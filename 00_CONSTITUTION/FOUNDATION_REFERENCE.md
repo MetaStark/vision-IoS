@@ -21,7 +21,7 @@ The foundation contains:
 ## How Vision-IoS Uses the Foundation
 
 1. **Database:** Same database, new schemas (vision_*)
-2. **Agents:** Uses existing identities (LARS/STIG/LINE/FINN)
+2. **Agents:** Uses existing identities (LARS/STIG/LINE/FINN/VEGA)
 3. **Governance:** Flows through fhq_governance
 4. **Audit:** Logs to fhq_meta.adr_audit_log
 5. **Keys:** Uses fhq_meta.agent_keys (ADR-008)
