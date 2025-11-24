@@ -1320,13 +1320,13 @@ class VEGAG3AuditEngine:
 
         # Export JSON
         json_path = output_dir / f"G3_AUDIT_PACKET_{packet.audit_id}.json"
-        with open(json_path, 'w') as f:
+        with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(packet.to_dict(), f, indent=2, default=str)
 
         # Export Markdown report
         md_path = output_dir / f"G3_AUDIT_REPORT_{packet.audit_id}.md"
         report = self.generate_audit_report(packet)
-        with open(md_path, 'w') as f:
+        with open(md_path, 'w', encoding='utf-8') as f:
             f.write(f"# VEGA G3 Audit Report\n\n```\n{report}\n```\n")
 
         logger.info(f"\nAudit packet exported:")
