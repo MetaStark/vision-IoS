@@ -39,7 +39,10 @@ class OHLCVInterval(Enum):
     MIN_1 = "1m"      # 1-minute (high-frequency analysis)
     MIN_5 = "5m"      # 5-minute (intraday signals)
     MIN_15 = "15m"    # 15-minute (short-term trend)
+    HOUR_1 = "1h"     # 1-hour (intraday swing)
+    HOUR_4 = "4h"     # 4-hour (medium-term swing)
     DAY_1 = "1d"      # Daily (regime classification primary)
+    WEEK_1 = "1w"     # Weekly (long-term trend)
 
     @property
     def seconds(self) -> int:
@@ -48,7 +51,10 @@ class OHLCVInterval(Enum):
             "1m": 60,
             "5m": 300,
             "15m": 900,
-            "1d": 86400
+            "1h": 3600,
+            "4h": 14400,
+            "1d": 86400,
+            "1w": 604800
         }
         return interval_seconds[self.value]
 
@@ -59,7 +65,10 @@ class OHLCVInterval(Enum):
             "1m": "1min",
             "5m": "5min",
             "15m": "15min",
-            "1d": "1D"
+            "1h": "1h",
+            "4h": "4h",
+            "1d": "1D",
+            "1w": "1W"
         }
         return freq_map[self.value]
 

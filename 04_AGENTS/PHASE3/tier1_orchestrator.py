@@ -719,9 +719,9 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
 
     # Map interval string to OHLCVInterval
     interval_map = {
-        "1m": OHLCVInterval.MINUTE_1,
-        "5m": OHLCVInterval.MINUTE_5,
-        "15m": OHLCVInterval.MINUTE_15,
+        "1m": OHLCVInterval.MIN_1,
+        "5m": OHLCVInterval.MIN_5,
+        "15m": OHLCVInterval.MIN_15,
         "1h": OHLCVInterval.HOUR_1,
         "4h": OHLCVInterval.HOUR_4,
         "1d": OHLCVInterval.DAY_1,
