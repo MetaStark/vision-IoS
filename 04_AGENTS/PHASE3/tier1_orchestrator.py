@@ -1,12 +1,12 @@
 """
-Tier-1 Orchestrator Skeleton
-Phase 3: Week 2 — Enhanced Context Gathering (Steps 1-5)
+Tier-1 Orchestrator
+Phase 3: Week 3 — Enhanced Context Gathering with CDS Integration
 
 Authority: LARS Phase 3 Directive (HC-LARS-PHASE3-CONTINUE-20251124)
 Canonical ADR Chain: ADR-001 → ADR-015
 
 Purpose: Orchestrate Phase 3 agent pipeline for regime-aware decision making
-Scope: Steps 1-5 (Enhanced Context Gathering)
+Scope: Steps 1-6 (Enhanced Context Gathering + CDS Computation)
 
 Pipeline Flow:
 1. LINE+ Data Ingestion → Multi-interval OHLCV data
@@ -14,22 +14,24 @@ Pipeline Flow:
 3. FINN+ Regime Classification → BEAR/NEUTRAL/BULL
 4. STIG+ Validation → 5-tier validation gate
 5. Relevance Engine → Regime weight mapping
+6. CDS Engine → Composite Decision Score (Week 3+)
 
-Future Extensions (Week 3+):
-6. FINN Tier-2 → Conflict summarization
-7. Tier-1 Execution → Actionable trades
+Future Extensions:
+7. FINN Tier-2 → Conflict summarization
+8. Tier-1 Execution → Actionable trades
 
 Integration:
 - LINE+: Data layer (OHLCV contracts + quality validation)
 - FINN+: Regime classifier with Ed25519 signatures
 - STIG+: 5-tier validation framework (mandatory gate)
 - Relevance Engine: FINN+ regime → weight mapping
+- CDS Engine: Composite Decision Score (LARS Directive 3)
 
 Output:
 - Validated regime prediction (SignedPrediction)
-- Relevance score (float)
-- Regime weight (float)
-- Quality reports (LINE+, STIG+)
+- CDS score (float, 0.0–1.0)
+- CDS components (6 components)
+- Quality reports (LINE+, STIG+, CDS)
 - Orchestration metadata (timing, cost tracking)
 
 Compliance:
@@ -37,6 +39,7 @@ Compliance:
 - ADR-008: 100% signature verification
 - ADR-010: Discrepancy scoring (severity classification)
 - ADR-012: Economic safety (cost tracking, rate limits)
+- BIS-239, ISO-8000, GIPS, MiFID II (CDS Engine compliance)
 """
 
 from dataclasses import dataclass, field
@@ -56,6 +59,17 @@ from finn_regime_classifier import RegimeClassifier
 from finn_signature import Ed25519Signer, SignedPrediction, sign_regime_prediction
 from stig_validator import STIGValidator, ValidationReport
 from relevance_engine import compute_relevance_score, get_regime_weight
+from cds_engine import (
+    CDSEngine,
+    CDSComponents,
+    CDSResult,
+    compute_regime_strength,
+    compute_signal_stability,
+    compute_data_integrity,
+    compute_causal_coherence,
+    compute_stress_modulator,
+    compute_relevance_alignment
+)
 
 
 @dataclass
@@ -91,8 +105,12 @@ class OrchestratorCycleResult:
 
     # Step 5: Relevance Engine
     regime_weight: Optional[float] = None
-    relevance_score: Optional[float] = None  # Would be computed with CDS in future
-    cds_score: Optional[float] = None  # Placeholder for future CDS integration
+    relevance_score: Optional[float] = None
+
+    # Step 6: CDS Engine (Week 3+)
+    cds_result: Optional[CDSResult] = None
+    cds_value: Optional[float] = None
+    cds_components: Optional[Dict[str, float]] = None
 
     # Overall status
     pipeline_success: bool = False
@@ -105,6 +123,7 @@ class OrchestratorCycleResult:
     finn_classification_time_ms: float = 0.0
     stig_validation_time_ms: float = 0.0
     relevance_computation_time_ms: float = 0.0
+    cds_computation_time_ms: float = 0.0
 
     # Cost tracking (ADR-012)
     total_cost_usd: float = 0.0
@@ -128,6 +147,7 @@ class OrchestratorCycleResult:
             f"  [3] FINN+ Classification: {'✅ ' + self.regime_label if self.regime_label else '❌ N/A'}",
             f"  [4] STIG+ Validation: {'✅ PASS' if self.stig_validation_pass else '❌ FAIL'}",
             f"  [5] Relevance Engine: {'✅ ' + f'{self.relevance_score:.3f}' if self.relevance_score else '❌ N/A'}",
+            f"  [6] CDS Engine: {'✅ ' + f'{self.cds_value:.4f}' if self.cds_value is not None else '❌ N/A'}",
             "",
         ]
 
@@ -137,7 +157,8 @@ class OrchestratorCycleResult:
                 f"  - Regime: {self.regime_label}",
                 f"  - Confidence: {self.regime_confidence:.2%}",
                 f"  - Regime Weight: {self.regime_weight:.1f}",
-                f"  - Relevance Score: {self.relevance_score:.3f}" if self.relevance_score else "  - Relevance Score: N/A (CDS not computed)",
+                f"  - Relevance Score: {self.relevance_score:.3f}" if self.relevance_score else "  - Relevance Score: N/A",
+                f"  - CDS Value: {self.cds_value:.4f}" if self.cds_value is not None else "  - CDS Value: N/A",
                 "",
             ])
         else:
@@ -155,6 +176,7 @@ class OrchestratorCycleResult:
             f"  - FINN+ classification: {self.finn_classification_time_ms:.1f}ms",
             f"  - STIG+ validation: {self.stig_validation_time_ms:.1f}ms",
             f"  - Relevance computation: {self.relevance_computation_time_ms:.1f}ms",
+            f"  - CDS computation: {self.cds_computation_time_ms:.1f}ms",
             "",
             "Cost Tracking (ADR-012):",
             f"  - Total cost: ${self.total_cost_usd:.6f}",
@@ -167,14 +189,22 @@ class OrchestratorCycleResult:
 
 class Tier1Orchestrator:
     """
-    Phase 3 Tier-1 Orchestrator (Steps 1-5: Enhanced Context Gathering).
+    Phase 3 Tier-1 Orchestrator (Steps 1-6: Enhanced Context Gathering + CDS).
 
-    This orchestrator integrates LINE+, FINN+, STIG+, and Relevance Engine
-    to produce validated regime classifications with relevance scores.
+    This orchestrator integrates LINE+, FINN+, STIG+, Relevance Engine, and CDS Engine
+    to produce validated regime classifications with composite decision scores.
 
-    Future extensions (Week 3+):
-    - Step 6: FINN Tier-2 conflict summarization
-    - Step 7: Tier-1 execution (actionable trades)
+    Pipeline (Steps 1-6):
+    1. LINE+ Data Ingestion
+    2. LINE+ Data Quality Validation
+    3. FINN+ Regime Classification
+    4. STIG+ Validation
+    5. Relevance Engine
+    6. CDS Engine (Week 3+)
+
+    Future extensions:
+    7. FINN Tier-2 conflict summarization
+    8. Tier-1 execution (actionable trades)
     """
 
     def __init__(self):
@@ -189,6 +219,9 @@ class Tier1Orchestrator:
         # STIG+ components
         self.stig_validator = STIGValidator()
 
+        # CDS Engine (Week 3+)
+        self.cds_engine = CDSEngine()
+
         # Orchestrator metadata
         self.cycle_count = 0
         self.total_cost_usd = 0.0
@@ -197,14 +230,14 @@ class Tier1Orchestrator:
                      ohlcv_dataset: OHLCVDataset,
                      cds_score: Optional[float] = None) -> OrchestratorCycleResult:
         """
-        Execute complete orchestrator cycle (Steps 1-5).
+        Execute complete orchestrator cycle (Steps 1-6).
 
         Args:
             ohlcv_dataset: OHLCV dataset from LINE+ data ingestion
-            cds_score: Optional CDS score for relevance computation (future)
+            cds_score: Optional CDS score for relevance computation (legacy parameter, unused)
 
         Returns:
-            OrchestratorCycleResult with complete pipeline output
+            OrchestratorCycleResult with complete pipeline output (including CDS)
         """
         cycle_start_time = time.time()
         self.cycle_count += 1
@@ -219,8 +252,7 @@ class Tier1Orchestrator:
             symbol=ohlcv_dataset.symbol,
             interval=ohlcv_dataset.interval.value,
             ohlcv_dataset=ohlcv_dataset,
-            data_bar_count=ohlcv_dataset.get_bar_count(),
-            cds_score=cds_score
+            data_bar_count=ohlcv_dataset.get_bar_count()
         )
 
         # STEP 2: LINE+ Data Quality Validation
@@ -276,6 +308,21 @@ class Tier1Orchestrator:
         result.regime_weight = regime_weight
         result.relevance_score = relevance_score
         result.relevance_computation_time_ms = step5_duration
+
+        # STEP 6: CDS Engine (Week 3+)
+        step6_start = time.time()
+        cds_result = self._compute_cds(
+            ohlcv_dataset=ohlcv_dataset,
+            regime_prediction=regime_prediction,
+            data_quality_report=data_quality_report,
+            regime_weight=regime_weight
+        )
+        step6_duration = (time.time() - step6_start) * 1000
+
+        result.cds_result = cds_result
+        result.cds_value = cds_result.cds_value
+        result.cds_components = cds_result.components
+        result.cds_computation_time_ms = step6_duration
 
         # Pipeline success
         result.pipeline_success = True
@@ -372,6 +419,61 @@ class Tier1Orchestrator:
             relevance_score, _ = compute_relevance_score(cds_score, regime_label)
 
         return regime_weight, relevance_score
+
+    def _compute_cds(self,
+                    ohlcv_dataset: OHLCVDataset,
+                    regime_prediction: SignedPrediction,
+                    data_quality_report: DataQualityReport,
+                    regime_weight: float) -> CDSResult:
+        """
+        Step 6: CDS Engine (Week 3+).
+
+        Computes Composite Decision Score from all pipeline components.
+
+        Returns: CDSResult with CDS value and validation
+        """
+        # Extract price DataFrame for volatility calculation
+        price_df = ohlcv_dataset.to_dataframe()
+
+        # Compute 6 CDS components
+
+        # C1: Regime Strength (FINN+ confidence)
+        C1 = compute_regime_strength(regime_prediction.confidence)
+
+        # C2: Signal Stability (persistence - placeholder, using 15 days for now)
+        # TODO: Replace with actual persistence from STIG+ when available
+        persistence_days = 15.0
+        C2 = compute_signal_stability(persistence_days, max_days=30.0)
+
+        # C3: Data Integrity (LINE+ quality report)
+        C3 = compute_data_integrity(data_quality_report)
+
+        # C4: Causal Coherence (FINN+ Tier-2, not implemented yet)
+        C4 = compute_causal_coherence(0.0)  # Placeholder
+
+        # C5: Market Stress Modulator (volatility)
+        returns = price_df['close'].pct_change().dropna()
+        volatility = returns.std() if len(returns) > 0 else 0.02
+        C5 = compute_stress_modulator(volatility, max_volatility=0.05)
+
+        # C6: Relevance Alignment (regime weight normalized)
+        relevance_score = regime_weight  # Using regime weight directly
+        C6 = compute_relevance_alignment(relevance_score, max_relevance=1.8)
+
+        # Create CDS components
+        components = CDSComponents(
+            C1_regime_strength=C1,
+            C2_signal_stability=C2,
+            C3_data_integrity=C3,
+            C4_causal_coherence=C4,
+            C5_stress_modulator=C5,
+            C6_relevance_alignment=C6
+        )
+
+        # Compute CDS
+        cds_result = self.cds_engine.compute_cds(components)
+
+        return cds_result
 
     def get_orchestrator_stats(self) -> Dict[str, Any]:
         """Get orchestrator statistics."""
