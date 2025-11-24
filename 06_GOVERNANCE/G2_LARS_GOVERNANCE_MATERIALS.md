@@ -576,23 +576,86 @@ Recommendations (MANDATORY):
 
 ---
 
-### 7.3 G2 Re-Validation (Pending)
+### 7.3 G2 Re-Validation (2025-11-24)
 
-**G2 Governance Validation Decision:** [ ] PASS  [ ] FAIL  [ ] MODIFY
+**G2 Governance Validation Decision:** ✅ **PASS**
 
 **Re-Validation Checklist:**
-- [ ] **FINN Mandate Alignment:** Confirms FINN Tier-2 = 3 components only (CDS, Relevance, Conflict Summary)
-- [ ] **Canonical Reference:** FINN_TIER2_MANDATE.md is sole authoritative contract
-- [ ] **Scope Compliance:** No unauthorized functions (baseline, noise floor, alpha gen, backtesting)
-- [ ] **Phase 2 Separation:** Out-of-scope functions moved to FINN_PHASE2_ROADMAP.md
-- [ ] **ADR-010 Integration:** Discrepancy contracts correctly specified
-- [ ] **Tier-2 Constraints:** Economic safety limits enforced per ADR-012
-- [ ] **Strategic Fit:** FINN Tier-2 mandate aligns with Vision-IoS mission (ADR-005)
+- ✅ **FINN Mandate Alignment:** Confirms FINN Tier-2 = 3 components only (CDS, Relevance, Conflict Summary)
+- ✅ **Canonical Reference:** FINN_TIER2_MANDATE.md is sole authoritative contract
+- ✅ **Scope Compliance:** No unauthorized functions (baseline, noise floor, alpha gen, backtesting)
+- ✅ **Phase 2 Separation:** Out-of-scope functions moved to FINN_PHASE2_ROADMAP.md
+- ✅ **ADR-010 Integration:** Discrepancy contracts correctly specified
+- ✅ **Tier-2 Constraints:** Economic safety limits enforced per ADR-012
+- ✅ **Strategic Fit:** FINN Tier-2 mandate aligns with Vision-IoS mission (ADR-005)
 
-**LARS Signature:** _______________________________
-**Date:** _______________________________
-**Hash Chain ID:** HC-LARS-ADR004-G2-REVALIDATION-20251124
+**LARS Executive Assessment:**
+
+**1. FINN Tier-2 Mandate Realignment:** ✅ PASS
+- Reduced to 3 canonical components (CDS Score, Relevance Score, Conflict Summary)
+- Matches CEO mandate exactly: "Tier-2 laget skal konvertere deterministiske Tier-4-signaler (CDS, Relevance) til auditerbar Alpha-syntese"
+
+**2. Scope Purification:** ✅ PASS
+- Removed all Tier-1 functions (Alpha Signal Generation)
+- Removed all preprocessing logic (Baseline Inference, Noise Floor)
+- Removed all validation workloads (Backtesting)
+- Removed meta-state responsibilities (flagged for VEGA review)
+
+**3. Phase 2 Roadmap Creation:** ✅ PASS
+- Out-of-scope components isolated in FINN_PHASE2_ROADMAP.md
+- Preserves audit lineage and prevents accidental revival
+- Each Phase 2 function requires fresh G0-G4 cycle
+
+**4. ADR Compliance:** ✅ PASS
+- ADR-003: Institutional separation of research vs governance
+- ADR-007: Orchestrator boundaries and tier separation
+- ADR-008: Ed25519 signature requirement
+- ADR-010: Discrepancy scoring & tolerances
+- ADR-012: Economic safety ceilings
+
+**Governance Decision:**
+> "Your corrective operation is clean, structurally compliant, and fully aligned with CEO-specified FINN Tier-2 mandate. You have removed all Tier-1 functions, all preprocessing logic, all validation workloads, and all meta-state responsibilities not belonging to FINN Tier-2. This restores the constitutional separation required under ADR-001, ADR-003, ADR-004 and ADR-010. No governance drift remains."
+
+**LARS Signature:** LARS-CSO-G2-PASS-20251124
+**Date:** 2025-11-24
+**Hash Chain ID:** HC-LARS-ADR004-G2-PASS-20251124
+**Decision:** PASS ✅
 **Next Gate:** G3 (VEGA Audit Verification)
+
+---
+
+### 7.4 Post-G2 Required Actions
+
+**Mandatory Actions Upon G3 Approval:**
+
+**1. Mandatory Registration:**
+- ✅ Register `FINN_TIER2_MANDATE.md` → `fhq_governance.agent_contracts`
+- ✅ FINN_TIER2_MANDATE.md is the sole authoritative contract for FINN Tier-2
+
+**2. Phase 2 Isolation:**
+- ✅ `FINN_PHASE2_ROADMAP.md` must never auto-activate
+- ✅ Each listed function requires fresh G0-G4 cycle
+- ✅ No Phase 2 function may be implemented without G0-G4 approval
+
+**3. STIG/VEGA Coordination:**
+
+**VEGA G3 Validation (Audit Verification):**
+- [ ] Discrepancy contracts validation
+- [ ] Signature enforcement verification
+- [ ] 3-sentence deterministic structure validation
+- [ ] Semantic similarity thresholds (≥0.65)
+- [ ] Tolerance layer correctness (ADR-010)
+- [ ] Economic safety compliance (ADR-012)
+
+**STIG G3 Support (Technical Validation):**
+- [ ] Input correctness from Tier-4 engines (cds_engine, relevance_engine)
+- [ ] Feature integrity verification
+- [ ] Schema alignment with vision_signals.finn_tier2
+- [ ] Storage validation trigger testing
+- [ ] Ed25519 signature constraint verification
+
+**4. G4 Prerequisites:**
+- Both VEGA (G3 Audit Verification) and STIG (Technical Support) validations are prerequisites for G4 (CEO Canonicalization)
 
 ---
 
