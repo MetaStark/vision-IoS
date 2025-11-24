@@ -167,9 +167,9 @@ class RegimeClassifier:
         """
         Classify regime using rule-based logic (Week 1 prototype).
 
-        Rules:
-        - BEAR: negative returns, high volatility, high drawdown
-        - BULL: positive returns, moderate volatility, low drawdown
+        Rules (RECALIBRATED for stability):
+        - BEAR: strong negative returns, high volatility, high drawdown
+        - BULL: strong positive returns, moderate volatility, low drawdown
         - NEUTRAL: near-zero returns, moderate volatility
 
         Args:
@@ -183,15 +183,15 @@ class RegimeClassifier:
         vol_z = features.get('volatility_z', 0)
         drawdown_z = features.get('drawdown_z', 0)
 
-        # Rule-based classification
-        if return_z < -0.5 and drawdown_z < -0.3:
+        # Rule-based classification (THRESHOLDS INCREASED FOR STABILITY)
+        if return_z < -1.0 and drawdown_z < -0.6:
             # Strong negative signal → BEAR
             regime_state = 0
             regime_label = "BEAR"
             prob_bear = 0.70
             prob_neutral = 0.20
             prob_bull = 0.10
-        elif return_z > 0.5 and drawdown_z > -0.3:
+        elif return_z > 1.0 and drawdown_z > -0.2:
             # Strong positive signal → BULL
             regime_state = 2
             regime_label = "BULL"
@@ -234,6 +234,129 @@ class RegimeClassifier:
         """
         # Week 1: Rule-based classification
         return self.classify_regime_rule_based(features)
+
+    def _classify_with_hysteresis(self, features: pd.Series, current_regime: int) -> int:
+        """
+        Classify with hysteresis (different thresholds for staying vs entering).
+
+        This implements state-dependent thresholds to reduce regime-flipping:
+        - Higher thresholds to ENTER a regime
+        - Lower thresholds to STAY in current regime
+
+        Args:
+            features: z-scored features for one day
+            current_regime: Current regime state (0=BEAR, 1=NEUTRAL, 2=BULL)
+
+        Returns:
+            Regime state (0, 1, 2)
+        """
+        return_z = features.get('return_z', 0)
+        drawdown_z = features.get('drawdown_z', 0)
+        vol_z = features.get('volatility_z', 0)
+
+        # BEAR state logic
+        if current_regime == 0:  # Currently BEAR
+            # Stay BEAR unless strong reversal signal
+            if return_z > 0.5 and drawdown_z > -0.2:
+                return 2  # Strong reversal → BULL
+            elif return_z > 0.0:
+                return 1  # Moderate improvement → NEUTRAL
+            else:
+                return 0  # Stay BEAR
+        else:  # Not currently BEAR
+            # Enter BEAR only with strong negative signal
+            if return_z < -1.0 and drawdown_z < -0.6:
+                return 0  # Enter BEAR
+
+        # BULL state logic
+        if current_regime == 2:  # Currently BULL
+            # Stay BULL unless strong reversal signal
+            if return_z < -0.5 and drawdown_z < -0.5:
+                return 0  # Strong reversal → BEAR
+            elif return_z < 0.0:
+                return 1  # Moderate decline → NEUTRAL
+            else:
+                return 2  # Stay BULL
+        else:  # Not currently BULL
+            # Enter BULL only with strong positive signal
+            if return_z > 1.0 and drawdown_z > -0.2 and vol_z < 0.5:
+                return 2  # Enter BULL
+
+        # Default: NEUTRAL (stable baseline state)
+        return 1
+
+    def classify_timeseries_with_persistence(self,
+                                            features: pd.DataFrame,
+                                            persistence_days: int = 5) -> pd.DataFrame:
+        """
+        Classify regime over time with persistence filtering.
+
+        This addresses LARS validation requirements:
+        - Minimum persistence ≥ 5 days
+        - Maximum transitions ≤ 30 per 90 days
+
+        Implementation:
+        1. Apply hysteresis (state-dependent thresholds)
+        2. Require N consecutive confirmations before regime change
+        3. Default to NEUTRAL as stable baseline
+
+        Args:
+            features: DataFrame with z-scored features (one row per day)
+            persistence_days: Days required to confirm regime change
+
+        Returns:
+            DataFrame with regime classifications and metadata
+        """
+        results = []
+        current_regime = 1  # Start in NEUTRAL (stable baseline)
+        candidate_regime = 1
+        candidate_count = 0
+
+        for idx in features.index:
+            row = features.loc[idx]
+
+            # Skip if features are invalid
+            is_valid, _ = self.validate_features(row)
+            if not is_valid:
+                # Maintain current regime on invalid data
+                results.append({
+                    'regime_state': current_regime,
+                    'regime_label': self.REGIME_LABELS[current_regime],
+                    'raw_regime': current_regime,
+                    'candidate_count': 0,
+                    'is_valid': False
+                })
+                continue
+
+            # Get raw classification with hysteresis
+            raw_regime = self._classify_with_hysteresis(row, current_regime)
+
+            # Persistence logic
+            if raw_regime == current_regime:
+                # Same regime - reset candidate tracking
+                candidate_regime = current_regime
+                candidate_count = 0
+            elif raw_regime == candidate_regime:
+                # Continuing candidate - increment count
+                candidate_count += 1
+                if candidate_count >= persistence_days:
+                    # Confirmed - switch regime
+                    current_regime = candidate_regime
+                    candidate_count = 0
+            else:
+                # New candidate - start tracking
+                candidate_regime = raw_regime
+                candidate_count = 1
+
+            results.append({
+                'regime_state': current_regime,
+                'regime_label': self.REGIME_LABELS[current_regime],
+                'raw_regime': raw_regime,
+                'candidate_count': candidate_count,
+                'is_valid': True
+            })
+
+        return pd.DataFrame(results, index=features.index)
 
     def validate_features(self, features: pd.Series) -> Tuple[bool, str]:
         """
@@ -371,22 +494,25 @@ if __name__ == "__main__":
     else:
         print(f"    ❌ Validation failed: {reason}")
 
-    # Analyze persistence
-    print("\n[3] Analyzing regime persistence...")
+    # Analyze persistence WITH stability corrections
+    print("\n[3] Analyzing regime persistence (WITH STABILITY CORRECTIONS)...")
     recent_features = features.tail(90).dropna()
-    regime_labels = []
 
-    for idx in recent_features.index:
-        result = classifier.classify_regime(recent_features.loc[idx])
-        regime_labels.append(result.regime_label)
+    # Use new persistence-aware classification
+    regime_df = classifier.classify_timeseries_with_persistence(recent_features, persistence_days=5)
+    regime_series = regime_df['regime_label']
 
-    regime_series = pd.Series(regime_labels)
     is_valid, avg_persistence = RegimePersistence.validate_persistence(regime_series)
     transitions = RegimePersistence.count_transitions(regime_series)
 
-    print(f"    Average persistence: {avg_persistence:.1f} days (min: 5 days)")
-    print(f"    Regime transitions (90d): {transitions}")
-    print(f"    Persistence valid: {'✅' if is_valid else '❌'}")
+    print(f"    Average persistence: {avg_persistence:.1f} days (requirement: ≥5 days)")
+    print(f"    Regime transitions (90d): {transitions} (requirement: ≤30)")
+    print(f"    Persistence valid: {'✅ PASS' if is_valid else '❌ FAIL'}")
+    print(f"    Transitions valid: {'✅ PASS' if transitions <= 30 else '❌ FAIL'}")
+
+    # Show validation status
+    validation_pass = is_valid and transitions <= 30
+    print(f"\n    🎯 LARS VALIDATION: {'✅ PASS' if validation_pass else '❌ FAIL'}")
 
     # Regime distribution
     print("\n[4] Regime distribution (last 90 days)...")
@@ -394,6 +520,20 @@ if __name__ == "__main__":
     for regime, pct in distribution.items():
         print(f"    {regime}: {pct:.1%}")
 
+    # Show transition points
+    print("\n[5] Regime transition analysis...")
+    transition_mask = regime_df['regime_label'] != regime_df['regime_label'].shift()
+    transition_points = regime_df[transition_mask]
+    print(f"    Total transitions: {len(transition_points) - 1}")  # -1 for first row
+    if len(transition_points) > 1:
+        print(f"    Last 3 transitions:")
+        for idx in transition_points.index[-3:]:
+            row = regime_df.loc[idx]
+            print(f"      {idx}: → {row['regime_label']} (from raw regime {row['raw_regime']})")
+
     print("\n" + "=" * 80)
-    print("✅ WEEK 1 PROTOTYPE COMPLETE")
+    if validation_pass:
+        print("✅ STABILITY CORRECTIONS APPLIED — LARS VALIDATION PASS")
+    else:
+        print("⚠️  WEEK 1 PROTOTYPE COMPLETE — AWAITING VALIDATION")
     print("=" * 80)
