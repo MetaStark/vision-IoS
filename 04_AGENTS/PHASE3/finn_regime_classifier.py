@@ -183,7 +183,7 @@ class RegimeClassifier:
         vol_z = features.get('volatility_z', 0)
         drawdown_z = features.get('drawdown_z', 0)
 
-        # Rule-based classification (THRESHOLDS INCREASED FOR STABILITY)
+        # Rule-based classification (THRESHOLDS RECALIBRATED FOR STABILITY & BULL DETECTION)
         if return_z < -1.0 and drawdown_z < -0.6:
             # Strong negative signal → BEAR
             regime_state = 0
@@ -191,7 +191,7 @@ class RegimeClassifier:
             prob_bear = 0.70
             prob_neutral = 0.20
             prob_bull = 0.10
-        elif return_z > 1.0 and drawdown_z > -0.2:
+        elif return_z > 0.85 and drawdown_z > -0.2:
             # Strong positive signal → BULL
             regime_state = 2
             regime_label = "BULL"
@@ -279,7 +279,7 @@ class RegimeClassifier:
                 return 2  # Stay BULL
         else:  # Not currently BULL
             # Enter BULL only with strong positive signal
-            if return_z > 1.0 and drawdown_z > -0.2 and vol_z < 0.5:
+            if return_z > 0.85 and drawdown_z > -0.2 and vol_z < 0.5:
                 return 2  # Enter BULL
 
         # Default: NEUTRAL (stable baseline state)
