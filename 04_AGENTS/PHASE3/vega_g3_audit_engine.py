@@ -286,7 +286,7 @@ class VEGAG3AuditEngine:
             metrics['total_modules'] += 1
 
             if module_path.exists():
-                content = module_path.read_text().lower()
+                content = module_path.read_text(encoding='utf-8').lower()
                 pattern_found = any(p in content for p in patterns)
 
                 if pattern_found:
@@ -343,7 +343,7 @@ class VEGAG3AuditEngine:
         # Check 3: Verify CDS formula determinism
         cds_path = self.base_path / 'cds_engine.py'
         if cds_path.exists():
-            cds_content = cds_path.read_text()
+            cds_content = cds_path.read_text(encoding='utf-8')
 
             # Check for linear formula
             if 'Σ' in cds_content or 'sum' in cds_content.lower() or '+' in cds_content:
@@ -450,7 +450,7 @@ class VEGAG3AuditEngine:
                     ))
                 continue
 
-            content = module_path.read_text().lower()
+            content = module_path.read_text(encoding='utf-8').lower()
             pattern_matches = sum(1 for p in signature_patterns if p in content)
 
             if pattern_matches >= 2:
@@ -488,7 +488,7 @@ class VEGAG3AuditEngine:
         # Check for Ed25519 specific implementation
         finn_sig_path = self.base_path / 'finn_signature.py'
         if finn_sig_path.exists():
-            content = finn_sig_path.read_text()
+            content = finn_sig_path.read_text(encoding='utf-8')
             if 'ed25519' in content.lower() or 'nacl' in content.lower():
                 findings.append(self._add_finding(
                     procedure="B",
@@ -628,7 +628,7 @@ class VEGAG3AuditEngine:
         chain_references = 0
 
         for code_file in code_files:
-            content = code_file.read_text()
+            content = code_file.read_text(encoding='utf-8')
             if 'ADR-001' in content and 'ADR-015' in content:
                 chain_references += 1
 
@@ -704,7 +704,7 @@ class VEGAG3AuditEngine:
         # Check 1: CDS Engine has no external LLM calls
         cds_path = self.base_path / 'cds_engine.py'
         if cds_path.exists():
-            cds_content = cds_path.read_text()
+            cds_content = cds_path.read_text(encoding='utf-8')
             cds_content_lower = cds_content.lower()
 
             # Check for actual LLM imports (not just cost tracking fields)
@@ -780,7 +780,7 @@ class VEGAG3AuditEngine:
         # Check 2: Rate limiting in production adapters
         adapters_path = self.base_path / 'production_data_adapters.py'
         if adapters_path.exists():
-            adapter_content = adapters_path.read_text().lower()
+            adapter_content = adapters_path.read_text(encoding='utf-8').lower()
 
             if 'rate_limit' in adapter_content or 'ratelimit' in adapter_content:
                 metrics['rate_limiting_present'] = True
@@ -813,7 +813,7 @@ class VEGAG3AuditEngine:
         # Check 3: FINN+ Tier-2 has cost controls
         tier2_path = self.base_path / 'finn_tier2_engine.py'
         if tier2_path.exists():
-            tier2_content = tier2_path.read_text().lower()
+            tier2_content = tier2_path.read_text(encoding='utf-8').lower()
 
             cost_controls = ['rate_limit', 'cost', 'budget', 'cache']
             controls_found = sum(1 for c in cost_controls if c in tier2_content)
@@ -902,7 +902,7 @@ class VEGAG3AuditEngine:
             metrics['agents_checked'] += 1
 
             if module_path.exists():
-                content = module_path.read_text().lower()
+                content = module_path.read_text(encoding='utf-8').lower()
                 pattern_matches = sum(1 for p in patterns if p in content)
 
                 if pattern_matches >= 2:
@@ -933,7 +933,7 @@ class VEGAG3AuditEngine:
         # Check data flow integration
         orchestrator_path = self.base_path / 'tier1_orchestrator.py'
         if orchestrator_path.exists():
-            content = orchestrator_path.read_text().lower()
+            content = orchestrator_path.read_text(encoding='utf-8').lower()
 
             # Check for all agent integrations
             agent_refs = ['line', 'finn', 'stig', 'cds']
@@ -1039,7 +1039,7 @@ class VEGAG3AuditEngine:
                 metrics['modules_present'] += 1
 
                 # Check module size (proxy for completeness)
-                content = module_path.read_text()
+                content = module_path.read_text(encoding='utf-8')
                 lines = len(content.split('\n'))
 
                 if lines >= 100:
@@ -1320,13 +1320,13 @@ class VEGAG3AuditEngine:
 
         # Export JSON
         json_path = output_dir / f"G3_AUDIT_PACKET_{packet.audit_id}.json"
-        with open(json_path, 'w') as f:
+        with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(packet.to_dict(), f, indent=2, default=str)
 
         # Export Markdown report
         md_path = output_dir / f"G3_AUDIT_REPORT_{packet.audit_id}.md"
         report = self.generate_audit_report(packet)
-        with open(md_path, 'w') as f:
+        with open(md_path, 'w', encoding='utf-8') as f:
             f.write(f"# VEGA G3 Audit Report\n\n```\n{report}\n```\n")
 
         logger.info(f"\nAudit packet exported:")
@@ -1334,6 +1334,268 @@ class VEGAG3AuditEngine:
         logger.info(f"  Report: {md_path}")
 
         return json_path, md_path
+
+
+# =============================================================================
+# VEGA GOVERNANCE READER (ADR-006 Compliant)
+# LARS Directive 10B: VEGA-First Access Pattern
+# =============================================================================
+
+class VEGAGovernanceReader:
+    """
+    VEGA Governance Reader — Canonical Lock Query Interface
+
+    Authority: ADR-006 (VEGA governance access)
+    Mandate: LARS Directive 10B (VEGA-First Access Pattern)
+
+    Purpose:
+    Provides the ONLY authorized read pathway for canonical CDS weight locks.
+    Other agents (LARS, LINE, FINN, STIG, etc.) MUST read lock state via
+    these VEGA functions, not direct table access.
+
+    Usage:
+        reader = VEGAGovernanceReader(db_connection_string)
+        lock = reader.get_canonical_lock()
+        if lock:
+            print(f"Canonical Lock: {lock['lock_id']}")
+    """
+
+    def __init__(self, db_connection_string: Optional[str] = None):
+        """Initialize VEGA Governance Reader."""
+        self.db_connection_string = db_connection_string
+        self.conn = None
+
+    def connect(self) -> bool:
+        """Establish database connection."""
+        if not self.db_connection_string:
+            logger.warning("No database connection string provided")
+            return False
+
+        try:
+            import psycopg2
+            self.conn = psycopg2.connect(self.db_connection_string)
+            return True
+        except ImportError:
+            logger.warning("psycopg2 not available")
+            return False
+        except Exception as e:
+            logger.error(f"Database connection failed: {e}")
+            return False
+
+    def get_canonical_lock(self) -> Optional[Dict[str, Any]]:
+        """
+        Get the current canonical CDS weight lock.
+
+        This is the primary VEGA governance function for lock verification.
+        Per ADR-006, all agents must use this function to read canonical lock state.
+
+        Returns:
+            Dict with canonical lock details, or None if no canonical lock exists.
+        """
+        if not self.conn:
+            return None
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        signature,
+                        weights_json,
+                        version,
+                        authority,
+                        is_canonical,
+                        created_at
+                    FROM fhq_phase3.cds_weight_locks
+                    WHERE is_canonical = TRUE
+                    LIMIT 1
+                """)
+                row = cur.fetchone()
+
+                if row:
+                    return {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "signature": row[3],
+                        "weights": row[4] if isinstance(row[4], dict) else json.loads(row[4]) if row[4] else {},
+                        "version": row[5],
+                        "authority": row[6],
+                        "is_canonical": row[7],
+                        "created_at": row[8].isoformat() if row[8] else None
+                    }
+
+            return None
+        except Exception as e:
+            logger.error(f"Failed to read canonical lock: {e}")
+            return None
+
+    def get_lock_by_id(self, lock_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific lock by ID.
+
+        Args:
+            lock_id: The lock ID to retrieve
+
+        Returns:
+            Dict with lock details, or None if not found.
+        """
+        if not self.conn:
+            return None
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        signature,
+                        weights_json,
+                        version,
+                        authority,
+                        is_canonical
+                    FROM fhq_phase3.cds_weight_locks
+                    WHERE lock_id = %s
+                """, (lock_id,))
+                row = cur.fetchone()
+
+                if row:
+                    return {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "signature": row[3],
+                        "weights": row[4] if isinstance(row[4], dict) else json.loads(row[4]) if row[4] else {},
+                        "version": row[5],
+                        "authority": row[6],
+                        "is_canonical": row[7]
+                    }
+
+            return None
+        except Exception as e:
+            logger.error(f"Failed to read lock {lock_id}: {e}")
+            return None
+
+    def get_all_locks(self) -> List[Dict[str, Any]]:
+        """
+        Get all locks in the system (for audit purposes).
+
+        Returns:
+            List of all lock records.
+        """
+        if not self.conn:
+            return []
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        version,
+                        is_canonical
+                    FROM fhq_phase3.cds_weight_locks
+                    ORDER BY timestamp_utc DESC
+                """)
+                rows = cur.fetchall()
+
+                return [
+                    {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "version": row[3],
+                        "is_canonical": row[4]
+                    }
+                    for row in rows
+                ]
+        except Exception as e:
+            logger.error(f"Failed to read locks: {e}")
+            return []
+
+    def verify_lock_consistency(self, json_lock_path: str) -> Dict[str, Any]:
+        """
+        Verify that DB lock matches JSON lock file (LARS Directive 10B requirement).
+
+        This function confirms that the canonical lock in the database matches
+        the lock stored in the JSON file, ensuring data integrity.
+
+        Args:
+            json_lock_path: Path to the JSON lock file
+
+        Returns:
+            Dict with verification results.
+        """
+        result = {
+            "verified": False,
+            "db_lock": None,
+            "json_lock": None,
+            "discrepancies": []
+        }
+
+        # Get DB lock
+        db_lock = self.get_canonical_lock()
+        result["db_lock"] = db_lock
+
+        # Get JSON lock
+        try:
+            with open(json_lock_path, 'r', encoding='utf-8') as f:
+                json_lock = json.load(f)
+            result["json_lock"] = json_lock
+        except Exception as e:
+            result["discrepancies"].append(f"Failed to read JSON lock: {e}")
+            return result
+
+        if not db_lock:
+            result["discrepancies"].append("No canonical lock found in database")
+            return result
+
+        # Compare critical fields
+        if db_lock["lock_id"] != json_lock.get("lock_id"):
+            result["discrepancies"].append(
+                f"Lock ID mismatch: DB={db_lock['lock_id']}, JSON={json_lock.get('lock_id')}"
+            )
+
+        if db_lock["weight_hash"] != json_lock.get("weight_hash"):
+            result["discrepancies"].append(
+                f"Weight hash mismatch: DB={db_lock['weight_hash'][:16]}..., JSON={json_lock.get('weight_hash', '')[:16]}..."
+            )
+
+        if db_lock["signature"] != json_lock.get("signature_hash"):
+            result["discrepancies"].append(
+                f"Signature mismatch: DB={db_lock['signature'][:16]}..., JSON={json_lock.get('signature_hash', '')[:16]}..."
+            )
+
+        # Verify if no discrepancies
+        result["verified"] = len(result["discrepancies"]) == 0
+
+        return result
+
+    def get_governance_status(self) -> Dict[str, Any]:
+        """
+        Get comprehensive governance status for VEGA reporting.
+
+        Returns:
+            Dict with governance status summary.
+        """
+        canonical_lock = self.get_canonical_lock()
+        all_locks = self.get_all_locks()
+
+        return {
+            "canonical_lock_exists": canonical_lock is not None,
+            "canonical_lock_id": canonical_lock["lock_id"] if canonical_lock else None,
+            "canonical_weight_hash": canonical_lock["weight_hash"] if canonical_lock else None,
+            "total_locks": len(all_locks),
+            "canonical_count": sum(1 for l in all_locks if l.get("is_canonical")),
+            "governance_healthy": (
+                canonical_lock is not None and
+                sum(1 for l in all_locks if l.get("is_canonical")) == 1
+            )
+        }
 
 
 # =============================================================================
