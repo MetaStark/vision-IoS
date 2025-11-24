@@ -286,7 +286,7 @@ class VEGAG3AuditEngine:
             metrics['total_modules'] += 1
 
             if module_path.exists():
-                content = module_path.read_text().lower()
+                content = module_path.read_text(encoding='utf-8').lower()
                 pattern_found = any(p in content for p in patterns)
 
                 if pattern_found:
@@ -343,7 +343,7 @@ class VEGAG3AuditEngine:
         # Check 3: Verify CDS formula determinism
         cds_path = self.base_path / 'cds_engine.py'
         if cds_path.exists():
-            cds_content = cds_path.read_text()
+            cds_content = cds_path.read_text(encoding='utf-8')
 
             # Check for linear formula
             if 'Σ' in cds_content or 'sum' in cds_content.lower() or '+' in cds_content:
@@ -450,7 +450,7 @@ class VEGAG3AuditEngine:
                     ))
                 continue
 
-            content = module_path.read_text().lower()
+            content = module_path.read_text(encoding='utf-8').lower()
             pattern_matches = sum(1 for p in signature_patterns if p in content)
 
             if pattern_matches >= 2:
@@ -488,7 +488,7 @@ class VEGAG3AuditEngine:
         # Check for Ed25519 specific implementation
         finn_sig_path = self.base_path / 'finn_signature.py'
         if finn_sig_path.exists():
-            content = finn_sig_path.read_text()
+            content = finn_sig_path.read_text(encoding='utf-8')
             if 'ed25519' in content.lower() or 'nacl' in content.lower():
                 findings.append(self._add_finding(
                     procedure="B",
@@ -628,7 +628,7 @@ class VEGAG3AuditEngine:
         chain_references = 0
 
         for code_file in code_files:
-            content = code_file.read_text()
+            content = code_file.read_text(encoding='utf-8')
             if 'ADR-001' in content and 'ADR-015' in content:
                 chain_references += 1
 
@@ -704,7 +704,7 @@ class VEGAG3AuditEngine:
         # Check 1: CDS Engine has no external LLM calls
         cds_path = self.base_path / 'cds_engine.py'
         if cds_path.exists():
-            cds_content = cds_path.read_text()
+            cds_content = cds_path.read_text(encoding='utf-8')
             cds_content_lower = cds_content.lower()
 
             # Check for actual LLM imports (not just cost tracking fields)
@@ -780,7 +780,7 @@ class VEGAG3AuditEngine:
         # Check 2: Rate limiting in production adapters
         adapters_path = self.base_path / 'production_data_adapters.py'
         if adapters_path.exists():
-            adapter_content = adapters_path.read_text().lower()
+            adapter_content = adapters_path.read_text(encoding='utf-8').lower()
 
             if 'rate_limit' in adapter_content or 'ratelimit' in adapter_content:
                 metrics['rate_limiting_present'] = True
@@ -813,7 +813,7 @@ class VEGAG3AuditEngine:
         # Check 3: FINN+ Tier-2 has cost controls
         tier2_path = self.base_path / 'finn_tier2_engine.py'
         if tier2_path.exists():
-            tier2_content = tier2_path.read_text().lower()
+            tier2_content = tier2_path.read_text(encoding='utf-8').lower()
 
             cost_controls = ['rate_limit', 'cost', 'budget', 'cache']
             controls_found = sum(1 for c in cost_controls if c in tier2_content)
@@ -902,7 +902,7 @@ class VEGAG3AuditEngine:
             metrics['agents_checked'] += 1
 
             if module_path.exists():
-                content = module_path.read_text().lower()
+                content = module_path.read_text(encoding='utf-8').lower()
                 pattern_matches = sum(1 for p in patterns if p in content)
 
                 if pattern_matches >= 2:
@@ -933,7 +933,7 @@ class VEGAG3AuditEngine:
         # Check data flow integration
         orchestrator_path = self.base_path / 'tier1_orchestrator.py'
         if orchestrator_path.exists():
-            content = orchestrator_path.read_text().lower()
+            content = orchestrator_path.read_text(encoding='utf-8').lower()
 
             # Check for all agent integrations
             agent_refs = ['line', 'finn', 'stig', 'cds']
@@ -1039,7 +1039,7 @@ class VEGAG3AuditEngine:
                 metrics['modules_present'] += 1
 
                 # Check module size (proxy for completeness)
-                content = module_path.read_text()
+                content = module_path.read_text(encoding='utf-8')
                 lines = len(content.split('\n'))
 
                 if lines >= 100:
