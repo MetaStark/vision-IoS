@@ -1,0 +1,361 @@
+{
+  "production_monitoring_config": {
+    "version": "v1.0",
+    "baseline_commit": "4e9abd3",
+    "effective_date": "2025-11-24",
+    "authority": "LARS G4 Production Authorization Directive (HC-LARS-G4-PROD-AUTH-20251124)",
+    "governance_state": "PHASE_2_PRODUCTION_READY",
+    "architecture_freeze": true,
+    "immutable_baseline_control": true
+  },
+
+  "monitoring_loops": [
+    {
+      "monitor_id": "vega_weekly_attestation",
+      "monitor_type": "governance_attestation",
+      "status": "active",
+      "frequency": "weekly",
+      "next_execution": "2025-12-01T00:00:00Z",
+      "description": "VEGA performs weekly attestation of production cycles to verify continued compliance with ADR requirements and Gold Baseline standards.",
+
+      "attestation_checks": [
+        {
+          "check_id": "adr_compliance",
+          "check_name": "ADR Compliance Verification",
+          "adrs_verified": [
+            "ADR-001",
+            "ADR-002",
+            "ADR-007",
+            "ADR-008",
+            "ADR-009",
+            "ADR-010",
+            "ADR-012"
+          ],
+          "pass_threshold": "100%",
+          "failure_action": "alert_lars_and_pause_production"
+        },
+        {
+          "check_id": "signature_verification",
+          "check_name": "Cryptographic Signature Verification",
+          "signature_algorithm": "Ed25519",
+          "verification_scope": [
+            "line_ohlcv_ingestion",
+            "finn_cds_computation",
+            "finn_relevance_score",
+            "finn_conflict_summary",
+            "stig_validation",
+            "vega_attestation"
+          ],
+          "pass_threshold": "100%",
+          "failure_action": "alert_vega_and_pause_production"
+        },
+        {
+          "check_id": "economic_safety",
+          "check_name": "Economic Safety Verification (ADR-012)",
+          "cost_metrics": {
+            "per_summary_ceiling_usd": 0.050,
+            "baseline_cost_usd": 0.048,
+            "compliance_margin_min": 0.0,
+            "daily_budget_cap_usd": 500,
+            "daily_rate_limit": 100
+          },
+          "pass_criteria": {
+            "all_summaries_within_ceiling": true,
+            "no_daily_budget_breaches": true,
+            "no_rate_limit_breaches": true
+          },
+          "failure_action": "block_execution_and_alert_lars"
+        },
+        {
+          "check_id": "determinism_threshold",
+          "check_name": "Determinism Threshold Verification",
+          "minimum_determinism": 0.95,
+          "measurement_method": "replay_validation",
+          "sample_size": "all_production_cycles",
+          "pass_criteria": {
+            "tier4_determinism_min": 1.0,
+            "tier2_determinism_min": 0.90,
+            "overall_determinism_min": 0.95
+          },
+          "failure_action": "alert_lars_and_request_investigation"
+        }
+      ],
+
+      "alert_configuration": {
+        "alert_on_failure": true,
+        "alert_recipients": ["lars", "vega", "code"],
+        "alert_severity": "critical",
+        "escalation_policy": "immediate_lars_notification"
+      },
+
+      "attestation_output": {
+        "format": "markdown_report",
+        "storage_location": "05_GOVERNANCE/VEGA_ATTESTATIONS/",
+        "filename_pattern": "VEGA_ATTESTATION_{YYYY_MM_DD}.md",
+        "database_record": true,
+        "database_table": "fhq_governance.vega_attestations"
+      }
+    },
+
+    {
+      "monitor_id": "adr012_cost_ceiling_tracking",
+      "monitor_type": "economic_safety",
+      "status": "active",
+      "frequency": "per_cycle",
+      "description": "Real-time tracking of cost ceilings per ADR-012. Monitors per-summary costs, daily budget caps, and rate limits for every orchestrator cycle.",
+
+      "cost_constraints": {
+        "per_summary_ceiling_usd": 0.050,
+        "daily_budget_cap_usd": 500,
+        "daily_rate_limit": 100,
+        "monthly_budget_cap_usd": 15000,
+        "annual_budget_cap_usd": 182500
+      },
+
+      "tracking_metrics": [
+        {
+          "metric_id": "per_summary_cost_check",
+          "metric_name": "Per-Summary Cost Validation",
+          "validation_rule": "summary_cost_usd <= 0.050",
+          "enforcement": "pre_execution_block",
+          "failure_action": "block_summary_generation"
+        },
+        {
+          "metric_id": "daily_budget_check",
+          "metric_name": "Daily Budget Cap Validation",
+          "validation_rule": "daily_total_usd <= 500",
+          "enforcement": "pre_execution_block",
+          "failure_action": "block_new_cycles_until_next_day"
+        },
+        {
+          "metric_id": "daily_rate_limit_check",
+          "metric_name": "Daily Rate Limit Validation",
+          "validation_rule": "daily_summary_count <= 100",
+          "enforcement": "pre_execution_block",
+          "failure_action": "block_new_summaries_until_next_day"
+        }
+      ],
+
+      "alert_configuration": {
+        "alert_on_failure": true,
+        "alert_recipients": ["lars", "vega", "finn"],
+        "alert_severity": "critical",
+        "alert_triggers": {
+          "cost_ceiling_breach": true,
+          "cost_approaching_ceiling": true,
+          "cost_approach_threshold_pct": 0.90,
+          "daily_budget_80pct": true,
+          "rate_limit_80pct": true
+        }
+      },
+
+      "reporting": {
+        "daily_cost_summary": true,
+        "weekly_cost_trends": true,
+        "monthly_cost_analysis": true,
+        "storage_location": "05_GOVERNANCE/COST_REPORTS/"
+      }
+    },
+
+    {
+      "monitor_id": "signature_verification_per_cycle",
+      "monitor_type": "cryptographic_security",
+      "status": "active",
+      "frequency": "per_cycle",
+      "description": "Verify Ed25519 signatures for every agent operation in every orchestrator cycle. Ensures cryptographic integrity and non-repudiation per ADR-008.",
+
+      "signature_verification": {
+        "algorithm": "Ed25519",
+        "verification_mode": "strict",
+        "fail_on_invalid_signature": true,
+        "verification_scope": [
+          {
+            "agent": "LINE",
+            "operations": ["ingest_binance_ohlcv"],
+            "signature_required": true,
+            "public_key_source": "agent_registry"
+          },
+          {
+            "agent": "FINN",
+            "operations": [
+              "compute_cds_score",
+              "compute_relevance_score",
+              "tier2_conflict_summary"
+            ],
+            "signature_required": true,
+            "public_key_source": "agent_registry"
+          },
+          {
+            "agent": "STIG",
+            "operations": [
+              "validate_cds_computation",
+              "validate_conflict_summary"
+            ],
+            "signature_required": true,
+            "public_key_source": "agent_registry"
+          },
+          {
+            "agent": "VEGA",
+            "operations": ["final_attestation"],
+            "signature_required": true,
+            "public_key_source": "agent_registry"
+          }
+        ],
+
+        "verification_checks": [
+          {
+            "check_id": "signature_presence",
+            "check_name": "Signature Presence Check",
+            "validation_rule": "all_operations_have_signature",
+            "pass_threshold": "100%"
+          },
+          {
+            "check_id": "signature_validity",
+            "check_name": "Signature Validity Check",
+            "validation_rule": "all_signatures_verify_with_public_key",
+            "pass_threshold": "100%"
+          },
+          {
+            "check_id": "signature_freshness",
+            "check_name": "Signature Freshness Check",
+            "validation_rule": "signature_timestamp_within_cycle_window",
+            "max_age_minutes": 60
+          }
+        ]
+      },
+
+      "failure_handling": {
+        "block_cycle_completion": true,
+        "alert_recipients": ["vega", "lars"],
+        "alert_severity": "critical",
+        "investigation_required": true,
+        "failure_action": "halt_orchestrator_and_alert_vega"
+      },
+
+      "audit_trail": {
+        "log_all_verifications": true,
+        "storage_location": "05_GOVERNANCE/SIGNATURE_AUDIT_LOGS/",
+        "retention_days": 365
+      }
+    }
+  ],
+
+  "architecture_freeze_enforcement": {
+    "enabled": true,
+    "scope": "all_agent_contracts_and_orchestrator_logic",
+    "exceptions": [
+      {
+        "exception_id": "production_logging",
+        "exception_description": "Production-grade logging enhancements",
+        "authorization_required": "lars_approval",
+        "allowed_modifications": [
+          "log_level_adjustments",
+          "log_format_improvements",
+          "additional_log_statements",
+          "monitoring_instrumentation"
+        ],
+        "prohibited_modifications": [
+          "agent_contract_changes",
+          "orchestrator_logic_changes",
+          "adr_compliance_changes",
+          "economic_safety_changes"
+        ]
+      }
+    ],
+
+    "change_control": {
+      "approval_gate": "G4",
+      "required_approvers": ["lars", "vega"],
+      "change_review_process": "formal_adr_amendment",
+      "emergency_override": "lars_only"
+    }
+  },
+
+  "baseline_reference": {
+    "gold_baseline_version": "v1.0",
+    "gold_baseline_commit": "4e9abd3",
+    "canonical_cycle_id": "75c6040e1e25f939",
+    "canonical_evidence_registered": true,
+    "vega_production_ready_attestation": true,
+    "g4_evidence_package_validated": true
+  },
+
+  "production_readiness_criteria": {
+    "all_agent_contracts_registered": true,
+    "orchestrator_configuration_validated": true,
+    "first_cycle_executed_successfully": true,
+    "determinism_threshold_met": true,
+    "economic_safety_verified": true,
+    "signature_verification_100pct": true,
+    "vega_attestation_granted": true,
+    "g4_evidence_complete": true
+  },
+
+  "immutable_baseline_control": {
+    "enabled": true,
+    "enforcement": "strict",
+    "prohibited_actions": [
+      "modify_agent_contracts",
+      "change_orchestrator_logic",
+      "alter_adr_compliance_checks",
+      "modify_economic_safety_constraints",
+      "change_signature_verification_requirements"
+    ],
+    "permitted_actions": [
+      "add_production_logging",
+      "enable_monitoring_instrumentation",
+      "create_cost_reports",
+      "generate_vega_attestation_reports"
+    ],
+    "violation_consequences": "immediate_halt_and_lars_escalation"
+  },
+
+  "reporting_and_audit": {
+    "vega_weekly_attestation_reports": {
+      "enabled": true,
+      "storage_location": "05_GOVERNANCE/VEGA_ATTESTATIONS/",
+      "format": "markdown"
+    },
+    "daily_cost_summaries": {
+      "enabled": true,
+      "storage_location": "05_GOVERNANCE/COST_REPORTS/",
+      "format": "json"
+    },
+    "signature_verification_audit_logs": {
+      "enabled": true,
+      "storage_location": "05_GOVERNANCE/SIGNATURE_AUDIT_LOGS/",
+      "format": "json"
+    },
+    "governance_compliance_dashboard": {
+      "enabled": false,
+      "planned_for": "phase_3"
+    }
+  },
+
+  "escalation_procedures": {
+    "signature_verification_failure": {
+      "action": "halt_orchestrator",
+      "alert": ["vega", "lars"],
+      "severity": "critical",
+      "investigation_sla": "1_hour"
+    },
+    "cost_ceiling_breach": {
+      "action": "block_execution",
+      "alert": ["lars", "finn"],
+      "severity": "critical",
+      "investigation_sla": "2_hours"
+    },
+    "adr_compliance_failure": {
+      "action": "pause_production",
+      "alert": ["lars", "vega"],
+      "severity": "critical",
+      "investigation_sla": "4_hours"
+    },
+    "determinism_threshold_failure": {
+      "action": "alert_and_investigate",
+      "alert": ["lars", "vega"],
+      "severity": "high",
+      "investigation_sla": "24_hours"
+    }
+  }
+}
