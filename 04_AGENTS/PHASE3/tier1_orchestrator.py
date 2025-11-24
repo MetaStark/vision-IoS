@@ -73,7 +73,14 @@ from cds_engine import (
 from finn_tier2_engine import (
     FINNTier2Engine,
     Tier2Input,
-    Tier2Result
+    Tier2Result,
+    G1ValidatedTier2Engine,
+    ConflictSummarizer
+)
+from stig_persistence_tracker import (
+    STIGPersistenceTracker,
+    compute_c2_for_cds,
+    RegimeLabel
 )
 
 
@@ -212,8 +219,16 @@ class Tier1Orchestrator:
     8. Tier-1 execution (actionable trades)
     """
 
-    def __init__(self):
-        """Initialize orchestrator with Phase 3 components."""
+    def __init__(self, production_mode: bool = True):
+        """
+        Initialize orchestrator with Phase 3 components.
+
+        Args:
+            production_mode: If True, use G4 production components.
+                           If False, use mock/placeholder mode.
+        """
+        self.production_mode = production_mode
+
         # LINE+ components
         self.line_validator = LINEDataQualityValidator()
 
@@ -224,13 +239,18 @@ class Tier1Orchestrator:
         # STIG+ components
         self.stig_validator = STIGValidator()
 
+        # STIG+ Persistence Tracker (G4 Production: Real-time C2)
+        self.persistence_tracker = STIGPersistenceTracker(use_mock_storage=not production_mode)
+
         # CDS Engine (Week 3+)
         self.cds_engine = CDSEngine()
 
-        # FINN+ Tier-2 Engine (Week 3+ Directive 6)
-        # Note: use_production_mode=False by default (LARS Directive 6 mandate)
-        # Returns placeholder (0.0) until G1-validated
-        self.tier2_engine = FINNTier2Engine(use_production_mode=False)
+        # FINN+ Tier-2 Engine (G4 Production: ConflictSummarizer)
+        # G1ValidatedTier2Engine uses deterministic conflict detection ($0.00/cycle)
+        self.tier2_engine = G1ValidatedTier2Engine(use_llm_mode=False)
+
+        # Conflict Summarizer for explicit conflict detection
+        self.conflict_summarizer = ConflictSummarizer()
 
         # Orchestrator metadata
         self.cycle_count = 0
