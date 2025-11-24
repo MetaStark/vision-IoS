@@ -1,0 +1,306 @@
+{
+  "orchestrator_version": "v1.0-phase2",
+  "activation_date": "2025-11-24T08:30:00Z",
+  "governance_state": "PHASE_2_ACTIVE",
+  "authority": "LARS Strategic Directive - Phase 2 Activation",
+  "hash_chain_id": "HC-LARS-PHASE2-ACTIVATION-20251124",
+
+  "agents": {
+    "lars": {
+      "agent_id": "lars",
+      "role": "Chief Strategy Officer - Orchestrator",
+      "tier": "tier0_orchestration",
+      "status": "active",
+      "key_id": "lars_active_key",
+      "signature_required": true,
+      "contract_version": "v1.0"
+    },
+    "finn": {
+      "agent_id": "finn",
+      "role": "Tier-2 Alpha Intelligence - MVA Core",
+      "tier": "tier2_llm_tier4_python",
+      "status": "active",
+      "key_id": "finn_active_key",
+      "signature_required": true,
+      "contract_version": "v1.0",
+      "contract_reference": "fhq_governance.agent_contracts WHERE agent_id='finn'",
+      "functions": [
+        "cognitive_dissonance_score",
+        "relevance_score",
+        "tier2_conflict_summary"
+      ],
+      "cost_ceiling_usd": 0.05,
+      "max_daily_summaries": 100
+    },
+    "stig": {
+      "agent_id": "stig",
+      "role": "Validation & Compliance Layer",
+      "tier": "tier4_python_validation",
+      "status": "active",
+      "key_id": "stig_active_key",
+      "signature_required": true,
+      "contract_version": "v1.0",
+      "contract_reference": "fhq_governance.agent_contracts WHERE agent_id='stig'",
+      "functions": [
+        "schema_validation",
+        "signature_validation",
+        "tolerance_validation",
+        "economic_validation",
+        "governance_validation"
+      ]
+    },
+    "line": {
+      "agent_id": "line",
+      "role": "Execution Layer",
+      "tier": "tier1_execution_tier4_portfolio",
+      "status": "active",
+      "key_id": "line_active_key",
+      "signature_required": true,
+      "contract_version": "v1.0",
+      "contract_reference": "fhq_governance.agent_contracts WHERE agent_id='line'",
+      "functions": [
+        "portfolio_rebalance",
+        "order_execution",
+        "position_sizing",
+        "risk_limits"
+      ],
+      "cost_ceiling_usd": 10.00,
+      "requires_stig_approval": true
+    },
+    "vega": {
+      "agent_id": "vega",
+      "role": "Attestation & Oversight",
+      "tier": "tier4_python_attestation",
+      "status": "active",
+      "key_id": "vega_active_key",
+      "signature_required": true,
+      "contract_version": "v1.0",
+      "contract_reference": "fhq_governance.agent_contracts WHERE agent_id='vega'",
+      "functions": [
+        "output_attestation",
+        "reconciliation",
+        "certification",
+        "audit_log",
+        "integrity_check",
+        "suspension_trigger"
+      ],
+      "oversight_authority": "full"
+    }
+  },
+
+  "inter_agent_communication": {
+    "protocol": "deterministic_message_passing",
+    "signature_requirement": "all_messages_signed",
+    "message_format": "json",
+    "hash_chain_tracking": true,
+    "audit_logging": "fhq_meta.adr_audit_log",
+
+    "call_graph": {
+      "lars_to_finn": {
+        "enabled": true,
+        "purpose": "Orchestration commands",
+        "message_types": ["start_cds_computation", "start_relevance_scoring", "trigger_conflict_summary"]
+      },
+      "finn_to_stig": {
+        "enabled": true,
+        "purpose": "Validation requests",
+        "message_types": ["validate_cds_output", "validate_relevance_output", "validate_conflict_summary"]
+      },
+      "stig_to_finn": {
+        "enabled": true,
+        "purpose": "Validation responses",
+        "message_types": ["validation_pass", "validation_fail", "adr009_suspension_trigger"]
+      },
+      "finn_to_vega": {
+        "enabled": true,
+        "purpose": "Attestation requests",
+        "message_types": ["request_output_attestation", "submit_evidentiary_bundle"]
+      },
+      "vega_to_finn": {
+        "enabled": true,
+        "purpose": "Attestation responses",
+        "message_types": ["attestation_granted", "attestation_denied", "reconciliation_required"]
+      },
+      "stig_to_line": {
+        "enabled": true,
+        "purpose": "Execution approval",
+        "message_types": ["execution_approved", "execution_denied", "risk_limit_violation"]
+      },
+      "line_to_vega": {
+        "enabled": true,
+        "purpose": "Execution logging",
+        "message_types": ["execution_complete", "execution_failed", "cost_report"]
+      },
+      "vega_to_lars": {
+        "enabled": true,
+        "purpose": "Governance escalation",
+        "message_types": ["weekly_attestation_report", "class_a_violation", "suspension_initiated"]
+      }
+    }
+  },
+
+  "orchestrator_cycle": {
+    "cycle_frequency": "on_demand",
+    "trigger_sources": [
+      "binance_ohlcv_update",
+      "serper_event_detected",
+      "manual_lars_command",
+      "scheduled_cron"
+    ],
+
+    "cycle_steps": [
+      {
+        "step": 1,
+        "agent": "line",
+        "action": "ingest_binance_ohlcv",
+        "output": "fhq_data.price_series",
+        "next_step": 2
+      },
+      {
+        "step": 2,
+        "agent": "finn",
+        "action": "compute_cds_score",
+        "inputs": ["fhq_data.price_series", "fhq_finn.serper_events"],
+        "output": "cds_score",
+        "validation_required": true,
+        "validator": "stig",
+        "next_step": 3
+      },
+      {
+        "step": 3,
+        "agent": "stig",
+        "action": "validate_cds_score",
+        "inputs": ["cds_score"],
+        "adr010_check": true,
+        "tolerance_check": "max_drift_0.01",
+        "next_step": 4
+      },
+      {
+        "step": 4,
+        "agent": "finn",
+        "action": "compute_relevance_score",
+        "inputs": ["cds_score", "hhmm_regime_weight"],
+        "output": "relevance_score",
+        "validation_required": true,
+        "validator": "stig",
+        "next_step": 5
+      },
+      {
+        "step": 5,
+        "agent": "stig",
+        "action": "validate_relevance_score",
+        "inputs": ["relevance_score"],
+        "adr010_check": true,
+        "canonical_regime_weights": [0.25, 0.50, 0.75, 0.85, 1.0],
+        "next_step": 6
+      },
+      {
+        "step": 6,
+        "agent": "finn",
+        "action": "check_conflict_summary_trigger",
+        "condition": "cds_score >= 0.65",
+        "if_true": "step_7",
+        "if_false": "step_10"
+      },
+      {
+        "step": 7,
+        "agent": "finn",
+        "action": "generate_tier2_conflict_summary",
+        "tier": "tier2_llm",
+        "inputs": ["cds_score", "top_3_serper_events"],
+        "evidentiary_bundle_required": true,
+        "output": "conflict_summary",
+        "signature_required": true,
+        "next_step": 8
+      },
+      {
+        "step": 8,
+        "agent": "stig",
+        "action": "validate_conflict_summary",
+        "inputs": ["conflict_summary"],
+        "anti_hallucination_check": true,
+        "sentence_count_check": 3,
+        "keyword_validation": ">=2_of_3",
+        "next_step": 9
+      },
+      {
+        "step": 9,
+        "agent": "vega",
+        "action": "attest_conflict_summary",
+        "inputs": ["conflict_summary", "evidentiary_bundle_hash"],
+        "output": "attestation_certificate",
+        "signature_required": true,
+        "next_step": 10
+      },
+      {
+        "step": 10,
+        "agent": "vega",
+        "action": "log_cycle_completion",
+        "outputs_logged": ["cds_score", "relevance_score", "conflict_summary (if generated)"],
+        "audit_log": "fhq_meta.adr_audit_log",
+        "hash_chain_updated": true,
+        "cycle_complete": true
+      }
+    ]
+  },
+
+  "error_propagation": {
+    "adr010_compliant": true,
+    "suspension_workflow": "adr009",
+    "escalation_path": "stig -> vega -> lars",
+
+    "error_handlers": {
+      "validation_failure": {
+        "handler": "stig",
+        "action": "reject_output",
+        "log_to": "fhq_meta.adr_audit_log",
+        "escalate_after": 5
+      },
+      "tolerance_violation": {
+        "handler": "stig",
+        "action": "trigger_adr010_reconciliation",
+        "notify": "vega",
+        "auto_suspend_after": 10
+      },
+      "cost_ceiling_exceeded": {
+        "handler": "vega",
+        "action": "trigger_adr009_suspension",
+        "notify": "lars",
+        "immediate": true
+      },
+      "signature_verification_failure": {
+        "handler": "stig",
+        "action": "reject_message",
+        "notify": "vega",
+        "class_a_violation": true
+      }
+    }
+  },
+
+  "binance_feed": {
+    "enabled": true,
+    "exchange": "binance",
+    "feed_type": "ohlcv",
+    "symbol": "BTCUSD",
+    "interval": "1d",
+    "storage": "fhq_data.price_series",
+    "ingestion_agent": "line",
+    "validation_agent": "stig"
+  },
+
+  "governance_compliance": {
+    "adr_references": [
+      "ADR-001",
+      "ADR-002",
+      "ADR-007",
+      "ADR-008",
+      "ADR-009",
+      "ADR-010",
+      "ADR-012"
+    ],
+    "change_log": "fhq_governance.change_log",
+    "audit_log": "fhq_meta.adr_audit_log",
+    "vega_attestation_frequency": "weekly",
+    "lars_oversight_frequency": "monthly"
+  }
+}
