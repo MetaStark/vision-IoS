@@ -70,6 +70,11 @@ from cds_engine import (
     compute_stress_modulator,
     compute_relevance_alignment
 )
+from finn_tier2_engine import (
+    FINNTier2Engine,
+    Tier2Input,
+    Tier2Result
+)
 
 
 @dataclass
@@ -221,6 +226,11 @@ class Tier1Orchestrator:
 
         # CDS Engine (Week 3+)
         self.cds_engine = CDSEngine()
+
+        # FINN+ Tier-2 Engine (Week 3+ Directive 6)
+        # Note: use_production_mode=False by default (LARS Directive 6 mandate)
+        # Returns placeholder (0.0) until G1-validated
+        self.tier2_engine = FINNTier2Engine(use_production_mode=False)
 
         # Orchestrator metadata
         self.cycle_count = 0
@@ -448,8 +458,56 @@ class Tier1Orchestrator:
         # C3: Data Integrity (LINE+ quality report)
         C3 = compute_data_integrity(data_quality_report)
 
-        # C4: Causal Coherence (FINN+ Tier-2, not implemented yet)
-        C4 = compute_causal_coherence(0.0)  # Placeholder
+        # C4: Causal Coherence (FINN+ Tier-2, Week 3+ Directive 6)
+        # Compute features for Tier-2 input
+        returns = price_df['close'].pct_change().dropna()
+
+        # Z-scored features (20-bar lookback)
+        lookback = min(20, len(price_df))
+        recent_returns = returns.tail(lookback)
+
+        return_z = (recent_returns.mean() / recent_returns.std()) if len(recent_returns) > 0 and recent_returns.std() > 0 else 0.0
+        volatility = returns.std() if len(returns) > 0 else 0.02
+        volatility_z = (volatility - 0.02) / 0.01 if volatility > 0 else 0.0  # Normalize around 2% baseline
+
+        # Drawdown calculation
+        cumulative_returns = (1 + returns).cumprod()
+        running_max = cumulative_returns.expanding().max()
+        drawdown = (cumulative_returns - running_max) / running_max
+        current_drawdown_pct = drawdown.iloc[-1] * 100 if len(drawdown) > 0 else 0.0
+        drawdown_z = (drawdown.mean() / drawdown.std()) if len(drawdown) > 0 and drawdown.std() > 0 else 0.0
+
+        # MACD (simplified: 12-26 EMA difference)
+        close_prices = price_df['close']
+        if len(close_prices) >= 26:
+            ema12 = close_prices.ewm(span=12, adjust=False).mean()
+            ema26 = close_prices.ewm(span=26, adjust=False).mean()
+            macd_diff = ema12 - ema26
+            macd_diff_z = (macd_diff.iloc[-1] / macd_diff.std()) if macd_diff.std() > 0 else 0.0
+        else:
+            macd_diff_z = 0.0
+
+        # Price change over lookback period
+        price_change_pct = ((price_df['close'].iloc[-1] / price_df['close'].iloc[-lookback]) - 1) * 100 if lookback > 0 else 0.0
+
+        # Create Tier-2 input
+        tier2_input = Tier2Input(
+            regime_label=regime_prediction.regime_label,
+            regime_confidence=regime_prediction.confidence,
+            return_z=return_z,
+            volatility_z=volatility_z,
+            drawdown_z=drawdown_z,
+            macd_diff_z=macd_diff_z,
+            price_change_pct=price_change_pct,
+            current_drawdown_pct=current_drawdown_pct
+        )
+
+        # Compute causal coherence with FINN+ Tier-2
+        tier2_result = self.tier2_engine.compute_coherence(tier2_input)
+        C4 = tier2_result.coherence_score
+
+        # Track Tier-2 cost (ADR-012)
+        self.total_cost_usd += tier2_result.llm_cost_usd
 
         # C5: Market Stress Modulator (volatility)
         returns = price_df['close'].pct_change().dropna()
