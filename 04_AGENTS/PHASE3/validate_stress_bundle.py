@@ -13,6 +13,7 @@ Validation Targets:
 
 import pandas as pd
 import numpy as np
+import os
 from finn_regime_classifier import RegimeClassifier, RegimePersistence
 
 def validate_against_stress_bundle(data_path: str = "TEST_DATA_V1.0.csv"):
@@ -144,4 +145,7 @@ def validate_against_stress_bundle(data_path: str = "TEST_DATA_V1.0.csv"):
     }
 
 if __name__ == "__main__":
-    results = validate_against_stress_bundle("TEST_DATA_V1.0.csv")
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(script_dir, "TEST_DATA_V1.0.csv")
+    results = validate_against_stress_bundle(data_path)
