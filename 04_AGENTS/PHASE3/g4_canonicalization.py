@@ -344,7 +344,7 @@ class ComplianceChecker:
         found_patterns = 0
 
         for py_file in self.base_path.glob('*.py'):
-            content = py_file.read_text()
+            content = py_file.read_text(encoding='utf-8')
             for pattern in audit_patterns:
                 if pattern in content.lower():
                     found_patterns += 1
@@ -389,7 +389,7 @@ class ComplianceChecker:
         found = 0
         for sig_file in signature_files:
             if (self.base_path / sig_file).exists():
-                content = (self.base_path / sig_file).read_text()
+                content = (self.base_path / sig_file).read_text(encoding='utf-8')
                 if 'signature' in content.lower() or 'ed25519' in content.lower():
                     found += 1
 
@@ -435,7 +435,7 @@ class ComplianceChecker:
         found_patterns = 0
 
         for py_file in self.base_path.glob('*.py'):
-            content = py_file.read_text()
+            content = py_file.read_text(encoding='utf-8')
             for pattern in economic_patterns:
                 if pattern in content.lower():
                     found_patterns += 1
@@ -500,7 +500,7 @@ class SnapshotGenerator:
         for file_name in files:
             file_path = self.base_path / file_name
             if file_path.exists():
-                content = file_path.read_text()
+                content = file_path.read_text(encoding='utf-8')
                 combined_data[file_name] = G4Signature.compute_hash(content)
                 record_count += 1
 
