@@ -580,6 +580,239 @@ class FINNTier2Engine:
 
 
 # ============================================================================
+# Conflict Summarizer (G4 Production Component)
+# ============================================================================
+
+@dataclass
+class ConflictDetection:
+    """
+    Conflict detection result between regime classification and market indicators.
+
+    G4 Production Component: Explicit conflict detection for CDS C4.
+    """
+    has_conflict: bool
+    conflict_severity: str  # "NONE", "MINOR", "MODERATE", "SEVERE"
+    conflict_type: str  # "BULLISH_CONTRADICTION", "BEARISH_CONTRADICTION", etc.
+    conflicting_indicators: List[str]
+    alignment_score: float  # 0.0 (complete conflict) to 1.0 (perfect alignment)
+    summary: str
+
+
+class ConflictSummarizer:
+    """
+    Conflict Summarizer: Detects and summarizes conflicts between regime and indicators.
+
+    G4 Production Component for FINN+ Tier-2 Conflict Summarization.
+    This class implements explicit conflict detection logic as required by
+    LARS Directive 6 to unlock the final 20% of CDS value.
+
+    MANDATE:
+    1. Detect conflicts between FINN+ regime classification and market narratives
+    2. Summarize conflicts in 3 sentences or less
+    3. Assess coherence of regime classification given narratives
+
+    ADR-012 Compliance: $0.00/cycle (deterministic computation)
+    """
+
+    # Conflict thresholds
+    BULL_CONFLICT_THRESHOLD = -0.3  # Return z-score below this contradicts BULL
+    BEAR_CONFLICT_THRESHOLD = 0.3   # Return z-score above this contradicts BEAR
+    SEVERE_CONFLICT_THRESHOLD = 0.8  # Z-score deviation for severe conflicts
+
+    def detect_conflicts(self, tier2_input: Tier2Input) -> ConflictDetection:
+        """
+        Detect conflicts between regime classification and market indicators.
+
+        This is a deterministic computation (ADR-012 compliant, $0.00/cycle).
+
+        Args:
+            tier2_input: Tier2Input with regime and market features
+
+        Returns:
+            ConflictDetection with conflict analysis
+        """
+        regime = tier2_input.regime_label
+        return_z = tier2_input.return_z
+        vol_z = tier2_input.volatility_z
+        drawdown_z = tier2_input.drawdown_z
+        macd_z = tier2_input.macd_diff_z
+
+        conflicting_indicators = []
+        conflict_type = "NONE"
+
+        # BULL regime conflict detection
+        if regime == "BULL":
+            if return_z < self.BULL_CONFLICT_THRESHOLD:
+                conflicting_indicators.append(f"return_z ({return_z:.2f} < -0.3)")
+            if drawdown_z < -0.5:
+                conflicting_indicators.append(f"drawdown_z ({drawdown_z:.2f} < -0.5)")
+            if macd_z < -0.3:
+                conflicting_indicators.append(f"macd_z ({macd_z:.2f} < -0.3)")
+            if conflicting_indicators:
+                conflict_type = "BULLISH_CONTRADICTION"
+
+        # BEAR regime conflict detection
+        elif regime == "BEAR":
+            if return_z > self.BEAR_CONFLICT_THRESHOLD:
+                conflicting_indicators.append(f"return_z ({return_z:.2f} > 0.3)")
+            if drawdown_z > -0.2:
+                conflicting_indicators.append(f"drawdown_z ({drawdown_z:.2f} > -0.2)")
+            if macd_z > 0.3:
+                conflicting_indicators.append(f"macd_z ({macd_z:.2f} > 0.3)")
+            if conflicting_indicators:
+                conflict_type = "BEARISH_CONTRADICTION"
+
+        # NEUTRAL regime conflict detection
+        else:  # NEUTRAL
+            if abs(return_z) > 1.0:
+                conflicting_indicators.append(f"return_z ({return_z:.2f}, |z| > 1.0)")
+                conflict_type = "NEUTRAL_CONTRADICTION"
+
+        # Determine conflict severity
+        num_conflicts = len(conflicting_indicators)
+        if num_conflicts == 0:
+            severity = "NONE"
+            has_conflict = False
+        elif num_conflicts == 1:
+            severity = "MINOR"
+            has_conflict = True
+        elif num_conflicts == 2:
+            severity = "MODERATE"
+            has_conflict = True
+        else:
+            severity = "SEVERE"
+            has_conflict = True
+
+        # Compute alignment score (inverse of conflict severity)
+        alignment_score = 1.0 - (num_conflicts * 0.25)
+        alignment_score = max(0.0, min(1.0, alignment_score))
+
+        # Generate summary
+        if not has_conflict:
+            summary = f"The {regime} classification is well-supported. All indicators align with regime expectations. No conflicts detected."
+        else:
+            summary = f"The {regime} classification shows {severity.lower()} conflict. {len(conflicting_indicators)} indicator(s) contradict the regime: {', '.join(conflicting_indicators[:2])}."
+
+        # Truncate summary to 300 chars
+        if len(summary) > 300:
+            summary = summary[:297] + "..."
+
+        return ConflictDetection(
+            has_conflict=has_conflict,
+            conflict_severity=severity,
+            conflict_type=conflict_type,
+            conflicting_indicators=conflicting_indicators,
+            alignment_score=alignment_score,
+            summary=summary
+        )
+
+    def compute_coherence_deterministic(self, tier2_input: Tier2Input) -> Tier2Result:
+        """
+        Compute causal coherence score using deterministic conflict detection.
+
+        This method provides a $0.00/cycle alternative to LLM-based coherence
+        scoring, suitable for G4 production use when cost control is critical.
+
+        ADR-012 Compliance: No external API calls, pure mathematical computation.
+
+        Args:
+            tier2_input: Tier2Input with regime and features
+
+        Returns:
+            Tier2Result with coherence_score based on conflict detection
+        """
+        # Detect conflicts
+        conflict = self.detect_conflicts(tier2_input)
+
+        # Map alignment score to coherence score
+        # Apply regime confidence as a multiplier
+        coherence_score = conflict.alignment_score * tier2_input.regime_confidence
+
+        # Boost for high-confidence, no-conflict scenarios
+        if not conflict.has_conflict and tier2_input.regime_confidence > 0.7:
+            coherence_score = min(1.0, coherence_score * 1.1)
+
+        # Penalize severe conflicts
+        if conflict.conflict_severity == "SEVERE":
+            coherence_score = coherence_score * 0.5
+
+        # Clamp to [0.0, 1.0]
+        coherence_score = max(0.0, min(1.0, coherence_score))
+
+        return Tier2Result(
+            coherence_score=coherence_score,
+            summary=conflict.summary,
+            llm_cost_usd=0.0,  # Deterministic, no LLM cost
+            llm_api_calls=0,
+            timestamp=datetime.now(),
+            cycle_id=tier2_input.cycle_id,
+            llm_model="conflict-summarizer-v1.0"
+        )
+
+
+class G1ValidatedTier2Engine(FINNTier2Engine):
+    """
+    G1-Validated FINN+ Tier-2 Engine for G4 Production.
+
+    This engine uses the ConflictSummarizer for deterministic coherence scoring
+    when LLM calls are not available or cost-prohibitive. It provides:
+
+    1. Deterministic conflict detection (ConflictSummarizer)
+    2. LLM-based coherence scoring when enabled (FINNTier2Engine)
+    3. Fallback to deterministic mode on LLM failure
+
+    G4 Production Ready: This engine is validated for production use.
+    """
+
+    def __init__(self, llm_client: Optional[LLMClient] = None,
+                 use_llm_mode: bool = False):
+        """
+        Initialize G1-Validated Tier-2 engine.
+
+        Args:
+            llm_client: LLM client for coherence scoring (optional)
+            use_llm_mode: If True, use LLM; if False, use deterministic
+        """
+        super().__init__(llm_client=llm_client, use_production_mode=use_llm_mode)
+        self.conflict_summarizer = ConflictSummarizer()
+        self.use_llm_mode = use_llm_mode
+
+    def compute_coherence(self, tier2_input: Tier2Input) -> Tier2Result:
+        """
+        Compute causal coherence score (G4 production interface).
+
+        Uses deterministic conflict detection by default.
+        Falls back to LLM-based scoring if use_llm_mode=True and available.
+
+        Args:
+            tier2_input: Tier2Input with regime and features
+
+        Returns:
+            Tier2Result with coherence_score (C4 component)
+        """
+        self.computation_count += 1
+
+        if self.use_llm_mode:
+            # Try LLM-based coherence
+            try:
+                result = super().compute_coherence(tier2_input)
+                if result.coherence_score > 0.0:  # Not a placeholder
+                    return result
+            except Exception:
+                pass  # Fall back to deterministic
+
+        # Deterministic conflict-based coherence (default)
+        result = self.conflict_summarizer.compute_coherence_deterministic(tier2_input)
+
+        # Sign the result
+        signature_hex, public_key_hex = self._sign_result(result)
+        result.signature_hex = signature_hex
+        result.public_key_hex = public_key_hex
+
+        return result
+
+
+# ============================================================================
 # Example Usage
 # ============================================================================
 
