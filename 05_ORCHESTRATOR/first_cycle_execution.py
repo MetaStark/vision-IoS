@@ -416,10 +416,10 @@ def execute_first_orchestrator_cycle():
     }
 
     # Save report
-    with open("/tmp/first_cycle_report.json", "w") as f:
+    with open("first_cycle_report.json", "w") as f:
         json.dump(report, f, indent=2)
 
-    logger.info("\nCycle report saved to: /tmp/first_cycle_report.json")
+    logger.info("\nCycle report saved to: first_cycle_report.json")
     logger.info(f"\nCycle ID: {log_entry['cycle_id']}")
     logger.info(f"CDS Score: {cds_result['cds_score']} ({cds_result['cds_tier']})")
     logger.info(f"Relevance Score: {relevance_result['relevance_score']:.3f} ({relevance_result['relevance_tier']})")
