@@ -709,13 +709,14 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
     print(f"    FINN+ public key: {orchestrator.finn_signer.get_public_key_hex()}")
 
     # Import production adapters
+    from datetime import datetime, timedelta, timezone
     from production_data_adapters import (
         BinanceAdapter,
         YahooFinanceAdapter,
         AlpacaAdapter
     )
     from line_data_ingestion import DataSourceConfig
-    from line_ohlcv_contracts import OHLCVInterval
+    from line_ohlcv_contracts import OHLCVInterval, OHLCVDataset
 
     # Map interval string to OHLCVInterval
     interval_map = {
@@ -763,22 +764,45 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
 
     print(f"    ✅ {adapter.capitalize()} adapter initialized")
 
+    # Calculate lookback based on interval (need ~300 bars for feature calculation)
+    lookback_map = {
+        "1m": timedelta(hours=5),       # 300 minutes
+        "5m": timedelta(hours=25),      # 300 * 5 = 1500 minutes
+        "15m": timedelta(hours=75),     # 300 * 15 = 4500 minutes
+        "1h": timedelta(days=13),       # 300 hours
+        "4h": timedelta(days=50),       # 300 * 4 = 1200 hours
+        "1d": timedelta(days=400),      # 300 days (+ weekends)
+        "1w": timedelta(weeks=320),     # 300 weeks
+    }
+
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - lookback_map.get(interval, timedelta(days=400))
+
     # Fetch live data
     print(f"\n[2] Fetching live OHLCV data...")
     print(f"    Symbol: {symbol}")
     print(f"    Interval: {interval}")
-    print(f"    Lookback: 300 bars (for feature calculation)")
+    print(f"    Date range: {start_date.date()} → {end_date.date()}")
 
     try:
-        dataset = data_adapter.fetch_ohlcv(
+        bars = data_adapter.fetch_ohlcv(
             symbol=symbol,
             interval=ohlcv_interval,
-            limit=300  # Need 300 bars for proper feature calculation
+            start_date=start_date,
+            end_date=end_date
         )
 
-        if dataset is None or dataset.get_bar_count() == 0:
+        if bars is None or len(bars) == 0:
             print(f"    ❌ No data returned from {adapter}")
             return None
+
+        # Wrap bars in OHLCVDataset for orchestrator compatibility
+        dataset = OHLCVDataset(
+            symbol=symbol,
+            interval=ohlcv_interval,
+            bars=bars,
+            source=adapter
+        )
 
         print(f"    ✅ Fetched {dataset.get_bar_count()} bars")
         print(f"    Date range: {dataset.bars[0].timestamp} → {dataset.bars[-1].timestamp}")
