@@ -69,15 +69,26 @@ Write-Host ""
 $dropScript = @'
 BEGIN;
 
+-- Drop Migration 018 tables (governance layer)
 DROP TABLE IF EXISTS fhq_governance.model_provider_policy CASCADE;
 DROP TABLE IF EXISTS fhq_governance.agent_contracts CASCADE;
+DROP TABLE IF EXISTS fhq_governance.executive_roles CASCADE;
+
+-- Drop Migration 018 tables (meta layer)
 DROP TABLE IF EXISTS fhq_meta.adr_version_history CASCADE;
 DROP TABLE IF EXISTS fhq_meta.adr_audit_log CASCADE;
 DROP TABLE IF EXISTS fhq_meta.adr_registry CASCADE;
 DROP TABLE IF EXISTS fhq_meta.key_archival_log CASCADE;
-DROP TABLE IF EXISTS vega.llm_rate_limits CASCADE;
-DROP TABLE IF EXISTS vega.llm_cost_limits CASCADE;
+
+-- CRITICAL: Drop existing agent_keys table (conflicts with migration 018)
+DROP TABLE IF EXISTS fhq_meta.agent_keys CASCADE;
+
+-- Drop VEGA economic safety tables
+DROP TABLE IF EXISTS vega.llm_violation_events CASCADE;
+DROP TABLE IF EXISTS vega.llm_usage_log CASCADE;
 DROP TABLE IF EXISTS vega.llm_execution_limits CASCADE;
+DROP TABLE IF EXISTS vega.llm_cost_limits CASCADE;
+DROP TABLE IF EXISTS vega.llm_rate_limits CASCADE;
 
 COMMIT;
 '@
@@ -176,6 +187,31 @@ ORDER BY table_schema;
 psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c $tableCountQuery
 Write-Host ""
 
+# Verify total table count
+Write-Host "   Total table verification:" -ForegroundColor White
+$totalCountQuery = @'
+SELECT COUNT(*) as total_tables
+FROM information_schema.tables
+WHERE table_schema IN ('fhq_meta', 'fhq_governance', 'vega')
+  AND table_name IN (
+    'adr_registry', 'adr_audit_log', 'adr_version_history',
+    'agent_keys', 'key_archival_log',
+    'executive_roles', 'agent_contracts', 'model_provider_policy',
+    'llm_rate_limits', 'llm_cost_limits', 'llm_execution_limits',
+    'llm_usage_log', 'llm_violation_events'
+  );
+'@
+
+$totalCount = psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -c $totalCountQuery 2>&1
+
+if ($totalCount -match "13") {
+    Write-Host "   [OK] All 13 governance tables created" -ForegroundColor Green
+} else {
+    Write-Host "   [ERROR] Expected 13 tables, found: $totalCount" -ForegroundColor Red
+}
+
+Write-Host ""
+
 # Verify G0 submission logged
 Write-Host "   G0 submission verification:" -ForegroundColor White
 $g0CheckQuery = @'
@@ -195,8 +231,9 @@ $g0Result = psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c $g0CheckQuery 
 
 if ($g0Result -match "G0-2025-11-23-LINE-MANDATE") {
     Write-Host $g0Result -ForegroundColor Green
+    Write-Host "   [OK] G0 submission logged" -ForegroundColor Green
 } else {
-    Write-Host "   WARNING: G0 submission not found in audit log" -ForegroundColor Yellow
+    Write-Host "   [WARNING] G0 submission not found in audit log" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -220,13 +257,13 @@ $liveModeResult = psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c $liveMod
 
 if ($liveModeResult -match "[1-9]") {
     Write-Host ""
-    Write-Host "   ERROR: LIVE_MODE=TRUE detected!" -ForegroundColor Red
+    Write-Host "   [ERROR] LIVE_MODE=TRUE detected!" -ForegroundColor Red
     Write-Host "   All economic safety limits MUST have LIVE_MODE=False until VEGA QG-F6 attestation" -ForegroundColor Red
     Write-Host ""
     exit 1
 } else {
     Write-Host $liveModeResult -ForegroundColor Green
-    Write-Host "   SUCCESS: LIVE_MODE=False enforced (all violations = 0)" -ForegroundColor Green
+    Write-Host "   [OK] LIVE_MODE=False enforced (all violations = 0)" -ForegroundColor Green
 }
 
 Write-Host ""
