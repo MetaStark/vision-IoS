@@ -87,11 +87,11 @@ class RegimeClassifier:
         """
         df = price_data.copy()
 
-        # 1. Log returns
-        df['returns'] = np.log(df['close'] / df['close'].shift(1))
+        # 1. Log returns (use singular 'return' for consistency)
+        df['return'] = np.log(df['close'] / df['close'].shift(1))
 
         # 2. Volatility (20-day rolling std of returns)
-        df['volatility'] = df['returns'].rolling(window=20).std()
+        df['volatility'] = df['return'].rolling(window=20).std()
 
         # 3. Drawdown from peak
         df['cummax'] = df['close'].cummax()
@@ -120,7 +120,7 @@ class RegimeClassifier:
         df['roc_20'] = (df['close'] - df['close'].shift(20)) / df['close'].shift(20)
 
         # Z-score standardization (252-day rolling window)
-        raw_features = ['returns', 'volatility', 'drawdown', 'macd_diff',
+        raw_features = ['return', 'volatility', 'drawdown', 'macd_diff',
                        'bb_width', 'rsi_14', 'roc_20']
 
         for feature in raw_features:
