@@ -3,8 +3,27 @@
 **Classification:** GOVERNANCE — CEO PRODUCTION AUTHORIZATION
 **Date:** 2025-11-24
 **Authority:** LARS G4 — Strategic Directive Authority
-**Reference:** HC-LARS-DIRECTIVE-10-G4-EXEC
+**Reference:** HC-LARS-DIRECTIVE-10-G4-EXEC, HC-LARS-DIRECTIVE-10B-DB-HARDENING
 **Status:** ✅ READY FOR CEO SIGNATURE
+
+---
+
+## DIRECTIVE 10B REMEDIATION STATUS
+
+> **Note:** Initial G4 lock (2025-11-24) was file-only with database backfill required.
+> Database integration has now been completed and verified per LARS Directive 10B.
+
+| Remediation Item | Status |
+|------------------|--------|
+| fhq_phase3.cds_weight_locks table created | ✅ COMPLETE |
+| G4 lock backfilled from JSON | ✅ COMPLETE |
+| g4_weight_lock_deploy.py idempotent rerun | ✅ COMPLETE |
+| VEGA governance read pathway | ✅ COMPLETE |
+| Documentation updated | ✅ COMPLETE |
+
+**Governance Statement:**
+> CDS weights v1.0 canonical lock is stored in `fhq_phase3.cds_weight_locks` and may only
+> be modified via a future ADR-backed G4 governance process with CEO authorization.
 
 ---
 
@@ -106,6 +125,32 @@ After CEO signature, these weights become **PERMANENTLY IMMUTABLE**:
 - Weights can only be modified via new G2-Procedure with CEO authorization
 - Hash chain ensures tamper-evident audit trail
 - Ed25519 signatures provide non-repudiation
+
+### Database Schema (LARS Directive 10B)
+
+The canonical lock is stored in PostgreSQL for VEGA-queryable governance:
+
+```sql
+-- Table: fhq_phase3.cds_weight_locks
+-- Purpose: Canonical CDS weight lock storage (ADR-002, ADR-006, ADR-014)
+
+Column          | Type          | Description
+----------------|---------------|------------------------------------------
+lock_id         | VARCHAR(64)   | Primary key (e.g., G4-LOCK-20251124_215520)
+timestamp_utc   | TIMESTAMPTZ   | When lock was executed (UTC)
+weight_hash     | VARCHAR(64)   | SHA-256 hash of canonical weights
+signature       | VARCHAR(128)  | Ed25519 signature (hex)
+ceo_code_used   | VARCHAR(64)   | Hashed CEO auth code (raw NEVER stored)
+weights_json    | JSONB         | Full C1-C6 weights as JSON
+version         | VARCHAR(16)   | CDS version (e.g., "1.0.0")
+authority       | VARCHAR(128)  | Authorization authority
+is_canonical    | BOOLEAN       | TRUE for current authoritative lock
+```
+
+**Access Pattern (ADR-006):**
+- VEGA is the ONLY agent with direct read access
+- Other agents must use `VEGAGovernanceReader.get_canonical_lock()`
+- Writes require G4 governance process with CEO authorization
 
 ---
 

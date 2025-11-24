@@ -1337,6 +1337,268 @@ class VEGAG3AuditEngine:
 
 
 # =============================================================================
+# VEGA GOVERNANCE READER (ADR-006 Compliant)
+# LARS Directive 10B: VEGA-First Access Pattern
+# =============================================================================
+
+class VEGAGovernanceReader:
+    """
+    VEGA Governance Reader — Canonical Lock Query Interface
+
+    Authority: ADR-006 (VEGA governance access)
+    Mandate: LARS Directive 10B (VEGA-First Access Pattern)
+
+    Purpose:
+    Provides the ONLY authorized read pathway for canonical CDS weight locks.
+    Other agents (LARS, LINE, FINN, STIG, etc.) MUST read lock state via
+    these VEGA functions, not direct table access.
+
+    Usage:
+        reader = VEGAGovernanceReader(db_connection_string)
+        lock = reader.get_canonical_lock()
+        if lock:
+            print(f"Canonical Lock: {lock['lock_id']}")
+    """
+
+    def __init__(self, db_connection_string: Optional[str] = None):
+        """Initialize VEGA Governance Reader."""
+        self.db_connection_string = db_connection_string
+        self.conn = None
+
+    def connect(self) -> bool:
+        """Establish database connection."""
+        if not self.db_connection_string:
+            logger.warning("No database connection string provided")
+            return False
+
+        try:
+            import psycopg2
+            self.conn = psycopg2.connect(self.db_connection_string)
+            return True
+        except ImportError:
+            logger.warning("psycopg2 not available")
+            return False
+        except Exception as e:
+            logger.error(f"Database connection failed: {e}")
+            return False
+
+    def get_canonical_lock(self) -> Optional[Dict[str, Any]]:
+        """
+        Get the current canonical CDS weight lock.
+
+        This is the primary VEGA governance function for lock verification.
+        Per ADR-006, all agents must use this function to read canonical lock state.
+
+        Returns:
+            Dict with canonical lock details, or None if no canonical lock exists.
+        """
+        if not self.conn:
+            return None
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        signature,
+                        weights_json,
+                        version,
+                        authority,
+                        is_canonical,
+                        created_at
+                    FROM fhq_phase3.cds_weight_locks
+                    WHERE is_canonical = TRUE
+                    LIMIT 1
+                """)
+                row = cur.fetchone()
+
+                if row:
+                    return {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "signature": row[3],
+                        "weights": row[4] if isinstance(row[4], dict) else json.loads(row[4]) if row[4] else {},
+                        "version": row[5],
+                        "authority": row[6],
+                        "is_canonical": row[7],
+                        "created_at": row[8].isoformat() if row[8] else None
+                    }
+
+            return None
+        except Exception as e:
+            logger.error(f"Failed to read canonical lock: {e}")
+            return None
+
+    def get_lock_by_id(self, lock_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific lock by ID.
+
+        Args:
+            lock_id: The lock ID to retrieve
+
+        Returns:
+            Dict with lock details, or None if not found.
+        """
+        if not self.conn:
+            return None
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        signature,
+                        weights_json,
+                        version,
+                        authority,
+                        is_canonical
+                    FROM fhq_phase3.cds_weight_locks
+                    WHERE lock_id = %s
+                """, (lock_id,))
+                row = cur.fetchone()
+
+                if row:
+                    return {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "signature": row[3],
+                        "weights": row[4] if isinstance(row[4], dict) else json.loads(row[4]) if row[4] else {},
+                        "version": row[5],
+                        "authority": row[6],
+                        "is_canonical": row[7]
+                    }
+
+            return None
+        except Exception as e:
+            logger.error(f"Failed to read lock {lock_id}: {e}")
+            return None
+
+    def get_all_locks(self) -> List[Dict[str, Any]]:
+        """
+        Get all locks in the system (for audit purposes).
+
+        Returns:
+            List of all lock records.
+        """
+        if not self.conn:
+            return []
+
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        lock_id,
+                        timestamp_utc,
+                        weight_hash,
+                        version,
+                        is_canonical
+                    FROM fhq_phase3.cds_weight_locks
+                    ORDER BY timestamp_utc DESC
+                """)
+                rows = cur.fetchall()
+
+                return [
+                    {
+                        "lock_id": row[0],
+                        "timestamp_utc": row[1].isoformat() if row[1] else None,
+                        "weight_hash": row[2],
+                        "version": row[3],
+                        "is_canonical": row[4]
+                    }
+                    for row in rows
+                ]
+        except Exception as e:
+            logger.error(f"Failed to read locks: {e}")
+            return []
+
+    def verify_lock_consistency(self, json_lock_path: str) -> Dict[str, Any]:
+        """
+        Verify that DB lock matches JSON lock file (LARS Directive 10B requirement).
+
+        This function confirms that the canonical lock in the database matches
+        the lock stored in the JSON file, ensuring data integrity.
+
+        Args:
+            json_lock_path: Path to the JSON lock file
+
+        Returns:
+            Dict with verification results.
+        """
+        result = {
+            "verified": False,
+            "db_lock": None,
+            "json_lock": None,
+            "discrepancies": []
+        }
+
+        # Get DB lock
+        db_lock = self.get_canonical_lock()
+        result["db_lock"] = db_lock
+
+        # Get JSON lock
+        try:
+            with open(json_lock_path, 'r', encoding='utf-8') as f:
+                json_lock = json.load(f)
+            result["json_lock"] = json_lock
+        except Exception as e:
+            result["discrepancies"].append(f"Failed to read JSON lock: {e}")
+            return result
+
+        if not db_lock:
+            result["discrepancies"].append("No canonical lock found in database")
+            return result
+
+        # Compare critical fields
+        if db_lock["lock_id"] != json_lock.get("lock_id"):
+            result["discrepancies"].append(
+                f"Lock ID mismatch: DB={db_lock['lock_id']}, JSON={json_lock.get('lock_id')}"
+            )
+
+        if db_lock["weight_hash"] != json_lock.get("weight_hash"):
+            result["discrepancies"].append(
+                f"Weight hash mismatch: DB={db_lock['weight_hash'][:16]}..., JSON={json_lock.get('weight_hash', '')[:16]}..."
+            )
+
+        if db_lock["signature"] != json_lock.get("signature_hash"):
+            result["discrepancies"].append(
+                f"Signature mismatch: DB={db_lock['signature'][:16]}..., JSON={json_lock.get('signature_hash', '')[:16]}..."
+            )
+
+        # Verify if no discrepancies
+        result["verified"] = len(result["discrepancies"]) == 0
+
+        return result
+
+    def get_governance_status(self) -> Dict[str, Any]:
+        """
+        Get comprehensive governance status for VEGA reporting.
+
+        Returns:
+            Dict with governance status summary.
+        """
+        canonical_lock = self.get_canonical_lock()
+        all_locks = self.get_all_locks()
+
+        return {
+            "canonical_lock_exists": canonical_lock is not None,
+            "canonical_lock_id": canonical_lock["lock_id"] if canonical_lock else None,
+            "canonical_weight_hash": canonical_lock["weight_hash"] if canonical_lock else None,
+            "total_locks": len(all_locks),
+            "canonical_count": sum(1 for l in all_locks if l.get("is_canonical")),
+            "governance_healthy": (
+                canonical_lock is not None and
+                sum(1 for l in all_locks if l.get("is_canonical")) == 1
+            )
+        }
+
+
+# =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
 
