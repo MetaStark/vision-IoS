@@ -712,9 +712,9 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
     from production_data_adapters import (
         BinanceAdapter,
         YahooFinanceAdapter,
-        AlpacaAdapter,
-        AdapterConfig
+        AlpacaAdapter
     )
+    from line_data_ingestion import DataSourceConfig
     from line_ohlcv_contracts import OHLCVInterval
 
     # Map interval string to OHLCVInterval
@@ -734,14 +734,14 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
     print(f"\n[1] Initializing {adapter} adapter...")
 
     if adapter == "binance":
-        config = AdapterConfig(
+        config = DataSourceConfig(
             source_name="binance",
             base_url="https://api.binance.com",
             rate_limit_per_minute=1200
         )
         data_adapter = BinanceAdapter(config)
     elif adapter == "yahoo":
-        config = AdapterConfig(
+        config = DataSourceConfig(
             source_name="yahoo",
             base_url="https://query1.finance.yahoo.com",
             rate_limit_per_minute=100
@@ -749,7 +749,7 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
         data_adapter = YahooFinanceAdapter(config)
     elif adapter == "alpaca":
         import os
-        config = AdapterConfig(
+        config = DataSourceConfig(
             source_name="alpaca",
             base_url="https://data.alpaca.markets",
             api_key=os.environ.get("ALPACA_API_KEY", ""),
