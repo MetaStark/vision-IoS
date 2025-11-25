@@ -832,13 +832,16 @@ def run_live_production_cycle(orchestrator: Tier1Orchestrator, symbol: str, inte
 
     # Production cycle complete
     print("\n" + "=" * 80)
-    print("✅ PRODUCTION CYCLE COMPLETE")
+    status_icon = "✅" if result.pipeline_success else "⚠️"
+    print(f"{status_icon} PRODUCTION CYCLE COMPLETE")
     print("=" * 80)
     print(f"    Symbol: {symbol}")
-    print(f"    Regime: {result.regime}")
-    print(f"    CDS Score: {result.cds_value:.4f}")
-    print(f"    Confidence: {result.confidence:.1%}")
+    print(f"    Regime: {result.regime_label or 'N/A (pipeline failed)'}")
+    print(f"    CDS Score: {result.cds_value:.4f if result.cds_value else 'N/A'}")
+    print(f"    Confidence: {result.regime_confidence:.1% if result.regime_confidence else 'N/A'}")
     print(f"    Adapter: {adapter}")
+    if not result.pipeline_success:
+        print(f"    Failure: {result.failure_reason}")
     print("=" * 80)
 
     return result
