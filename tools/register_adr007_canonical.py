@@ -152,26 +152,40 @@ def register_adr(conn, content_hash: str) -> bool:
         return result is not None
 
 
-def register_version_history(conn) -> bool:
+def register_version_history(conn, content_hash: str) -> bool:
     """Register ADR-007 in version history"""
     columns = get_table_columns(conn, 'fhq_meta', 'adr_version_history')
+    print(f"      Version history columns: {columns}")
 
     with conn.cursor() as cur:
-        # Adapt to available columns
-        if 'approved_by' in columns:
-            cur.execute("""
-                INSERT INTO fhq_meta.adr_version_history (adr_id, version, approved_by, created_at)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT DO NOTHING
-            """, (Config.ADR_ID, Config.VERSION, Config.APPROVAL_AUTHORITY, datetime.now(timezone.utc)))
-        else:
-            # Try simpler structure
-            cur.execute("""
-                INSERT INTO fhq_meta.adr_version_history (adr_id, version, created_at)
-                VALUES (%s, %s, %s)
-                ON CONFLICT DO NOTHING
-            """, (Config.ADR_ID, Config.VERSION, datetime.now(timezone.utc)))
+        # Build dynamic insert based on available columns
+        insert_cols = ['adr_id', 'version']
+        insert_vals = [Config.ADR_ID, Config.VERSION]
 
+        column_mapping = {
+            'approved_by': Config.APPROVAL_AUTHORITY,
+            'sha256_hash': content_hash,
+            'hash': content_hash,
+            'content_hash': content_hash,
+            'created_at': datetime.now(timezone.utc),
+            'effective_date': datetime.now(timezone.utc),
+        }
+
+        for col in columns:
+            if col not in ['adr_id', 'version', 'id', 'version_id'] and col in column_mapping:
+                insert_cols.append(col)
+                insert_vals.append(column_mapping[col])
+
+        cols_str = ', '.join(insert_cols)
+        placeholders = ', '.join(['%s'] * len(insert_vals))
+
+        sql = f"""
+            INSERT INTO fhq_meta.adr_version_history ({cols_str})
+            VALUES ({placeholders})
+            ON CONFLICT DO NOTHING
+        """
+
+        cur.execute(sql, insert_vals)
         conn.commit()
         return True
 
@@ -332,7 +346,7 @@ def main():
 
         # Step 4: Register version history
         print("\n[4/6] Registering version history...")
-        if register_version_history(conn):
+        if register_version_history(conn, content_hash):
             print(f"      [PASS] Version {Config.VERSION} recorded")
 
         # Step 5: Register dependencies (lineage)
