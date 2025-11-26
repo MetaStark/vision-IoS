@@ -72,23 +72,25 @@ def parse_adr_content(content: str, filename: str) -> dict:
     version_match = re.search(r'\*?\*?Version:?\*?\*?\s*([^\n]+)', content, re.IGNORECASE)
     version = version_match.group(1).strip() if version_match else "1.0"
 
-    # Determine status
-    status = "PRODUCTION"
-    if "CANONICAL" in content.upper() or "ROOT AUTHORITY" in content.upper():
-        status = "CANONICAL"
-    elif "DRAFT" in filename.upper():
+    # Determine status (allowed: DRAFT, PROPOSED, APPROVED, DEPRECATED, SUPERSEDED)
+    status = "APPROVED"  # Default for production docs
+    if "DRAFT" in filename.upper():
         status = "DRAFT"
     elif "DEPRECATED" in filename.upper():
         status = "DEPRECATED"
+    elif "SUPERSEDED" in filename.upper():
+        status = "SUPERSEDED"
 
-    # Determine type
-    adr_type = "GOVERNANCE"  # Default
-    if "CHARTER" in filename.upper() or "CHARTER" in content.upper():
-        adr_type = "CHARTER"
-    elif "COMPLIANCE" in filename.upper():
+    # Determine type (allowed: CONSTITUTIONAL, ARCHITECTURAL, OPERATIONAL, COMPLIANCE, ECONOMIC)
+    adr_type = "CONSTITUTIONAL"  # Default for ADR-001
+    if "COMPLIANCE" in filename.upper() or "COMPLIANCE" in content.upper():
         adr_type = "COMPLIANCE"
     elif "ORCHESTRATOR" in filename.upper():
-        adr_type = "ORCHESTRATOR"
+        adr_type = "OPERATIONAL"
+    elif "ECONOMIC" in filename.upper() or "ECONOMIC" in content.upper():
+        adr_type = "ECONOMIC"
+    elif "ARCHITECTURAL" in content.upper():
+        adr_type = "ARCHITECTURAL"
 
     # Extract owner/approval authority
     owner_match = re.search(r'\*?\*?Owner:?\*?\*?\s*([^\n]+)', content, re.IGNORECASE)
