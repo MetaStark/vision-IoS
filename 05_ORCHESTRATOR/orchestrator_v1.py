@@ -124,15 +124,16 @@ class OrchestratorDatabase:
                     task_id,
                     task_name,
                     task_type,
-                    agent_id,
-                    task_description,
-                    task_config,
-                    enabled,
+                    task_scope,
+                    owned_by_agent AS agent_id,
+                    executed_by_agent,
+                    description AS task_description,
+                    parameters_schema AS task_config,
+                    task_status,
                     created_at,
                     updated_at
                 FROM fhq_governance.task_registry
-                WHERE task_type = 'VISION_FUNCTION'
-                  AND enabled = TRUE
+                WHERE task_status = 'ACTIVE'
                 ORDER BY task_id
             """)
             tasks = cur.fetchall()
