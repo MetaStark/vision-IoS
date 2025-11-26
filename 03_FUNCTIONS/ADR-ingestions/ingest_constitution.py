@@ -104,7 +104,7 @@ def parse_adr_content(content: str, filename: str) -> dict:
 def ensure_schema_exists(cur):
     """
     Ensure fhq_meta schema and adr_registry table exist.
-    Creates them if they don't exist.
+    Creates them if they don't exist, and adds missing columns.
     """
     # Create schema if not exists
     cur.execute("CREATE SCHEMA IF NOT EXISTS fhq_meta;")
@@ -113,19 +113,44 @@ def ensure_schema_exists(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS fhq_meta.adr_registry (
             id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            hash TEXT NOT NULL,
-            version TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'DRAFT',
+            title TEXT,
+            hash TEXT,
+            version TEXT,
+            status TEXT DEFAULT 'DRAFT',
             file_path TEXT,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            created_by TEXT DEFAULT 'SYSTEM',
-
-            CONSTRAINT adr_registry_status_check
-                CHECK (status IN ('DRAFT', 'REVIEW', 'PRODUCTION', 'CANONICAL', 'DEPRECATED'))
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            created_by TEXT DEFAULT 'SYSTEM'
         );
+    """)
 
+    # Add missing columns if table already exists with different schema
+    columns_to_add = [
+        ("status", "TEXT DEFAULT 'DRAFT'"),
+        ("version", "TEXT"),
+        ("file_path", "TEXT"),
+        ("created_at", "TIMESTAMPTZ DEFAULT NOW()"),
+        ("updated_at", "TIMESTAMPTZ DEFAULT NOW()"),
+        ("created_by", "TEXT DEFAULT 'SYSTEM'"),
+    ]
+
+    for col_name, col_type in columns_to_add:
+        cur.execute(f"""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'fhq_meta'
+                    AND table_name = 'adr_registry'
+                    AND column_name = '{col_name}'
+                ) THEN
+                    ALTER TABLE fhq_meta.adr_registry ADD COLUMN {col_name} {col_type};
+                END IF;
+            END $$;
+        """)
+
+    # Create indexes if not exist
+    cur.execute("""
         CREATE INDEX IF NOT EXISTS idx_adr_registry_status
             ON fhq_meta.adr_registry(status);
         CREATE INDEX IF NOT EXISTS idx_adr_registry_hash
