@@ -3,7 +3,7 @@
 VISION-IOS ORCHESTRATOR v1.0
 Agent: LARS (Strategy/Orchestration)
 Purpose: Execute Vision-IoS functions in coordinated cycles
-Compliance: ADR-007, ADR-010, ADR-002
+Compliance: ADR-007, ADR-009, ADR-010, ADR-002
 
 Architecture:
 - Reads tasks from fhq_governance.task_registry
@@ -34,6 +34,9 @@ from pathlib import Path
 # Database
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+# ADR-009: Suspension Enforcement
+from suspension_enforcement import SuspensionEnforcer
 
 
 # =============================================================================
@@ -388,6 +391,13 @@ class VisionIoSOrchestrator:
         self.db = OrchestratorDatabase(self.config.get_db_connection_string(), logger)
         self.executor = FunctionExecutor(logger)
 
+        # ADR-009: Initialize suspension enforcement
+        self.suspension_enforcer = SuspensionEnforcer(
+            connection_string=self.config.get_db_connection_string(),
+            logger=logger
+        )
+        assert self.suspension_enforcer is not None, "SuspensionEnforcer not initialized – ADR-009 violation"
+
     def generate_cycle_id(self) -> str:
         """Generate cycle ID"""
         return datetime.now(timezone.utc).strftime("CYCLE_%Y%m%d_%H%M%S")
@@ -443,9 +453,35 @@ class VisionIoSOrchestrator:
 
             # Execute functions in order
             results = []
+            blocked_count = 0
             for i, task in enumerate(tasks, 1):
                 self.logger.info("")
                 self.logger.info(f"[{i}/{len(tasks)}] Executing: {task['task_name']} (Agent: {task['agent_id']})")
+
+                # ADR-009: Check suspension status before execution
+                agent_id = task.get('agent_id')
+                can_execute, reason, request_id = self.suspension_enforcer.check_agent_can_execute(agent_id)
+
+                if not can_execute:
+                    self.logger.warning(
+                        f"[SUSPENSION_BLOCK] Agent={agent_id} - Task={task['task_name']} blocked - Reason: {reason}"
+                    )
+                    self.suspension_enforcer.log_task_rejection(
+                        agent_id=agent_id,
+                        task_id=str(task.get('task_id', '')),
+                        reason=reason,
+                        task_name=task.get('task_name'),
+                        request_id=request_id
+                    )
+                    blocked_count += 1
+                    results.append({
+                        'task_name': task['task_name'],
+                        'agent_id': agent_id,
+                        'success': False,
+                        'error': f'AGENT_SUSPENDED: {reason}',
+                        'blocked_by_adr009': True
+                    })
+                    continue
 
                 result = self.executor.execute_function(task, dry_run=self.dry_run)
                 results.append(result)
@@ -495,6 +531,8 @@ class VisionIoSOrchestrator:
             self.logger.info(f"Tasks executed: {len(results)}")
             self.logger.info(f"Successes: {sum(1 for r in results if r['success'])}")
             self.logger.info(f"Failures: {sum(1 for r in results if not r['success'])}")
+            if blocked_count > 0:
+                self.logger.info(f"Blocked (ADR-009): {blocked_count}")
             self.logger.info("=" * 70)
 
             return {
