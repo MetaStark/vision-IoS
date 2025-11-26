@@ -37,6 +37,19 @@ try:
             print(f"{col[0]:<25} {col[1]:<20} {col[2]:<10}")
         print("=" * 60)
 
+        # Show CHECK constraints
+        cur.execute("""
+            SELECT conname, pg_get_constraintdef(oid)
+            FROM pg_constraint
+            WHERE conrelid = 'fhq_meta.adr_registry'::regclass
+            AND contype = 'c';
+        """)
+        constraints = cur.fetchall()
+        if constraints:
+            print("\nCHECK CONSTRAINTS:")
+            for c in constraints:
+                print(f"  {c[0]}: {c[1]}")
+
         # Also show sample data
         cur.execute("SELECT * FROM fhq_meta.adr_registry LIMIT 3;")
         rows = cur.fetchall()
