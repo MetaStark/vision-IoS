@@ -126,6 +126,8 @@ def ensure_schema_exists(cur):
 
     # Add missing columns if table already exists with different schema
     columns_to_add = [
+        ("hash", "TEXT"),
+        ("title", "TEXT"),
         ("status", "TEXT DEFAULT 'DRAFT'"),
         ("version", "TEXT"),
         ("file_path", "TEXT"),
