@@ -109,8 +109,10 @@ def register_adr(conn, content_hash: str) -> bool:
             'adr_type': Config.ADR_TYPE,
             'type': Config.ADR_TYPE,
             'version': Config.VERSION,
+            'current_version': Config.VERSION,
             'content_hash': content_hash,
             'hash': content_hash,
+            'sha256_hash': content_hash,
             'document_hash': content_hash,
             'approval_authority': Config.APPROVAL_AUTHORITY,
             'approved_by': Config.APPROVAL_AUTHORITY,
@@ -119,6 +121,8 @@ def register_adr(conn, content_hash: str) -> bool:
             'is_canonical': True,
             'created_at': datetime.now(timezone.utc),
             'registered_at': datetime.now(timezone.utc),
+            'updated_at': datetime.now(timezone.utc),
+            'effective_date': datetime.now(timezone.utc),
         }
 
         for col in columns:
