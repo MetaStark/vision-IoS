@@ -19,6 +19,7 @@ Integration:
 - STIG+ validation before write
 """
 
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict, Any, List
@@ -31,13 +32,25 @@ from cds_engine import CDSResult, CDSComponents
 
 @dataclass
 class DatabaseConfig:
-    """Database connection configuration."""
-    host: str = "localhost"
-    port: int = 5432
-    database: str = "fjordhq"
-    user: str = "fjordhq_user"
-    password: str = ""
+    """Database connection configuration.
+
+    Default values match local PROD environment (127.0.0.1:54322).
+    Override via environment variables: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD.
+    """
+    host: str = None
+    port: int = None
+    database: str = None
+    user: str = None
+    password: str = None
     schema: str = "fhq_phase3"
+
+    def __post_init__(self):
+        """Initialize from environment variables with local PROD defaults."""
+        self.host = self.host or os.getenv("PGHOST", "127.0.0.1")
+        self.port = self.port or int(os.getenv("PGPORT", "54322"))
+        self.database = self.database or os.getenv("PGDATABASE", "postgres")
+        self.user = self.user or os.getenv("PGUSER", "postgres")
+        self.password = self.password or os.getenv("PGPASSWORD", "postgres")
 
 
 class CDSDatabasePersistence:
