@@ -31,12 +31,16 @@ from cds_engine import CDSResult, CDSComponents
 
 @dataclass
 class DatabaseConfig:
-    """Database connection configuration."""
-    host: str = "localhost"
-    port: int = 5432
-    database: str = "fjordhq"
-    user: str = "fjordhq_user"
-    password: str = ""
+    """Database connection configuration.
+
+    Default: Local Supabase PostgreSQL instance
+    Address: 127.0.0.1:54322
+    """
+    host: str = "127.0.0.1"
+    port: int = 54322
+    database: str = "postgres"
+    user: str = "postgres"
+    password: str = "postgres"
     schema: str = "fhq_phase3"
 
 
