@@ -3,8 +3,10 @@ ADR Constitution Ingestion Script
 =================================
 Ingests ADR-001 (System Charter) into fhq_meta.adr_registry
 
-This script parses the canonical ADR-001 markdown file and inserts/updates
-the registry entry in the database, establishing the constitutional foundation.
+Uses the EXISTING table schema with columns:
+- adr_id, adr_title, adr_status, adr_type, current_version
+- sha256_hash, file_path, approval_authority, effective_date
+- metadata, created_at, updated_at
 
 Usage:
     python ingest_constitution.py
@@ -16,9 +18,10 @@ Environment:
 import os
 import re
 import hashlib
+import json
 import psycopg2
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, date
 
 # ------------------------------
 # 1. Load environment variables
@@ -33,7 +36,6 @@ if not DB_DSN:
 # ------------------------------
 # 2. CONFIGURATION
 # ------------------------------
-# Default path - can be overridden
 ADR_DIRECTORY = os.getenv(
     "ADR_DIRECTORY",
     r"C:\fhq-market-system\vision-IoS\00_CONSTITUTION"
@@ -45,43 +47,33 @@ ADR_DIRECTORY = os.getenv(
 # ------------------------------
 
 def calculate_hash(content: str) -> str:
-    """
-    Calculate SHA-256 hash of the file content.
-    This creates a unique fingerprint for version tracking.
-    """
+    """Calculate SHA-256 hash of the file content."""
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
 
 def parse_adr_content(content: str, filename: str) -> dict:
     """
     Parse ADR markdown content and extract metadata.
-
-    Returns a dict with:
-        - id: ADR identifier (e.g., 'ADR-001')
-        - title: Document title
-        - version: Version string
-        - status: Document status (e.g., 'CANONICAL', 'PRODUCTION')
-        - hash: SHA-256 content hash
+    Returns dict matching the EXISTING database schema.
     """
-    # Extract ADR ID from filename (e.g., 'ADR-001' from 'ADR-001_2026_PRODUCTION.md')
+    # Extract ADR ID from filename
     adr_id_match = re.match(r'^(ADR-\d{3})', filename.upper())
     adr_id = adr_id_match.group(1) if adr_id_match else "ADR-UNKNOWN"
 
-    # Extract title from markdown header (# **ADR-001 - TITLE**)
+    # Extract title from markdown header
     title_match = re.search(r'^#\s*\*?\*?ADR-\d{3}[^*\n]*\*?\*?\s*[–-]\s*(.+?)(?:\*\*)?$',
                            content, re.MULTILINE | re.IGNORECASE)
     if title_match:
         title = title_match.group(1).strip().rstrip('*')
     else:
-        # Fallback: extract from filename
         title = filename.replace('.md', '').replace('_', ' ')
 
     # Extract version from content
     version_match = re.search(r'\*?\*?Version:?\*?\*?\s*([^\n]+)', content, re.IGNORECASE)
     version = version_match.group(1).strip() if version_match else "1.0"
 
-    # Determine status from filename or content
-    status = "PRODUCTION"  # Default
+    # Determine status
+    status = "PRODUCTION"
     if "CANONICAL" in content.upper() or "ROOT AUTHORITY" in content.upper():
         status = "CANONICAL"
     elif "DRAFT" in filename.upper():
@@ -89,75 +81,52 @@ def parse_adr_content(content: str, filename: str) -> dict:
     elif "DEPRECATED" in filename.upper():
         status = "DEPRECATED"
 
+    # Determine type
+    adr_type = "GOVERNANCE"  # Default
+    if "CHARTER" in filename.upper() or "CHARTER" in content.upper():
+        adr_type = "CHARTER"
+    elif "COMPLIANCE" in filename.upper():
+        adr_type = "COMPLIANCE"
+    elif "ORCHESTRATOR" in filename.upper():
+        adr_type = "ORCHESTRATOR"
+
+    # Extract owner/approval authority
+    owner_match = re.search(r'\*?\*?Owner:?\*?\*?\s*([^\n]+)', content, re.IGNORECASE)
+    approval_authority = owner_match.group(1).strip() if owner_match else "CEO"
+
+    # Extract date
+    date_match = re.search(r'\*?\*?Date:?\*?\*?\s*(\d{1,2}\s+\w+\s+\d{4})', content, re.IGNORECASE)
+    effective_date = None
+    if date_match:
+        try:
+            from dateutil import parser as date_parser
+            effective_date = date_parser.parse(date_match.group(1)).date()
+        except:
+            effective_date = date.today()
+    else:
+        effective_date = date.today()
+
     # Calculate content hash
     content_hash = calculate_hash(content)
 
-    return {
-        "id": adr_id,
-        "title": title,
-        "version": version,
-        "status": status,
-        "hash": content_hash
+    # Build metadata JSON
+    metadata = {
+        "source_file": filename,
+        "ingested_at": datetime.now().isoformat(),
+        "parser_version": "1.0"
     }
 
-
-def ensure_schema_exists(cur):
-    """
-    Ensure fhq_meta schema and adr_registry table exist.
-    Creates them if they don't exist, and adds missing columns.
-    """
-    # Create schema if not exists
-    cur.execute("CREATE SCHEMA IF NOT EXISTS fhq_meta;")
-
-    # Create adr_registry table if not exists
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS fhq_meta.adr_registry (
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            hash TEXT,
-            version TEXT,
-            status TEXT DEFAULT 'DRAFT',
-            file_path TEXT,
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW(),
-            created_by TEXT DEFAULT 'SYSTEM'
-        );
-    """)
-
-    # Add missing columns if table already exists with different schema
-    columns_to_add = [
-        ("hash", "TEXT"),
-        ("title", "TEXT"),
-        ("status", "TEXT DEFAULT 'DRAFT'"),
-        ("version", "TEXT"),
-        ("file_path", "TEXT"),
-        ("created_at", "TIMESTAMPTZ DEFAULT NOW()"),
-        ("updated_at", "TIMESTAMPTZ DEFAULT NOW()"),
-        ("created_by", "TEXT DEFAULT 'SYSTEM'"),
-    ]
-
-    for col_name, col_type in columns_to_add:
-        cur.execute(f"""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM information_schema.columns
-                    WHERE table_schema = 'fhq_meta'
-                    AND table_name = 'adr_registry'
-                    AND column_name = '{col_name}'
-                ) THEN
-                    ALTER TABLE fhq_meta.adr_registry ADD COLUMN {col_name} {col_type};
-                END IF;
-            END $$;
-        """)
-
-    # Create indexes if not exist
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_adr_registry_status
-            ON fhq_meta.adr_registry(status);
-        CREATE INDEX IF NOT EXISTS idx_adr_registry_hash
-            ON fhq_meta.adr_registry(hash);
-    """)
+    return {
+        "adr_id": adr_id,
+        "adr_title": title,
+        "adr_status": status,
+        "adr_type": adr_type,
+        "current_version": version,
+        "approval_authority": approval_authority,
+        "effective_date": effective_date,
+        "sha256_hash": content_hash,
+        "metadata": json.dumps(metadata)
+    }
 
 
 # ------------------------------
@@ -167,24 +136,15 @@ def ensure_schema_exists(cur):
 def run_ingestion_adr_001():
     """
     Main ingestion function for ADR-001 (System Charter).
-
-    1. Finds ADR-001 file in the constitution directory
-    2. Parses metadata from the markdown content
-    3. Upserts the entry into fhq_meta.adr_registry
+    Uses EXISTING table schema.
     """
-    # Validate directory exists
     if not os.path.isdir(ADR_DIRECTORY):
         print(f"CRITICAL: Directory not found: {ADR_DIRECTORY}")
-        print("Set ADR_DIRECTORY environment variable or update the script.")
         return
 
     try:
         conn = psycopg2.connect(DB_DSN)
         cur = conn.cursor()
-
-        # Ensure schema and table exist
-        ensure_schema_exists(cur)
-        conn.commit()
 
         # Find ADR-001 file
         target_file = next(
@@ -197,73 +157,85 @@ def run_ingestion_adr_001():
 
         if not target_file:
             print("Kritisk: Fant ikke filen ADR-001 i mappen.")
-            print(f"Sjekket mappe: {ADR_DIRECTORY}")
             return
 
         print(f"Fant filen: {target_file}. Starter behandling...")
 
         filepath = os.path.abspath(os.path.join(ADR_DIRECTORY, target_file))
 
-        # Read and parse content
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
 
         meta = parse_adr_content(content, target_file)
 
-        print(f"   ID:      {meta['id']}")
-        print(f"   Tittel:  {meta['title']}")
-        print(f"   Versjon: {meta['version']}")
-        print(f"   Status:  {meta['status']}")
-        print(f"   Hash:    {meta['hash'][:16]}...")
+        print(f"   ID:       {meta['adr_id']}")
+        print(f"   Tittel:   {meta['adr_title']}")
+        print(f"   Type:     {meta['adr_type']}")
+        print(f"   Status:   {meta['adr_status']}")
+        print(f"   Versjon:  {meta['current_version']}")
+        print(f"   Hash:     {meta['sha256_hash'][:16]}...")
 
-        # SQL: UPSERT (Insert or update if exists)
+        # SQL: UPSERT using EXISTING column names
         sql = """
             INSERT INTO fhq_meta.adr_registry (
-                id, title, hash, version, status, file_path, created_by
+                adr_id, adr_title, adr_status, adr_type, current_version,
+                approval_authority, effective_date, file_path, sha256_hash, metadata
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (adr_id)
             DO UPDATE SET
-                title = EXCLUDED.title,
-                hash = EXCLUDED.hash,
-                version = EXCLUDED.version,
-                status = EXCLUDED.status,
+                adr_title = EXCLUDED.adr_title,
+                adr_status = EXCLUDED.adr_status,
+                adr_type = EXCLUDED.adr_type,
+                current_version = EXCLUDED.current_version,
+                approval_authority = EXCLUDED.approval_authority,
+                effective_date = EXCLUDED.effective_date,
                 file_path = EXCLUDED.file_path,
+                sha256_hash = EXCLUDED.sha256_hash,
+                metadata = EXCLUDED.metadata,
                 updated_at = NOW();
         """
 
         cur.execute(sql, (
-            meta["id"],
-            meta["title"],
-            meta["hash"],
-            meta["version"],
-            meta["status"],
+            meta["adr_id"],
+            meta["adr_title"],
+            meta["adr_status"],
+            meta["adr_type"],
+            meta["current_version"],
+            meta["approval_authority"],
+            meta["effective_date"],
             filepath,
-            "SYSTEM"
+            meta["sha256_hash"],
+            meta["metadata"]
         ))
 
         conn.commit()
 
-        # Verify the insert
-        cur.execute("SELECT id, title, status, hash FROM fhq_meta.adr_registry WHERE id = %s", (meta["id"],))
+        # Verify
+        cur.execute("""
+            SELECT adr_id, adr_title, adr_status, sha256_hash
+            FROM fhq_meta.adr_registry
+            WHERE adr_id = %s
+        """, (meta["adr_id"],))
         result = cur.fetchone()
 
         if result:
-            print(f"\n SUKSESS: {result[0]} er registrert i databasen")
+            print(f"\nSUKSESS: {result[0]} er registrert i databasen")
+            print(f"   Tittel: {result[1]}")
             print(f"   Status: {result[2]}")
-            print(f"   Hash:   {result[3][:16]}...")
+            print(f"   Hash:   {result[3][:16] if result[3] else 'N/A'}...")
 
         cur.close()
         conn.close()
 
     except psycopg2.Error as e:
-        print(f"\n DATABASE FEIL: {e}")
+        print(f"\nDATABASE FEIL: {e}")
         print("\nSjekk:")
         print("  1. DATABASE_URL er korrekt i .env")
         print("  2. PostgreSQL kjorer")
         print("  3. Du har tilgang til databasen")
     except Exception as e:
-        print(f"\n FEIL: {e}")
+        print(f"\nFEIL: {e}")
 
 
 # ------------------------------
