@@ -1,153 +1,151 @@
-ADR-012_2026_PRODUCTION_Economic Safety Architecture
+ADR-012_2026_PRODUCTION
+
+Economic Safety Architecture
 
 Status: PRODUCTION
-Tier: Tier-3.5 (Pre-LIVE Protection Layer)
+Tier: Tier-3.5 (LIVE Protection Layer)
 Authority: LARS – Chief Strategy & Alpha Officer
 Owners: LINE (Operations), STIG (Architecture), VEGA (Governance)
 Date: 2025-11-22
 
+Constitutional Chain:
+ADR-001 System Charter → ADR-002 Audit & Error Reconciliation → ADR-003 Institutional Standards → ADR-004 Change Gates → ADR-007 Orchestrator → ADR-008 Cryptographic Key Management → ADR-011 Production Fortress  → ADR-012 (this ADR)
+
 1. Executive Summary
 
-The activation of LIVE LLM mode introduces a high-risk category of operational exposure:
-economic drift failure.
+Activating LIVE LLM mode moves FjordHQ from a closed, deterministic test environment to a state where agents can:
 
-Once external LLM calls are enabled, the system can:
+Generate real API charges across multiple LLM providers
 
-generate real API charges
+Escalate requests in parallel across agents and tasks
 
-escalate costs in parallel across agents
+Trigger runaway LLM loops and pathological reasoning chains
 
-trigger runaway LLM call loops
+Inherit and amplify upstream provider instability (latency, errors, throttling)
 
-propagate provider instability (latency spikes, outages)
+Degrade governance responsiveness and potentially trigger cascading suspensions
 
-degrade governance response under load
+Without explicit economic controls, this violates the constitutional guarantees in ADR-001, the audit and error framework in ADR-002, the orchestrator invariants in ADR-007, and the Production Fortress guarantees in ADR-011.
 
-cause unintended suspension cascades
+ADR-012 defines the Economic Safety Architecture – a mandatory protection layer embedded in the Worker pipeline – that:
 
-ADR-012 establishes the Economic Safety Architecture, a mandatory protection layer that:
+Enforces deterministic rate limits and cost ceilings
 
-enforces deterministic API rate and cost ceilings
+Prevents runaway costs and overuse before they occur
 
-prevents runaway charges before they occur
+Automatically degrades the system to STUB mode on violation
 
-automatically degrades to STUB mode on violation
+Logs all violations as VEGA-visible governance events
 
-logs all violations as governance events
+Preserves ADR-011 Production Fortress guarantees even in LIVE mode
 
-preserves ADR-011 Production Fortress guarantees in LIVE mode
+Ensures LLM operations remain predictable, bounded, and auditable across all providers
 
-ensures predictable, controllable LLM operations across all providers
-
-This is the final prerequisite before API keys may be activated.
+This ADR is the final prerequisite before any external LLM API keys can be activated in production.
 
 2. Problem Statement
 
-Following Tier-3 Activation, the WorkerEngine gained the ability to perform external LLM calls.
-Without economic controls, LIVE mode creates unacceptable institutional risk:
+After Tier-3 activation of the WorkerEngine, agents gained the ability to call external LLM providers through the orchestrator. Without guardrails, LIVE mode introduces an unacceptable class of economic drift failure:
 
-2.1 Runaway Operating Costs
+Runaway Operating Costs
+Parallel agents can generate high-cost calls in minutes, easily breaching daily or monthly budgets.
 
-Parallel agents can generate expensive calls in minutes, exceeding daily budgets.
+Rate Limit Breaches
+Unregulated bursts cause throttling and bans, collapsing pipelines and breaking deterministic behaviour.
 
-2.2 Rate Limit Breaches
+Loss of Budgetary Control
+CEO can no longer bound daily or per-strategy LLM spend with confidence.
 
-Unregulated bursts → throttling → bans → pipeline collapse.
+Provider Instability Propagation
+Latency spikes or outages propagate inward as:
+– stalled pipelines
+– governance timeouts
+– false positive discrepancy scores and suspension flows
 
-2.3 Loss of Budgetary Control
+Governance Bypass via Resource Exhaustion
+A single misbehaving or adversarial agent can:
+– saturate the Worker pipeline
+– delay or block VEGA and LARS
+– degrade reconciliation and oversight in exactly the scenarios where governance is most needed
 
-CEO cannot guarantee or bound daily system costs.
+This directly undermines:
 
-2.4 Propagation of Provider Instability
+ADR-001 – Constitution of FjordHQ (system charter)
 
-Provider downtime or latency spikes cause:
+ADR-002 – Audit & Error Reconciliation Charter
 
-pipeline stalls
+ADR-007 – Orchestrator behaviour and anti-hallucination controls
 
-governance timeouts
+ADR-011 – Production Fortress & VEGA Testsuite (proof-based integrity)
 
-false-positive suspension flows
-
-2.5 Governance Bypass via Resource Exhaustion
-
-A single overactive agent may:
-
-saturate the Worker pipeline
-
-block VEGA and LARS
-
-cause governance delays or misclassification
-
-This violates:
-
-ADR-001 Constitution of FjordHQ
-
-ADR-002 Change Control Architecture
-
-ADR-007 Agent–LLM Binding
-
-ADR-011 Production Fortress Integrity
-
-Therefore, LIVE mode cannot be enabled without a deterministic, auditable economic safety layer.
+Conclusion:
+LIVE mode must not be enabled until a deterministic, auditable, and VEGA-governed Economic Safety layer is in place.
 
 3. Decision
 
-FjordHQ adopts a three-layer Economic Safety Architecture, enforced within the Worker pipeline before any external LLM call:
+FjordHQ adopts a three-layer Economic Safety Architecture, enforced inside the Worker pipeline prior to any external LLM call:
 
-Rate Governance Layer
+Rate Governance Layer – controls call frequency and volume.
 
-Cost Governance Layer
+Cost Governance Layer – enforces hard monetary ceilings per agent, task, and day.
 
-Execution Governance Layer
+Execution Governance Layer – bounds depth, latency, and token volume of reasoning.
 
-All safety layers are:
+All three layers are:
 
-deterministic
+Deterministic – same inputs and state produce the same decision.
 
-cryptographically attestable (ADR-008)
+Cryptographically attestable under ADR-008 (Ed25519-signed events and hash-chained logs).
 
-unbypassable (Worker pipeline enforcement)
+Unbypassable – embedded directly into Worker control flow, not in agent prompts.
 
-audited under ADR-002
+Audited under ADR-002 – all violations are logged as governance events with full evidence.
 
-integrated with VEGA attestation logic
+Integrated with VEGA attestation – violations influence VEGA’s view of system integrity under ADR-011 and ADR-010.
 
-reversible only with LARS approval
+Reversible only with LARS authority – returning from STUB mode to LIVE mode requires explicit governance action.
 
-This framework guarantees safe, predictable, bounded operation of LIVE LLM mode.
+This architecture becomes mandatory for all agents and providers once API keys are activated.
 
 4. Architecture Overview
 4.1 Rate Governance Layer
 
-Controls LLM call frequency across multiple dimensions:
+Purpose: Prevent rate-driven failure modes (throttling, bans, pipeline storming).
+
+Default limits (per production configuration):
 
 Metric	Default
 max_calls_per_agent_per_minute	3
 max_calls_per_pipeline_execution	5
 global_daily_limit	100
 
+Defaults are constitutional baselines and can be tightened by VEGA or raised by CEO decision via ADR-004 change gates.
+
+Research agents that use lower-cost providers (e.g. DeepSeek) may be granted higher call quotas, but only through canonical configuration updates (no prompt-level overrides).
+
 On violation:
 
-violation recorded in vega.llm_violation_events
+A violation event is written to vega.llm_violation_events.
 
-VEGA issues WARN or SUSPEND recommendation
+VEGA issues a WARN or SUSPEND-RECOMMENDATION governance classification (aligned with ADR-010 thresholds).
 
-Worker switches to STUB_MODE immediately
+Worker immediately switches to STUB_MODE for that agent, task, or (if necessary) globally.
 
-hash-chain event appended (ADR-011)
+A hash-chained governance event is appended under ADR-011’s Production Fortress rules.
 
 4.2 Cost Governance Layer
 
-Tracks estimated and actual cost per provider.
+Purpose: Make LLM spend predictable, capped and provable.
 
-Estimated cost envelopes:
+The system tracks estimated and actual cost per provider and call. Per-provider reference envelopes (to be kept in canonical config, not hard-coded):
 
-Provider	Estimated Range
-Anthropic Claude	$0.004–$0.08 per call
-OpenAI GPT	$0.002–$0.04 per call
-DeepSeek	$0.001–$0.005 per call
+Provider	Estimated Range (USD per call)
+Anthropic Claude	[configured from official pricing – no hard-coding]
+OpenAI GPT	[configured from official pricing – no hard-coding]
+DeepSeek	$0.001 – $0.005
+Gemini	[configured from official pricing – no hard-coding]
 
-Hard ceilings:
+Hard ceilings (defaults):
 
 Metric	Default
 max_daily_cost	$5.00
@@ -156,156 +154,232 @@ max_cost_per_agent_per_day	$1.00
 
 On breach:
 
-Worker aborts the call
+Worker aborts the call before sending it to the provider.
 
-System degrades to STUB_MODE
+Worker immediately degrades to STUB_MODE for the relevant scope (task/agent/global).
 
-VEGA issues governance violation event
+VEGA emits a governance violation event (Class B or Class A depending on impact) under ADR-002.
 
-LIVE mode locked until LARS explicitly reactivates
+LIVE mode remains locked until LARS (or delegated SMF under ADR-003) explicitly reauthorizes via a gated configuration change.
 
 4.3 Execution Governance Layer
 
-Prevents runaway reasoning and compute overload:
+Purpose: Bound reasoning depth, latency and token growth, preventing “infinite thought spirals”.
+
+Default execution ceilings:
 
 Configuration	Default
 max_llm_steps_per_task	3
-max_total_latency_ms	3000ms
-max_total_tokens_generated	provider-specific
+max_total_latency_ms	3000 ms
+max_total_tokens_generated	provider-specific (canonical config)
 abort_on_overrun	True
 
-Protects against:
+This layer protects against:
 
-recursive LLM loops
+Recursive or cyclic LLM loops
 
-excessive chain-of-thought expansion
+Excessive chain-of-thought expansion that does not change state
 
-degraded Worker performance
+Worker performance degradation and queue starvation
 
-unbounded latency accumulation
+Unbounded latency that can distort VEGA’s timing assumptions during reconciliation
+
+Any overrun:
+
+Triggers a controlled abort with deterministic error envelope (per ADR-011 quality gates).
+
+Produces a violation event visible to VEGA and LINE (SRE).
+
+Can be used as input to discrepancy scoring if it leads to output divergence.
 
 5. Data Model (Database Specification)
 
-New tables under the vega schema:
+All Economic Safety tables live under the vega schema, enforcing that governance, not agents, owns economic controls.
+
+New canonical tables:
 
 vega.llm_rate_limits
 
+Per-agent and global rate ceilings.
+
+Key fields: agent_id, provider, max_per_minute, max_per_execution, global_daily_limit, source_adr, created_at.
+
 vega.llm_cost_limits
+
+Per-agent, per-task and global monetary ceilings.
+
+Key fields: agent_id, provider, max_daily_cost, max_cost_per_task, max_cost_per_agent_per_day, currency, source_adr, created_at.
 
 vega.llm_usage_log
 
+Canonical usage ledger for all LLM calls.
+
+Key fields: usage_id, agent_id, task_id, provider, tokens_in, tokens_out, cost_usd, latency_ms, timestamp, mode (LIVE/STUB), signature.
+
 vega.llm_violation_events
 
-Key fields include:
+Governance log for rate, cost, and execution violations; hash-chained under ADR-011.
+
+Key fields:
+
+violation_id
 
 agent_id
 
 provider
 
-tokens_in
+violation_type (RATE, COST, EXECUTION)
 
-tokens_out
+governance_action (NONE, WARN, SUSPEND_RECOMMENDATION, SWITCH_TO_STUB)
 
-cost_usd
+details (JSONB – full evidence bundle)
+
+discrepancy_score (if relevant; see ADR-010)
+
+hash_prev, hash_self (for hash-chain)
 
 timestamp
 
-violation_type
-
-governance_action (NONE, WARN, SUSPEND, SWITCH_TO_STUB)
-
-All violation events are anchored into the hash-chain per ADR-011.
+All violation events are anchored into the hash-chain and become part of the Production Fortress evidence base.
 
 6. Quality Gates
 
-ADR-012 introduces:
+ADR-012 introduces QG-F6: Economic Safety Gate, extending the Fortress quality gate suite defined in ADR-011.
 
-QG-F6: Economic Safety Gate
 Gate	Description	Pass Requirement
-QG-F6	Economic Safety	No rate, cost, or execution breaches in the last 24 hours
+QG-F6	Economic Safety	No rate, cost, or execution breaches in last 24 hours and all safety tables consistent with configuration hashes
 
 QG-F6 is mandatory before:
 
-enabling LIVE mode
+Enabling LIVE mode for any provider or agent
 
-enabling FINN reasoning loops
+Enabling FINN’s autonomous reasoning loops in production
 
-running any production strategy
+Running any production trading or strategy pipeline that depends on LLM outputs
 
-enabling DeepSeek live research
+Enabling DeepSeek live research in FINN or research agents
 
-7. Implementation Plan
-Phase 1 — Rate Governance
+Failure of QG-F6 automatically:
 
-Rate limit enforcement and persistent logging.
+Locks the system into STUB_MODE for all LLM calls
 
-Phase 2 — Cost Governance
+Flags a Class B or Class A governance event under ADR-002, depending on the severity and impact.
 
-Cost estimation, ceiling enforcement, daily aggregation.
+7. Implementation Plan (CODE / STIG / LINE)
 
-Phase 3 — Execution Governance
+This section defines what must be done – not how to write the code – so CODE can implement against the existing architecture on the local Supabase/Postgres instance (127.0.0.1:54322/postgres) as already defined in .env.
 
-Execution ceilings, latency control, abort logic.
+Phase 1 – Rate Governance
 
-Phase 4 — Governance Integration
+Owner: STIG (design), CODE (implementation), VEGA (validation)
 
-VEGA attestation
+Retrieve existing rate-limit logic from the current FHQ-IoS / WorkerEngine codebase (Economic Safety / LLM guard modules).
 
-LARS approval flows
+Refactor configuration so that all limits are read from vega.llm_rate_limits instead of hard-coded values.
 
-hash-chain event creation
+Ensure Worker pipeline uses the canonical DSN (Supabase instance at 127.0.0.1:54322) for all reads/writes.
 
-Phase 5 — Test Suite (10–15 tests)
+Add persistent logging into vega.llm_usage_log for every LLM call – regardless of success or violation.
 
-Covers:
+On violation, insert into vega.llm_violation_events and switch the relevant scope to STUB_MODE.
 
-rate-limit violations
+Phase 2 – Cost Governance
 
-cost-breach behavior
+Owner: STIG, CODE, VEGA
 
-pipeline abort logic
+Extend WorkerEngine’s LLM binding layer (per ADR-007) to compute estimated cost for every planned call using provider-specific config.
 
-STUB fallback transitions
+Before dispatch, compare projected cost against vega.llm_cost_limits for:
 
-deterministic error envelopes
+this task
 
-governance event creation
+this agent (today)
+
+global daily cost.
+
+Abort non-compliant calls deterministically and emit violation events with full evidence (usage, limits, config hash).
+
+Ensure all cost data is written into vega.llm_usage_log and can be aggregated for daily/weekly reporting.
+
+Phase 3 – Execution Governance
+
+Owner: CODE, LINE
+
+Implement step-count, latency and token ceilings inside the Worker pipeline.
+
+Ensure abort conditions are deterministic and produce standard error envelopes suitable for Fortress tests.
+
+Log all overruns as EXECUTION violations in vega.llm_violation_events.
+
+Phase 4 – Governance Integration (VEGA / LARS)
+
+Owner: VEGA, LARS
+
+Integrate violation events into VEGA’s reconciliation and discrepancy scoring logic per ADR-010 (e.g. high frequency of violations impacts integrity classification).
+
+Ensure VEGA can classify violations as NORMAL / WARNING / CATASTROPHIC and, for catastrophic cases, issue SUSPEND_RECOMMENDATION to LARS under ADR-009 (dual-approval suspension).
+
+Require explicit LARS approval to re-enable LIVE mode after a lock, recorded as a governance event with hash-chain evidence.
+
+Phase 5 – Test Suite (10–15 Fortress-Grade Tests)
+
+Owner: CODE, VEGA (attestation)
+
+Minimum coverage:
+
+Rate-limit violations at agent level, pipeline level, and global level
+
+Cost breaches per task, per agent, and global
+
+Execution overrun scenarios (steps, latency, tokens)
+
+STUB_MODE fallback and recovery flows
+
+Deterministic error envelopes suitable for ADR-011 Fortress checks
+
+Correct creation, hashing, and linkage of vega.llm_violation_events rows
+
+A successful full run must produce a VEGA-signed attestation under ADR-011 and be stored as Fortress proof.
 
 8. Consequences
 Positive
 
-Predictable, bounded operating cost
+Predictable, bounded operating cost for all LLM usage.
 
-Safe activation of LIVE mode
+Safe activation of LIVE mode without compromising constitutional guarantees.
 
-Preservation of ADR-011 governance guarantees
+Preservation of ADR-011 Production Fortress integrity in real-world operation.
 
-Protection against runaway reasoning
+Strong protection against runaway reasoning, loops, and resource exhaustion.
 
-Stable research environment for FINN
+Stable and controlled environment for FINN’s research and strategy evaluation.
 
 Negative
 
-Strict ceilings may throttle workflows
+Strict ceilings may throttle some workflows until limits are tuned with empirical data.
 
-Budgets may require manual tuning
+Budgets and limits require ongoing governance rather than one-off configuration.
 
-Slightly increased Worker complexity
+Worker complexity increases due to safety checks and additional logging.
 
 Risks Mitigated
 
-runaway LLM API costs
+Runaway LLM API costs and unexpected billing events.
 
-governance bypass
+Governance bypass via resource exhaustion or starvation.
 
-external provider instability
+External provider instability translating into systemic instability.
 
-unpredictable failure modes
+Unpredictable failure modes from unbounded loops or token usage.
 
-unbounded token generation
+Hidden drift between perceived and actual economic exposure.
 
 9. Status
 
 PRODUCTION
-All future LIVE-mode operations must comply with ADR-012.
-QG-F6 is required before API key activation.
+
+ADR-012 is binding for all future LIVE-mode operations.
+
+QG-F6 Economic Safety Gate is required before any API key activation or production strategy using LLM output.
+
+Any attempt to bypass this architecture constitutes a Class A governance event under ADR-002 and must be escalated immediately to VEGA and CEO.

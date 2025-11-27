@@ -1,322 +1,248 @@
 ADR-010 – State Reconciliation Methodology & Discrepancy Scoring
 
-Status: Approved
+Version: 2026.PRODUCTION
+Status: APPROVED
 Date: 2025-11-22
 Owner: LARS – Chief Strategy & Alpha Officer
 Governance Tier: Tier-2 (Validation, Integrity, Anti-Hallucination)
+Authority Chain: ADR-001 → ADR-002 → ADR-006 → ADR-007 → ADR-008 → ADR-009 → ADR-010 → EC-001
 Affects: VEGA, Worker, Reconciliation Service, fhq_meta, fhq_governance
 Supersedes: None
 Review Cycle: 12 months
 
-1. Context
+1. Purpose & Context
 
-Autonomous agents within FjordHQ-IoS produce state assessments, analyses, metrics, and recommendations.
-These outputs must be continuously reconciled against the canonical system-of-record to detect:
+Autonomous agents in FjordHQ-IoS generate analytical state, decisions, metrics and strategic assessments.
+These outputs must be validated against canonical system-of-record data to detect:
 
-hallucination
+hallucination or fabricated reasoning
 
-data drift
+drift from validated market data
 
-stale state
+stale or cached state
 
-implementation errors
+implementation divergence
 
 tampering or corruption
 
-divergence from financial truth
+misalignment with governance truth
 
-Without a mathematically defined methodology, deviations would be ambiguous, unscaled, and inconsistently interpreted.
-
-Tier-2 governance therefore requires a deterministic, reproducible, verifiable method for calculating discrepancy scores, producing evidence, and triggering VEGA oversight and LARS governance review.
-
-This ADR defines that methodology in full.
+Before ADR-010, there was no deterministic or reproducible method to measure deviations.
+This ADR establishes the only allowed mathematical methodology for reconciliation in FjordHQ.
 
 2. Decision
 
-FHQ-IoS adopts a unified, weighted, tolerance-aware discrepancy scoring system applied to every agent and every reconciliation cycle.
+FHQ-IoS adopts a single unified weighted discrepancy scoring model, applied after every agent task, with the following characteristics:
 
-Key decisions:
+Field-level binary match / mismatch (δᵢ)
 
-Field-by-field comparison with binary match/mismatch
+Criticality-weighted scoring
 
-Criticality-weighted metric
+Tolerance layer for timestamps, floats, metadata
 
-Tolerance layer for timestamps, floats, and metadata
+Three-tier discrepancy classification
 
-Three-tier discrepancy classification (Normal, Warning, Catastrophic)
+Canonical evidence bundle generation
 
-Canonical evidence bundle stored for every reconciliation
+Automatic VEGA validation and signing
 
-Automatic VEGA attestation; no agent self-evaluation
+Suspension routed through ADR-009 dual-approval workflow
 
-Suspension workflow governed by ADR-009 (dual approval)
-
-The discrepancy score becomes the authoritative signal for governance intervention.
+The discrepancy score becomes the authoritative governance signal.
 
 3. Methodology
-3.1 Core Formula
-
-All reconciliations use the same normalized formula:
-
+3.1 Canonical Formula
 discrepancy_score = Σ(weight_i × δ_i) / Σ(weight_i)
 
 
 Where:
 
-δ_i = 0 if field_i matches within tolerance
+δᵢ = 0 → match within tolerance
 
-δ_i = 1 if mismatch
+δᵢ = 1 → mismatch
 
-weight_i ∈ [0.1, 1.0] (criticality factor)
+weights ∈ [0.1, 1.0]
 
-weights depend on the agent and field class
+score ∈ [0.0, 1.0]
 
-all scores ∈ [0.0, 1.0]
+This method must be identical across:
 
-This yields a stable, scalable measure that works across:
+LARS (strategy)
 
-strategic reasoning (LARS)
+STIG (implementation)
 
-technical analysis (STIG)
+LINE (infrastructure)
 
-research (FINN)
+FINN (research)
 
-infrastructure metrics (LINE)
+VEGA (governance)
 
-governance evaluation (VEGA)
+4. Field Classes & Weights
 
-4. Field Classes & Criticality Weights
-4.1 Critical (1.0)
+Critical (1.0)
+financial values, risk metrics, agent identity, signatures, governance booleans.
 
-Mismatch indicates severe hallucination or integrity failure.
+High (0.8)
+order states, infrastructure metrics, position counts.
 
-Examples:
+Medium (0.5)
+non-critical derived metrics, rolling analytics.
 
-financial values (portfolio_value, exposure_usd)
+Low (0.3)
+metadata, timestamps, API versions.
 
-risk metrics (var_95, sharpe_ratio)
-
-boolean compliance states
-
-agent identity, signatures, timestamps of execution events
-
-4.2 High (0.8)
-
-Mismatch affects operational accuracy.
-
-Examples:
-
-position counts
-
-order statuses
-
-infrastructure load metrics
-
-4.3 Medium (0.5)
-
-Derived metrics with informational use.
-
-Examples:
-
-indicators, rolling statistics, non-critical analytic features
-
-4.4 Low (0.3)
-
-Metadata with high tolerance.
-
-Examples:
-
-timestamps
-
-API versions
-
-source attribution
-
-Weight definitions are stored and versioned in fhq_meta.reconciliation_field_weights.
+Stored in:
+fhq_meta.reconciliation_field_weights
 
 5. Tolerance Rules
 
-Reconciliation considers tolerances to prevent false positives.
+Timestamps: match if |agent_ts − canonical_ts| ≤ 5s
 
-5.1 Timestamps
-match if |agent_ts − canonical_ts| ≤ 5 seconds
+Floats: relative deviation ≤ 0.1%
 
-5.2 Floats
-match if |agent − canonical| / max(|canonical|, ε) ≤ 0.001   # 0.1%
+Integers: exact match
 
+Strings: case/whitespace-insensitive
 
-(ε prevents division by zero.)
+Tolerances must be uniformly enforced for all agents.
 
-5.3 Integers
+6. Thresholds & Governance Actions
+Score	Status	Outcome
+0.00–0.05	NORMAL	VEGA certifies
+0.05–0.10	WARNING	Log & monitor
+>0.10	CATASTROPHIC	VEGA submits suspension request (ADR-009)
 
-Exact match required.
-
-5.4 Strings
-
-Case- and whitespace-insensitive match.
-
-These tolerance rules are enforced uniformly across all agents.
-
-6. Discrepancy Thresholds
-6.1 Classification
-Score Range	Status	Action
-0.00 – 0.05	NORMAL	Proceed
-0.05 – 0.10	WARNING	Log & monitor
-> 0.10	CATASTROPHIC	Trigger VEGA suspension request
-
-These thresholds are calibrated from empirical pilot data and Tier-2 risk tolerance.
-
-6.2 Governance Behaviour
-
-NORMAL: VEGA certifies.
-
-WARNING: VEGA logs; no escalation.
-
-CATASTROPHIC: VEGA creates suspension request (ADR-009 workflow).
-
-VEGA never suspends; VEGA only recommends.
+VEGA never suspends. Only CEO approves.
 
 7. Canonical State Sources
 
-The reconciler always compares against the system-of-record:
+Comparisons must always reference deterministic, timestamped canonical data:
 
-fhq_org.org_agents (agent identity & config)
+fhq_org.org_agents
 
-fhq_org.org_tasks (task state)
+fhq_org.org_tasks
 
-fhq_market datasets (financial truth)
+validated market/pricing data
 
-external validated data (market feeds, pricing)
-
-last validated reconciliation snapshot
-
-Canonical queries must be deterministic and timestamped.
+last reconciliation snapshot
 
 8. Evidence Bundle Specification
 
-Every reconciliation produces a structured evidence bundle including:
+Each reconciliation produces:
 
 agent_id
 
 reconciliation_type
 
-agent_reported_state (full snapshot)
+agent_reported_state
 
-canonical_state (full snapshot)
+canonical_state
 
-field-by-field comparisons
+field-by-field diffs
 
-weights applied
+weights
 
-tolerances applied
+tolerances
 
 discrepancy score
 
-classification (NORMAL/WARNING/CATASTROPHIC)
+classification
 
-cryptographic signatures
+signatures
 
 timestamp
 
 Stored in:
 
 fhq_meta.reconciliation_snapshots
+
 fhq_meta.reconciliation_evidence
 
-
-This bundle becomes the foundation for VEGA’s attestation.
+This evidence is mandatory for VEGA signing.
 
 9. VEGA Integration
 
-After every reconciliation:
+VEGA must:
 
-VEGA verifies field comparisons
+verify discrepancy score
 
-VEGA validates discrepancy score
+confirm all tolerances
 
-VEGA attaches governance signature
+apply governance signature
 
-VEGA makes classification decision
+classify score
 
-If discrepancy_score > 0.10, VEGA:
+generate suspension requests if >0.10
 
-creates suspension request
+notify LARS
 
-stores evidence
-
-notifies LARS
-
-returns status: "SUSPENSION_PENDING_APPROVAL"
+register outcome in governance log
 
 All per ADR-009.
 
-10. Orchestrator Worker Requirements
+10. Worker Requirements
 
-The worker must:
+Worker must:
 
-run reconciliation after each agent task
+execute reconciliation after each agent task
 
-reject unsigned or unverifiable agent output
+reject unsigned output
 
-record evidence bundles
+generate evidence bundle
 
-load weights from DB, not code
+load weights from DB (never from code)
 
-propagate VEGA decision to governance layer
+honor suspension state (no execution when suspended)
 
-respect suspension status (no execution for suspended agents)
-
-This ensures end-to-end determinism and auditability.
+propagate VEGA decisions to governance layer
 
 11. Acceptance Criteria
 
-Tier-2 Reconciliation is complete when:
+Tier-2 reconciliation is considered complete when:
 
- Discrepancy formula implemented uniformly across agents
+discrepancy formula implemented identically for all agents
 
- Field weights stored & versioned in DB
+field weights versioned in DB
 
- Tolerance rules enforced
+all tolerance rules active
 
- Evidence bundles generated every cycle
+evidence bundle generated every cycle
 
- VEGA attestation integrated
+VEGA signature applied
 
- Suspensions flow through ADR-009 workflow
+ADR-009 workflow triggered deterministically
 
- Worker integrates discrepancy & governance logic
+worker enforces discrepancy logic and suspension boundaries
 
- Full audit trail is append-only and hash-chained
+audit trail is immutable and hash-chained
 
 12. Consequences
 Positive
 
-Deterministic evaluation of agent truthfulness
+deterministic truth-validation
 
-Strong anti-hallucination enforcement
+system-wide anti-hallucination
 
-Institution-grade lineage
+institutional‐grade auditability
 
-Clear escalation pathways
+complete forensic reconstruction
 
-Forensic-grade reconstruction ability
+predictable governance escalation
 
 Negative
 
-Higher CPU & I/O load from evidence generation
+CPU/I/O cost increase
 
-Increased storage for reconciliation snapshots
+storage overhead from snapshots
 
 Risks
 
-Misconfigured weights could raise false alarms
+misconfigured weights
 
-Canonical data lag could affect timestamp tolerance
+lagging canonical data
 
-VEGA misconfiguration requires human review
+VEGA misalignment requiring human review
 
 13. Change History
 Version	Date	Author	Change
 1.0	2025-11-22	LARS	Initial governance specification
-
-ADR-010 is now finalized, audit-ready, and implementation-ready.

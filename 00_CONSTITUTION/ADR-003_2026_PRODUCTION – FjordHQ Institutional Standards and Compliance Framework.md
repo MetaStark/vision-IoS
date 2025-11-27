@@ -1,384 +1,294 @@
-ADR-003_2026_PRODUCTION
-FjordHQ Institutional Standards & Compliance Framework
+# **ADR-003 – FjordHQ Institutional Standards & Compliance Framework**
 
-Canonical Version: 2026.PROD.2
-Status: Active
-Phase: CANONICAL
-Owner: LARS (CSO)
-Constitutional Authority: ADR-001_2026_PRODUCTION
-Effective Date: 2026-01-01
+**FjordHQ Market System**
+**Version:** 1.0
+**Date:** 26 November 2025
+**Owner:** CEO
+**Approval:** CEO → VEGA (Verify, Encrypt, Governance, Authority)
+**Supersedes:** All prior standards and compliance frameworks
+**Constitutional Authority:** ADR-001 – System Charter 2026
+**Governing Agent:** VEGA
 
-1. Purpose
+---
 
-This Architecture Decision Record establishes FjordHQ’s Institutional Standards & Compliance Framework. It binds:
+# **EXECUTIVE SUMMARY**
 
-internal constitutional requirements (ADR-001 → ADR-002)
+### **1. What is addressed**
 
-institutional governance (LARS, STIG, GOV/VEGA)
+This charter establishes FjordHQ’s institutional standards for:
 
-external regulatory-grade standards (ISO/IEC 42001, DORA, GIPS 2020, SMCR analogues)
+* Data governance and lineage integrity
+* Compliance and regulatory alignment (GIPS, ISO‑8000, BCBS‑239, DORA)
+* Operational execution and documentation
+* Model, research, and strategy standards
+* Metadata, structure, and evidence requirements
+* End‑to‑end auditability
 
-…into a single, enforceable architecture.
+ADR‑003 operationalizes ADR‑001’s constitutional authority and ADR‑002’s reconciliation model. It is the baseline standard for all future operational and analytical layers.
 
-ADR-003 defines the institutional operating system for FjordHQ:
-how decisions are governed, how models are controlled, how failures escalate, how regulatory-grade integrity is preserved, and how accountability is assigned.
+### **2. Institutional governance principles**
 
-This is a mandatory requirement for the activation of GOV (VEGA).
+* One unified standard for all agents and all layers
+* No ambiguity in definitions, rules, or metadata
+* Full traceability through deterministic structures
+* Zero tolerance for undocumented drift
+* Institutional‑grade rigor in every process
+* Autonomous audits and compliance enforcement via VEGA
 
-2. Scope
+### **3. Who follows up, and how**
 
-ADR-003 governs all institutional processes that sit above technical execution (STIG) and below constitutional audit (ADR-002).
+**VEGA – Verification & Governance Authority**
 
-2.1 Domains Covered
+* Enforces institutional standards
+* Performs compliance validation
+* Executes autonomous audits and escalations
+* Holds veto power over all non‑compliant changes
 
-Governance roles & senior manager functions (SMF model)
+**LARS – Logic, Analytics & Research Strategy**
 
-AI governance and AI-specific risk controls
+* Designs analytical frameworks
+* Ensures standards support strategic integrity
+* Aligns research logic with institutional requirements
 
-Change approvals
+**STIG – System for Technical Implementation & Governance**
 
-Escalation thresholds
+* Implements schemas, metadata rules, lineage, and architecture
+* Enforces technical constraints defined in this charter
 
-External regulatory alignment
+**LINE – Local Infrastructure, Network & Execution**
 
-Bias, drift, adversarial risk
+* Ensures standards are correctly deployed across pipelines and runtime
+* Executes operational implementation of compliance rules
 
-Transparency & Explainability (XAI)
+**FINN – Financial Investments Neural Network**
 
-Oversight of ALL:
+* Aligns research, RAG, indicators, and models with institutional standards
+* Validates research integrity against compliance rules
 
-signals
+**CODE – Engineering Execution Unit**
 
-models
+* Implements the technical execution of changes approved under ADR‑003
 
-datasets
+---
 
-strategy logic
+# **1. Purpose**
 
-execution logic
+ADR‑003 defines mandatory standards for:
 
-performance reporting
+* data structures and integrity
+* lineage and traceability
+* model and research validation
+* operational execution rules
+* audit, evidence, and documentation
+* agent‑level compliance boundaries
 
-2.2 Systems Governed
+It ensures FjordHQ operates at institutional quality, eliminates ambiguity, and prevents drift across all domains.
 
-fhq_meta.* (registry, audit log, version history)
+---
 
-fhq_research.* (models, signals, attribution)
+# **2. Scope**
 
-fhq_execution.* (orders, P&L, slippage, reconciliation)
+ADR‑003 governs standards across:
 
-fhq_monitoring.* (incident logs, adversarial anomalies)
+* all schemas under FjordHQ
+* ADR-001 to ADR-015 (Foundation)
+* all Application Layers (IoS‑001 → IoS‑XXX)
+* all governance tables
+* research, model, and strategy artifacts
+* operational pipelines, ingestion systems, monitoring
+* agent behavior and execution
 
-3. Constitutional Alignment (ADR-001 → ADR-002 → ADR-003)
+It applies to every AI‑agent and subordinate agent.
 
-ADR-003 derives its authority from ADR-001 and is enforced by ADR-002.
+---
 
-It adds institutional rules that guarantee:
+# **3. Institutional Standards**
 
-3.1 No governance vacuum
+### **3.1 Data Standards**
 
-Every canonical artifact must have:
+All data must:
 
-Named Owner (SMF)
+* follow defined ownership (ADR‑001, Domain Ownership)
+* include mandatory metadata
+* follow strict type, constraint, and validation rules
+* include deterministic lineage entries for each material change
 
-Approver (CEO)
+### **3.2 Research & Model Standards**
 
-Certifier (GOV/VEGA after activation)
+All research and models must:
 
-3.2 No orphaned decisions
+* use traceable datasets
+* document feature definitions, assumptions, constraints
+* pass structural validation by STIG and compliance validation by VEGA
+* include versioning and full audit history
 
-If an SMF becomes inactive → responsibility automatically transfers to CEO until reassignment.
+### **3.3 Operational Standards**
 
-3.3 No unbounded changes
+Pipelines must:
 
-ADR-004 (Change Gates) is subordinate to ADR-003.
-ADR-003 defines who may pass the gates;
-ADR-004 defines how gates operate.
+* be restart‑safe and deterministic
+* log all material events
+* validate inputs and outputs
+* maintain full reproducibility via LINE
 
-4. Roles & Institutional Responsibilities
-4.1 CEO
+### **3.4 Documentation Standards**
 
-final constitutional authority
+Each artifact must include:
 
-assigns SMF roles
+* purpose
+* owner
+* version
+* dependencies
+* constraints
+* evidence path
+* SHA‑256 hash
 
-triggers constitutional review
+---
 
-approves all canonical ADRs
+# **4. Compliance Requirements**
 
-4.2 LARS (CSO)
+These standards mandate the rules governing the business operations and the Model Development Lifecycle (MDLC):
 
-owns institutional structure & governance logic
+* ISO/IEC 42001 (AIMS) – Critical for AI Governance, Bias/Drift, and Explainable AI (XAI).
+* DORA (Digital Operational Resilience Act) – For resilience and operational stability.
+* GIPS 2020 (Global Investment Performance Standards) – For performance integrity and accurate composite reporting.
+* SMCR (Senior Manager Functions and Certification Regime) – For individual accountability and mapping responsibilities.
 
-cannot certify models
+# Summary:
+* **GIPS** (performance integrity)
+* **ISO‑8000** (data quality & semantics)
+* **BCBS‑239** (risk data aggregation)
+* **DORA** (resilience & incident handling)
 
-cannot override audit
+VEGA ensures adherence and certifies compliance.
 
-defines compliance frameworks and policy interpretation
+---
 
-4.3 STIG (CTO)
+# **5. Audit & Evidence Architecture**
 
-executes approved changes
+ADR‑003 requires:
 
-performs canonicalization
+* immutable audit logs for all changes
+* version history for all standards, models, indicators, and datasets
+* SHA‑256 hash verification for all files and registry entries
+* evidence bundles stored with reproducibility metadata
 
-performs checks (hash, lineage, integrity)
+All logs recorded in:
 
-maintains registries
+* fhq_meta.adr_audit_log
+* fhq_meta.adr_version_history
+* fhq_monitoring.system_event_log
 
-cannot approve or certify anything
+---
 
-4.4 GOV (VEGA) – Audit & Governance AI
+# **6. Enforcement by Agents**
 
-Activated after ADR-001 → ADR-005 canonical.
+### **6.1 VEGA**
 
-VEGA responsibilities:
+* Enforces all standards
+* Performs daily, weekly, monthly compliance checks
+* Triggers escalation for structural drift
 
-daily integrity control
+### **6.2 STIG**
 
-weekly reconciliation
+* Enforces schema, metadata, lineage, and structural rules
+* Blocks non‑compliant structures
 
-adversarial detection escalation
+### **6.3 LINE**
 
-bias/drift monitoring
+* Enforces operational compliance in execution and pipelines
 
-certification of models & ADRs
+### **6.4 FINN**
 
-generation of audit evidence
+* Enforces research integrity against standards
 
-VEGA is the enforcement engine for ADR-003.
+### **6.5 LARS**
 
-4.5 Senior Manager Functions (SMFs)
+* Ensures strategic alignment of standards
 
-Mapping inspired by SMCR/MAIFA:
+### **6.6 CODE**
 
-SMF	Role	Responsibility
-SMF-1	Data Integrity Officer	lineage, quality, provenance
-SMF-2	AI Governance Officer	bias, drift, XAI, MDLC
-SMF-3	Model Risk Officer	adversarial robustness, testing
-SMF-4	Operational Resilience Officer	DORA, TLPT, availability
-SMF-5	Performance Integrity Officer	GIPS, attribution, composites
-SMF-0	CEO	final accountability
+* Executes changes approved under this framework
 
-All SMFs must sign their area’s canonical certification after VEGA activation.
+---
 
-5. Mandatory Standards
+# **7. Enforcement Rhythm**
 
-ADR-003 mandates adoption of four regulatory-grade standards.
+### **Daily**
 
-5.1 ISO/IEC 42001 – Artificial Intelligence Management System (AIMS)
+* metadata validation
+* hash verification
+* integrity checks
 
-This is mandatory.
+### **Weekly**
 
-What must be implemented:
+* cross‑schema consistency verification
+* ownership and domain boundary review
 
-documented MDLC
+### **Monthly**
 
-formalised fairness metrics
+* snapshot of structural standards
+* evidence bundle generation
 
-required XAI coverage levels
+### **Annual**
 
-pre-deployment bias & security testing
+* full institutional review led by VEGA
+* integration of TLPT results
 
-continuous monitoring for drift
+---
 
-adversarial robustness requirements
+# **8. Escalation Framework**
 
-traceable model versioning
+### **Class A – Critical Structural Failures**
 
-Required governance outputs:
+* schema drift, missing standard, invalid metadata, adversarial manipulation
+  → Immediate VEGA escalation and remediation
 
-Model Fact Sheet (canonical)
+### **Class B – Governance & Compliance Failures**
 
-Explainability Report
+* missing owner, missing approval, invalid status
+  → Threshold‑based escalation
 
-Bias & Drift Log
+### **Class C – Documentation Gaps**
 
-Adversarial Risk Assessment
+* incomplete metadata or missing rationale
+  → Logged, escalated if persistent
 
-5.2 DORA – Digital Operational Resilience Act
+---
 
-ADR-003 mandates:
+# **9. Registration Requirements**
 
-full DORA compliance
+STIG must register ADR‑003 in:
 
-ICT risk management
+* fhq_meta.adr_registry
+* fhq_meta.adr_version_history
+* fhq_meta.adr_audit_log
+* fhq_governance.executive_roles
+* fhq_governance.authority_matrix
+* fhq_governance.agent_contracts
+* fhq_governance.task_registry
 
-vendor risk contracts
+---
 
-operational resilience architecture
+# **10. Effective Date**
 
-TLPT every 3 years
+ADR‑003 becomes effective 26‑11‑2025 upon:
 
-mandatory incident reporting
+* VEGA certification
+* CEO approval
 
-Mapping rule:
-Any Class A event from ADR-002 that impacts integrity, availability, or confidentiality must trigger a DORA Major Incident Assessment within 30 minutes.
+---
 
-5.3 GIPS 2020 – Performance Standards
+# **11. Deprecation**
 
-Mandatory rules:
+This ADR deprecates:
 
-NO synthetic composites
+* all prior standard and compliance documents
+* all inconsistent rule sets
+* any definitions contradicting this framework
 
-NO combining composites
+---
 
-NO reporting of simulated performance as real
+# **END OF ADR‑003 – FjordHQ Institutional Standards & Compliance Framework**
 
-All composite outputs must map to canonical trade logs
 
-TWR, dispersion metrics, asset totals must be archived canonically
-
-5.4 SMCR / MAIFA Accountability Principles
-
-every critical function has a named SMF
-
-responsibilities map stored canonically
-
-no “collective responsibility” allowed
-
-6. Automation Requirements
-
-ADR-003 makes audit/compliance automation mandatory, not optional.
-
-6.1 Required automations
-
-daily integrity checks
-
-weekly reconciliation
-
-bias/drift monitors
-
-adversarial detectors
-
-change-control gate logs
-
-lineage verification
-
-DORA-incident triage
-
-6.2 Automation Evidence
-
-Evidence of automation must be included in:
-
-monthly canonical snapshot
-
-annual constitutional review
-
-7. Escalation Framework
-
-ADR-003 formalizes the following escalation logic:
-
-7.1 Class B → Class A Pre-Failure Escalation
-
-If ≥5 Class B failures occur in 7 days, ADR-003 mandates:
-
-→ automatic trigger of Canonical Reconciliation Protocol (ADR-002 Steps 1–5)
-→ SMF review
-→ CEO notification
-
-7.2 Adversarial Events = Intentional Class A
-
-Any confirmed adversarial model manipulation constitutes a Class A critical event requiring:
-
-immediate CRP
-
-DORA major incident review
-
-adversarial forensic record
-
-7.3 Governance Drift
-
-If an SMF assignment becomes invalid:
-
-system enters Pre-Failure State
-
-CEO takes temporary control
-
-reassignment required within 48 hours
-
-8. Model Development Lifecycle (MDLC)
-
-ADR-003 mandates a canonical, audit-ready MDLC pipeline.
-
-Stages:
-
-Design
-
-Data Qualification
-
-Bias & Security Testing
-
-Adversarial Robustness Validation
-
-Explainability Certification
-
-Shadow Deployment (Paper Trading)
-
-Canonical Certification (VEGA)
-
-Production Deployment
-
-Continuous Monitoring
-
-No model may reach canonical status without:
-
-valid XAI report
-
-adversarial robustness certificate
-
-fairness metrics
-
-drift baseline
-
-lineage logs
-
-9. Registry & Evidence Requirements
-
-VEGA enforces the following evidence structure:
-
-SHA-256 hashes on all artifacts
-
-versioned lineage
-
-SMF sign-off
-
-CEO approval
-
-automated monitoring logs
-
-DORA-incident triage logs
-
-GIPS-compliant performance archives
-
-10. External Alignment Matrix
-Regulation	Mandatory Action	ADR-002 Interaction
-DORA	Major incident reporting, TLPT, ICT controls	Class A triggers triage
-ISO 42001	AI governance, bias, drift, security	MDLC validation
-GIPS	Strict composite rules	Performance lineage
-SMCR	Individual responsibility	SMF mapping
-11. Dependencies
-
-ADR-003 depends on:
-
-ADR-001 (Constitution)
-
-ADR-002 (Audit Charter)
-
-ADR-004 (Change Gates)
-
-It must be in place before:
-
-ADR-005
-
-VEGA activation
-
-12. Signatures
-
-Approved by: CEO
-Owned by: LARS (CSO)
-To be certified after activation: GOV (VEGA)
-
-Canonical Authority: ADR-001_2026_PRODUCTION
-
-END OF ADR-003_2026_PRODUCTION (2026.PROD.2)

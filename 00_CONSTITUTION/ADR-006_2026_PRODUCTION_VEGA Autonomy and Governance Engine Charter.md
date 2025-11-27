@@ -1,23 +1,23 @@
 ADR-006_2026_PRODUCTION.md
-VEGA Autonomy & Governance Engine Charter (Tier-1 Constitutional System)
+VEGA Autonomy & Governance Engine Charter 
 
-Canonical Version: 2026.PROD.1
+Canonical Version: 2026.PRODUCTION
 Status: Active
 Phase: CANONICAL
 Owner: LARS (CSO)
 Approved By: CEO
 Constitutional Authority: ADR-001_2026_PRODUCTION
-Effective Date: 2026-01-01
-Classification: Tier-1 Constitutional
+Effective Date: 2025-11-11
+Classification: Constitutional
 Supersedes: None
 
 1. Purpose
 
-ADR-006 defines the architecture, governance mandate, operational boundaries, certification authority, and enforcement responsibilities of VEGA – FjordHQ’s autonomous constitutional governance engine.
+ADR-006 defines the architecture, governance mandate, operational boundaries, certification authority, and enforcement responsibilities of VEGA – FjordHQ’s autonomous constitutional governance AI-engine.
 
 VEGA is now a fully delivered Tier-1 system, with:
 
-4 upstream constitutional ADRs (002–005)
+5 upstream constitutional ADRs (001–005)
 
 34 files changed across system
 
@@ -247,7 +247,7 @@ VEGA is the only entity allowed to:
 - Issue governance alerts
 - Enforce zero-override policy
 
-No human agent, including STIG or LARS, may override VEGA decisions.
+No agent, including STIG or LARS, may override VEGA decisions.
 
 Only CEO may issue constitutional exceptions.
 

@@ -1,7 +1,7 @@
 # FOUNDATION COMPATIBILITY MATRIX
 ## Vision-IoS <-> ADR-001–013 Compliance
 
-**Generated:** 2025-11-23 01:32:31 UTC
+**Generated:** 2025-11-24 08:03:25 UTC
 **Foundation Repo:** github.com/MetaStark/fhq-market-system
 **Foundation Branch:** claude/setup-db-mirroring-01LUuKugCnjjoWAPxAYwxt8s
 **Foundation Commit:** c5fb701 - CANONICAL BASE SYNC
@@ -208,5 +208,5 @@ If Vision-IoS violates ADR-001–013:
 ---
 
 **Status:** ACTIVE
-**Last Updated:** 2025-11-23
+**Last Updated:** 2025-11-24
 **Maintained By:** LARS (orchestrator)

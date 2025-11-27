@@ -4,7 +4,7 @@
 **Date:** 2025-11-24
 **Authority:** LARS G4 — Strategic Directive Authority
 **Reference:** HC-LARS-DIRECTIVE-10-G4-EXEC, HC-LARS-DIRECTIVE-10B-DB-HARDENING
-**Status:** ✅ READY FOR CEO SIGNATURE
+**Status:** ✅ CEO SIGNED — PRODUCTION AUTHORIZED
 
 ---
 
@@ -30,7 +30,7 @@
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║              G4 CANONICALIZATION COMPLETE — AWAITING CEO SIGNATURE           ║
+║              G4 CANONICALIZATION COMPLETE — CEO SIGNED           ║
 ║                                                                              ║
 ║                         CDS WEIGHTS v1.0 LOCKED                              ║
 ║                                                                              ║

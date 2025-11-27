@@ -193,4 +193,4 @@ fhq_meta.agent_keys
 
 fhq_meta.key_archival_log
 
-ADR-008 is hereby approved as the canonical cryptographic standard for Tier-2.
+ADR-008 is hereby approved as the cryptographic standard for Tier-2.

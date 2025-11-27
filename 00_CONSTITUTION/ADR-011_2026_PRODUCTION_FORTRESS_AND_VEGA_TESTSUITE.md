@@ -1,167 +1,186 @@
-ADR-011_2026_PRODUCTION_FORTRESS_AND_VEGA_TESTSUITE
+ADR-011 – Production Fortress & VEGA Testsuite Architecture
 
-Status: Draft
+ID: ADR-011
+Version: 2026.PRODUCTION
+Status: APPROVED
 Date: 2025-11-22
 Owner: LARS – Chief Strategy & Alpha Officer
 Governance Tier: Tier-0 (Production Integrity)
+Authority Chain: ADR-001 → ADR-002 → ADR-006 → ADR-007 → ADR-008 → ADR-009 → ADR-010 → ADR-011 → EC-001
 Affects: VEGA, LARS, STIG, LINE, FINN, Worker, Reconciler, Orchestrator, fhq_meta, fhq_governance
+Supersedes: None
+Review Cycle: 12 months
 
 1. Executive Summary
 
-ADR-011 establishes the FjordHQ Production Fortress, the cryptographically-verified integrity framework enabling the system to prove its own correctness across:
+ADR-011 establishes the FjordHQ Production Fortress – the institutional-grade integrity framework that cryptographically proves the correctness of the FjordHQ Intelligence Operating System.
 
-Cryptographic subsystem
+The Production Fortress verifies:
 
-Governance subsystem (ADR-009, ADR-010)
+cryptographic subsystem integrity
 
-Orchestrator pipeline
+governance invariants (ADR-009, ADR-010)
 
-Agent authority boundaries
+orchestrator determinism
 
-Deterministic cross-platform execution
+agent-level authority boundaries
+
+cross-platform deterministic behavior
 
 VEGA-signed production attestations
 
-The Fortress guarantees that FjordHQ can always answer:
+The central purpose is to ensure FjordHQ can always answer:
 
 “Is the core safe?”
 
-with cryptographic proof, zero human inspection, and deterministic reproducibility.
+with:
 
-All test layers (Unit → Services → Worker/API → Integration → Tier-3 → Tier-3.5) are now fully implemented, verified on Linux and Windows, and formally certified by VEGA.
+cryptographic evidence
+
+reproducible test results
+
+deterministic behavior across platforms
+
+zero human interpretation
+
+All test layers – Unit → Services → Worker/API → Integration → Tier-3 → Tier-3.5 – are implemented, reproducible, and VEGA-certified.
 
 2. Problem Statement
 
-While ADR-001 to ADR-010 define the constitutional, cryptographic, and governance foundations of FjordHQ, they do not specify:
+ADR-001 through ADR-010 define constitutional, cryptographic, and governance foundations.
+However, they do not define:
 
-How correctness is proven
+how FjordHQ proves correctness
 
-How governance invariants are enforced
+how governance invariants are verified
 
-How deterministic behavior is validated across environments
+how deterministic behavior is enforced across OS environments
 
-How LLM autonomy is contained and audited
+how to contain autonomous LLM behavior
 
-How failures are caught before entering production
+how failures are detected before production
 
-How integrity is attested at the meta-governance level (VEGA)
+how VEGA attests system integrity at the meta-governance level
 
-ADR-011 solves this by introducing an institutional-grade, multi-layer test architecture.
+Without ADR-011, correctness would be implicit rather than proven.
+ADR-011 introduces the full Production Fortress necessary for Tier-0 integrity.
 
 3. Decision
 
 FjordHQ adopts a three-layer Production Fortress:
 
-1. Unit Test Layer
+Layer 1 – Unit Test Layer
 
-Covers all invariants from ADR-007, ADR-008, ADR-009, ADR-010.
+Covers invariants across ADR-007 (orchestrator), ADR-008 (key management), ADR-009 (suspension governance), ADR-010 (reconciliation).
+Ensures correctness of core crypto, signing, hash-chains, reconciliation, identity binding, and governance logic.
 
-2. Integration Test Layer
+Layer 2 – Integration Test Layer
 
-Covers the full governance loop for all 5 agents:
-LARS, STIG, LINE, FINN, VEGA.
+Validates full governance and execution pipeline across all agents:
 
-Includes catastrophic discrepancy scenarios, cross-module stress tests, deterministic failure testing, and end-to-end pipeline execution.
+LARS (strategy)
 
-3. VEGA Attestation Layer
+STIG (implementation)
 
-After a complete run, VEGA:
+LINE (SRE)
 
-Signs the run via Ed25519
+FINN (research)
 
-Stores attestation immutably
+VEGA (auditor)
 
-Logs coverage, hashes, failures, and metadata
+Includes catastrophic mismatch scenarios, cross-module consistency tests, deterministic failure injection, and full pipeline end-to-end validation.
 
-Enforces Quality Gates
+Layer 3 – VEGA Attestation Layer
 
-This is the core of FjordHQ’s proof-based integrity model.
+After all layers complete:
+
+VEGA performs cryptographic signing (Ed25519)
+
+Attestation stored immutably
+
+Quality gates enforced
+
+Full coverage, failures, metadata logged
+
+This layer is the foundation of FjordHQ’s proof-based integrity model.
 
 4. Architecture
 4.1 Test Layers Implemented
-Unit Layer
+Unit Layer — 63 tests
 
-63 tests
-100% invariant coverage across:
+100% coverage of critical invariants:
 
 keystore
 
-signing
+key signing
 
-hash_chain
-
-reconciliation
-
-agent-binding
-
-lars_approval
-
-Services Layer
-
-50 tests
-Validates:
+hash-chain integrity
 
 reconciliation engine
 
-tolerance engine
+agent identity binding
 
-VEGA attestation service
+LARS approval mechanics
 
-LARS approval logic
+Services Layer — 50 tests
 
-agent-LLM binding
-
-Worker & API Layer
-
-21 tests
 Validates:
 
-worker orchestration
+tolerance engine
 
-preflight rules
+VEGA attestation API
 
-LLM invocation routing
+LARS governance logic
+
+agent-to-LLM binding
+
+reconciliation correctness
+
+Worker & API Layer — 21 tests
+
+Validates:
+
+preflight governance checks
+
+task orchestration
+
+LLM routing
 
 VEGA decision mapping
 
-suspension creation
+suspension workflow creation
 
-endpoint behavior
+Integration Layer — 35 tests
 
-Integration Layer
-
-35 tests
 Validates:
 
-full governance loop (all agents)
+full agent governance loop
 
-catastrophic-to-suspension workflows
+catastrophic → suspension workflows
 
-cross-module failure injection
+deterministic failure injection
+
+cross-module consistency
 
 pipeline determinism
 
-Tier-3 Intelligence Layer
+Tier-3 Intelligence Layer — 18 tests
 
-18 tests
-Validates:
+Covers:
 
-LLM client integration
+LLM provider isolation (Claude/OpenAI/DeepSeek)
 
-network guard
+network guards
 
-encrypted key management
+encrypted key access
 
-worker LIVE/STUB modes
+LIVE vs STUB worker modes
 
-multi-provider support (Claude, OpenAI, DeepSeek)
+Tier-3.5 Economic Safety Layer — 16 tests
 
-Tier-3.5 Economic Safety Layer
+Implements ADR-012:
 
-16 tests
-Validates all constraints of ADR-012:
-
-rate limiting
+rate limits
 
 cost ceilings
 
@@ -169,21 +188,30 @@ execution budgets
 
 mode guard fallback
 
-governance events on violations
+governance events for violations
 
 4.2 VEGA Attestation Layer
 
+Data stored in:
+
 vega.test_runs
+
 vega.test_coverage
+
 vega.quality_gate_results
+
 vega.test_failures
+
 vega.agent_test_execution
+
 vega.api_endpoint_tests
+
+Only after VEGA signs the coverage can the system be considered production-safe.
 
 5. Scope of Coverage
 5.1 Agents
 
-All 5 agents included:
+All five agents:
 
 LARS
 
@@ -197,7 +225,7 @@ VEGA
 
 5.2 Endpoints
 
-All external and internal governance endpoints tested.
+All governance and orchestrator endpoints, internal and external.
 
 5.3 Modules
 
@@ -206,60 +234,61 @@ crypto, signing, hash-chain, reconciliation, attestation, approval, worker, LLM-
 6. Quality Gates (QG-F Series)
 Gate	Description	Requirement
 QG-F1	Invariant Coverage	Crypto 100%, overall ≥ 80%
-QG-F2	Agent + API Integration	Full governance loop for all 5 agents and endpoints
-QG-F3	VEGA Attestation	Ed25519-signed attestation
+QG-F2	Agent + API Integration	Full loop for all 5 agents
+QG-F3	VEGA Attestation	Ed25519 signature required
 QG-F4	Deterministic Failures	All failures reproducible
-QG-F5	Cross-Platform	Must pass on Linux + Windows
-QG-F6	Economic Safety (ADR-012)	No active violations in last 24h
+QG-F5	Cross-Platform	Must pass Linux + Windows
+QG-F6	Economic Safety	No ADR-012 violations in 24h
 
 All gates passed.
 
 7. Implementation Summary (Completed)
 Phase	Description	Status
-Phase 1	Crypto Layer	COMPLETE
-Phase 2	Services Layer	COMPLETE
-Phase 3	Worker & API	COMPLETE
-Phase 4	Integration	COMPLETE
+1	Crypto Layer	COMPLETE
+2	Services Layer	COMPLETE
+3	Worker & API	COMPLETE
+4	Integration	COMPLETE
 Tier-3	Intelligence Layer	COMPLETE
 Tier-3.5	Economic Safety	COMPLETE
-Cross-Platform	Windows + Linux	COMPLETE
-Attestation	VEGA-signed	COMPLETE
+X-Platform	Linux + Windows	COMPLETE
+VEGA Attestation	Signed	COMPLETE
 
-Final count: 224 tests, 1 skipped, 0 failures.
+224 tests, 1 skipped, 0 failures.
 
 8. Consequences
 Positive
 
 Fully autonomous integrity verification
 
-Zero human overhead
+Zero human inspection required
 
 Immutable audit trail
 
-Institutional-grade compliance
+Tier-0 institutional compliance baseline
 
-Platform determinism
+Deterministic system state across environments
 
 Negative
 
-High initial development cost
+High test development cost
 
-Strict gates require discipline
+Strict quality gates require engineering discipline
 
 Risks Mitigated
 
-Silent failures
+silent failures
 
-Governance bypass
+governance bypass
 
-Cryptographic drift
+LLM autonomy errors
 
-Platform inconsistencies
+cryptographic mismatch
 
-Unbounded LLM autonomy
+reconciliation drift
 
-Economic runaway behavior
+economic runaway conditions
 
 9. Status
 
 PRODUCTION – Ready for G3 Audit and G4 Canonicalization
+ADR-011 becomes part of the canonical integrity chain for FjordHQ.

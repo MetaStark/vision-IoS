@@ -1,0 +1,505 @@
+{
+  "metadata": {
+    "report_type": "PHASE_4_SYSTEM_STATE_VERIFICATION",
+    "database": "postgres @ 127.0.0.1:54322",
+    "timestamp": "2025-11-25T00:00:00Z",
+    "generated_by": "STIG",
+    "verification_scope": "FULL_DATABASE_INVENTORY_WITH_EXPECTED_ARCHITECTURE_COMPARISON"
+  },
+  "schemas": {
+    "_realtime": {
+      "table_count": 3,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "auth": {
+      "table_count": 19,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "fhq_data": {
+      "table_count": 9,
+      "total_rows": 720,
+      "status": "PARTIAL",
+      "active_tables": ["price_series"]
+    },
+    "fhq_governance": {
+      "table_count": 8,
+      "total_rows": 153,
+      "status": "ACTIVE",
+      "active_tables": ["executive_roles", "governance_actions_log", "canonical_evidence", "governance_state", "model_provider_policy", "production_monitoring", "task_registry"]
+    },
+    "fhq_meta": {
+      "table_count": 51,
+      "total_rows": 14,
+      "status": "PARTIAL",
+      "active_tables": ["adr_audit_log", "function_registry", "vega_attestations"]
+    },
+    "fhq_monitoring": {
+      "table_count": 21,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "fhq_phase3": {
+      "table_count": 1,
+      "total_rows": 1,
+      "status": "ACTIVE",
+      "active_tables": ["cds_weight_locks"]
+    },
+    "fhq_research": {
+      "table_count": 20,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "net": {
+      "table_count": 2,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "realtime": {
+      "table_count": 9,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "storage": {
+      "table_count": 9,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "supabase_functions": {
+      "table_count": 2,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "vault": {
+      "table_count": 1,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "vega": {
+      "table_count": 6,
+      "total_rows": 52,
+      "status": "PARTIAL",
+      "active_tables": ["llm_rate_limits", "llm_cost_limits", "llm_execution_limits", "llm_economic_safety_config"]
+    },
+    "vision_autonomy": {
+      "table_count": 2,
+      "total_rows": 0,
+      "status": "EMPTY"
+    },
+    "vision_core": {
+      "table_count": 7,
+      "total_rows": 3,
+      "status": "PARTIAL",
+      "active_tables": ["execution_state", "economic_safety_gate", "live_mode_proposals"]
+    },
+    "vision_signals": {
+      "table_count": 2,
+      "total_rows": 11,
+      "status": "PARTIAL",
+      "active_tables": ["signal_baseline"]
+    },
+    "vision_verification": {
+      "table_count": 2,
+      "total_rows": 75,
+      "status": "PARTIAL",
+      "active_tables": ["operation_signatures"]
+    }
+  },
+  "tables": {
+    "total_count": 178,
+    "with_data": 17,
+    "empty": 161,
+    "missing_primary_key": ["fhq_data.price_series"],
+    "foreign_key_count": 24,
+    "index_count": 134
+  },
+  "expected_vs_actual": {
+    "adr_registry": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "0 rows - 15 ADR documents exist in filesystem but not ingested",
+      "filesystem_documents": [
+        "ADR-001_2026_PRODUCTION.md",
+        "ADR-002_2026_PRODUCTION.md",
+        "ADR-003_2026_PRODUCTION.md",
+        "ADR-004_2026_PRODUCTION.md",
+        "ADR-005_2026_PRODUCTION.md",
+        "ADR-006_2026_PRODUCTION.md",
+        "ADR-007_2026_PRODUCTION_ORCHESTRATOR.md",
+        "ADR-008_2026_PRODUCTION_Cryptographic Key Management and Rotation Architecture.md",
+        "ADR-009_2026_PRODUCTION_Governance Approval Workflow for Agent Suspension.md",
+        "ADR-010_2026_PRODUCTION_State Reconciliation Methodology and Discrepancy Scoring.md",
+        "ADR-011_2026_PRODUCTION_FORTRESS_AND_VEGA_TESTSUITE.md",
+        "ADR-012_2026_PRODUCTION_Economic Safety Architecture.md",
+        "ADR-013_2026_PRODUCTION_FHQ-IoS Kernel Specification and VEGA Attestation Architecture.md",
+        "ADR-014_Canonical ADR Governance and One-True-Source Architecture.md",
+        "ADR-015 Meta-Governance Framework for ADR Ingestion and Canonical Lifecycle Integrity.md"
+      ],
+      "critical": true
+    },
+    "agent_keys": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "0 Ed25519 keys - Per ADR-008, all agents must have cryptographic keys",
+      "critical": true
+    },
+    "data_source_registry": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "0 data sources - Despite 720 price_series rows with vendor_id='INGEST'",
+      "critical": false
+    },
+    "monitoring_layer": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "All 21 fhq_monitoring tables empty - No observability",
+      "critical": true
+    },
+    "reconciliation_layer": {
+      "expected": "FOUND",
+      "actual": "MISSING",
+      "status": "MISSING",
+      "details": "Per ADR-010, baseline_state and baseline_history both 0 rows",
+      "critical": true
+    },
+    "gate_registry": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "0 registered gates - gate_registry, gate_status, gate_dependencies all empty",
+      "critical": false
+    },
+    "validation_layer": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "MISSING",
+      "details": "validation_checks, validation_reports both 0 rows",
+      "critical": false
+    },
+    "vision_ios_core": {
+      "expected": "FOUND",
+      "actual": "FOUND",
+      "status": "FOUND",
+      "details": "vision_core schema exists with 3 active rows (execution_state, economic_safety_gate, live_mode_proposals)",
+      "critical": false
+    },
+    "vision_ios_signals": {
+      "expected": "FOUND",
+      "actual": "PARTIAL",
+      "status": "PARTIAL",
+      "details": "signal_baseline has 11 rows, alpha_signals empty",
+      "critical": false
+    },
+    "vision_ios_autonomy": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "governance_decisions and meta_state_sync both 0 rows",
+      "critical": false
+    },
+    "vision_ios_verification": {
+      "expected": "FOUND",
+      "actual": "PARTIAL",
+      "status": "PARTIAL",
+      "details": "operation_signatures has 75 rows, hash_chains empty",
+      "critical": false
+    },
+    "vega_rate_limits": {
+      "expected": "FOUND",
+      "actual": "FOUND",
+      "status": "FOUND",
+      "details": "Per ADR-012: llm_rate_limits (20), llm_cost_limits (17), llm_execution_limits (14), llm_economic_safety_config (1)",
+      "critical": false
+    },
+    "vega_usage_log": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "llm_usage_log and llm_violation_events both 0 rows - No actual usage tracking",
+      "critical": false
+    },
+    "research_layer": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "All 20 fhq_research tables empty (HMM models, regime predictions, backtests)",
+      "critical": false
+    },
+    "price_data_layer": {
+      "expected": "FOUND",
+      "actual": "FOUND",
+      "status": "FOUND",
+      "details": "price_series has 720 OHLCV rows (BTCUSD, 30 days) but NO PRIMARY KEY",
+      "critical": false
+    },
+    "cds_engine": {
+      "expected": "FOUND",
+      "actual": "FOUND",
+      "status": "FOUND",
+      "details": "fhq_phase3.cds_weight_locks has 1 canonical weight lock",
+      "critical": false
+    },
+    "finn_model_layer": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "No FINN models registered, no regime predictions in fhq_research",
+      "critical": false
+    },
+    "orchestration_layer": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "pipeline_runs 0 rows in fhq_meta",
+      "critical": false
+    },
+    "execution_controller": {
+      "expected": "FOUND",
+      "actual": "EMPTY",
+      "status": "EMPTY",
+      "details": "execution_log 0 rows in fhq_monitoring",
+      "critical": false
+    }
+  },
+  "critical_gaps": [
+    {
+      "gap_id": "CG-001",
+      "category": "CONSTITUTIONAL",
+      "severity": "CRITICAL",
+      "component": "ADR Registry",
+      "description": "0 ADR documents in fhq_meta.adr_registry despite 15 ADR files existing in 00_CONSTITUTION and 02_ADR",
+      "impact": "System lacks constitutional governance foundation",
+      "required_by": ["ADR-014", "ADR-015"]
+    },
+    {
+      "gap_id": "CG-002",
+      "category": "SECURITY",
+      "severity": "CRITICAL",
+      "component": "Agent Keys",
+      "description": "0 Ed25519 keys in fhq_meta.agent_keys - No cryptographic agent identity",
+      "impact": "Cannot verify agent signatures, all signatures are STUB_SIGNATURE",
+      "required_by": ["ADR-008", "ADR-013"]
+    },
+    {
+      "gap_id": "CG-003",
+      "category": "OBSERVABILITY",
+      "severity": "CRITICAL",
+      "component": "Monitoring Layer",
+      "description": "All 21 fhq_monitoring tables empty - Zero operational visibility",
+      "impact": "Cannot track ingestion, execution, data quality, or system events",
+      "required_by": ["ADR-007", "ADR-011"]
+    },
+    {
+      "gap_id": "CG-004",
+      "category": "DATA_INTEGRITY",
+      "severity": "CRITICAL",
+      "component": "Reconciliation Infrastructure",
+      "description": "baseline_state and baseline_history both 0 rows - No reconciliation capability",
+      "impact": "Cannot detect discrepancies between data sources",
+      "required_by": ["ADR-010"]
+    },
+    {
+      "gap_id": "CG-005",
+      "category": "DATA_INTEGRITY",
+      "severity": "HIGH",
+      "component": "Price Series Primary Key",
+      "description": "fhq_data.price_series has 720 rows but NO PRIMARY KEY",
+      "impact": "Risk of duplicate OHLCV records, cannot enforce uniqueness",
+      "required_by": ["ADR-005 (Data Quality)"]
+    },
+    {
+      "gap_id": "CG-006",
+      "category": "TRACEABILITY",
+      "severity": "MEDIUM",
+      "component": "Data Source Registry",
+      "description": "data_source_registry is empty despite active data ingestion (720 price records)",
+      "impact": "Cannot trace data provenance or vendor attribution",
+      "required_by": ["ADR-010"]
+    },
+    {
+      "gap_id": "CG-007",
+      "category": "GOVERNANCE",
+      "severity": "MEDIUM",
+      "component": "Gate Registry",
+      "description": "gate_registry, gate_status, gate_dependencies all empty",
+      "impact": "No gating mechanism for data quality or model validation",
+      "required_by": ["ADR-006 (Quality Gates)"]
+    },
+    {
+      "gap_id": "CG-008",
+      "category": "VALIDATION",
+      "severity": "MEDIUM",
+      "component": "Validation Layer",
+      "description": "validation_checks and validation_reports both 0 rows",
+      "impact": "No validation evidence for data or model outputs",
+      "required_by": ["ADR-011"]
+    }
+  ],
+  "misplaced_artifacts": {
+    "adr_documents_not_in_database": [
+      "00_CONSTITUTION/ADR-001_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-002_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-003_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-004_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-005_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-006_2026_PRODUCTION.md",
+      "00_CONSTITUTION/ADR-007_2026_PRODUCTION_ORCHESTRATOR.md",
+      "00_CONSTITUTION/ADR-008_2026_PRODUCTION_Cryptographic Key Management and Rotation Architecture.md",
+      "00_CONSTITUTION/ADR-009_2026_PRODUCTION_Governance Approval Workflow for Agent Suspension.md",
+      "00_CONSTITUTION/ADR-010_2026_PRODUCTION_State Reconciliation Methodology and Discrepancy Scoring.md",
+      "00_CONSTITUTION/ADR-011_2026_PRODUCTION_FORTRESS_AND_VEGA_TESTSUITE.md",
+      "00_CONSTITUTION/ADR-012_2026_PRODUCTION_Economic Safety Architecture.md",
+      "00_CONSTITUTION/ADR-013_2026_PRODUCTION_FHQ-IoS Kernel Specification and VEGA Attestation Architecture.md",
+      "00_CONSTITUTION/ADR-014_Canonical ADR Governance and One-True-Source Architecture.md",
+      "00_CONSTITUTION/ADR-015 Meta-Governance Framework for ADR Ingestion and Canonical Lifecycle Integrity.md"
+    ],
+    "functions_in_registry_vs_codebase": {
+      "in_database": [
+        "vision_signals.calculate_signal_baseline (FINN)",
+        "vision_core.estimate_noise_floor (STIG)",
+        "vision_autonomy.sync_meta_state (LARS)"
+      ],
+      "in_codebase_python": [
+        "04_AGENTS/PHASE3/cds_engine.py",
+        "04_AGENTS/PHASE3/finn_regime_classifier.py",
+        "04_AGENTS/PHASE3/finn_tier2_engine.py",
+        "04_AGENTS/PHASE3/relevance_engine.py",
+        "04_AGENTS/PHASE3/line_data_ingestion.py",
+        "04_AGENTS/PHASE3/stig_validator.py",
+        "05_ORCHESTRATOR/orchestrator_v1.py",
+        "05_ORCHESTRATOR/first_cycle_execution.py"
+      ],
+      "unregistered_count": 8
+    },
+    "data_without_lineage": {
+      "price_series_720_rows": "No entry in fhq_monitoring.data_lineage or ingestion_log",
+      "operation_signatures_75_rows": "75 signatures exist but no verification chain in hash_chains",
+      "vega_attestations_10_rows": "10 VEGA attestations but no usage logs in llm_usage_log"
+    },
+    "keys_without_constraints": [
+      {
+        "table": "fhq_data.price_series",
+        "issue": "NO PRIMARY KEY",
+        "rows": 720
+      }
+    ]
+  },
+  "repair_actions": [
+    {
+      "action_id": "RA-001",
+      "priority": "IMMEDIATE",
+      "category": "CONSTITUTIONAL",
+      "action": "Ingest ADR-001 through ADR-015 into fhq_meta.adr_registry",
+      "command": "python ingest_adrs.py --source 00_CONSTITUTION --target fhq_meta.adr_registry",
+      "expected_outcome": "15 rows in adr_registry, SHA256 hashes computed, file_path registered",
+      "required_by": ["ADR-014", "ADR-015"],
+      "estimated_effort": "30 minutes"
+    },
+    {
+      "action_id": "RA-002",
+      "priority": "IMMEDIATE",
+      "category": "SECURITY",
+      "action": "Generate Ed25519 keypairs for all 7 executive agents",
+      "command": "python agent_keys.py --generate-all --agents LARS,STIG,LINE,FINN,VEGA,CODE,CEO",
+      "expected_outcome": "7 rows in fhq_meta.agent_keys with public_key_hex, key_state=ACTIVE",
+      "required_by": ["ADR-008"],
+      "estimated_effort": "15 minutes"
+    },
+    {
+      "action_id": "RA-003",
+      "priority": "IMMEDIATE",
+      "category": "DATA_INTEGRITY",
+      "action": "Add PRIMARY KEY to fhq_data.price_series",
+      "command": "ALTER TABLE fhq_data.price_series ADD PRIMARY KEY (listing_id, timestamp, vendor_id, frequency, price_type)",
+      "expected_outcome": "PK constraint enforced, duplicate prevention enabled",
+      "required_by": ["ADR-005"],
+      "estimated_effort": "5 minutes"
+    },
+    {
+      "action_id": "RA-004",
+      "priority": "HIGH",
+      "category": "OBSERVABILITY",
+      "action": "Enable monitoring infrastructure - Populate fhq_monitoring tables",
+      "command": "Configure data_lineage tracking for price_series ingestion, enable execution_log for orchestrator runs",
+      "expected_outcome": "data_lineage, ingestion_log, execution_log populated on next cycle",
+      "required_by": ["ADR-007", "ADR-011"],
+      "estimated_effort": "2 hours"
+    },
+    {
+      "action_id": "RA-005",
+      "priority": "HIGH",
+      "category": "DATA_INTEGRITY",
+      "action": "Initialize reconciliation infrastructure",
+      "command": "Create baseline snapshot in baseline_state, configure tolerance rules per ADR-010",
+      "expected_outcome": "baseline_state has 1 snapshot, baseline_history tracks changes",
+      "required_by": ["ADR-010"],
+      "estimated_effort": "1 hour"
+    },
+    {
+      "action_id": "RA-006",
+      "priority": "MEDIUM",
+      "category": "TRACEABILITY",
+      "action": "Register data sources in data_source_registry",
+      "command": "INSERT INTO fhq_meta.data_source_registry (source_name, vendor_id, source_type) VALUES ('Binance OHLCV', 'INGEST', 'MARKET_DATA')",
+      "expected_outcome": "Data provenance traceable via data_source_registry",
+      "required_by": ["ADR-010"],
+      "estimated_effort": "30 minutes"
+    },
+    {
+      "action_id": "RA-007",
+      "priority": "MEDIUM",
+      "category": "GOVERNANCE",
+      "action": "Register quality gates in gate_registry",
+      "command": "Define gates for data completeness, outlier detection, duplicate prevention per ADR-006",
+      "expected_outcome": "gate_registry populated with G1-G6 gates, gate_status tracks pass/fail",
+      "required_by": ["ADR-006"],
+      "estimated_effort": "1 hour"
+    },
+    {
+      "action_id": "RA-008",
+      "priority": "LOW",
+      "category": "REGISTRATION",
+      "action": "Register Python functions in function_registry",
+      "command": "Register cds_engine, finn_regime_classifier, relevance_engine, orchestrator in fhq_meta.function_registry",
+      "expected_outcome": "8 additional functions registered with canonical_hash",
+      "required_by": ["ADR-007"],
+      "estimated_effort": "45 minutes"
+    }
+  ],
+  "summary": {
+    "total_schemas": 18,
+    "operational_schemas": 5,
+    "empty_schemas": 9,
+    "total_tables": 178,
+    "tables_with_data": 17,
+    "empty_tables": 161,
+    "total_data_rows": 1029,
+    "critical_gaps": 5,
+    "high_priority_gaps": 3,
+    "constitution_status": "NOT_INGESTED",
+    "cryptographic_identity": "MISSING",
+    "monitoring_status": "INACTIVE",
+    "reconciliation_status": "ABSENT",
+    "production_readiness": "STRUCTURE_READY_CONTENT_CRITICAL_GAPS"
+  },
+  "conclusion": {
+    "assessment": "SKELETON INFRASTRUCTURE WITH CRITICAL GOVERNANCE AND SECURITY GAPS",
+    "key_findings": [
+      "Database structure is production-ready (proper schemas, constraints, indexes)",
+      "Constitutional foundation missing: 15 ADR documents exist but not ingested",
+      "Security infrastructure hollow: 0 Ed25519 keys, all signatures are stubs",
+      "Monitoring completely inactive: 21 monitoring tables empty",
+      "Reconciliation absent: No baseline snapshots or discrepancy tracking",
+      "Minimal operational data: 720 OHLCV rows, 131 governance actions, 75 signatures",
+      "VEGA limits configured but no usage tracking (llm_usage_log empty)"
+    ],
+    "immediate_actions_required": 3,
+    "high_priority_actions_required": 2,
+    "estimated_time_to_production_ready": "6-8 hours"
+  }
+}
