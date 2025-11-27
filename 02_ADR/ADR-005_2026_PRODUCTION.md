@@ -1,212 +1,289 @@
-ADR-005 – Mission & Vision Charter (FjordHQ 2025–2026)
+# ADR-005 – Human Interaction & Application Layer Charter
 
-Status: Draft for CEO Approval
-Owner: LARS (CSO)
-Authority Chain:
-ADR-001 → ADR-002 → ADR-003 → ADR-004 → ADR-005 (this ADR) → VEGA Activation
-Classification: Constitutional (Tier-1)
-Governing Agent: VEGA (GOV) – FjordHQ’s Governance Engine
+**Status:** CEO Approved
+**Author:** LARS (CSO – Logic, Analytics & Research Strategy)
+**Authority Chain:** ADR-001 → ADR-002 → ADR-003 → ADR-004 → ADR-006 → ADR-007 → ADR-008 → ADR-009 → ADR-010 → ADR-011 → ADR-012
+**Tier:** Constitutional (Tier-1 – Human Interaction & Application Layer)
+**Scope:** CEO, Vision-IoS Dashboard, Orchestrator, VEGA, all agents (LARS, STIG, LINE, FINN, VEGA), fhq_meta, fhq_data, fhq_finn, fhq_validation
+**Purpose:** Define the only authorized human interface to FjordHQ – the Vision-IoS Dashboard – and its integration with governance, agents, and the Application Layer (IoS-XXX).
 
-1. Executive Summary
+---
 
-ADR-005 establishes the canonical Mission, Vision, Philosophy and Strategic Identity of FjordHQ.
-Where ADR-001 defines the constitutional structure, ADR-005 defines the purpose.
-Where ADR-003 defines institutional standards, ADR-005 defines direction.
-Where ADR-004 defines change control, ADR-005 defines why the system exists at all.
+## 1. Executive Summary
 
-All agents – LARS, STIG, LINE, FINN, CODE – must operate in alignment with ADR-005.
-VEGA (GOV) will enforce this alignment once activated.
+ADR-005 establishes the **Human Interaction & Application Layer** for FjordHQ.
 
-FjordHQ exists to transform deterministic data into verified financial outcomes through governance discipline, explainable logic, and transparent execution.
+It defines:
 
-This ADR is mandatory for VEGA activation.
+* the Vision-IoS Dashboard as the **only** authorized human entry point
+* a **hybrid interaction model** – data panels + agent chat + system control actions
+* CEO as the **sole human operator** of the dashboard
+* VEGA and Orchestrator as mandatory intermediaries for all actions
+* the IoS-XXX Application Layer as the extensible value-creation surface, separate from ADR governance
 
-2. Mission Statement (Canonical)
+This ADR connects the existing constitutional and governance stack (ADR-001–ADR-004, ADR-006–ADR-012) with the Next.js dashboard implementation that already exposes health, gates, CDS risk, data freshness, FINN events and validation views from Postgres.
 
-FjordHQ transforms deterministic data into verified financial outcomes.
+From this point, **all human value extraction** (insight, research, strategy, control actions) must occur via this layer.
 
-Operating as an audit-grade intelligence engine, FjordHQ connects:
+---
 
-Signal → Trade → P&L → Feedback → Calibration
+## 2. Purpose
 
-…inside a governed and fully traceable architecture.
+The purpose of ADR-005 is to:
 
-Every dataset—macro, flows, technical signals, volatility regimes—is processed through a verifiable pipeline where:
+1. Define a **single, governed human interaction surface** for FjordHQ (Vision-IoS Dashboard).
+2. Separate **Application Layer** concerns (IoS-XXX) from **constitutional ADR** logic.
+3. Enable the CEO to **ask, observe and act** – without breaking autonomy, governance, or economic safety.
+4. Provide a standard pattern for integrating new Application Layer modules (IoS-001+).
 
-every transformation is logged
+---
 
-every decision has lineage
+## 3. System Identity – Human Interaction Layer
 
-every model is certified
+### 3.1 Single Human Operator
 
-every execution step is reproducible
+* The **CEO** is the **only** permitted human operator of the Vision-IoS Dashboard.
+* No other user role may issue direct instructions to agents, orchestrate tasks, or trigger system actions through the Dashboard without a future ADR explicitly extending this charter.
 
-every P&L output is explainable
+### 3.2 Dashboard Definition
 
-The mission is clear:
+The Dashboard is defined as:
 
-Convert insight into income through explainable, compliant, and continuously improving logic.
+> The **only authorized surface** where a human can see, question, and influence FjordHQ – under VEGA-enforced governance and Orchestrator control.
 
-3. Vision Statement
+It is not "just UI". It is a governed interface bound to:
 
-FjordHQ will evolve into an autonomous value-creation engine where:
+* Postgres (fhq_data, fhq_finn, fhq_validation, fhq_meta)
+* Orchestrator endpoints (agent tasks, event logging)
+* VEGA governance and economic safety (ADR-006, ADR-011, ADR-012)
 
-data, capital, and governance converge
+---
 
-certified signals route automatically to execution
+## 4. Interaction Model – Hybrid Human Interface
 
-risk-adjusted returns are continuously measured and calibrated
+The Vision-IoS Dashboard uses a **hybrid** interaction model:
 
-VEGA (GOV) enforces consistency, compliance, and constitutional integrity in real time
+1. **Data & Insight Panels**
 
-Within 3 months every certified signal will flow through an auditable execution layer producing measurable, repeatable, risk-adjusted returns.
+   * Overview (market state, freshness, signals, system health)
+   * Trust Banner (gates, ADR compliance, data freshness, CDS / narrative risk)
+   * System Health & Governance (gates, data quality, ADR registry views)
+   * Live Market Data (Binance WebSocket, lineage-exposed, read-only)
 
-The vision is not prediction.
-The vision is verified understanding monetized across global markets.
+2. **Agent Chat Interface (IoS-006 – Research Workspace)**
 
-4. Philosophy
+   * CEO can open a **chat workspace** targeted at specific agents:
 
-Capital freedom arises when complexity becomes understandable.
+     * `LARS` – strategic analysis and scenario framing
+     * `FINN` – research, intelligence synthesis, CDS and narrative coherence
+     * `STIG` – technical feasibility and schema/governance checks
+     * `LINE` – SRE/state-of-pipelines, ingestion health, drift
+     * `VEGA` – governance, risk classification, compliance explanations
+   * Each message becomes a **typed Orchestrator task**, not a free-form LLM call.
 
-Markets are interconnected systems:
-oil → rates → currencies → volatility → liquidity → flows.
+3. **System Control Actions**
+   From selected panels and the chat workspace, the CEO may request:
 
-The world is not random – only mismeasured.
+   * "Ingest Binance now" (market data ingestion job)
+   * "Run reconciliation" (ADR-010 reconciliation workflow)
+   * "Re-run freshness tests" (validation suite on freshness views)
+   * "Generate new FINN embeddings" (research embeddings refresh)
+   * "Adjust cost ceilings (ADR-012)" (proposed config change, not direct write)
+   * "Propose capital calibration scenarios" (LARS/FINN-generated scenarios)
 
-By combining:
+   All such actions are **requests**, not direct writes. They must pass through Orchestrator, VEGA, and relevant ADR gates before any state change.
 
-human judgment
+---
 
-deterministic analytics
+## 5. Governance & Control of Actions
 
-BCBS-239 lineage discipline
+### 5.1 CEO-Only Execution Rights
 
-ISO 8000-110 data quality
+* Only the **CEO** can invoke control actions through the Dashboard.
+* Actions are **identity-bound** to CEO and logged for lineage, in alignment with ADR-002 (audit & reconciliation) and ADR-011 (Production Fortress).
 
-ISO-42001 AI governance
+### 5.2 Mandatory Intermediaries
 
-…FjordHQ replaces speculation with structure.
+Every action triggered from the Dashboard must:
 
-Uncertainty becomes a measurable asset class.
+1. Be packaged as an **Orchestrator task** (agent, action, parameters, idempotency key).
 
-5. FjordHQ System Identity (Canonical)
+2. Pass **VEGA** checks where applicable:
 
-FjordHQ is:
+   * integrity and lineage (ADR-002, ADR-006)
+   * discrepancy scoring (ADR-010)
+   * economic safety (ADR-012)
 
-1. A governed intelligence engine
+3. Respect **ADR-004 Change Gates** if the action leads to persistent changes in:
 
-Built on constitutional integrity and VEGA-enforced governance.
+   * ADR registry
+   * cost ceilings and rate limits
+   * capital configuration or strategy weights
+   * production configuration in fhq_meta or fhq_governance
 
-2. A commercial alpha-to-income pipeline
+### 5.3 Categories of Actions
 
-Signals → Trades → P&L → Feedback → Calibration.
+Actions initiated from the Dashboard fall into three governance categories:
 
-3. A compliance-first architecture
+1. **Category A – Observational / Read-Only**
 
-Aligned with BCBS-239, ISO 8000-110, ISO-42001, GIPS-2020, DORA.
+   * Examples: "Show current CDS", "List latest FINN events", "Show gate status", "Show economic safety status".
+   * Governance: No state change; subject only to VEGA read controls and standard access rules.
 
-4. A profitable value-creation system
+2. **Category B – Operational Jobs (Non-Structural)**
 
-Sharpe, ROI, MaxDD, audit lineage.
+   * Examples: "Ingest Binance now", "Re-run freshness tests", "Generate new FINN embeddings", "Run reconciliation job".
+   * Governance:
 
-5. An autonomous ecosystem
+     * Routed via Orchestrator
+     * Logged as jobs with full lineage
+     * Subject to VEGA economic safety constraints (rate limits, spend ceilings, execution budgets) per ADR-012.
+     * No schema or governance configuration change.
 
-VEGA (GOV) ensures constitutional and operational consistency.
+3. **Category C – Governance & Capital-Proximal Changes**
 
-6. Strategic Alignment Table
-Dimension	Essence
-Purpose	Create financial freedom through verified insight
-Method	Audit-grade discipline + deterministic logic
-Philosophy	Capital freedom emerges when complexity becomes understandable
-Differentiation	McKinsey governance + AI precision + BCBS-239 lineage
-Result	An audited, self-defining value-creation ecosystem
-7. Governance Alignment (ADR-002 / ADR-003 Linkage)
-Audit Integrity (ADR-002)
+   * Examples: "Adjust cost ceilings (ADR-012)", "Propose capital calibration scenarios", future production configuration adjustments.
+   * Governance:
 
-dual-ledger compliance
+     * CEO can **request** changes from Dashboard; cannot directly mutate.
+     * Requests become structured proposals:
 
-hashing + reconciliation
+       * G1 – STIG technical validation
+       * G2 – LARS + VEGA governance validation
+       * G3 – VEGA audit verification (hashes, lineage, discrepancy checks)
+       * G4 – CEO final approval and canonicalization (per ADR-004).
+     * Only after G4 may configuration be updated in canonical tables.
 
-Class A/B/C governance
+---
 
-VEGA (GOV) enforcement
+## 6. Application Layer – IoS-XXX Namespace
 
-Institutional Standards (ADR-003)
+### 6.1 Separation from ADR Layer
 
-GIPS reporting discipline
+* ADR-001–ADR-012 define **constitutional and governance logic**.
+* IoS-XXX defines **Application Layer modules** surfaced through the Dashboard.
+* IoS modules **may not**:
 
-ISO-42001 AI fairness, explainability, risk controls
+  * write to ADR tables directly
+  * bypass VEGA or Orchestrator
+  * alter economic safety or governance without passing ADR-004 gates
 
-DORA operational resilience
+### 6.2 IoS Family (Reserved Structure)
 
-MAIFA/SMCR-style accountability
+This ADR reserves and defines the purpose of the following modules (detailed specifications to follow once ADR-001–ADR-015 are finalized):
 
-Commercial Traceability
+* **IoS-001 – Market Pulse**
+  High-level market state, cross-asset freshness, and volatility snapshot, driven by `fhq_data.price_series` and dashboard freshness views.
 
-every revenue event carries SHA-256 lineage
+* **IoS-002 – Alpha Drift Monitor**
+  Monitors strategy performance, drift vs. baselines, and alpha stability (to be linked with ADR-011 tests and performance metrics).
 
-every model decision is attributable
+* **IoS-003 – FINN Intelligence v3**
+  External narrative, serper events, CDS metrics, narrative shift risk, currently partially exposed via FINN events and CDS integration.
 
-every P&L outcome is explainable
+* **IoS-004 (Future)**
+  Additional modules (Signal Feed Layer, Research Workspace chat, System Operations Console) will be specified in IoS-series documents, each bound to this charter.
 
-8. Commercial Scoring Framework
+### 6.3 Contract with the Dashboard
 
-Score 10 – Sustainable Alpha (Commercial Sovereignty achieved)
-Score 8–9 – Profitable but unstable
-Score < 8 – Reengineering required
-Score < 6 – Strategy retirement
+* Each IoS module must:
 
-This scoring becomes constitutionally binding for strategy evaluation.
+  * expose **read-only** views to the Dashboard by default
+  * register any **action endpoints** with Orchestrator + VEGA
+  * publish lineage (source tables/views) directly in the UI (pattern already in use via `data-lineage-indicator`).
 
-9. Commercial Review Rhythm
-Frequency	Review	Owner	Output
-Weekly	P&L Drift	Strategy Unit	Alpha Yield Snapshot
-Monthly	KPI Review	VEGA (GOV)	Sharpe Delta Trigger
-Quarterly	Capital Calibration	CEO + CTO	Strategy Weight Adjustment
-Annual	Sovereignty Audit	External	BCBS-239 Certification
-10. Consequences of ADR-005 Activation
-Positive
+---
 
-technical system becomes financially goal-aligned
+## 7. Agent Chat Workspace (IoS-006 Concept)
 
-alpha pipeline becomes measurable
+While detailed IoS-006 specification is out of scope for this ADR, the following **constitutional constraints** apply:
 
-governance directly reinforces ROI
+* Every chat message:
 
-VEGA (GOV) governs the entire loop
+  * must be bound to a **target agent** (LARS / FINN / STIG / LINE / VEGA)
+  * must be logged with:
 
-Negative
+    * human identity (CEO)
+    * agent identity
+    * timestamp
+    * task type (research, analysis, operational request, governance inquiry)
 
-requires strict discipline
+* No agent may:
 
-exposes weak strategies instantly
+  * receive a direct LLM call from the Dashboard without passing through Orchestrator
+  * bypass VEGA economic safety constraints when invoking external LLM APIs (ADR-012)
 
-Neutral
+* For any agent-issued proposal that affects:
 
-full backward compatibility maintained
+  * governance
+  * capital
+  * cost ceilings
+    the output is treated as **recommendation**, not direct execution. Execution is handled through the ADR-004 gates and CEO approval.
 
-11. Final Decision
+---
 
-ADR-005 formally establishes FjordHQ’s:
+## 8. Alignment with Existing Implementation
 
-Mission
+The current Next.js Dashboard already embodies parts of this charter:
 
-Vision
+* **RootLayout** wires TrustBanner, Navigation and system health from `getSystemHealth()` and FINN CDS metrics.
+* **Overview Page** consumes multi-asset freshness, FINN events, and gate summaries directly from Postgres (`fhq_data.price_series`, `fhq_finn.serper_events`, `fhq_validation.v_gate_a_summary`).
+* **System Health module** is reserved as a governance surface for data quality, gates, ADR governance.
+* **LiveBinancePrices** is a read-only, WebSocket-based panel explicitly separated from database writes (category A – observational).
 
-Philosophy
+ADR-005 formalizes these patterns and promotes them to **constitutional rules**.
 
-Identity
+---
 
-Commercial score system
+## 9. Consequences
 
-Review rhythms
+### Positive
 
-Alignment constraints for all agents
+* Single, governed human interface
+* Clean separation: ADR kernel vs. Application Layer
+* CEO can extract real value (research, strategy, operations) without compromising governance
+* All control actions are traceable, orchestrated, and VEGA-guarded
+* Future IoS modules have a clear contract and namespace
 
-Governance role of VEGA = GOV
+### Negative
 
-This ADR is the final constitutional requirement before VEGA activation.
+* CEO becomes a hard dependency for human-triggered actions
+* Additional engineering required to wire chat workspace and control actions through Orchestrator and VEGA with full lineage
 
-When canonicalized by STIG, the constitutional chain is complete:
+### Risks & Mitigations
 
-ADR-001 → ADR-002 → ADR-003 → ADR-004 → ADR-005 → VEGA (GOV) Activation
+* **Risk:** Misconfigured actions bypass governance.
+  **Mitigation:** All actions classified into A/B/C with explicit VEGA + gate requirements.
+
+* **Risk:** IoS modules accidentally write into governance schemas.
+  **Mitigation:** Enforce schema-level permissions and VEGA-only write access for ADR/gov tables (per ADR-006, ADR-011, ADR-012).
+
+---
+
+## 10. Next Steps
+
+1. Register ADR-005 in `fhq_meta.adr_registry` as constitutional Tier-1 once approved.
+2. Implement **IoS module registry** (IoS-XXX) in `fhq_meta` to mirror ADR registry patterns (read-only from Dashboard, VEGA-mediated writes).
+3. Design and implement **IoS-006 – Research Workspace (Chat)** and **IoS-001–004** specifications in IoS-series documents, bound to this charter.
+4. Wire Dashboard actions to Orchestrator with:
+
+   * explicit task types
+   * VEGA economic safety hooks (ADR-012)
+   * ADR-004 gate routing for Category C actions.
+
+---
+
+## 11. Signatures
+
+**Prepared by:**
+LARS – Chief Strategy & Alpha Officer
+
+**Reviewed by:**
+STIG – CTO (Technical Integration & Database Alignment)
+VEGA – Governance Engine (AI Governance, Economic Safety, ADR Compliance)
+
+**To be approved by:**
+CEO – Final Canonical Authority
+
+**To be certified by:**
+VEGA – Attestation of Human Interaction & Application Layer Conformance
