@@ -269,78 +269,93 @@ ON CONFLICT (component_type, component_name, component_version) DO UPDATE SET
 -- =====================================================
 -- 5. LOG GOVERNANCE ACTIONS (AUDIT TRAIL)
 -- =====================================================
+-- Using vision_autonomy.governance_decisions for audit trail
 
--- Log ADR-013 registration
-INSERT INTO fhq_governance.governance_actions_log (
-    action_type,
-    agent_id,
+-- Log ADR-013 registration decision
+INSERT INTO vision_autonomy.governance_decisions (
+    decision_type,
+    decision_scope,
     decision,
-    metadata,
-    hash_chain_id,
-    signature,
-    timestamp
+    rationale,
+    vega_reviewed,
+    vega_approved,
+    vega_reviewer,
+    vega_review_timestamp,
+    gate_level,
+    gate_passed,
+    created_by,
+    hash_chain_id
 ) VALUES (
     'ADR_REGISTRATION',
-    'LARS',
+    'ADR-013',
     'APPROVED',
-    jsonb_build_object(
-        'adr_id', 'ADR-013',
-        'adr_title', 'Canonical Governance & One-Source-of-Truth Architecture',
-        'action', 'Registered ADR-013 in fhq_meta.adr_registry',
-        'governance_tier', 'Tier-1 (Constitutional)'
-    ),
-    'HC-LARS-ADR013-REGISTRATION-20251127',
-    MD5('LARS:ADR013:REGISTRATION:' || NOW()::TEXT),
-    NOW()
+    'ADR-013 Canonical Governance & One-Source-of-Truth Architecture registered in fhq_meta.adr_registry',
+    TRUE,
+    TRUE,
+    'VEGA',
+    NOW(),
+    'G4',
+    TRUE,
+    'LARS',
+    'HC-LARS-ADR013-REGISTRATION-20251127'
 );
 
--- Log VEGA attestation
-INSERT INTO fhq_governance.governance_actions_log (
-    action_type,
-    agent_id,
+-- Log VEGA attestation decision
+INSERT INTO vision_autonomy.governance_decisions (
+    decision_type,
+    decision_scope,
     decision,
-    metadata,
-    hash_chain_id,
-    signature,
-    timestamp
+    rationale,
+    vega_reviewed,
+    vega_approved,
+    vega_reviewer,
+    vega_review_timestamp,
+    gate_level,
+    gate_passed,
+    created_by,
+    hash_chain_id
 ) VALUES (
     'VEGA_ATTESTATION',
-    'VEGA',
+    'ADR-013',
     'ATTESTED',
-    jsonb_build_object(
-        'adr_id', 'ADR-013',
-        'attestation_type', 'CERTIFICATION',
-        'action', 'VEGA attestation created for ADR-013',
-        'invariants_verified', 5,
-        'compliance_verified', TRUE
-    ),
-    'HC-VEGA-ADR013-ATTESTATION-20251127',
-    MD5('VEGA:ADR013:ATTESTATION:' || NOW()::TEXT),
-    NOW()
+    'VEGA attestation created for ADR-013. 5 invariants verified, compliance confirmed.',
+    TRUE,
+    TRUE,
+    'VEGA',
+    NOW(),
+    'G4',
+    TRUE,
+    'VEGA',
+    'HC-VEGA-ADR013-ATTESTATION-20251127'
 );
 
--- Log G4 canonicalization
-INSERT INTO fhq_governance.governance_actions_log (
-    action_type,
-    agent_id,
+-- Log G4 canonicalization decision
+INSERT INTO vision_autonomy.governance_decisions (
+    decision_type,
+    decision_scope,
     decision,
-    metadata,
-    hash_chain_id,
-    signature,
-    timestamp
+    rationale,
+    vega_reviewed,
+    vega_approved,
+    vega_reviewer,
+    vega_review_timestamp,
+    gate_level,
+    gate_passed,
+    created_by,
+    hash_chain_id
 ) VALUES (
     'G4_CANONICALIZATION',
-    'CEO',
+    'ADR-013',
     'CANONICALIZED',
-    jsonb_build_object(
-        'adr_id', 'ADR-013',
-        'action', 'G4 canonicalization completed for ADR-013',
-        'status', 'PRODUCTION READY',
-        'effective_immediately', TRUE
-    ),
-    'HC-CEO-ADR013-G4-CANONICALIZATION-20251127',
-    MD5('CEO:ADR013:G4:CANONICALIZATION:' || NOW()::TEXT),
-    NOW()
+    'G4 canonicalization completed for ADR-013. PRODUCTION READY. Effective immediately.',
+    TRUE,
+    TRUE,
+    'VEGA',
+    NOW(),
+    'G4',
+    TRUE,
+    'CEO',
+    'HC-CEO-ADR013-G4-CANONICALIZATION-20251127'
 );
 
 -- =====================================================
