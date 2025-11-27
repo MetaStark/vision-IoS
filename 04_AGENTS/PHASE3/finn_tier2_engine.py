@@ -38,13 +38,32 @@ CDS Engine C4 component receives coherence_score directly from Tier-2.
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
+from decimal import Decimal
 import time
 import hashlib
 import json
 import re
+import logging
 
 # Phase 3 imports
 from finn_signature import Ed25519Signer
+
+# ADR-012: Economic Safety Engine integration
+try:
+    from economic_safety_engine import (
+        EconomicSafetyEngine,
+        UsageRecord,
+        OperationMode,
+        SafetyCheckResult,
+        estimate_llm_cost
+    )
+    ECONOMIC_SAFETY_AVAILABLE = True
+except ImportError:
+    ECONOMIC_SAFETY_AVAILABLE = False
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("finn_tier2")
 
 
 @dataclass
@@ -349,29 +368,53 @@ class FINNTier2Engine:
     are causally coherent with market indicators.
 
     Cost: ~$0.0024/call (Claude 3 Sonnet)
-    Rate Limit: 100 calls/hour (ADR-012)
-    Daily Budget: $500 cap
+
+    ADR-012 Limits (constitutional baselines):
+    - Rate Limit: 3 calls/minute, 5 calls/pipeline, 50 calls/day (FINN agent)
+    - Cost Limit: $1.00/day (FINN agent), $0.50/task, $5.00/day (global)
+
+    Note: These limits are enforced via vega.llm_rate_limits and vega.llm_cost_limits.
     """
 
     def __init__(self, llm_client: Optional[LLMClient] = None,
-                 use_production_mode: bool = False):
+                 use_production_mode: bool = False,
+                 use_db_limits: bool = True):
         """
         Initialize FINN+ Tier-2 engine.
 
         Args:
             llm_client: LLM client implementation (default: MockLLMClient)
             use_production_mode: If True, use real LLM; if False, return placeholder
+            use_db_limits: If True, use DB-backed limits from vega schema (ADR-012)
         """
         self.llm_client = llm_client or MockLLMClient()
         self.use_production_mode = use_production_mode
         self.signer = Ed25519Signer()
 
-        # Rate limiting (ADR-012)
-        self.max_calls_per_hour = 100
-        self.daily_budget_usd = 500.0
+        # ADR-012: Economic Safety Engine (DB-backed limits)
+        self._safety_engine: Optional[Any] = None
+        self._use_db_limits = use_db_limits
+        if use_db_limits and ECONOMIC_SAFETY_AVAILABLE:
+            try:
+                self._safety_engine = EconomicSafetyEngine()
+                logger.info("FINNTier2Engine: Using DB-backed ADR-012 limits")
+            except Exception as e:
+                logger.warning(f"Failed to initialize EconomicSafetyEngine: {e}. Using in-memory limits.")
+
+        # Rate limiting (ADR-012 compliant defaults)
+        # Note: If DB limits are available, these are overridden by vega schema values
+        self.max_calls_per_minute = 3    # ADR-012 default
+        self.max_calls_per_hour = 50     # FINN agent limit (ADR-012)
+        self.daily_budget_usd = 1.0      # FINN agent limit (ADR-012: $1.00/agent/day)
+        self.max_cost_per_task = 0.50    # ADR-012 default
         self.call_timestamps: List[datetime] = []
         self.daily_cost = 0.0
         self.daily_reset_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Pipeline execution tracking (for per-pipeline limits)
+        self._pipeline_call_count = 0
+        self._current_task_id: Optional[str] = None
+        self._current_task_cost = 0.0
 
         # Statistics
         self.computation_count = 0
@@ -422,11 +465,18 @@ class FINNTier2Engine:
                 del self.cache[cache_key]
 
         # Check rate limits (ADR-012)
-        if not self._check_rate_limits():
+        # Estimate cost for the call (~$0.0024 for Claude Sonnet)
+        estimated_cost = 0.003
+        allowed, reason = self._check_rate_limits(
+            estimated_cost=estimated_cost,
+            task_id=tier2_input.cycle_id
+        )
+        if not allowed:
             # Rate limit exceeded, return placeholder
+            logger.warning(f"ADR-012 rate limit: {reason}")
             return Tier2Result(
                 coherence_score=0.0,
-                summary="RATE LIMIT: Tier-2 calls exceeded (ADR-012 protection)",
+                summary=f"ADR-012 LIMIT: {reason[:80]}",
                 llm_cost_usd=0.0,
                 llm_api_calls=0,
                 timestamp=datetime.now(),
@@ -471,8 +521,14 @@ class FINNTier2Engine:
                 llm_model=llm_response['model']
             )
 
-        # [4] Track costs
-        self._track_cost(llm_response['cost_usd'])
+        # [4] Track costs (ADR-012)
+        self._track_cost(
+            cost_usd=llm_response['cost_usd'],
+            task_id=tier2_input.cycle_id,
+            tokens_in=llm_response.get('tokens_input', 0),
+            tokens_out=llm_response.get('tokens_output', 0),
+            model=llm_response.get('model', 'anthropic')
+        )
 
         # [5] Create result
         result = Tier2Result(
@@ -510,37 +566,119 @@ class FINNTier2Engine:
         canonical_json = json.dumps(key_dict, sort_keys=True)
         return hashlib.sha256(canonical_json.encode()).hexdigest()[:16]
 
-    def _check_rate_limits(self) -> bool:
+    def _check_rate_limits(self, estimated_cost: float = 0.01,
+                           task_id: Optional[str] = None) -> tuple[bool, str]:
         """
         Check if rate limits allow new API call (ADR-012).
 
+        If DB-backed limits are available (EconomicSafetyEngine), uses those.
+        Otherwise falls back to in-memory limits.
+
+        Args:
+            estimated_cost: Estimated cost of the call in USD
+            task_id: Optional task identifier
+
         Returns:
-            True if call allowed, False if rate limit exceeded
+            Tuple of (allowed, reason)
         """
+        # ADR-012: Use DB-backed safety engine if available
+        if self._safety_engine:
+            try:
+                result = self._safety_engine.check_all_limits(
+                    agent_id='FINN',
+                    estimated_cost=Decimal(str(estimated_cost)),
+                    provider='anthropic',  # Default provider for FINN
+                    task_id=task_id or self._current_task_id,
+                    pipeline_call_count=self._pipeline_call_count
+                )
+                if not result.allowed:
+                    logger.warning(f"ADR-012 limit exceeded: {result.reason}")
+                return result.allowed, result.reason
+            except Exception as e:
+                logger.warning(f"DB limit check failed: {e}. Falling back to in-memory.")
+
+        # In-memory fallback
         now = datetime.now()
 
         # Reset daily budget at midnight
         if now >= self.daily_reset_time + timedelta(days=1):
             self.daily_cost = 0.0
             self.daily_reset_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            self._pipeline_call_count = 0
+            self._current_task_cost = 0.0
+
+        # Check task cost limit (ADR-012)
+        if self._current_task_cost + estimated_cost > self.max_cost_per_task:
+            return False, f"Task cost limit exceeded: ${self._current_task_cost:.2f} + ${estimated_cost:.2f} > ${self.max_cost_per_task:.2f}"
 
         # Check daily budget
-        if self.daily_cost >= self.daily_budget_usd:
-            return False
+        if self.daily_cost + estimated_cost > self.daily_budget_usd:
+            return False, f"Daily budget exceeded: ${self.daily_cost:.2f} + ${estimated_cost:.2f} > ${self.daily_budget_usd:.2f}"
+
+        # Check per-minute rate limit (ADR-012)
+        one_minute_ago = now - timedelta(minutes=1)
+        recent_calls = [ts for ts in self.call_timestamps if ts > one_minute_ago]
+        if len(recent_calls) >= self.max_calls_per_minute:
+            return False, f"Per-minute limit exceeded: {len(recent_calls)}/{self.max_calls_per_minute}"
 
         # Check hourly rate limit
         one_hour_ago = now - timedelta(hours=1)
         self.call_timestamps = [ts for ts in self.call_timestamps if ts > one_hour_ago]
 
         if len(self.call_timestamps) >= self.max_calls_per_hour:
-            return False
+            return False, f"Hourly limit exceeded: {len(self.call_timestamps)}/{self.max_calls_per_hour}"
 
-        return True
+        return True, "OK"
 
-    def _track_cost(self, cost_usd: float):
-        """Track API call cost."""
-        self.call_timestamps.append(datetime.now())
+    def _track_cost(self, cost_usd: float, task_id: Optional[str] = None,
+                   tokens_in: int = 0, tokens_out: int = 0,
+                   latency_ms: int = 0, model: str = "anthropic"):
+        """
+        Track API call cost (ADR-012).
+
+        If DB-backed limits are available, logs to vega.llm_usage_log.
+        """
+        now = datetime.now()
+        self.call_timestamps.append(now)
         self.daily_cost += cost_usd
+        self._current_task_cost += cost_usd
+        self._pipeline_call_count += 1
+
+        # ADR-012: Log to DB if available
+        if self._safety_engine:
+            try:
+                from datetime import timezone
+                record = UsageRecord(
+                    agent_id='FINN',
+                    provider=model,
+                    mode=OperationMode.LIVE if self.use_production_mode else OperationMode.STUB,
+                    tokens_in=tokens_in,
+                    tokens_out=tokens_out,
+                    cost_usd=Decimal(str(cost_usd)),
+                    latency_ms=latency_ms,
+                    task_id=task_id or self._current_task_id,
+                    model=model,
+                    timestamp=datetime.now(timezone.utc)
+                )
+                self._safety_engine.log_usage(record)
+            except Exception as e:
+                logger.warning(f"Failed to log usage to DB: {e}")
+
+    def start_task(self, task_id: str):
+        """
+        Start tracking a new task (ADR-012 per-task cost tracking).
+
+        Call this at the beginning of each task to reset per-task counters.
+        """
+        self._current_task_id = task_id
+        self._current_task_cost = 0.0
+        self._pipeline_call_count = 0
+
+    def end_task(self):
+        """End current task tracking."""
+        self._current_task_id = None
+        self._current_task_cost = 0.0
+        self._pipeline_call_count = 0
 
     def _sign_result(self, result: Tier2Result) -> tuple[str, str]:
         """

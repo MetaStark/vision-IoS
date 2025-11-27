@@ -45,8 +45,26 @@ Compliance:
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Dict, Any, Tuple
+from decimal import Decimal
 import pandas as pd
 import time
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("tier1_orchestrator")
+
+# ADR-012: Economic Safety Engine integration
+try:
+    from economic_safety_engine import (
+        EconomicSafetyEngine,
+        QGF6Result,
+        OperationMode
+    )
+    ECONOMIC_SAFETY_AVAILABLE = True
+except ImportError:
+    ECONOMIC_SAFETY_AVAILABLE = False
+    logger.warning("EconomicSafetyEngine not available. Cost tracking will use placeholders.")
 
 # Phase 3 imports
 from line_ohlcv_contracts import OHLCVDataset, OHLCVInterval
@@ -276,6 +294,74 @@ class Tier1Orchestrator:
         self.cycle_count = 0
         self.total_cost_usd = 0.0
 
+        # ADR-012: Economic Safety Engine for QG-F6 checks
+        self._safety_engine: Optional[Any] = None
+        if ECONOMIC_SAFETY_AVAILABLE:
+            try:
+                self._safety_engine = EconomicSafetyEngine()
+                logger.info("Tier1Orchestrator: EconomicSafetyEngine initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize EconomicSafetyEngine: {e}")
+
+    def check_qg_f6(self) -> Tuple[bool, str]:
+        """
+        Check QG-F6 Economic Safety Gate (ADR-012 Section 6).
+
+        This gate must pass before enabling LIVE mode for LLM operations.
+
+        Returns:
+            Tuple of (gate_passed, reason)
+        """
+        if not self._safety_engine:
+            return False, "EconomicSafetyEngine not available"
+
+        try:
+            result = self._safety_engine.check_qg_f6()
+            if result.gate_passed:
+                return True, "QG-F6 PASSED: No violations in last 24 hours"
+            else:
+                reasons = []
+                if result.rate_violations > 0:
+                    reasons.append(f"{result.rate_violations} rate violation(s)")
+                if result.cost_violations > 0:
+                    reasons.append(f"{result.cost_violations} cost violation(s)")
+                if result.execution_violations > 0:
+                    reasons.append(f"{result.execution_violations} execution violation(s)")
+                return False, f"QG-F6 FAILED: {', '.join(reasons)}"
+        except Exception as e:
+            logger.error(f"QG-F6 check failed: {e}")
+            return False, f"QG-F6 check error: {str(e)}"
+
+    def get_economic_status(self) -> Dict[str, Any]:
+        """
+        Get current economic safety status (ADR-012).
+
+        Returns:
+            Dict with cost tracking and limit status
+        """
+        status = {
+            'total_cost_usd': self.total_cost_usd,
+            'cycle_count': self.cycle_count,
+            'qg_f6_available': self._safety_engine is not None
+        }
+
+        if self._safety_engine:
+            try:
+                qg_f6_result = self._safety_engine.check_qg_f6()
+                status['qg_f6_passed'] = qg_f6_result.gate_passed
+                status['rate_violations_24h'] = qg_f6_result.rate_violations
+                status['cost_violations_24h'] = qg_f6_result.cost_violations
+                status['execution_violations_24h'] = qg_f6_result.execution_violations
+
+                # Get daily usage
+                global_usage = self._safety_engine.get_global_usage_today()
+                status['daily_call_count'] = global_usage['call_count']
+                status['daily_cost_usd'] = float(global_usage['total_cost_usd'])
+            except Exception as e:
+                logger.warning(f"Failed to get economic status: {e}")
+
+        return status
+
     def execute_cycle(self,
                      ohlcv_dataset: OHLCVDataset,
                      cds_score: Optional[float] = None) -> OrchestratorCycleResult:
@@ -385,11 +471,21 @@ class Tier1Orchestrator:
         result.execution_time_ms = (time.time() - cycle_start_time) * 1000
 
         # Cost tracking (ADR-012)
-        # Note: In production, track actual LLM API calls and costs
-        result.total_cost_usd = 0.0  # Placeholder
-        result.llm_api_calls = 0     # Placeholder
+        # Aggregate costs from FINN Tier-2 if available
+        tier2_cost = 0.0
+        tier2_calls = 0
+        if result.cds_result and hasattr(result.cds_result, 'llm_cost_usd'):
+            tier2_cost = float(result.cds_result.llm_cost_usd or 0)
+            tier2_calls = int(result.cds_result.llm_api_calls or 0)
+
+        result.total_cost_usd = tier2_cost
+        result.llm_api_calls = tier2_calls
 
         self.total_cost_usd += result.total_cost_usd
+
+        # Log cost tracking (ADR-012 visibility)
+        if tier2_cost > 0:
+            logger.info(f"ADR-012: Cycle cost=${tier2_cost:.4f}, calls={tier2_calls}, total_cost=${self.total_cost_usd:.4f}")
 
         return result
 

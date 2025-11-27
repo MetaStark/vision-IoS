@@ -37,6 +37,18 @@ from enum import Enum
 from line_ohlcv_contracts import OHLCVBar, OHLCVDataset, OHLCVInterval
 from line_data_ingestion import DataSourceAdapter, DataSourceConfig
 
+# Optional: Import EconomicSafetyEngine for DB-backed limits
+try:
+    from economic_safety_engine import (
+        EconomicSafetyEngine,
+        UsageRecord,
+        OperationMode,
+        estimate_llm_cost
+    )
+    ECONOMIC_SAFETY_AVAILABLE = True
+except ImportError:
+    ECONOMIC_SAFETY_AVAILABLE = False
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("production_adapters")
@@ -48,13 +60,25 @@ logger = logging.getLogger("production_adapters")
 
 @dataclass
 class RateLimitConfig:
-    """Rate limit configuration (ADR-012 compliance)."""
+    """
+    Rate limit configuration (ADR-012 compliance).
+
+    Note: For LLM calls, ADR-012 specifies stricter defaults:
+    - max_calls_per_minute: 3
+    - max_daily_budget: $5.00
+
+    Data API adapters (Binance, Alpaca, etc.) can use higher limits
+    since they are typically free or have their own rate limits.
+    """
     max_requests_per_minute: int = 60
     max_requests_per_hour: int = 1000
-    max_daily_budget_usd: float = 50.0  # Daily cost cap
+    max_daily_budget_usd: float = 50.0  # Daily cost cap (data APIs typically free)
     retry_max_attempts: int = 3
     retry_base_delay_seconds: float = 1.0
     retry_exponential_base: float = 2.0
+    # ADR-012: Use DB-backed limits when available
+    use_db_limits: bool = False
+    agent_id: Optional[str] = None
 
 
 class RateLimiter:
@@ -66,6 +90,12 @@ class RateLimiter:
     - Per-hour rate limiting
     - Daily budget tracking
     - Automatic blocking when limits exceeded
+    - Optional: DB-backed limits via EconomicSafetyEngine (ADR-012)
+
+    For DB-backed mode (ADR-012 compliant):
+    - Set config.use_db_limits = True
+    - Set config.agent_id to the calling agent
+    - Limits are read from vega.llm_rate_limits and vega.llm_cost_limits
     """
 
     def __init__(self, config: RateLimitConfig):
@@ -75,6 +105,15 @@ class RateLimiter:
         self.hour_requests: List[datetime] = []
         self.daily_cost: float = 0.0
         self.daily_cost_reset_time: datetime = datetime.now(timezone.utc)
+
+        # ADR-012: DB-backed safety engine (optional)
+        self._safety_engine: Optional[Any] = None
+        if config.use_db_limits and ECONOMIC_SAFETY_AVAILABLE:
+            try:
+                self._safety_engine = EconomicSafetyEngine()
+                logger.info(f"RateLimiter: Using DB-backed limits for agent={config.agent_id}")
+            except Exception as e:
+                logger.warning(f"Failed to initialize EconomicSafetyEngine: {e}. Using in-memory limits.")
 
     def _cleanup_old_requests(self):
         """Remove requests older than their window."""
@@ -94,9 +133,25 @@ class RateLimiter:
         """
         Check if a request can be made within rate limits.
 
+        If use_db_limits is enabled, checks against vega schema tables.
+        Otherwise uses in-memory tracking.
+
         Returns:
             Tuple of (allowed, reason)
         """
+        # ADR-012: Use DB-backed checks if available
+        if self._safety_engine and self.config.agent_id:
+            try:
+                from decimal import Decimal
+                result = self._safety_engine.check_all_limits(
+                    agent_id=self.config.agent_id,
+                    estimated_cost=Decimal(str(estimated_cost))
+                )
+                return result.allowed, result.reason
+            except Exception as e:
+                logger.warning(f"DB limit check failed: {e}. Falling back to in-memory.")
+
+        # In-memory fallback
         self._cleanup_old_requests()
 
         # Check per-minute limit
@@ -113,22 +168,53 @@ class RateLimiter:
 
         return True, "OK"
 
-    def record_request(self, cost: float = 0.0):
-        """Record a successful request."""
+    def record_request(self, cost: float = 0.0, provider: str = "unknown"):
+        """
+        Record a successful request.
+
+        If use_db_limits is enabled, logs to vega.llm_usage_log.
+        """
         now = datetime.now(timezone.utc)
         self.minute_requests.append(now)
         self.hour_requests.append(now)
         self.daily_cost += cost
 
+        # ADR-012: Log to DB if available
+        if self._safety_engine and self.config.agent_id:
+            try:
+                from decimal import Decimal
+                record = UsageRecord(
+                    agent_id=self.config.agent_id,
+                    provider=provider,
+                    mode=OperationMode.LIVE,
+                    cost_usd=Decimal(str(cost)),
+                    timestamp=now
+                )
+                self._safety_engine.log_usage(record)
+            except Exception as e:
+                logger.warning(f"Failed to log usage to DB: {e}")
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get rate limiter statistics."""
         self._cleanup_old_requests()
-        return {
+        stats = {
             'requests_this_minute': len(self.minute_requests),
             'requests_this_hour': len(self.hour_requests),
             'daily_cost_usd': self.daily_cost,
-            'daily_budget_remaining_usd': self.config.max_daily_budget_usd - self.daily_cost
+            'daily_budget_remaining_usd': self.config.max_daily_budget_usd - self.daily_cost,
+            'using_db_limits': self._safety_engine is not None
         }
+
+        # ADR-012: Add DB stats if available
+        if self._safety_engine and self.config.agent_id:
+            try:
+                db_usage = self._safety_engine.get_agent_usage_today(self.config.agent_id)
+                stats['db_call_count_today'] = db_usage['call_count']
+                stats['db_cost_today_usd'] = float(db_usage['total_cost_usd'])
+            except Exception:
+                pass
+
+        return stats
 
 
 # =============================================================================

@@ -33,10 +33,21 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 import logging
+
+# ADR-012: Economic Safety Engine integration
+try:
+    from economic_safety_engine import (
+        EconomicSafetyEngine,
+        QGF6Result
+    )
+    ECONOMIC_SAFETY_AVAILABLE = True
+except ImportError:
+    ECONOMIC_SAFETY_AVAILABLE = False
 
 # Set up logging
 logging.basicConfig(
@@ -858,6 +869,183 @@ class VEGAG3AuditEngine:
 
         self.procedure_results.append(result)
         logger.info(f"\nProcedure D Result: {status.value} (Cost: ${metrics['cds_cost_per_cycle']:.4f}/cycle)")
+
+        return result
+
+    # =========================================================================
+    # PROCEDURE D2: QG-F6 ECONOMIC SAFETY GATE (ADR-012)
+    # =========================================================================
+
+    def procedure_d2_qg_f6_gate(self) -> ProcedureResult:
+        """
+        Procedure D2: QG-F6 Economic Safety Gate (ADR-012 Section 6)
+
+        Goal: Verify economic safety gate for LIVE mode enablement
+        Standard: ADR-012 Economic Safety Architecture
+        Pass Criteria: No rate, cost, or execution violations in last 24 hours
+
+        This procedure queries vega.llm_violation_events to check the QG-F6 gate.
+        The gate must pass before LIVE mode can be enabled for any LLM operations.
+        """
+        import time
+        start_time = time.time()
+
+        logger.info("\n" + "=" * 70)
+        logger.info("PROCEDURE D2: QG-F6 ECONOMIC SAFETY GATE")
+        logger.info("Standard: ADR-012 Section 6")
+        logger.info("=" * 70)
+
+        findings = []
+        metrics = {
+            'qg_f6_available': ECONOMIC_SAFETY_AVAILABLE,
+            'gate_passed': False,
+            'rate_violations_24h': 0,
+            'cost_violations_24h': 0,
+            'execution_violations_24h': 0,
+            'last_violation_at': None,
+            'live_mode_allowed': False
+        }
+
+        if not ECONOMIC_SAFETY_AVAILABLE:
+            findings.append(self._add_finding(
+                procedure="D2",
+                check_name="EconomicSafetyEngine Availability",
+                status=AuditStatus.FAIL,
+                severity=AuditSeverity.WARNING,
+                discrepancy_class=DiscrepancyClass.CLASS_C,
+                message="EconomicSafetyEngine not available - QG-F6 check skipped",
+                evidence="economic_safety_engine.py not importable",
+                regulatory_standard="ADR-012"
+            ))
+            status = AuditStatus.PARTIAL
+        else:
+            try:
+                engine = EconomicSafetyEngine()
+                with engine:
+                    qg_f6_result = engine.check_qg_f6()
+
+                    metrics['gate_passed'] = qg_f6_result.gate_passed
+                    metrics['rate_violations_24h'] = qg_f6_result.rate_violations
+                    metrics['cost_violations_24h'] = qg_f6_result.cost_violations
+                    metrics['execution_violations_24h'] = qg_f6_result.execution_violations
+                    metrics['last_violation_at'] = qg_f6_result.last_violation_at.isoformat() if qg_f6_result.last_violation_at else None
+                    metrics['live_mode_allowed'] = qg_f6_result.gate_passed
+
+                    if qg_f6_result.gate_passed:
+                        findings.append(self._add_finding(
+                            procedure="D2",
+                            check_name="QG-F6 Economic Safety Gate",
+                            status=AuditStatus.PASS,
+                            severity=AuditSeverity.INFO,
+                            discrepancy_class=DiscrepancyClass.NONE,
+                            message="QG-F6 PASSED: No violations in last 24 hours",
+                            evidence=f"Rate: {qg_f6_result.rate_violations}, Cost: {qg_f6_result.cost_violations}, Exec: {qg_f6_result.execution_violations}",
+                            regulatory_standard="ADR-012"
+                        ))
+                    else:
+                        # Check violation types
+                        if qg_f6_result.rate_violations > 0:
+                            findings.append(self._add_finding(
+                                procedure="D2",
+                                check_name="Rate Limit Violations",
+                                status=AuditStatus.FAIL,
+                                severity=AuditSeverity.WARNING,
+                                discrepancy_class=DiscrepancyClass.CLASS_B,
+                                message=f"{qg_f6_result.rate_violations} rate limit violation(s) in last 24 hours",
+                                evidence=f"Rate violations detected. LIVE mode locked.",
+                                regulatory_standard="ADR-012 Section 4.1"
+                            ))
+
+                        if qg_f6_result.cost_violations > 0:
+                            findings.append(self._add_finding(
+                                procedure="D2",
+                                check_name="Cost Ceiling Violations",
+                                status=AuditStatus.FAIL,
+                                severity=AuditSeverity.ERROR,
+                                discrepancy_class=DiscrepancyClass.CLASS_A if qg_f6_result.cost_violations > 3 else DiscrepancyClass.CLASS_B,
+                                message=f"{qg_f6_result.cost_violations} cost ceiling violation(s) in last 24 hours",
+                                evidence=f"Cost violations detected. LIVE mode locked.",
+                                regulatory_standard="ADR-012 Section 4.2"
+                            ))
+
+                        if qg_f6_result.execution_violations > 0:
+                            findings.append(self._add_finding(
+                                procedure="D2",
+                                check_name="Execution Limit Violations",
+                                status=AuditStatus.FAIL,
+                                severity=AuditSeverity.WARNING,
+                                discrepancy_class=DiscrepancyClass.CLASS_B,
+                                message=f"{qg_f6_result.execution_violations} execution limit violation(s) in last 24 hours",
+                                evidence=f"Execution overruns detected. LIVE mode locked.",
+                                regulatory_standard="ADR-012 Section 4.3"
+                            ))
+
+                    # Also check daily usage is within limits
+                    global_usage = engine.get_global_usage_today()
+                    cost_limits = engine.get_cost_limits()
+
+                    metrics['daily_call_count'] = global_usage['call_count']
+                    metrics['daily_cost_usd'] = float(global_usage['total_cost_usd'])
+                    metrics['max_daily_cost'] = float(cost_limits.max_daily_cost)
+
+                    if global_usage['total_cost_usd'] < cost_limits.max_daily_cost * Decimal('0.9'):
+                        findings.append(self._add_finding(
+                            procedure="D2",
+                            check_name="Daily Budget Headroom",
+                            status=AuditStatus.PASS,
+                            severity=AuditSeverity.INFO,
+                            discrepancy_class=DiscrepancyClass.NONE,
+                            message=f"Daily cost ${global_usage['total_cost_usd']:.2f} within ${cost_limits.max_daily_cost:.2f} limit",
+                            evidence=f"Budget utilization: {float(global_usage['total_cost_usd']) / float(cost_limits.max_daily_cost) * 100:.1f}%",
+                            regulatory_standard="ADR-012"
+                        ))
+                    else:
+                        findings.append(self._add_finding(
+                            procedure="D2",
+                            check_name="Daily Budget Warning",
+                            status=AuditStatus.PARTIAL,
+                            severity=AuditSeverity.WARNING,
+                            discrepancy_class=DiscrepancyClass.CLASS_C,
+                            message=f"Daily cost ${global_usage['total_cost_usd']:.2f} approaching ${cost_limits.max_daily_cost:.2f} limit",
+                            evidence=f"Budget utilization: {float(global_usage['total_cost_usd']) / float(cost_limits.max_daily_cost) * 100:.1f}%",
+                            regulatory_standard="ADR-012"
+                        ))
+
+            except Exception as e:
+                logger.error(f"QG-F6 check failed: {e}")
+                findings.append(self._add_finding(
+                    procedure="D2",
+                    check_name="QG-F6 Database Check",
+                    status=AuditStatus.FAIL,
+                    severity=AuditSeverity.ERROR,
+                    discrepancy_class=DiscrepancyClass.CLASS_B,
+                    message=f"QG-F6 database check failed: {str(e)[:100]}",
+                    evidence="Database query error - vega schema may not exist",
+                    regulatory_standard="ADR-012"
+                ))
+
+        # Determine overall status
+        if metrics['gate_passed']:
+            status = AuditStatus.PASS
+        elif any(f.status == AuditStatus.FAIL for f in findings):
+            status = AuditStatus.FAIL
+        else:
+            status = AuditStatus.PARTIAL
+
+        execution_time = (time.time() - start_time) * 1000
+
+        result = ProcedureResult(
+            procedure_id="D2",
+            procedure_name="QG-F6 Economic Safety Gate",
+            status=status,
+            pass_criteria="No violations in last 24 hours, daily cost within limits",
+            findings=findings,
+            metrics=metrics,
+            execution_time_ms=execution_time
+        )
+
+        self.procedure_results.append(result)
+        logger.info(f"\nProcedure D2 Result: {status.value} (Gate Passed: {metrics['gate_passed']})")
 
         return result
 
