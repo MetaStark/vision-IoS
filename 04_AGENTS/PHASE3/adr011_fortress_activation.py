@@ -291,14 +291,15 @@ class ADR011Registrar:
         try:
             sha256_hash = self.compute_adr_hash()
 
-            # Use existing table structure with correct column names
+            # Use existing table structure - only columns that actually exist
+            # Based on: \d fhq_meta.adr_registry
             self.db.execute_command("""
                 INSERT INTO fhq_meta.adr_registry (
                     adr_id, adr_title, adr_type, adr_status,
-                    current_version, approval_authority, effective_date,
-                    sha256_hash, governance_tier, owner,
-                    description, vega_attested
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    current_version, sha256_hash, governance_tier,
+                    owner, description, vega_attested,
+                    constitutional_authority, affects, created_by
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (adr_id) DO UPDATE SET
                     adr_title = EXCLUDED.adr_title,
                     current_version = EXCLUDED.current_version,
@@ -306,6 +307,7 @@ class ADR011Registrar:
                     sha256_hash = EXCLUDED.sha256_hash,
                     governance_tier = EXCLUDED.governance_tier,
                     vega_attested = EXCLUDED.vega_attested,
+                    description = EXCLUDED.description,
                     updated_at = NOW()
             """, (
                 Config.ADR_ID,
@@ -313,13 +315,14 @@ class ADR011Registrar:
                 Config.ADR_TYPE,
                 'APPROVED',
                 Config.ADR_VERSION,
-                Config.APPROVAL_AUTHORITY,
-                datetime.now(timezone.utc).date(),
                 sha256_hash,
                 Config.GOVERNANCE_TIER,
                 'LARS',
                 'Production Fortress & VEGA Testsuite Architecture - Cryptographically verified integrity framework',
-                True
+                True,
+                'ADR-001 → ADR-002 → ADR-006 → ADR-007 → ADR-008 → ADR-009 → ADR-010 → ADR-011 → EC-001',
+                ['VEGA', 'LARS', 'STIG', 'LINE', 'FINN', 'Worker', 'Reconciler', 'Orchestrator', 'fhq_meta', 'fhq_governance'],
+                Config.AGENT_ID
             ))
 
             self.logger.info(f"ADR-011 registered in fhq_meta.adr_registry")
