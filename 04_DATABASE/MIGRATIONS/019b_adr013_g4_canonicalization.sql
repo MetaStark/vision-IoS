@@ -51,7 +51,7 @@ INSERT INTO fhq_meta.adr_registry (
     'Establishes the canonical truth architecture for FjordHQ. Defines that there shall always exist one, and only one, authoritative source of truth for every domain, asset, frequency, calculation method, and governance artifact across the entire system lifetime.',
     ARRAY['LARS', 'FINN', 'STIG', 'LINE', 'VEGA', 'fhq_meta', 'fhq_data', 'fhq_governance', 'fhq_phase3'],
     jsonb_build_object(
-        'authority_chain', 'ADR-001 → ADR-012',
+        'authority_chain', 'ADR-001 -> ADR-012',
         'scope', 'All agents, all data domains, Orchestrator, VEGA, fhq_meta, Kernel',
         'compliance_standards', ARRAY['BCBS-239', 'ISO-8000-110', 'ISO-42001', 'GIPS-2020'],
         'key_tables', ARRAY[
@@ -79,8 +79,6 @@ ON CONFLICT (adr_id) DO UPDATE SET
     current_version = EXCLUDED.current_version,
     vega_attested = TRUE,
     updated_at = NOW();
-
-RAISE NOTICE 'ADR-013 registered in adr_registry';
 
 -- =====================================================
 -- 2. CREATE VEGA ATTESTATION FOR ADR-013
@@ -134,8 +132,6 @@ INSERT INTO fhq_governance.vega_attestations (
     'EC-001'
 );
 
-RAISE NOTICE 'VEGA attestation created for ADR-013';
-
 -- =====================================================
 -- 3. COMPLETE G4 CANONICALIZATION
 -- =====================================================
@@ -183,7 +179,7 @@ INSERT INTO fhq_governance.canonical_mutation_gates (
     'LARS',
     jsonb_build_object(
         'validation', 'ADR-013 governance chain verified',
-        'authority_chain', 'ADR-001 → ADR-012 → ADR-013',
+        'authority_chain', 'ADR-001 -> ADR-012 -> ADR-013',
         'constitutional_compliance', TRUE
     ),
     TRUE,
@@ -218,8 +214,6 @@ INSERT INTO fhq_governance.canonical_mutation_gates (
     'HC-LARS-ADR013-G4-CANONICALIZATION-20251127',
     MD5('LARS:ADR013:G4:CANONICALIZATION:' || NOW()::TEXT)
 );
-
-RAISE NOTICE 'G4 canonicalization completed for ADR-013';
 
 -- =====================================================
 -- 4. UPDATE GOVERNANCE STATE
@@ -271,8 +265,6 @@ ON CONFLICT (component_type, component_name, component_version) DO UPDATE SET
     vega_attested = TRUE,
     vega_attestation_timestamp = NOW(),
     updated_at = NOW();
-
-RAISE NOTICE 'Governance state updated for ADR-013';
 
 -- =====================================================
 -- 5. LOG GOVERNANCE ACTIONS (AUDIT TRAIL)
@@ -351,8 +343,6 @@ INSERT INTO fhq_governance.governance_actions_log (
     NOW()
 );
 
-RAISE NOTICE 'Governance actions logged for audit trail';
-
 -- =====================================================
 -- 6. VERIFICATION QUERIES
 -- =====================================================
@@ -427,28 +417,28 @@ COMMIT;
 -- FINAL STATUS REPORT
 -- =====================================================
 
-SELECT '═══════════════════════════════════════════════════════════════════' AS status;
+SELECT '=======================================================================' AS status;
 SELECT 'ADR-013 IMPLEMENTATION COMPLETE' AS status;
-SELECT '═══════════════════════════════════════════════════════════════════' AS status;
+SELECT '=======================================================================' AS status;
 
 SELECT
     'ADR Registration' AS component,
-    CASE WHEN COUNT(*) > 0 THEN '✓ COMPLETE' ELSE '✗ MISSING' END AS status
+    CASE WHEN COUNT(*) > 0 THEN '[OK] COMPLETE' ELSE '[X] MISSING' END AS status
 FROM fhq_meta.adr_registry WHERE adr_id = 'ADR-013'
 UNION ALL
 SELECT
     'VEGA Attestation',
-    CASE WHEN COUNT(*) > 0 THEN '✓ COMPLETE' ELSE '✗ MISSING' END
+    CASE WHEN COUNT(*) > 0 THEN '[OK] COMPLETE' ELSE '[X] MISSING' END
 FROM fhq_governance.vega_attestations WHERE target_id = 'ADR-013'
 UNION ALL
 SELECT
     'G4 Canonicalization',
-    CASE WHEN COUNT(*) > 0 THEN '✓ COMPLETE' ELSE '✗ MISSING' END
+    CASE WHEN COUNT(*) > 0 THEN '[OK] COMPLETE' ELSE '[X] MISSING' END
 FROM fhq_governance.canonical_mutation_gates WHERE target_domain = 'ADR-013-CANONICAL-TRUTH' AND gate_status = 'COMPLETED'
 UNION ALL
 SELECT
     'Governance State',
-    CASE WHEN COUNT(*) > 0 THEN '✓ COMPLETE' ELSE '✗ MISSING' END
+    CASE WHEN COUNT(*) > 0 THEN '[OK] COMPLETE' ELSE '[X] MISSING' END
 FROM fhq_governance.governance_state WHERE component_name = 'ADR-013-CANONICAL-TRUTH-ARCHITECTURE'
 UNION ALL
 SELECT
@@ -456,6 +446,6 @@ SELECT
     COUNT(*)::TEXT || ' domains registered'
 FROM fhq_meta.canonical_domain_registry WHERE is_active = TRUE;
 
-SELECT '═══════════════════════════════════════════════════════════════════' AS status;
+SELECT '=======================================================================' AS status;
 SELECT 'ADR-013: CANONICALIZED AND PRODUCTION READY' AS status;
-SELECT '═══════════════════════════════════════════════════════════════════' AS status;
+SELECT '=======================================================================' AS status;
