@@ -291,29 +291,35 @@ class ADR011Registrar:
         try:
             sha256_hash = self.compute_adr_hash()
 
+            # Use existing table structure with correct column names
             self.db.execute_command("""
                 INSERT INTO fhq_meta.adr_registry (
-                    adr_id, adr_title, adr_type, adr_version,
-                    status, approval_authority, approval_date,
-                    sha256_hash, governance_tier, registered_by
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    adr_id, adr_title, adr_type, adr_status,
+                    current_version, approval_authority, effective_date,
+                    sha256_hash, governance_tier, owner,
+                    description, vega_attested
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (adr_id) DO UPDATE SET
                     adr_title = EXCLUDED.adr_title,
-                    adr_version = EXCLUDED.adr_version,
-                    status = EXCLUDED.status,
+                    current_version = EXCLUDED.current_version,
+                    adr_status = EXCLUDED.adr_status,
                     sha256_hash = EXCLUDED.sha256_hash,
+                    governance_tier = EXCLUDED.governance_tier,
+                    vega_attested = EXCLUDED.vega_attested,
                     updated_at = NOW()
             """, (
                 Config.ADR_ID,
                 Config.ADR_TITLE,
                 Config.ADR_TYPE,
-                Config.ADR_VERSION,
                 'APPROVED',
+                Config.ADR_VERSION,
                 Config.APPROVAL_AUTHORITY,
-                datetime.now(timezone.utc),
+                datetime.now(timezone.utc).date(),
                 sha256_hash,
                 Config.GOVERNANCE_TIER,
-                Config.AGENT_ID
+                'LARS',
+                'Production Fortress & VEGA Testsuite Architecture - Cryptographically verified integrity framework',
+                True
             ))
 
             self.logger.info(f"ADR-011 registered in fhq_meta.adr_registry")
