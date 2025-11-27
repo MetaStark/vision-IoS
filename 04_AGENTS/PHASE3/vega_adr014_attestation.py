@@ -320,12 +320,19 @@ def main():
     # Save attestation report
     report_path = f"05_GOVERNANCE/PHASE3/VEGA_ADR014_ATTESTATION_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
+    # Convert checks to dict with enum values as strings
+    checks_serialized = []
+    for c in attestation.checks:
+        check_dict = asdict(c)
+        check_dict["status"] = c.status.value  # Convert enum to string
+        checks_serialized.append(check_dict)
+
     report = {
         "attestation_id": attestation.attestation_id,
         "adr_id": attestation.adr_id,
         "timestamp": attestation.attestation_timestamp,
         "authority": attestation.authority,
-        "checks": [asdict(c) for c in attestation.checks],
+        "checks": checks_serialized,
         "overall_status": attestation.overall_status.value,
         "signature": attestation.signature,
         "public_key": attestation.public_key,
