@@ -260,9 +260,7 @@ CREATE INDEX IF NOT EXISTS idx_llm_violation_events_unresolved ON vega.llm_viola
 CREATE INDEX IF NOT EXISTS idx_llm_violation_events_severity ON vega.llm_violation_events(severity);
 CREATE INDEX IF NOT EXISTS idx_llm_violation_events_hash_chain ON vega.llm_violation_events(hash_prev);
 
--- Daily index for QG-F6 checks
-CREATE INDEX IF NOT EXISTS idx_llm_violation_events_24h ON vega.llm_violation_events(timestamp)
-    WHERE timestamp > NOW() - INTERVAL '24 hours';
+-- Note: QG-F6 checks use idx_llm_violation_events_timestamp with runtime filter
 
 COMMENT ON TABLE vega.llm_violation_events IS 'ADR-012 Section 5: Hash-chained governance log for violations';
 COMMENT ON COLUMN vega.llm_violation_events.violation_type IS 'RATE = rate limit, COST = cost ceiling, EXECUTION = steps/latency/tokens';
