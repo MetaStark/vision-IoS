@@ -336,26 +336,23 @@ class ADR011Registrar:
     def register_dependencies(self) -> bool:
         """Register ADR-011 dependencies in fhq_meta.adr_dependencies"""
         try:
-            registered = 0
-            for dep_adr in Config.ADR_DEPENDENCIES:
-                self.db.execute_command("""
-                    INSERT INTO fhq_meta.adr_dependencies (
-                        adr_id, depends_on_adr_id,
-                        dependency_type, criticality, version,
-                        dependency_description
-                    ) VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (adr_id, depends_on_adr_id) DO NOTHING
-                """, (
-                    Config.ADR_ID,
-                    dep_adr,
-                    'GOVERNANCE',
-                    'HIGH',
-                    Config.ADR_VERSION,
-                    f'ADR-011 depends on {dep_adr} for Production Fortress integrity'
-                ))
-                registered += 1
+            # Table uses depends_on as text[] array, not separate rows
+            # Based on: \d fhq_meta.adr_dependencies
+            self.db.execute_command("""
+                INSERT INTO fhq_meta.adr_dependencies (
+                    adr_id, version, depends_on,
+                    dependency_type, criticality
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (dependency_id) DO NOTHING
+            """, (
+                Config.ADR_ID,
+                Config.ADR_VERSION,
+                Config.ADR_DEPENDENCIES,  # This is already a list ['ADR-001', 'ADR-002', ...]
+                'GOVERNANCE',
+                'HIGH'
+            ))
 
-            self.logger.info(f"Registered {registered} ADR-011 dependencies")
+            self.logger.info(f"Registered ADR-011 dependencies: {Config.ADR_DEPENDENCIES}")
             return True
 
         except Exception as e:
