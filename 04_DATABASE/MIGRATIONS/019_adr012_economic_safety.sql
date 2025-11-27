@@ -19,6 +19,20 @@
 BEGIN;
 
 -- =====================================================
+-- CLEANUP: Drop existing incomplete tables (idempotent)
+-- =====================================================
+
+DROP TABLE IF EXISTS vega.llm_violation_events CASCADE;
+DROP TABLE IF EXISTS vega.llm_usage_log CASCADE;
+DROP TABLE IF EXISTS vega.llm_execution_limits CASCADE;
+DROP TABLE IF EXISTS vega.llm_cost_limits CASCADE;
+DROP TABLE IF EXISTS vega.llm_rate_limits CASCADE;
+DROP VIEW IF EXISTS vega.llm_daily_usage CASCADE;
+DROP VIEW IF EXISTS vega.llm_violation_summary_24h CASCADE;
+DROP FUNCTION IF EXISTS vega.compute_violation_hash CASCADE;
+DROP FUNCTION IF EXISTS vega.check_qg_f6 CASCADE;
+
+-- =====================================================
 -- SCHEMA CREATION
 -- =====================================================
 
