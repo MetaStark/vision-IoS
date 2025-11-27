@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS fhq_meta.canonical_domain_registry (
         )
     ),
     CONSTRAINT canonical_domain_canonical_check CHECK (is_canonical = TRUE),
-    CONSTRAINT canonical_domain_store_format CHECK (canonical_store ~ '^[a-z_]+\.[a-z_]+$')
+    CONSTRAINT canonical_domain_store_format CHECK (canonical_store ~ '^[a-z_0-9]+\.[a-z_0-9]+$')
 );
 
 -- Indexes for canonical domain registry
