@@ -188,8 +188,7 @@ CREATE INDEX IF NOT EXISTS idx_llm_usage_log_mode ON vega.llm_usage_log(mode);
 CREATE INDEX IF NOT EXISTS idx_llm_usage_log_task ON vega.llm_usage_log(task_id) WHERE task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_llm_usage_log_cycle ON vega.llm_usage_log(cycle_id) WHERE cycle_id IS NOT NULL;
 
--- Partition-ready index for daily aggregation
-CREATE INDEX IF NOT EXISTS idx_llm_usage_log_daily ON vega.llm_usage_log(DATE(timestamp), agent_id);
+-- Note: Daily aggregation uses idx_llm_usage_log_timestamp + agent filter
 
 COMMENT ON TABLE vega.llm_usage_log IS 'ADR-012 Section 5: Canonical usage ledger for all LLM calls';
 COMMENT ON COLUMN vega.llm_usage_log.mode IS 'LIVE = real API call, STUB = mock/placeholder response';
