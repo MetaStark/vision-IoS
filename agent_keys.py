@@ -21,7 +21,20 @@ else:
 class AgentKeyManager:
     """Manages encrypted agent keys"""
 
-    AGENTS = ['LARS', 'STIG', 'LINE', 'FINN', 'VEGA']
+    # Constitutional Fleet (11 Sovereigns) per ADR-008 / EXEC-DIR-004
+    AGENTS = [
+        # Tier-1 Executive
+        'VEGA', 'LARS',
+        # Tier-2 Executive
+        'STIG', 'FINN', 'LINE',
+        # Tier-2 Sub-Executive (ADR-014)
+        'CSEO', 'CDMO', 'CRIO', 'CEIO', 'CFAO',
+        # Tier-3 Engineering
+        'CODE'
+    ]
+
+    # Legacy agents (for backward compatibility)
+    LEGACY_AGENTS = ['LARS', 'STIG', 'LINE', 'FINN', 'VEGA']
 
     def __init__(self):
         """Initialize key manager with keystore passphrase"""
@@ -30,9 +43,18 @@ class AgentKeyManager:
             raise ValueError("KEYSTORE_PASSPHRASE not set in environment")
 
     def get_agent_private_key(self, agent_id: str) -> Optional[str]:
-        """Get encrypted private key for agent"""
-        env_var = f"AGENT_{agent_id.upper()}_PRIVATE_KEY"
-        return os.getenv(env_var)
+        """Get private key for agent (supports both new and legacy formats)"""
+        agent_upper = agent_id.upper()
+
+        # Try new format first (FHQ_*_PRIVATE_KEY - raw hex Ed25519)
+        new_format_var = f"FHQ_{agent_upper}_PRIVATE_KEY"
+        key = os.getenv(new_format_var)
+        if key and not key.startswith('your-'):
+            return key
+
+        # Fall back to legacy format (AGENT_*_PRIVATE_KEY - Fernet encrypted)
+        legacy_var = f"AGENT_{agent_upper}_PRIVATE_KEY"
+        return os.getenv(legacy_var)
 
     def decrypt_agent_key(self, agent_id: str) -> Optional[str]:
         """Decrypt agent private key using keystore passphrase"""
