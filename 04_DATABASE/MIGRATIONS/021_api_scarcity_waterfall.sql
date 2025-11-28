@@ -275,7 +275,7 @@ CREATE OR REPLACE FUNCTION fhq_governance.check_api_budget(
 RETURNS TABLE (
     allowed BOOLEAN,
     remaining_quota INTEGER,
-    usage_tier TEXT,
+    tier_name TEXT,
     reason TEXT
 ) AS $$
 DECLARE
@@ -298,10 +298,10 @@ BEGIN
 
     -- Get agent policy for this tier
     SELECT * INTO v_policy
-    FROM fhq_governance.data_provider_policy
-    WHERE agent_id = p_agent_id
-      AND usage_tier = v_tier
-      AND UPPER(p_provider) = ANY(authorized_providers);
+    FROM fhq_governance.data_provider_policy dpp
+    WHERE dpp.agent_id = p_agent_id
+      AND dpp.usage_tier = v_tier
+      AND UPPER(p_provider) = ANY(dpp.authorized_providers);
 
     IF NOT FOUND THEN
         RETURN QUERY SELECT FALSE, 0, v_tier, 'Agent not authorized for this provider';
@@ -316,11 +316,11 @@ BEGIN
     END IF;
 
     -- Calculate usage today
-    SELECT COALESCE(SUM(credits_used), 0) INTO v_used_today
-    FROM fhq_monitoring.api_budget_log
-    WHERE agent_id = p_agent_id
-      AND provider = UPPER(p_provider)
-      AND created_at >= CURRENT_DATE;
+    SELECT COALESCE(SUM(abl.credits_used), 0) INTO v_used_today
+    FROM fhq_monitoring.api_budget_log abl
+    WHERE abl.agent_id = p_agent_id
+      AND abl.provider = UPPER(p_provider)
+      AND abl.created_at >= CURRENT_DATE;
 
     -- Check quota
     IF v_used_today >= v_policy.daily_quota THEN
@@ -356,7 +356,7 @@ BEGIN
         RAISE EXCEPTION 'API call blocked: %', v_check.reason;
     END IF;
 
-    v_tier := v_check.usage_tier;
+    v_tier := v_check.tier_name;
 
     -- SNIPER tier requires justification
     IF v_tier = 'SNIPER' AND p_justification IS NULL THEN
