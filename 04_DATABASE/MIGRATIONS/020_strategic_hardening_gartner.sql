@@ -843,13 +843,15 @@ BEGIN
         );
         RAISE NOTICE '✅ VEGA attestation recorded for ADR-015';
     ELSE
-        -- Use minimal column set (attestation_type, evidence_bundle, created_at)
+        -- Use column set with attestation_target (required NOT NULL column)
         INSERT INTO fhq_meta.vega_attestations (
             attestation_type,
+            attestation_target,
             evidence_bundle,
             created_at
         ) VALUES (
             'ADR_REGISTRATION',
+            'ADR-015',
             jsonb_build_object(
                 'adr_id', 'ADR-015',
                 'title', 'Strategic Hardening & Gartner 2025 Alignment Charter',
@@ -868,7 +870,7 @@ BEGIN
             ),
             NOW()
         );
-        RAISE NOTICE '✅ VEGA attestation recorded for ADR-015 (minimal schema)';
+        RAISE NOTICE '✅ VEGA attestation recorded for ADR-015';
     END IF;
 END $$;
 
