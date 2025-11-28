@@ -76,9 +76,8 @@ class AgentKeyState:
     agent_id: str
     public_key_hex: Optional[str] = None
     key_state: Optional[str] = None
-    signing_algorithm: str = "Ed25519"
-    rotation_generation: int = 1
-    valid_from: Optional[str] = None
+    key_type: str = "ED25519_SIGNING"
+    activation_date: Optional[str] = None
     key_fingerprint: Optional[str] = None
     ceremony_id: Optional[str] = None
     is_registered: bool = False
@@ -153,11 +152,11 @@ def verify_agent_key(agent_id: str, strict: bool = False) -> VerificationResult:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-        # Check for active keys
+        # Check for active keys (using actual schema columns)
         cursor.execute("""
             SELECT
-                agent_id, public_key_hex, key_state, signing_algorithm,
-                rotation_generation, valid_from, key_fingerprint, ceremony_id
+                agent_id, public_key_hex, key_state, key_type,
+                activation_date, key_fingerprint, ceremony_id
             FROM fhq_meta.agent_keys
             WHERE (agent_id = %s OR UPPER(agent_id) = UPPER(%s))
               AND key_state = 'ACTIVE'
@@ -217,7 +216,7 @@ def verify_agent_key(agent_id: str, strict: bool = False) -> VerificationResult:
             agent_id=agent_id,
             details={
                 "public_key_fingerprint": key_data.get("key_fingerprint"),
-                "rotation_generation": key_data.get("rotation_generation"),
+                "key_type": key_data.get("key_type"),
                 "ceremony_id": key_data.get("ceremony_id")
             }
         )
@@ -313,11 +312,11 @@ def create_identity_snapshot(reason: str, canonical: bool = False) -> Optional[I
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-        # Get all agent key states
+        # Get all agent key states (using actual schema columns)
         cursor.execute("""
             SELECT
-                agent_id, public_key_hex, key_state, signing_algorithm,
-                rotation_generation, valid_from, key_fingerprint, ceremony_id
+                agent_id, public_key_hex, key_state, key_type,
+                activation_date, key_fingerprint, ceremony_id
             FROM fhq_meta.agent_keys
             WHERE key_state = 'ACTIVE'
         """)
@@ -548,12 +547,12 @@ def attest_identity_state(sign: bool = False) -> None:
             cursor.execute("""
                 INSERT INTO fhq_governance.vega_attestations (
                     target_type, target_id, target_version,
-                    attestation_type, attestation_status,
+                    attestation_type, attestation_status, attestation_timestamp,
                     vega_signature, vega_public_key, signature_verified,
                     attestation_data, adr_reference, constitutional_basis
                 ) VALUES (
                     'IDENTITY_STATE', %s, '1.0',
-                    'CERTIFICATION', 'APPROVED',
+                    'CERTIFICATION', 'APPROVED', NOW(),
                     %s, %s, TRUE,
                     %s, 'ADR-008', 'EC-001'
                 )
