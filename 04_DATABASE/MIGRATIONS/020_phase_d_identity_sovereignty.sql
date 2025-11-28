@@ -40,6 +40,57 @@ CREATE INDEX IF NOT EXISTS idx_agent_keys_ceremony ON fhq_meta.agent_keys(ceremo
 CREATE INDEX IF NOT EXISTS idx_agent_keys_attested ON fhq_meta.agent_keys(vega_attested);
 
 -- ============================================================================
+-- SECTION 1B: ENSURE GOVERNANCE TABLES EXIST
+-- ============================================================================
+
+-- Create authority_matrix table if not exists (from ADR-014)
+CREATE TABLE IF NOT EXISTS fhq_governance.authority_matrix (
+    matrix_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id TEXT NOT NULL UNIQUE,
+    authority_level INTEGER NOT NULL DEFAULT 2,
+    can_read_canonical BOOLEAN NOT NULL DEFAULT TRUE,
+    can_write_canonical BOOLEAN NOT NULL DEFAULT FALSE,
+    can_trigger_g0 BOOLEAN NOT NULL DEFAULT TRUE,
+    can_trigger_g1 BOOLEAN NOT NULL DEFAULT TRUE,
+    can_trigger_g2 BOOLEAN NOT NULL DEFAULT FALSE,
+    can_trigger_g3 BOOLEAN NOT NULL DEFAULT FALSE,
+    can_trigger_g4 BOOLEAN NOT NULL DEFAULT FALSE,
+    can_execute_operational_tasks BOOLEAN NOT NULL DEFAULT TRUE,
+    can_submit_g0 BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by TEXT NOT NULL DEFAULT 'CEO'
+);
+
+-- Create model_provider_policy table if not exists (from ADR-007/ADR-014)
+CREATE TABLE IF NOT EXISTS fhq_governance.model_provider_policy (
+    policy_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id TEXT NOT NULL UNIQUE,
+    llm_tier INTEGER NOT NULL,
+    allowed_providers TEXT[] NOT NULL,
+    forbidden_providers TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    data_sharing_allowed BOOLEAN NOT NULL DEFAULT FALSE,
+    tier_description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by TEXT NOT NULL DEFAULT 'CEO'
+);
+
+-- Create change_log table if not exists
+CREATE TABLE IF NOT EXISTS fhq_governance.change_log (
+    log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    change_type TEXT NOT NULL,
+    change_scope TEXT NOT NULL,
+    change_description TEXT NOT NULL,
+    authority TEXT NOT NULL,
+    approval_gate TEXT,
+    hash_chain_id TEXT,
+    agent_signatures JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by TEXT NOT NULL
+);
+
+-- ============================================================================
 -- SECTION 2: CODE AGENT REGISTRATION
 -- ============================================================================
 -- CODE is the Engineering Execution Unit (Tier-3)
