@@ -323,11 +323,17 @@ def create_identity_snapshot(reason: str, canonical: bool = False) -> Optional[I
 
         active_keys = cursor.fetchall()
 
-        # Build agent states dict
+        # Build agent states dict (convert datetime to string for JSON)
         agent_states = {}
         for row in active_keys:
             agent_id = row["agent_id"].upper()
-            agent_states[agent_id] = dict(row)
+            state = {}
+            for key, value in dict(row).items():
+                if isinstance(value, datetime.datetime):
+                    state[key] = value.isoformat()
+                else:
+                    state[key] = value
+            agent_states[agent_id] = state
 
         # Compute state hash
         state_hash = compute_identity_state_hash(agent_states)
