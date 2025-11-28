@@ -7,14 +7,11 @@
 -- Constitutional Foundation: ADR-007 Orchestrator Charter
 -- Priority: P0 - IMMEDIATE
 --
--- This migration creates:
---   1. fhq_meta.vega_employment_contract - Employment contract registry
---   2. Inserts EC-001 (VEGA) as baseline
---   3. Inserts EC-002 through EC-012 for all agents
---   4. Creates VEGA attestations for all contracts
+-- NOTE: EC-001 (VEGA) already exists in the database
+-- This migration adds EC-002 through EC-012 for remaining agents
 --
 -- Contract Matrix:
---   EC-001: VEGA   (Authority 10, Governance)
+--   EC-001: VEGA   (Authority 10, Governance) - ALREADY EXISTS
 --   EC-002: LARS   (Authority 9, Strategy)
 --   EC-003: STIG   (Authority 8, Implementation)
 --   EC-004: FINN   (Authority 8, Research)
@@ -32,77 +29,9 @@
 BEGIN;
 
 -- =====================================================
--- STEP 0: CREATE EMPLOYMENT CONTRACT TABLE
+-- STEP 1: INSERT EC-002 THROUGH EC-012
 -- =====================================================
-
-CREATE TABLE IF NOT EXISTS fhq_meta.vega_employment_contract (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    -- Contract identification
-    contract_number TEXT NOT NULL UNIQUE,
-    contract_version TEXT NOT NULL,
-
-    -- Employment relationship
-    employer TEXT NOT NULL DEFAULT 'FjordHQ AS',
-    employee TEXT NOT NULL,
-
-    -- Contract dates
-    effective_date DATE NOT NULL,
-    termination_date DATE,
-
-    -- Contract status
-    status TEXT NOT NULL DEFAULT 'PENDING',
-
-    -- Governance structure
-    governing_charter TEXT NOT NULL,
-    constitutional_foundation TEXT[] NOT NULL,
-
-    -- Duties and rights summary
-    total_duties INTEGER NOT NULL DEFAULT 0,
-    total_constraints INTEGER NOT NULL DEFAULT 0,
-    total_rights INTEGER NOT NULL DEFAULT 0,
-
-    -- Authority structure
-    override_authority TEXT[] NOT NULL,
-    reports_to TEXT NOT NULL,
-
-    -- Audit fields
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by TEXT NOT NULL DEFAULT 'LARS',
-
-    -- Constraints
-    CONSTRAINT employment_contract_status_check CHECK (
-        status IN ('PENDING', 'ACTIVE', 'SUSPENDED', 'TERMINATED', 'RESERVED')
-    )
-);
-
--- Create indexes for efficient querying
-CREATE INDEX IF NOT EXISTS idx_employment_contract_employee ON fhq_meta.vega_employment_contract(employee);
-CREATE INDEX IF NOT EXISTS idx_employment_contract_status ON fhq_meta.vega_employment_contract(status);
-CREATE INDEX IF NOT EXISTS idx_employment_contract_reports_to ON fhq_meta.vega_employment_contract(reports_to);
-
-COMMENT ON TABLE fhq_meta.vega_employment_contract IS 'ADR-007: Employment contracts establishing constitutional employment relationships for FjordHQ agents';
-
--- =====================================================
--- STEP 1: INSERT EC-001 (VEGA) - BASELINE
--- =====================================================
-
-INSERT INTO fhq_meta.vega_employment_contract
-    (contract_number, contract_version, employer, employee, effective_date, status,
-     governing_charter, constitutional_foundation, total_duties, total_constraints,
-     total_rights, override_authority, reports_to, created_by)
-VALUES
-    ('EC-001', '2026.PRODUCTION', 'FjordHQ AS', 'VEGA', '2025-11-28', 'ACTIVE',
-     'ADR-006', ARRAY['ADR-001','ADR-002','ADR-003','ADR-004','ADR-006','ADR-007'],
-     10, 3, 8, ARRAY['CEO'], 'CEO', 'CEO')
-ON CONFLICT (contract_number) DO UPDATE SET
-    status = EXCLUDED.status,
-    updated_at = NOW();
-
--- =====================================================
--- STEP 2: INSERT EC-002 THROUGH EC-012
--- =====================================================
+-- Using existing table schema (contract_id is auto-generated)
 
 INSERT INTO fhq_meta.vega_employment_contract
     (contract_number, contract_version, employer, employee, effective_date, status,
@@ -157,7 +86,7 @@ ON CONFLICT (contract_number) DO UPDATE SET
     updated_at = NOW();
 
 -- =====================================================
--- STEP 3: CREATE VEGA ATTESTATIONS
+-- STEP 2: CREATE VEGA ATTESTATIONS
 -- =====================================================
 -- Using the existing vega_attestations table structure
 
@@ -338,7 +267,7 @@ INSERT INTO fhq_governance.vega_attestations (
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- STEP 4: LOG GOVERNANCE ACTION
+-- STEP 3: LOG GOVERNANCE ACTION
 -- =====================================================
 
 INSERT INTO fhq_governance.governance_actions_log (
@@ -456,7 +385,7 @@ COMMIT;
 \echo 'Authority: CEO → ADR-007 §3.2'
 \echo ''
 \echo 'Contracts Registered:'
-\echo '  EC-001: VEGA    (Authority 10, Governance)'
+\echo '  EC-001: VEGA    (Authority 10, Governance) - PRE-EXISTING'
 \echo '  EC-002: LARS    (Authority 9, Strategy)'
 \echo '  EC-003: STIG    (Authority 8, Implementation)'
 \echo '  EC-004: FINN    (Authority 8, Research)'
