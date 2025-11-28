@@ -165,9 +165,10 @@ def generate_fleet_keys(
         }
 
         # Generate SQL statement (with idempotent check)
+        # Note: Uses only columns that exist in the base agent_keys table
         sql = f"""
 INSERT INTO fhq_meta.agent_keys (
-    key_id, agent_id, public_key_hex, key_state, signing_algorithm,
+    key_id, agent_id, public_key_hex, key_state,
     rotation_generation, valid_from, ceremony_id, key_fingerprint, created_by
 )
 SELECT
@@ -175,7 +176,6 @@ SELECT
     '{agent_id}',
     '{public_hex}',
     'ACTIVE',
-    'Ed25519',
     COALESCE(
         (SELECT MAX(rotation_generation) + 1 FROM fhq_meta.agent_keys WHERE agent_id = '{agent_id}'),
         1
