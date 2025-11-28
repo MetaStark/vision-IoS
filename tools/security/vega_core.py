@@ -119,6 +119,12 @@ def get_db_connection():
     if psycopg2 is None:
         raise RuntimeError("psycopg2 not installed. Cannot connect to database.")
 
+    # Try DATABASE_URL first (Supabase format)
+    db_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
+    if db_url:
+        return psycopg2.connect(db_url)
+
+    # Fall back to individual params
     return psycopg2.connect(
         host=os.getenv("PGHOST", "127.0.0.1"),
         port=os.getenv("PGPORT", "54322"),
