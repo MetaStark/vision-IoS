@@ -603,6 +603,23 @@ CREATE INDEX IF NOT EXISTS idx_mkg_nodes_type ON fhq_research.mkg_nodes(node_typ
 -- GOVERNANCE CHANGE LOG – STRATEGIC HARDENING ACTIVATION
 -- ============================================================================
 
+-- Create change_log table if it doesn't exist
+CREATE TABLE IF NOT EXISTS fhq_governance.change_log (
+    log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    change_type TEXT NOT NULL,
+    change_scope TEXT NOT NULL,
+    change_description TEXT,
+    authority TEXT,
+    approval_gate TEXT,
+    hash_chain_id TEXT,
+    agent_signatures JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_change_log_type ON fhq_governance.change_log(change_type);
+CREATE INDEX IF NOT EXISTS idx_change_log_created ON fhq_governance.change_log(created_at);
+
 INSERT INTO fhq_governance.change_log (
     change_type,
     change_scope,
