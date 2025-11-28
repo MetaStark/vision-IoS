@@ -385,15 +385,7 @@ WHERE adr_id = 'ADR-016';
 -- 11. REGISTER STIG AS RUNTIME GUARDIAN IN AUTHORITY MATRIX
 -- ============================================================================
 
--- Update STIG's authority to include Runtime Guardian capabilities
-UPDATE fhq_governance.authority_matrix
-SET
-    can_trigger_defcon = TRUE,
-    defcon_authority_level = 'RED',  -- Can escalate up to RED, BLACK requires VEGA+CEO
-    updated_at = NOW()
-WHERE agent_id = 'stig';
-
--- Add defcon columns if they don't exist
+-- Add defcon columns if they don't exist (MUST come before UPDATE)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns
@@ -412,6 +404,14 @@ BEGIN
         ADD COLUMN defcon_authority_level TEXT DEFAULT NULL;
     END IF;
 END $$;
+
+-- Update STIG's authority to include Runtime Guardian capabilities
+UPDATE fhq_governance.authority_matrix
+SET
+    can_trigger_defcon = TRUE,
+    defcon_authority_level = 'RED',  -- Can escalate up to RED, BLACK requires VEGA+CEO
+    updated_at = NOW()
+WHERE agent_id = 'stig';
 
 -- ============================================================================
 -- 12. GOVERNANCE CHANGE LOG – ADR-016 ACTIVATION
