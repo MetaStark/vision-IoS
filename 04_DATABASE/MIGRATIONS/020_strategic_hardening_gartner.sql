@@ -843,20 +843,21 @@ BEGIN
         );
         RAISE NOTICE '✅ VEGA attestation recorded for ADR-015';
     ELSE
-        -- Use column set with attestation_target (required NOT NULL column)
+        -- Use column set with required NOT NULL columns
         INSERT INTO fhq_meta.vega_attestations (
             attestation_type,
             attestation_target,
+            attestation_status,
             evidence_bundle,
             created_at
         ) VALUES (
             'ADR_REGISTRATION',
             'ADR-015',
+            'APPROVED',
             jsonb_build_object(
                 'adr_id', 'ADR-015',
                 'title', 'Strategic Hardening & Gartner 2025 Alignment Charter',
                 'scope', 'ADR-015_STRATEGIC_HARDENING',
-                'status', 'APPROVED',
                 'gartner_alignments', jsonb_build_array(
                     'Reasoning Models (CSEO CoT)',
                     'Knowledge Graphs / GraphRAG (CRIO MKG)',
