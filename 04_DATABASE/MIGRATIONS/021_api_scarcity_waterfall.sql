@@ -24,6 +24,38 @@
 BEGIN;
 
 -- ============================================================================
+-- 0. REGISTER SUB-EXECUTIVES IN ORG_AGENTS (Required for FK)
+-- ============================================================================
+-- Sub-executives defined in ADR-014 need to be in org_agents for FK references
+
+INSERT INTO fhq_org.org_agents (
+    agent_id, agent_name, agent_role, authority_level, public_key,
+    signing_algorithm, llm_tier, constitutional_authority, responsibilities
+) VALUES
+    ('CDMO', 'Chief Data & Memory Officer', 'Data Management', 5,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['Synthetic data generation', 'Memory management', 'Data pipeline']),
+    ('CRIO', 'Chief Research & Intelligence Officer', 'Research Intelligence', 5,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['GraphRAG maintenance', 'Market Knowledge Graph', 'Research coordination']),
+    ('CFAO', 'Chief Foresight & Analytics Officer', 'Foresight Analytics', 5,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['Scenario simulation', 'Foresight packs', 'Risk projection']),
+    ('CEIO', 'Chief External Intelligence Officer', 'External Intelligence', 5,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['News monitoring', 'Sentiment analysis', 'Fact verification']),
+    ('CSEO', 'Chief Strategy & Experimentation Officer', 'Strategy Experimentation', 5,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['Strategy drafts', 'Reasoning chains', 'Hypothesis testing']),
+    ('CODE', 'Engineering Execution Unit', 'Execution', 3,
+     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
+     ARRAY['Code execution', 'Technical implementation', 'No decision authority'])
+ON CONFLICT (agent_id) DO UPDATE SET
+    agent_role = EXCLUDED.agent_role,
+    responsibilities = EXCLUDED.responsibilities,
+    updated_at = NOW();
+
+-- ============================================================================
 -- 1. CREATE DATA PROVIDER POLICY TABLE
 -- ============================================================================
 
@@ -135,8 +167,8 @@ ON CONFLICT (provider_name) DO UPDATE SET
 -- CDMO: Chief Data & Memory Officer - Full LAKE access, limited PULSE
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('cdmo', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('cdmo', ARRAY['TWELVEDATA', 'FINNHUB'], 'PULSE', 200, 3, 'NORMAL', 'CEO')
+    ('CDMO', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('CDMO', ARRAY['TWELVEDATA', 'FINNHUB'], 'PULSE', 200, 3, 'NORMAL', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -144,8 +176,8 @@ ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
 -- CRIO: Chief Research & Intelligence Officer - GraphRAG builder
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('crio', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('crio', ARRAY['FINNHUB', 'MARKETAUX'], 'PULSE', 150, 4, 'NORMAL', 'CEO')
+    ('CRIO', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('CRIO', ARRAY['FINNHUB', 'MARKETAUX'], 'PULSE', 150, 4, 'NORMAL', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -153,8 +185,8 @@ ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
 -- CFAO: Chief Foresight & Analytics Officer - Simulation focus
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('cfao', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('cfao', ARRAY['TWELVEDATA'], 'PULSE', 100, 3, 'NORMAL', 'CEO')
+    ('CFAO', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('CFAO', ARRAY['TWELVEDATA'], 'PULSE', 100, 3, 'NORMAL', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -162,9 +194,9 @@ ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
 -- CEIO: Chief External Intelligence Officer - News & Verification
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('ceio', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('ceio', ARRAY['MARKETAUX', 'FINNHUB'], 'PULSE', 100, 5, 'NORMAL', 'CEO'),
-    ('ceio', ARRAY['SERPER'], 'SNIPER', 50, 8, 'HIGH', 'CEO')
+    ('CEIO', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('CEIO', ARRAY['MARKETAUX', 'FINNHUB'], 'PULSE', 100, 5, 'NORMAL', 'CEO'),
+    ('CEIO', ARRAY['SERPER'], 'SNIPER', 50, 8, 'HIGH', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -172,9 +204,9 @@ ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
 -- FINN: Financial Intelligence - Analysis focus
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('finn', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('finn', ARRAY['TWELVEDATA', 'FINNHUB'], 'PULSE', 300, 3, 'NORMAL', 'CEO'),
-    ('finn', ARRAY['ALPHAVANTAGE', 'FMP'], 'SNIPER', 25, 10, 'CRITICAL', 'CEO')
+    ('FINN', ARRAY['YFINANCE', 'FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('FINN', ARRAY['TWELVEDATA', 'FINNHUB'], 'PULSE', 300, 3, 'NORMAL', 'CEO'),
+    ('FINN', ARRAY['ALPHAVANTAGE', 'FMP'], 'SNIPER', 25, 10, 'CRITICAL', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -182,8 +214,8 @@ ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
 -- LARS: Strategy - Final confirmation only
 INSERT INTO fhq_governance.data_provider_policy (agent_id, authorized_providers, usage_tier, daily_quota, cost_weight, priority_required, created_by)
 VALUES
-    ('lars', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
-    ('lars', ARRAY['ALPHAVANTAGE', 'FMP'], 'SNIPER', 10, 10, 'CRITICAL', 'CEO')
+    ('LARS', ARRAY['FRED'], 'LAKE', 999999, 1, 'NORMAL', 'CEO'),
+    ('LARS', ARRAY['ALPHAVANTAGE', 'FMP'], 'SNIPER', 10, 10, 'CRITICAL', 'CEO')
 ON CONFLICT (agent_id, usage_tier) DO UPDATE SET
     authorized_providers = EXCLUDED.authorized_providers,
     daily_quota = EXCLUDED.daily_quota;
@@ -380,19 +412,19 @@ DECLARE
     v_result RECORD;
 BEGIN
     -- Test LAKE access (should always work)
-    SELECT * INTO v_result FROM fhq_governance.check_api_budget('cdmo', 'YFINANCE', 'NORMAL');
+    SELECT * INTO v_result FROM fhq_governance.check_api_budget('CDMO', 'YFINANCE', 'NORMAL');
     IF NOT v_result.allowed THEN
         RAISE EXCEPTION 'LAKE access failed for CDMO';
     END IF;
 
     -- Test SNIPER without CRITICAL (should fail)
-    SELECT * INTO v_result FROM fhq_governance.check_api_budget('finn', 'ALPHAVANTAGE', 'NORMAL');
+    SELECT * INTO v_result FROM fhq_governance.check_api_budget('FINN', 'ALPHAVANTAGE', 'NORMAL');
     IF v_result.allowed THEN
         RAISE EXCEPTION 'SNIPER should require CRITICAL priority';
     END IF;
 
     -- Test SNIPER with CRITICAL (should work)
-    SELECT * INTO v_result FROM fhq_governance.check_api_budget('finn', 'ALPHAVANTAGE', 'CRITICAL');
+    SELECT * INTO v_result FROM fhq_governance.check_api_budget('FINN', 'ALPHAVANTAGE', 'CRITICAL');
     IF NOT v_result.allowed THEN
         RAISE EXCEPTION 'SNIPER with CRITICAL should be allowed';
     END IF;
