@@ -272,29 +272,22 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO fhq_governance.governance_actions_log (
     action_type,
-    agent_id,
+    action_target,
+    action_target_type,
+    initiated_by,
     decision,
-    metadata,
+    decision_rationale,
     hash_chain_id,
-    signature,
-    timestamp
+    signature_id
 ) VALUES (
     'EMPLOYMENT_CONTRACT_REGISTRATION',
+    'EC-001_TO_EC-012',
+    'EMPLOYMENT_CONTRACT',
     'LARS',
     'APPROVED',
-    jsonb_build_object(
-        'directive_id', 'DIR-EC-REG-20251128',
-        'classification', 'CONSTITUTIONAL_IMPLEMENTATION',
-        'authority', 'CEO → ADR-007 §3.2',
-        'contracts_registered', 12,
-        'contract_range', 'EC-001 through EC-012',
-        'employees', ARRAY['VEGA', 'LARS', 'STIG', 'FINN', 'LINE', 'CSEO', 'CDMO', 'CRIO', 'CEIO', 'CFAO', 'CODE', 'RESERVED'],
-        'attestations_created', 12,
-        'effective_date', '2025-11-28'
-    ),
+    'CEO Directive DIR-EC-REG-20251128: Register employment contracts EC-001 through EC-012 per ADR-007 §3.2',
     'HC-DIR-EC-REG-20251128-' || MD5(NOW()::TEXT),
-    'LARS_SIGNATURE_' || MD5(NOW()::TEXT || 'EMPLOYMENT_CONTRACT_REGISTRATION'),
-    NOW()
+    gen_random_uuid()
 );
 
 -- =====================================================
