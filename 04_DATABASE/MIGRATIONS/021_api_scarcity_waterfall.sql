@@ -27,32 +27,75 @@ BEGIN;
 -- 0. REGISTER SUB-EXECUTIVES IN ORG_AGENTS (Required for FK)
 -- ============================================================================
 -- Sub-executives defined in ADR-014 need to be in org_agents for FK references
+-- Authority Level 7 = Sub-Executive (below 8=CTO/CIO/CRO, 9=CSO, 10=VEGA)
 
 INSERT INTO fhq_org.org_agents (
-    agent_id, agent_name, agent_role, authority_level, public_key,
-    signing_algorithm, llm_tier, constitutional_authority, responsibilities
+    agent_id, agent_name, agent_role, authority_level,
+    public_key, signing_algorithm, key_registered_at,
+    llm_tier, is_active, is_suspended, data_sharing_allowed,
+    constitutional_authority, responsibilities, created_at, updated_at
 ) VALUES
-    ('CDMO', 'Chief Data & Memory Officer', 'Data Management', 5,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['Synthetic data generation', 'Memory management', 'Data pipeline']),
-    ('CRIO', 'Chief Research & Intelligence Officer', 'Research Intelligence', 5,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['GraphRAG maintenance', 'Market Knowledge Graph', 'Research coordination']),
-    ('CFAO', 'Chief Foresight & Analytics Officer', 'Foresight Analytics', 5,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['Scenario simulation', 'Foresight packs', 'Risk projection']),
-    ('CEIO', 'Chief External Intelligence Officer', 'External Intelligence', 5,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['News monitoring', 'Sentiment analysis', 'Fact verification']),
-    ('CSEO', 'Chief Strategy & Experimentation Officer', 'Strategy Experimentation', 5,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['Strategy drafts', 'Reasoning chains', 'Hypothesis testing']),
+    ('CSEO', 'Chief Strategy & Execution Officer', 'Sub-Executive', 7,
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     2, true, false, true,
+     'ADR-014 → ADR-001', ARRAY['Strategy execution', 'Cross-domain coordination', 'Reasoning chains'], NOW(), NOW()),
+    ('CDMO', 'Chief Data & Model Officer', 'Sub-Executive', 7,
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     2, true, false, true,
+     'ADR-014 → ADR-013', ARRAY['Data governance', 'Model lifecycle', 'Synthetic data generation'], NOW(), NOW()),
+    ('CRIO', 'Chief Risk & Intelligence Officer', 'Sub-Executive', 7,
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     2, true, false, true,
+     'ADR-014 → ADR-012', ARRAY['Risk management', 'Intelligence analysis', 'GraphRAG maintenance'], NOW(), NOW()),
+    ('CEIO', 'Chief Engineering & Infrastructure Officer', 'Sub-Executive', 7,
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     3, true, false, true,
+     'ADR-014 → ADR-007', ARRAY['Engineering', 'Infrastructure', 'External intelligence'], NOW(), NOW()),
+    ('CFAO', 'Chief Financial & Audit Officer', 'Sub-Executive', 7,
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     2, true, false, true,
+     'ADR-014 → ADR-002', ARRAY['Financial oversight', 'Audit coordination', 'Foresight simulation'], NOW(), NOW()),
     ('CODE', 'Engineering Execution Unit', 'Execution', 3,
-     'PENDING_KEY_GENERATION', 'Ed25519', 2, 'ADR-014',
-     ARRAY['Code execution', 'Technical implementation', 'No decision authority'])
+     'PENDING_KEY_ROTATION', 'Ed25519', NOW(),
+     2, true, false, false,
+     'ADR-014', ARRAY['Code execution', 'Technical implementation', 'No decision authority'], NOW(), NOW())
 ON CONFLICT (agent_id) DO UPDATE SET
     agent_role = EXCLUDED.agent_role,
+    authority_level = EXCLUDED.authority_level,
+    constitutional_authority = EXCLUDED.constitutional_authority,
     responsibilities = EXCLUDED.responsibilities,
+    updated_at = NOW();
+
+-- ============================================================================
+-- 0b. REGISTER SUB-EXECUTIVES IN EXECUTIVE_ROLES
+-- ============================================================================
+
+INSERT INTO fhq_governance.executive_roles (
+    role_id, role_name, role_description, authority_level,
+    domain, veto_power, active, created_at, updated_at
+) VALUES
+    ('CSEO', 'Chief Strategy & Execution Officer',
+     'Sub-Executive - Strategy execution under LARS supervision', 7,
+     ARRAY['strategy', 'execution'], false, true, NOW(), NOW()),
+    ('CDMO', 'Chief Data & Model Officer',
+     'Sub-Executive - Data governance under LARS supervision', 7,
+     ARRAY['data', 'models', 'governance'], false, true, NOW(), NOW()),
+    ('CRIO', 'Chief Risk & Intelligence Officer',
+     'Sub-Executive - Risk management under FINN supervision', 7,
+     ARRAY['risk', 'intelligence', 'analysis'], false, true, NOW(), NOW()),
+    ('CEIO', 'Chief Engineering & Infrastructure Officer',
+     'Sub-Executive - Engineering under STIG/LINE supervision', 7,
+     ARRAY['engineering', 'infrastructure'], false, true, NOW(), NOW()),
+    ('CFAO', 'Chief Financial & Audit Officer',
+     'Sub-Executive - Financial oversight under VEGA supervision', 7,
+     ARRAY['financial', 'audit', 'foresight'], false, true, NOW(), NOW()),
+    ('CODE', 'Engineering Execution Unit',
+     'Execution arm - No decision authority, operates under STIG', 3,
+     ARRAY['execution', 'implementation'], false, true, NOW(), NOW())
+ON CONFLICT (role_id) DO UPDATE SET
+    role_description = EXCLUDED.role_description,
+    authority_level = EXCLUDED.authority_level,
+    domain = EXCLUDED.domain,
     updated_at = NOW();
 
 -- ============================================================================
