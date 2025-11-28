@@ -416,8 +416,9 @@ def test_llm_provider_policies() -> List[TestResult]:
             )]
 
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Use actual schema columns: allowed_tier, allowed_providers
             cur.execute("""
-                SELECT agent_id, llm_tier, allowed_providers, forbidden_providers
+                SELECT agent_id, allowed_tier, allowed_providers, data_sharing_policy
                 FROM fhq_governance.model_provider_policy
             """)
             rows = cur.fetchall()
@@ -425,7 +426,7 @@ def test_llm_provider_policies() -> List[TestResult]:
 
         policies = {row['agent_id'].lower(): row for row in rows}
 
-        # Tier-2 agents should have Anthropic forbidden
+        # Tier-2 agents should NOT have Anthropic in allowed_providers
         tier2_agents = ["cseo", "cdmo", "crio", "ceio", "cfao"]
         for agent in tier2_agents:
             if agent not in policies:
@@ -438,20 +439,22 @@ def test_llm_provider_policies() -> List[TestResult]:
                 continue
 
             policy = policies[agent]
-            anthropic_forbidden = "anthropic" in (policy.get('forbidden_providers') or [])
-            is_tier2 = policy.get('llm_tier') == 2
+            allowed = policy.get('allowed_providers') or []
+            # Anthropic blocked = not in allowed_providers list
+            anthropic_blocked = "anthropic" not in [p.lower() for p in allowed]
+            is_tier2 = policy.get('allowed_tier') == 2
 
             results.append(TestResult(
                 name=f"{agent.upper()} is Tier-2 LLM",
                 passed=is_tier2,
-                message=f"LLM Tier: {policy.get('llm_tier')}",
+                message=f"LLM Tier: {policy.get('allowed_tier')}",
                 agent=agent.upper()
             ))
 
             results.append(TestResult(
                 name=f"{agent.upper()} blocked from Anthropic",
-                passed=anthropic_forbidden,
-                message="BLOCKED" if anthropic_forbidden else "VIOLATION: Can use Anthropic!",
+                passed=anthropic_blocked,
+                message="BLOCKED" if anthropic_blocked else "VIOLATION: Can use Anthropic!",
                 agent=agent.upper()
             ))
 
