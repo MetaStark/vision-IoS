@@ -62,19 +62,8 @@ CREATE TABLE IF NOT EXISTS fhq_governance.authority_matrix (
     created_by TEXT NOT NULL DEFAULT 'CEO'
 );
 
--- Create model_provider_policy table if not exists (from ADR-007/ADR-014)
-CREATE TABLE IF NOT EXISTS fhq_governance.model_provider_policy (
-    policy_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agent_id TEXT NOT NULL UNIQUE,
-    llm_tier INTEGER NOT NULL,
-    allowed_providers TEXT[] NOT NULL,
-    forbidden_providers TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
-    data_sharing_allowed BOOLEAN NOT NULL DEFAULT FALSE,
-    tier_description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by TEXT NOT NULL DEFAULT 'CEO'
-);
+-- model_provider_policy table should already exist from migration 018
+-- Schema uses: allowed_tier, allowed_providers, data_sharing_policy, policy_rationale
 
 -- Create change_log table if not exists
 CREATE TABLE IF NOT EXISTS fhq_governance.change_log (
@@ -125,19 +114,13 @@ INSERT INTO fhq_governance.authority_matrix (
     authority_level = EXCLUDED.authority_level,
     updated_at = NOW();
 
--- Register CODE model provider policy
+-- Register CODE model provider policy (using existing schema from migration 018)
 INSERT INTO fhq_governance.model_provider_policy (
-    agent_id, llm_tier, allowed_providers, forbidden_providers,
-    data_sharing_allowed, tier_description, created_by
+    agent_id, allowed_tier, allowed_providers, data_sharing_policy, policy_rationale
 ) VALUES (
-    'CODE', 3, ARRAY['anthropic', 'openai', 'deepseek'], ARRAY[]::TEXT[], FALSE,
-    'Tier-3 Engineering: Code execution and security infrastructure. Full provider access for tooling.',
-    'CEO'
-) ON CONFLICT (agent_id) DO UPDATE SET
-    llm_tier = EXCLUDED.llm_tier,
-    allowed_providers = EXCLUDED.allowed_providers,
-    tier_description = EXCLUDED.tier_description,
-    updated_at = NOW();
+    'CODE', 3, ARRAY['Anthropic Claude', 'OpenAI', 'DeepSeek'], 'PROHIBITED',
+    'Tier-3 Engineering: Code execution and security infrastructure. Full provider access for tooling.'
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SECTION 3: KEY CEREMONY INFRASTRUCTURE
