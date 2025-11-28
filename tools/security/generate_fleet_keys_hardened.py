@@ -165,25 +165,25 @@ def generate_fleet_keys(
         }
 
         # Generate SQL statement (with idempotent check)
-        # Note: Uses only columns that exist in the base agent_keys table
+        # Note: Uses actual schema columns from fhq_meta.agent_keys
+        # key_type must be 'ED25519_SIGNING' or 'ED25519_VERIFICATION' (CHECK constraint)
+        # key_state must be 'PENDING', 'ACTIVE', 'DEPRECATED', 'ARCHIVED' (CHECK constraint)
+        # key_storage_tier must be 'TIER1_HOT', 'TIER2_WARM', 'TIER3_COLD' (CHECK constraint)
         sql = f"""
 INSERT INTO fhq_meta.agent_keys (
-    key_id, agent_id, public_key_hex, key_state,
-    rotation_generation, valid_from, ceremony_id, key_fingerprint, created_by
+    key_id, agent_id, key_type, key_state, public_key_hex,
+    key_storage_tier, activation_date, key_fingerprint, ceremony_id
 )
 SELECT
     gen_random_uuid(),
     '{agent_id}',
-    '{public_hex}',
+    'ED25519_SIGNING',
     'ACTIVE',
-    COALESCE(
-        (SELECT MAX(rotation_generation) + 1 FROM fhq_meta.agent_keys WHERE agent_id = '{agent_id}'),
-        1
-    ),
+    '{public_hex}',
+    'TIER1_HOT',
     NOW(),
-    '{ceremony_id}',
     '{fingerprint}',
-    'CODE'
+    '{ceremony_id}'
 WHERE NOT EXISTS (
     SELECT 1 FROM fhq_meta.agent_keys
     WHERE agent_id = '{agent_id}' AND key_state = 'ACTIVE'
