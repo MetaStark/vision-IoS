@@ -6,8 +6,10 @@
 -- Date: 2026-11-28
 -- Owner: CEO
 -- Governing Framework: ADR-001 → ADR-002 → ADR-003 → ADR-004 → ADR-006 →
---                      ADR-007 → ADR-008 → ADR-010 → ADR-013 → ADR-014
+--                      ADR-007 → ADR-008 → ADR-010 → ADR-013 → ADR-014 → ADR-015
 -- Attestation Required: VEGA (constitutional authority)
+--
+-- THIS MIGRATION IMPLEMENTS ADR-015: Strategic Hardening & Gartner 2025 Alignment
 --
 -- Purpose: Implement Gartner 2025 Impact Radar alignment:
 --   1. CSEO: Mandatory Explicit Chain-of-Thought Logging (CoT)
@@ -704,6 +706,97 @@ BEGIN
     RAISE NOTICE '✅ VEGA Action-Level Veto verified (test blocked canonical_write from cseo)';
 END $$;
 
+
+-- ============================================================================
+-- ADR-015 REGISTRATION IN CANONICAL REGISTRY
+-- ============================================================================
+-- ADR-015: Strategic Hardening & Gartner 2025 Alignment Charter
+-- This completes the authority chain: ADR-001 → ADR-014 → ADR-015
+
+INSERT INTO fhq_meta.adr_registry (
+    adr_id,
+    title,
+    adr_type,
+    tier,
+    status,
+    owner,
+    governing_agents,
+    authority_chain,
+    document_hash,
+    vega_attested,
+    effective_date,
+    created_at,
+    created_by
+) VALUES (
+    'ADR-015',
+    'Strategic Hardening & Gartner 2025 Alignment Charter',
+    'CONSTITUTIONAL',
+    'Tier-1',
+    'APPROVED',
+    'CEO',
+    ARRAY['VEGA', 'LARS'],
+    'ADR-001 → ADR-002 → ADR-003 → ADR-004 → ADR-006 → ADR-007 → ADR-008 → ADR-010 → ADR-013 → ADR-014 → ADR-015',
+    encode(sha256('ADR-015_STRATEGIC_HARDENING_GARTNER_2025_v1.0'::bytea), 'hex'),
+    TRUE,
+    '2026-11-28'::DATE,
+    NOW(),
+    'ceo'
+) ON CONFLICT (adr_id) DO UPDATE SET
+    title = EXCLUDED.title,
+    adr_type = EXCLUDED.adr_type,
+    tier = EXCLUDED.tier,
+    status = EXCLUDED.status,
+    document_hash = EXCLUDED.document_hash,
+    vega_attested = EXCLUDED.vega_attested,
+    updated_at = NOW();
+
+-- Add VEGA attestation for ADR-015
+INSERT INTO fhq_meta.vega_attestations (
+    attestation_type,
+    attestation_scope,
+    attestation_status,
+    evidence_bundle,
+    attestation_hash,
+    created_at,
+    created_by
+) VALUES (
+    'ADR_REGISTRATION',
+    'ADR-015_STRATEGIC_HARDENING',
+    'APPROVED',
+    jsonb_build_object(
+        'adr_id', 'ADR-015',
+        'title', 'Strategic Hardening & Gartner 2025 Alignment Charter',
+        'gartner_alignments', jsonb_build_array(
+            'Reasoning Models (CSEO CoT)',
+            'Knowledge Graphs / GraphRAG (CRIO MKG)',
+            'Synthetic Data (CDMO Stress Scenarios)',
+            'Intelligent Simulation (CFAO Foresight)',
+            'Agentic AI / LAM (VEGA Action-Level Veto)'
+        ),
+        'authority_chain', 'ADR-001 → ADR-014 → ADR-015',
+        'constitutional_tier', 'Tier-1'
+    ),
+    encode(sha256(('ADR-015:VEGA_ATTESTATION:' || NOW()::text)::bytea), 'hex'),
+    NOW(),
+    'vega'
+);
+
+-- Verify ADR-015 registration
+DO $$
+DECLARE
+    v_adr_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_adr_count
+    FROM fhq_meta.adr_registry
+    WHERE adr_id = 'ADR-015' AND vega_attested = TRUE;
+
+    IF v_adr_count < 1 THEN
+        RAISE EXCEPTION 'ADR-015 not registered in canonical registry';
+    END IF;
+
+    RAISE NOTICE '✅ ADR-015 registered and VEGA attested (15/15 ADRs complete)';
+END $$;
+
 COMMIT;
 
 -- ============================================================================
@@ -736,6 +829,12 @@ COMMIT;
 \echo '  ✅ fhq_research.mkg_nodes (CRIO Knowledge Graph)'
 \echo '  ✅ fhq_research.mkg_edges (CRIO Knowledge Graph)'
 \echo '  ✅ vega.action_level_veto (VEGA LAM decisions)'
+\echo ''
+\echo 'ADR-015 REGISTRATION:'
+\echo '  ✅ ADR-015: Strategic Hardening & Gartner 2025 Alignment Charter'
+\echo '  ✅ VEGA attestation recorded'
+\echo '  ✅ Authority chain: ADR-001 → ADR-014 → ADR-015'
+\echo '  ✅ ADR Registry: 15/15 Complete'
 \echo ''
 \echo 'NEXT STEPS:'
 \echo '  → Phase D: Generate Ed25519 keypairs for all agents'
