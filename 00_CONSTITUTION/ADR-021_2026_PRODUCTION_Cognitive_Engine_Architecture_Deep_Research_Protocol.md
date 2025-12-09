@@ -1,10 +1,10 @@
-# ADR-018 – Cognitive Engine Architecture & Deep Research Protocol
+# ADR-021 – Cognitive Engine Architecture & Deep Research Protocol
 
 **Canonical Version:** 2026.PRODUCTION
 **Status:** APPROVED
 **Date:** 09 December 2025
 **Owner:** CEO
-**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-012 → ADR-014 → ADR-017 (MIT QUAD) → ADR-018
+**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-012 → ADR-014 → ADR-017 (MIT QUAD) → ADR-021
 **Governing Agents:** VEGA (Compliance), LARS (Strategy), FINN (Research)
 **Affects:** fhq_governance, fhq_meta, Orchestrator, All Tier-2 Agents, LLM Routing
 **Classification:** GOVERNANCE–CRITICAL
@@ -30,7 +30,7 @@ FjordHQ formally adopts the **Cognitive Engine Architecture** as the foundationa
 
 ### Distinction from ADR-014 Sub-Executives
 
-| Dimension | Sub-Executives (ADR-014) | Cognitive Engines (ADR-018) |
+| Dimension | Sub-Executives (ADR-014) | Cognitive Engines (ADR-021) |
 |-----------|-------------------------|----------------------------|
 | Purpose | Task execution within domains | Reasoning pattern enforcement |
 | Output | Artifacts (Reports, Signals, Data) | Reasoning Chain Validity |
@@ -56,21 +56,21 @@ Research basis (arXiv:2505.00186 "Deep Research: A Survey of Autonomous Research
 2. **InForage**: Information-theoretic optimization of search behavior
 3. **IKEA**: Knowledge boundary-aware retrieval decisions
 
-### 2.2 Gap Analysis: FjordHQ Pre-ADR-018
+### 2.2 Gap Analysis: FjordHQ Pre-ADR-021
 
-| Capability | Status Before ADR-018 | Risk |
+| Capability | Status Before ADR-021 | Risk |
 |------------|----------------------|------|
 | Dynamic Planning | ADR-007 static routing | Strategic drift, wasted tokens |
 | Search Optimization | No RL-based decision model | API cost overruns, margin erosion |
 | Knowledge Boundaries | No parametric/external classification | Hallucination risk, bad trades |
 
-ADR-018 closes these gaps by establishing constitutional cognitive protocols that operate within the MIT QUAD framework (ADR-017).
+ADR-021 closes these gaps by establishing constitutional cognitive protocols that operate within the MIT QUAD framework (ADR-017).
 
 ---
 
 ## 3. Scope
 
-ADR-018 regulates:
+ADR-021 regulates:
 
 1. Definition and registration of Cognitive Engines
 2. Authority model for Tier-2 Cognitive Engines
@@ -404,7 +404,7 @@ The Cognitive Engines directly protect and enable the $100,000 REAL MONEY revenu
 
 ## 9. Acceptance Criteria
 
-ADR-018 is considered implemented when:
+ADR-021 is considered implemented when:
 
 1. All three Cognitive Engines are registered in `fhq_governance.cognitive_engines`
 2. Database schema is deployed (`cognitive_engine_evidence`, `chain_of_query`, `knowledge_boundary_log`, `search_foraging_log`)
@@ -466,4 +466,4 @@ This framework is 100% anchored in:
 
 ---
 
-**END OF ADR-018_2026_PRODUCTION**
+**END OF ADR-021_2026_PRODUCTION**

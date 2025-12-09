@@ -7,7 +7,7 @@
 **Phase:** CONSTITUTIONAL
 **Entity:** SitC (Search-in-the-Chain Protocol)
 **Role Type:** Tier-2 Cognitive Authority (Reasoning & Global Planning)
-**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-017 (MIT QUAD) → ADR-018 → EC-020
+**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-017 (MIT QUAD) → ADR-021 → EC-020
 **Parent Executive:** LARS (EC-002 – Chief Strategy & Alpha Officer)
 **Owner:** CEO
 **Effective Date:** 2025-12-09
@@ -356,4 +356,4 @@ Before any factual assertion:
 
 **END OF EC-020_2026_PRODUCTION**
 
-*Constitutional Authority: ADR-018 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*

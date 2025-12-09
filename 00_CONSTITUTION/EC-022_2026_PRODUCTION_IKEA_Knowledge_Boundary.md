@@ -7,7 +7,7 @@
 **Phase:** CONSTITUTIONAL
 **Entity:** IKEA (Internal-External Knowledge Synergistic Reasoning)
 **Role Type:** Tier-2 Cognitive Authority (Hallucination Firewall)
-**Authority Chain:** ADR-001 → ADR-010 → ADR-017 (MIT QUAD) → ADR-018 → EC-022
+**Authority Chain:** ADR-001 → ADR-010 → ADR-017 (MIT QUAD) → ADR-021 → EC-022
 **Parent Executive:** VEGA (EC-001 – Chief Governance & Verification Officer)
 **Owner:** CEO
 **Effective Date:** 2025-12-09
@@ -555,4 +555,4 @@ IKEA implements a **synergistic** approach – not just blocking internal or for
 
 **END OF EC-022_2026_PRODUCTION**
 
-*Constitutional Authority: ADR-018 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*

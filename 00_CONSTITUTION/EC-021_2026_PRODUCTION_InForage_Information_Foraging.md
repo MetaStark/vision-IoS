@@ -7,7 +7,7 @@
 **Phase:** CONSTITUTIONAL
 **Entity:** InForage (Information Foraging Protocol)
 **Role Type:** Tier-2 Cognitive Authority (Search Optimization & ROI)
-**Authority Chain:** ADR-001 → ADR-012 → ADR-017 (MIT QUAD) → ADR-018 → EC-021
+**Authority Chain:** ADR-001 → ADR-012 → ADR-017 (MIT QUAD) → ADR-021 → EC-021
 **Parent Executive:** FINN (EC-005 – Chief Research & Intelligence Officer)
 **Owner:** CEO
 **Effective Date:** 2025-12-09
@@ -505,4 +505,4 @@ InForage requires periodic calibration:
 
 **END OF EC-021_2026_PRODUCTION**
 
-*Constitutional Authority: ADR-018 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
