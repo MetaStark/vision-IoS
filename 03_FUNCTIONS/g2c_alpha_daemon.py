@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-G2-C ALPHA DAEMON v1.0
-======================
+G2-C ALPHA DAEMON v1.1 (LLM-INTEGRATED)
+========================================
 CEO Directive: CD-G2C-ALPHA-IGNITION-48H-2025-12-13 + Amendment A1
 Classification: G2-C CONSTRAINED ALPHA EXPLORATION
 Mode: NON-EXECUTING (Forecast, Resolution & Skill Scoring Only)
 
 This daemon runs persistently and handles:
-1. Continuous forecast generation (g2c_continuous_forecast_engine logic)
+1. Continuous forecast generation (LLM-informed via FINN DeepSeek CRIO)
 2. Forecast resolution against actual price outcomes
 3. Skill metrics computation for dashboard display
+4. Periodic CRIO research cycles (LLM-powered market analysis)
 
 Designed to run as a Windows Scheduled Task or persistent service.
 
@@ -17,7 +18,13 @@ CONSTRAINTS:
     - NO EXECUTION ESCALATION (IoS-012 remains PAPER-ONLY)
     - NO STRATEGY MUTATION (formulas frozen)
     - TTL & HASH INTEGRITY enforced
-    - LLM budget: max $5.00/day (not used by this daemon)
+    - LLM budget: max $5.00/day (ADR-012 enforced via FINN CRIO)
+
+LLM INTEGRATION (v1.1):
+    - FINN DeepSeek CRIO research every 30 minutes
+    - Research insights inform forecast generation
+    - Fragility/regime signals shape direction probability
+    - All LLM calls tracked via fhq_telemetry
 
 Authorized Actors: LARS, CEIO, CRIO, FINN
 """
@@ -42,6 +49,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv()
+
+# Add parent path for FINN CRIO import
+sys.path.insert(0, str(Path(__file__).parent.parent / '06_AGENTS' / 'FINN'))
 
 # =================================================================
 # LOGGING
@@ -110,6 +120,10 @@ class G2CConfig:
     RESOLUTION_INTERVAL_SECONDS = 300  # Check for resolvable forecasts every 5 minutes
     SKILL_COMPUTE_INTERVAL_SECONDS = 600  # Recompute skill metrics every 10 minutes
 
+    # LLM Research intervals (FINN CRIO)
+    CRIO_RESEARCH_INTERVAL_SECONDS = 1800  # Run CRIO research every 30 minutes
+    LLM_BUDGET_DAILY_USD = 5.00  # ADR-012 daily limit
+
     # Asset universe for forecasting - only tickers with price data in fhq_data.price_series
     ASSET_UNIVERSE = [
         "SPY",        # US Equity Index (2747 rows)
@@ -136,9 +150,10 @@ class G2CConfig:
 class G2CAlphaDaemon:
     """
     Persistent daemon that handles:
-    1. Forecast generation
+    1. Forecast generation (LLM-informed via FINN CRIO)
     2. Forecast resolution
     3. Skill metrics computation
+    4. Periodic CRIO research cycles
     """
 
     def __init__(self):
@@ -149,8 +164,14 @@ class G2CAlphaDaemon:
         self.last_forecast_time = {s: None for s in G2CConfig.STRATEGIES}
         self.last_resolution_time = None
         self.last_skill_compute_time = None
+        self.last_crio_research_time = None
         self.resolution_count = 0
         self.outcome_count = 0
+        self.crio_research_count = 0
+
+        # FINN CRIO Engine (lazy loaded)
+        self.crio_engine = None
+        self.latest_crio_result = None
 
         # Register signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._handle_shutdown)
@@ -181,6 +202,78 @@ class G2CAlphaDaemon:
         except:
             logger.warning("Database connection lost, reconnecting...")
             self.connect()
+
+    # =================================================================
+    # FINN CRIO RESEARCH (LLM-POWERED)
+    # =================================================================
+
+    def init_crio_engine(self):
+        """Initialize the FINN CRIO engine for LLM research"""
+        try:
+            from finn_deepseek_researcher import FINNCRIOEngine, CRIOConfig
+            config = CRIOConfig()
+            self.crio_engine = FINNCRIOEngine(config)
+            self.crio_engine.connect()
+            logger.info("FINN CRIO Engine initialized for LLM research")
+            return True
+        except ImportError as e:
+            logger.warning(f"FINN CRIO import failed (running without LLM): {e}")
+            return False
+        except Exception as e:
+            logger.error(f"FINN CRIO initialization failed: {e}")
+            return False
+
+    def run_crio_research(self) -> Optional[Dict[str, Any]]:
+        """
+        Execute FINN CRIO research cycle.
+        Returns the research result or None on failure.
+        """
+        if not self.crio_engine:
+            if not self.init_crio_engine():
+                return None
+
+        try:
+            logger.info("=" * 50)
+            logger.info("EXECUTING FINN CRIO RESEARCH (LLM-POWERED)")
+            logger.info("=" * 50)
+
+            # Execute the CRIO research
+            result = self.crio_engine.execute_crio_research()
+
+            if result.get("status") in ["CRIO_VERIFIED", "CRIO_PARTIAL"]:
+                self.latest_crio_result = result
+                self.crio_research_count += 1
+
+                # Extract key insights
+                analysis = result.get("analysis", {})
+                fragility = analysis.get("fragility_score", 0.5)
+                driver = analysis.get("dominant_driver", "UNKNOWN")
+                regime = analysis.get("regime_assessment", "UNCERTAIN")
+
+                logger.info(f"CRIO Research #{self.crio_research_count} complete:")
+                logger.info(f"  Fragility: {fragility:.2f}")
+                logger.info(f"  Driver: {driver}")
+                logger.info(f"  Regime: {regime}")
+                logger.info(f"  Status: {result['status']}")
+
+                return result
+            else:
+                logger.warning(f"CRIO research returned status: {result.get('status')}")
+                return result
+
+        except Exception as e:
+            logger.error(f"CRIO research failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def should_run_crio_research(self) -> bool:
+        """Check if it's time to run CRIO research"""
+        if self.last_crio_research_time is None:
+            return True
+
+        elapsed = (datetime.now(timezone.utc) - self.last_crio_research_time).total_seconds()
+        return elapsed >= G2CConfig.CRIO_RESEARCH_INTERVAL_SECONDS
 
     # =================================================================
     # FORECAST GENERATION
@@ -232,16 +325,31 @@ class G2CAlphaDaemon:
         asset: str,
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Generate a single forecast"""
+        """Generate a single forecast using CRIO research insights"""
 
         strategy_config = G2CConfig.STRATEGIES[strategy_id]
         now = datetime.now(timezone.utc)
 
-        # Compute forecast parameters based on context
+        # Get CRIO research insights (if available)
+        crio_fragility = 0.5
+        crio_driver = "UNKNOWN"
+        crio_regime = "UNCERTAIN"
+        crio_confidence = 0.5
+        llm_informed = False
+
+        if self.latest_crio_result:
+            analysis = self.latest_crio_result.get("analysis", {})
+            crio_fragility = analysis.get("fragility_score", 0.5)
+            crio_driver = analysis.get("dominant_driver", "UNKNOWN")
+            crio_regime = analysis.get("regime_assessment", "UNCERTAIN")
+            crio_confidence = analysis.get("confidence", 0.5)
+            llm_informed = True
+
+        # Compute forecast parameters based on context + CRIO insights
         regime = context.get("regime", "NEUTRAL")
         regime_confidence = context.get("regime_confidence", 0.5)
 
-        # Direction probability (influenced by regime)
+        # Direction probability (influenced by regime AND CRIO research)
         regime_bias = {
             "BULL": 0.65, "STRONG_BULL": 0.75,
             "BEAR": 0.35, "STRONG_BEAR": 0.25,
@@ -250,15 +358,38 @@ class G2CAlphaDaemon:
         }
         base_prob = regime_bias.get(regime, 0.50)
 
-        # Add noise proportional to inverse of regime confidence
-        noise = random.uniform(-0.15, 0.15) * (1 - regime_confidence)
+        # Apply CRIO regime adjustment if LLM-informed
+        if llm_informed:
+            crio_regime_bias = {
+                "STRONG_BULL": 0.80, "BULL": 0.65,
+                "NEUTRAL": 0.50, "UNCERTAIN": 0.50,
+                "BEAR": 0.35, "STRONG_BEAR": 0.20
+            }
+            crio_bias = crio_regime_bias.get(crio_regime, 0.50)
+
+            # Blend database regime with CRIO assessment (weight CRIO higher)
+            base_prob = 0.4 * base_prob + 0.6 * crio_bias
+
+            # Fragility adjustment: high fragility -> more cautious (toward 0.5)
+            if crio_fragility > 0.6:
+                base_prob = 0.7 * base_prob + 0.3 * 0.5  # Pull toward neutral
+            elif crio_fragility < 0.3:
+                pass  # Low fragility - trust the signal more
+
+            # Blend confidence with CRIO confidence
+            regime_confidence = 0.5 * regime_confidence + 0.5 * crio_confidence
+
+        # Add reduced noise when LLM-informed (more deterministic)
+        noise_scale = 0.08 if llm_informed else 0.15
+        noise = random.uniform(-noise_scale, noise_scale) * (1 - regime_confidence)
         direction_probability = max(0.05, min(0.95, base_prob + noise))
 
         # Forecast direction
         direction = "UP" if direction_probability > 0.5 else "DOWN"
 
-        # Confidence (based on regime confidence + randomness)
-        forecast_confidence = regime_confidence * random.uniform(0.7, 1.0)
+        # Confidence (based on blended regime confidence)
+        confidence_floor = 0.8 if llm_informed else 0.7
+        forecast_confidence = regime_confidence * random.uniform(confidence_floor, 1.0)
 
         # Horizon
         horizon_minutes = strategy_config["horizon_minutes"]
@@ -281,7 +412,12 @@ class G2CAlphaDaemon:
             "valid_until": valid_until,
             "context_hash": context_hash,
             "regime_at_forecast": regime,
-            "defcon_at_forecast": context.get("defcon_level", "GREEN")
+            "defcon_at_forecast": context.get("defcon_level", "GREEN"),
+            # LLM research context
+            "llm_informed": llm_informed,
+            "crio_fragility": round(crio_fragility, 4) if llm_informed else None,
+            "crio_driver": crio_driver if llm_informed else None,
+            "crio_regime": crio_regime if llm_informed else None
         }
 
         return forecast
@@ -331,11 +467,15 @@ class G2CAlphaDaemon:
                 forecast["valid_until"],
                 forecast["context_hash"],
                 f"G2C_{forecast['strategy_id']}",
-                "1.0",
+                "1.1",  # v1.1 with LLM integration
                 json.dumps({
                     "regime": forecast["regime_at_forecast"],
                     "defcon": forecast["defcon_at_forecast"],
-                    "strategy": forecast["strategy_id"]
+                    "strategy": forecast["strategy_id"],
+                    "llm_informed": forecast.get("llm_informed", False),
+                    "crio_fragility": forecast.get("crio_fragility"),
+                    "crio_driver": forecast.get("crio_driver"),
+                    "crio_regime": forecast.get("crio_regime")
                 }),
                 forecast["context_hash"],
                 hash_chain_id,
@@ -754,7 +894,7 @@ class G2CAlphaDaemon:
         elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 3600
 
         logger.info("=" * 70)
-        logger.info(f"G2-C ALPHA DAEMON STATUS")
+        logger.info(f"G2-C ALPHA DAEMON v1.1 (LLM-INTEGRATED) STATUS")
         logger.info(f"Uptime: {elapsed:.2f} hours")
         logger.info("-" * 70)
 
@@ -762,9 +902,19 @@ class G2CAlphaDaemon:
         logger.info(f"Forecasts Generated: {total_forecasts}")
         logger.info(f"Outcomes Created: {self.outcome_count}")
         logger.info(f"Forecasts Resolved: {self.resolution_count}")
+        logger.info(f"CRIO Research Cycles: {self.crio_research_count}")
+        logger.info(f"LLM-Informed: {'YES' if self.latest_crio_result else 'NO'}")
 
         for strategy_id, count in self.forecast_counts.items():
             logger.info(f"  {strategy_id}: {count}")
+
+        if self.latest_crio_result:
+            analysis = self.latest_crio_result.get("analysis", {})
+            logger.info("-" * 70)
+            logger.info(f"Latest CRIO Insights:")
+            logger.info(f"  Fragility: {analysis.get('fragility_score', 'N/A')}")
+            logger.info(f"  Driver: {analysis.get('dominant_driver', 'N/A')}")
+            logger.info(f"  Regime: {analysis.get('regime_assessment', 'N/A')}")
 
         logger.info("=" * 70)
 
@@ -773,13 +923,20 @@ class G2CAlphaDaemon:
         self.start_time = datetime.now(timezone.utc)
 
         logger.info("=" * 70)
-        logger.info("G2-C ALPHA DAEMON v1.0 STARTING")
+        logger.info("G2-C ALPHA DAEMON v1.1 (LLM-INTEGRATED) STARTING")
         logger.info(f"Directive: {G2CConfig.DIRECTIVE_ID}")
         logger.info(f"Start: {self.start_time.isoformat()}")
+        logger.info(f"LLM Research Interval: {G2CConfig.CRIO_RESEARCH_INTERVAL_SECONDS}s")
+        logger.info(f"LLM Daily Budget: ${G2CConfig.LLM_BUDGET_DAILY_USD}")
         logger.info("=" * 70)
 
         try:
             self.connect()
+
+            # Initial CRIO research (get LLM insights immediately)
+            logger.info("Running initial CRIO research cycle...")
+            self.run_crio_research()
+            self.last_crio_research_time = datetime.now(timezone.utc)
 
             # Initial skill metrics computation
             self.compute_skill_metrics()
@@ -791,11 +948,20 @@ class G2CAlphaDaemon:
                 self.reconnect_if_needed()
                 now = datetime.now(timezone.utc)
 
-                # 1. Run forecast cycle
+                # 0. CRIO Research cycle (every 30 minutes) - LLM-powered
+                if self.should_run_crio_research():
+                    try:
+                        self.run_crio_research()
+                        self.last_crio_research_time = now
+                    except Exception as e:
+                        logger.error(f"CRIO research cycle error: {e}")
+
+                # 1. Run forecast cycle (now LLM-informed)
                 try:
                     generated = self.run_forecast_cycle()
                     if generated > 0:
-                        logger.info(f"Generated {generated} new forecasts")
+                        llm_tag = "(LLM-informed)" if self.latest_crio_result else "(heuristic)"
+                        logger.info(f"Generated {generated} new forecasts {llm_tag}")
                 except Exception as e:
                     logger.error(f"Forecast cycle error: {e}")
 
@@ -830,7 +996,7 @@ class G2CAlphaDaemon:
             self.print_status()
 
             logger.info("=" * 70)
-            logger.info("G2-C ALPHA DAEMON - SHUTDOWN COMPLETE")
+            logger.info("G2-C ALPHA DAEMON v1.1 - SHUTDOWN COMPLETE")
             logger.info("=" * 70)
 
             return {
@@ -838,7 +1004,9 @@ class G2CAlphaDaemon:
                 "uptime_hours": (datetime.now(timezone.utc) - self.start_time).total_seconds() / 3600,
                 "forecast_counts": self.forecast_counts,
                 "resolutions": self.resolution_count,
-                "outcomes": self.outcome_count
+                "outcomes": self.outcome_count,
+                "crio_research_cycles": self.crio_research_count,
+                "llm_informed": self.latest_crio_result is not None
             }
 
         except Exception as e:
