@@ -1,12 +1,17 @@
 /**
  * Alpha Epistemology - Skill & Governance Dashboard
  * CEO Directive: CD-G2-C-DASH-SKILL-SCORECARD-2025-12-13
+ * CEO Directive: CD-G2C-UI-HUMAN-INTERPRETATION-2025-12-13
  *
  * Classification: G2-C Read-Only Observability - Non-Executing
  * Authority: ADR-004, ADR-012, ADR-013, IoS-010
  *
  * This tab gamifies Governance + Skill - not raw PnL.
  * All metrics are read-only projections from canonical database sources.
+ *
+ * HUMANIZATION LAYER:
+ * All metrics include plain-language explanations for human understanding.
+ * "If a human cannot explain what the system is doing, the system is not finished."
  */
 
 import { Suspense } from 'react'
@@ -29,7 +34,131 @@ import {
   Zap,
   Activity,
   Info,
+  HelpCircle,
 } from 'lucide-react'
+
+// ============================================================================
+// Human Explanations (CEO Directive: CD-G2C-UI-HUMAN-INTERPRETATION)
+// ============================================================================
+
+const EXPLANATIONS = {
+  fss: {
+    label: "FSS – Skill Strength",
+    description: "FSS measures how much better this strategy performs than random guessing, adjusted for uncertainty.",
+    scale: [
+      { value: "0.00", meaning: "no measurable skill" },
+      { value: "> 0.10", meaning: "weak but real signal" },
+      { value: "> 0.20", meaning: "statistically meaningful skill" },
+      { value: "> 0.40", meaning: "strong, rare skill" },
+    ],
+    interpretation: "Higher FSS means more reliable decision quality, not higher profit.",
+  },
+  ciWidth: {
+    label: "Reliability Band (95%)",
+    description: "This shows how stable the strategy's performance is.",
+    details: [
+      "A narrow band means results are consistent.",
+      "A wide band means results are volatile or uncertain.",
+    ],
+    interpretation: "Narrower = more trustworthy. Wider = needs more data.",
+    clarifier: "This measures confidence, not return.",
+  },
+  brier: {
+    label: "Calibration Error",
+    description: "Brier Score measures how honest the forecasts are. It compares predicted probabilities to actual outcomes.",
+    scale: [
+      { value: "0.00", meaning: "perfect probability forecasts" },
+      { value: "~0.25–0.30", meaning: "realistic, usable forecasts" },
+      { value: "> 0.40", meaning: "poorly calibrated" },
+    ],
+    interpretation: "Lower is better. This rewards truthfulness, not confidence.",
+  },
+  alchemist: {
+    title: "The Alchemist",
+    subtitle: "Which strategy shows the strongest measurable decision skill?",
+    explanation: "Ranked by FSS, not by profit. This identifies where real signal exists.",
+  },
+  oracle: {
+    title: "The Oracle",
+    subtitle: "Which strategy predicts reality most honestly?",
+    explanation: "Ranked by lowest Brier Score. Rewards accurate probabilities, not bravado.",
+  },
+  stabilizer: {
+    title: "The Stabilizer",
+    subtitle: "Which strategy behaves most consistently over time?",
+    explanation: "Ranked by narrowest 95% confidence band. Rewards stability and repeatability.",
+  },
+  architect: {
+    label: "Architect",
+    explanation: "How well system constraints and TTL discipline are respected.",
+  },
+  gatekeeper: {
+    label: "Gatekeeper",
+    explanation: "How efficiently LLM budget is converted into valid forecasts.",
+  },
+  fortress: {
+    label: "Fortress",
+    explanation: "Days since last operational anomaly or rule violation.",
+  },
+}
+
+// Tooltip component for metric explanations
+function MetricTooltip({
+  children,
+  explanation
+}: {
+  children: React.ReactNode
+  explanation: {
+    label?: string
+    description: string
+    scale?: { value: string; meaning: string }[]
+    details?: string[]
+    interpretation?: string
+    clarifier?: string
+  }
+}) {
+  return (
+    <div className="group relative inline-flex items-center gap-1">
+      {children}
+      <HelpCircle className="w-3 h-3 opacity-40 group-hover:opacity-100 cursor-help" />
+      <div className="absolute bottom-full left-0 mb-2 w-72 p-3 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
+           style={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }}>
+        {explanation.label && (
+          <p className="font-semibold text-sm mb-1" style={{ color: 'hsl(var(--foreground))' }}>
+            {explanation.label}
+          </p>
+        )}
+        <p className="text-xs mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          {explanation.description}
+        </p>
+        {explanation.scale && (
+          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            {explanation.scale.map((s, i) => (
+              <p key={i}>• <span className="font-mono">{s.value}</span> = {s.meaning}</p>
+            ))}
+          </div>
+        )}
+        {explanation.details && (
+          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            {explanation.details.map((d, i) => (
+              <p key={i}>{d}</p>
+            ))}
+          </div>
+        )}
+        {explanation.interpretation && (
+          <p className="text-xs font-medium mt-1" style={{ color: 'hsl(var(--primary))' }}>
+            {explanation.interpretation}
+          </p>
+        )}
+        {explanation.clarifier && (
+          <p className="text-xs italic mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            {explanation.clarifier}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export const revalidate = 30 // 30-second refresh
 
@@ -122,6 +251,7 @@ export default async function SkillDashboardPage() {
             subtitle="Skill Ranking (FSS)"
             icon={Brain}
             metricName="FSS Score"
+            humanExplanation={EXPLANATIONS.alchemist}
           />
         </Suspense>
         <Suspense fallback={<SkeletonCard />}>
@@ -131,6 +261,7 @@ export default async function SkillDashboardPage() {
             icon={Target}
             metricName="Brier Score"
             lowerIsBetter
+            humanExplanation={EXPLANATIONS.oracle}
           />
         </Suspense>
         <Suspense fallback={<SkeletonCard />}>
@@ -140,6 +271,7 @@ export default async function SkillDashboardPage() {
             icon={Gauge}
             metricName="CI Width"
             lowerIsBetter
+            humanExplanation={EXPLANATIONS.stabilizer}
           />
         </Suspense>
       </div>
@@ -273,25 +405,31 @@ async function StrategyTile({ strategyId, label, timeframe }: { strategyId: stri
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* FSS */}
+        {/* FSS - Skill Strength */}
         <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>FSS</span>
+          <MetricTooltip explanation={EXPLANATIONS.fss}>
+            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>FSS</span>
+          </MetricTooltip>
           <span className="font-mono font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
             {fss !== null ? fss.toFixed(3) : '—'}
           </span>
         </div>
 
-        {/* CI Width */}
+        {/* CI Width - Reliability Band */}
         <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>95% CI Width</span>
+          <MetricTooltip explanation={EXPLANATIONS.ciWidth}>
+            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>95% CI Width</span>
+          </MetricTooltip>
           <span className="font-mono" style={{ color: 'hsl(var(--foreground))' }}>
             {ciWidth !== null ? ciWidth.toFixed(3) : '—'}
           </span>
         </div>
 
-        {/* Brier Score */}
+        {/* Brier Score - Calibration Error */}
         <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Brier Score</span>
+          <MetricTooltip explanation={EXPLANATIONS.brier}>
+            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Brier Score</span>
+          </MetricTooltip>
           <span className="font-mono" style={{ color: 'hsl(var(--foreground))' }}>
             {forecastMetrics?.brier_score_mean != null ? forecastMetrics.brier_score_mean.toFixed(3) : '—'}
           </span>
@@ -404,48 +542,63 @@ async function GovernanceTile() {
       </CardHeader>
       <CardContent className="space-y-3">
         {/* The Architect - TTL Compliance */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Architect</span>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
+              <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Architect</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm">{ttlComplianceRate.toFixed(1)}%</span>
+              {(() => {
+                const BadgeIcon = badgeColors[ttlBadge].icon
+                return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[ttlBadge].text }} />
+              })()}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">{ttlComplianceRate.toFixed(1)}%</span>
-            {(() => {
-              const BadgeIcon = badgeColors[ttlBadge].icon
-              return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[ttlBadge].text }} />
-            })()}
-          </div>
+          <p className="text-xs pl-6" style={{ color: 'hsl(var(--muted-foreground))', opacity: 0.7 }}>
+            {EXPLANATIONS.architect.explanation}
+          </p>
         </div>
 
         {/* The Gatekeeper - LLM Budget */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Gatekeeper</span>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
+              <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Gatekeeper</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm">${llmSpendToday.toFixed(2)}/${llmBudgetDaily}</span>
+              {(() => {
+                const BadgeIcon = badgeColors[llmBadge].icon
+                return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[llmBadge].text }} />
+              })()}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">${llmSpendToday.toFixed(2)}/${llmBudgetDaily}</span>
-            {(() => {
-              const BadgeIcon = badgeColors[llmBadge].icon
-              return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[llmBadge].text }} />
-            })()}
-          </div>
+          <p className="text-xs pl-6" style={{ color: 'hsl(var(--muted-foreground))', opacity: 0.7 }}>
+            {EXPLANATIONS.gatekeeper.explanation}
+          </p>
         </div>
 
         {/* The Fortress - Zero-Anomaly Streak */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Fortress</span>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
+              <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Fortress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm">{fortressStreakDays}d streak</span>
+              {(() => {
+                const BadgeIcon = badgeColors[fortressBadge].icon
+                return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[fortressBadge].text }} />
+              })()}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">{fortressStreakDays}d streak</span>
-            {(() => {
-              const BadgeIcon = badgeColors[fortressBadge].icon
-              return <BadgeIcon className="w-4 h-4" style={{ color: badgeColors[fortressBadge].text }} />
-            })()}
-          </div>
+          <p className="text-xs pl-6" style={{ color: 'hsl(var(--muted-foreground))', opacity: 0.7 }}>
+            {EXPLANATIONS.fortress.explanation}
+          </p>
         </div>
 
         {/* 7-day target marker */}
@@ -472,12 +625,14 @@ async function LeaderboardPanel({
   icon: Icon,
   metricName,
   lowerIsBetter = false,
+  humanExplanation,
 }: {
   title: string
   subtitle: string
   icon: any
   metricName: string
   lowerIsBetter?: boolean
+  humanExplanation?: { subtitle: string; explanation: string }
 }) {
   // Query all strategies with their metrics
   const strategies = await queryMany<{
@@ -535,7 +690,14 @@ async function LeaderboardPanel({
           <Icon className="w-5 h-5" style={{ color: 'hsl(var(--primary))' }} />
           {title}
         </CardTitle>
-        <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{subtitle}</p>
+        <p className="text-xs font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          {humanExplanation?.subtitle || subtitle}
+        </p>
+        {humanExplanation && (
+          <p className="text-xs mt-1" style={{ color: 'hsl(var(--muted-foreground))', opacity: 0.8 }}>
+            {humanExplanation.explanation}
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {rankedStrategies.length === 0 ? (
