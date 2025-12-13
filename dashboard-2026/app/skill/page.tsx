@@ -121,37 +121,41 @@ function MetricTooltip({
     <div className="group relative inline-flex items-center gap-1">
       {children}
       <HelpCircle className="w-3 h-3 opacity-40 group-hover:opacity-100 cursor-help" />
-      <div className="absolute bottom-full left-0 mb-2 w-72 p-3 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
-           style={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }}>
+      <div className="absolute bottom-full left-0 mb-2 w-72 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
+           style={{
+             backgroundColor: 'hsl(222 47% 11%)',
+             border: '1px solid hsl(217 33% 25%)',
+             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)'
+           }}>
         {explanation.label && (
-          <p className="font-semibold text-sm mb-1" style={{ color: 'hsl(var(--foreground))' }}>
+          <p className="font-semibold text-sm mb-1" style={{ color: 'hsl(210 40% 98%)' }}>
             {explanation.label}
           </p>
         )}
-        <p className="text-xs mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+        <p className="text-xs mb-2" style={{ color: 'hsl(215 20% 75%)' }}>
           {explanation.description}
         </p>
         {explanation.scale && (
-          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(215 20% 75%)' }}>
             {explanation.scale.map((s, i) => (
-              <p key={i}>• <span className="font-mono">{s.value}</span> = {s.meaning}</p>
+              <p key={i}>• <span className="font-mono text-sky-300">{s.value}</span> = {s.meaning}</p>
             ))}
           </div>
         )}
         {explanation.details && (
-          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          <div className="text-xs space-y-0.5 mb-2" style={{ color: 'hsl(215 20% 75%)' }}>
             {explanation.details.map((d, i) => (
               <p key={i}>{d}</p>
             ))}
           </div>
         )}
         {explanation.interpretation && (
-          <p className="text-xs font-medium mt-1" style={{ color: 'hsl(var(--primary))' }}>
+          <p className="text-xs font-medium mt-1" style={{ color: 'hsl(142 70% 60%)' }}>
             {explanation.interpretation}
           </p>
         )}
         {explanation.clarifier && (
-          <p className="text-xs italic mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          <p className="text-xs italic mt-1" style={{ color: 'hsl(215 20% 65%)' }}>
             {explanation.clarifier}
           </p>
         )}
