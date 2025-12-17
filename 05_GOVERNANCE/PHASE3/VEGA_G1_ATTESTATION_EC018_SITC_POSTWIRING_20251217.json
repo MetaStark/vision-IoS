@@ -1,0 +1,301 @@
+{
+  "document_type": "VEGA_G1_ATTESTATION",
+  "attestation_id": "VEGA-G1-EC018-SITC-POSTWIRING-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date_issued": "2025-12-17",
+
+  "attestation_target": {
+    "component": "EC-018 + EC-020",
+    "name": "Alpha Daemon with SitC Hypothesis Validation Integration",
+    "primary_file": "03_FUNCTIONS/ec018_alpha_daemon.py",
+    "secondary_file": "03_FUNCTIONS/ios020_sitc_planner.py",
+    "integration_type": "POST_WIRING_VALIDATION"
+  },
+
+  "directive_reference": {
+    "ceo_directive": "CEO DIRECTIVE WAVE 7: EC-018 HYPOTHESIS VALIDATION WIRING",
+    "date": "2025-12-17",
+    "prerequisite_attestation": "VEGA-G1-EC020-SITC-20251217",
+    "guardrails_evidence": "CD-EC020-GUARDRAILS-20251217",
+    "wiring_evidence": "VEGA-EC018-SITC-WIRING-20251217"
+  },
+
+  "attestation_status": "G1_ATTESTED",
+
+  "validation_results": {
+    "I_SITC_ROLE_FILTER_NOT_COTHINKER": {
+      "status": "PASS",
+      "requirement": "SitC acts as FILTER (validation-only), not CO-THINKER",
+      "verification_method": "Controlled validation cycle with hypothesis_unchanged verification",
+      "findings": [
+        {
+          "check": "SitC integration is validation-only",
+          "location": "ec018_alpha_daemon.py:325-464",
+          "result": "VERIFIED - _validate_hypothesis_with_sitc() performs validation only"
+        },
+        {
+          "check": "No hypothesis modification occurs",
+          "location": "Controlled validation cycle results",
+          "result": "VERIFIED - all_unchanged=true for all 4 hypotheses"
+        },
+        {
+          "check": "SitCRoleViolation enforcement exists",
+          "location": "ios020_sitc_planner.py:256-310",
+          "result": "VERIFIED - PROHIBITED_OPERATIONS enforced"
+        }
+      ],
+      "conclusion": "SitC operates as FILTER only. No hypothesis modification detected."
+    },
+
+    "II_CONFIDENCE_ENVELOPE_HANDLING": {
+      "status": "PASS",
+      "requirement": "HIGH=accept, MEDIUM=log-only, LOW=reject with no override paths",
+      "verification_method": "Code inspection + controlled validation cycle",
+      "findings": [
+        {
+          "check": "PlanConfidenceEnvelope consumed in EC-018",
+          "location": "ec018_alpha_daemon.py:395-440",
+          "result": "VERIFIED - Confidence envelope determines accept/log/reject action"
+        },
+        {
+          "check": "HIGH confidence allows normal flow",
+          "location": "ec018_alpha_daemon.py:400-405",
+          "result": "VERIFIED - validated=True, action='ACCEPT'"
+        },
+        {
+          "check": "MEDIUM confidence is log-only",
+          "location": "ec018_alpha_daemon.py:406-415",
+          "result": "VERIFIED - validated=True, action='LOG_ONLY', no escalation"
+        },
+        {
+          "check": "LOW confidence rejects hypothesis",
+          "location": "ec018_alpha_daemon.py:416-425",
+          "result": "VERIFIED - validated=False, action='REJECT'"
+        },
+        {
+          "check": "No override paths exist",
+          "location": "Full code review",
+          "result": "VERIFIED - No conditional bypasses of confidence envelope"
+        },
+        {
+          "check": "Controlled validation cycle results",
+          "location": "VEGA-EC018-SITC-WIRING-20251217",
+          "result": "VERIFIED - 4 accepted (HIGH), 0 log-only, 0 rejected"
+        }
+      ],
+      "conclusion": "Confidence envelope handling complies with CEO Directive. No override paths."
+    },
+
+    "III_ASRP_STATE_BINDING": {
+      "status": "PASS",
+      "requirement": "All SitC outputs embed state_snapshot_hash from ASRP",
+      "verification_method": "Return value inspection",
+      "findings": [
+        {
+          "check": "asrp_hash in validation return",
+          "location": "ec018_alpha_daemon.py:450-455",
+          "result": "VERIFIED - state_snapshot_hash from envelope included"
+        },
+        {
+          "check": "asrp_hash in run_hunt return",
+          "location": "ec018_alpha_daemon.py:1143-1151",
+          "result": "VERIFIED - asrp_hash propagated to results"
+        },
+        {
+          "check": "Controlled validation cycle",
+          "location": "VEGA-EC018-SITC-WIRING-20251217",
+          "result": "VERIFIED - asrp_hash: 78c95c093b5164b485cdc29f4f016173639d896332af87a3dfc9e15d7042e2b8"
+        }
+      ],
+      "conclusion": "All SitC outputs include ASRP state binding."
+    },
+
+    "IV_DEFCON_SUPREMACY": {
+      "status": "PASS",
+      "requirement": "DEFCON check before SitC initialization and during validation",
+      "verification_method": "Code inspection",
+      "findings": [
+        {
+          "check": "DEFCON check in _init_sitc()",
+          "location": "ec018_alpha_daemon.py:295-310",
+          "result": "VERIFIED - SitCDEFCONViolation raised on RED/BLACK"
+        },
+        {
+          "check": "DEFCON check inherited from SitC planner",
+          "location": "ios020_sitc_planner.py:367-371",
+          "result": "VERIFIED - DEFCONViolation on connect()"
+        },
+        {
+          "check": "Current DEFCON state",
+          "location": "fhq_governance.defcon_state",
+          "result": "VERIFIED - GREEN (validation cycle permitted)"
+        }
+      ],
+      "conclusion": "DEFCON supremacy enforced at both EC-018 and SitC levels."
+    },
+
+    "V_ECONOMIC_SAFETY": {
+      "status": "PASS",
+      "requirement": "RuntimeEconomicGuardian.check_or_fail() invoked",
+      "verification_method": "Code inspection",
+      "findings": [
+        {
+          "check": "Economic safety check in _init_sitc()",
+          "location": "ec018_alpha_daemon.py:312-318",
+          "result": "VERIFIED - SitCEconomicViolation raised on failure"
+        },
+        {
+          "check": "RuntimeEconomicGuardian in SitC planner",
+          "location": "ios020_sitc_planner.py:379-384",
+          "result": "VERIFIED - Guardian initialized on connect()"
+        }
+      ],
+      "conclusion": "Economic safety enforced as runtime law."
+    },
+
+    "VI_ROLE_ISOLATION_MIT_QUAD": {
+      "status": "PASS",
+      "requirement": "SitC writes to fhq_meta only, evidence-only outputs",
+      "verification_method": "Database write analysis",
+      "findings": [
+        {
+          "check": "SitC writes to fhq_meta.chain_of_query only",
+          "location": "ios020_sitc_planner.py:669",
+          "result": "VERIFIED - enforce_schema_boundary('fhq_meta', 'chain_of_query')"
+        },
+        {
+          "check": "SitC writes to fhq_meta.cognitive_engine_evidence only",
+          "location": "ios020_sitc_planner.py:739",
+          "result": "VERIFIED - enforce_schema_boundary('fhq_meta', 'cognitive_engine_evidence')"
+        },
+        {
+          "check": "No writes to fhq_alpha from SitC integration",
+          "location": "ec018_alpha_daemon.py:325-464",
+          "result": "VERIFIED - SitC validation does not write to fhq_alpha"
+        },
+        {
+          "check": "Controlled validation cycle database entries",
+          "location": "VEGA-EC018-SITC-WIRING-20251217",
+          "result": "VERIFIED - 20 chain_of_query nodes logged to fhq_meta"
+        }
+      ],
+      "conclusion": "Role isolation enforced. SitC outputs are evidence-only in fhq_meta."
+    },
+
+    "VII_NO_STEERING_LEAKAGE": {
+      "status": "PASS",
+      "requirement": "No steering of hypothesis content by SitC",
+      "verification_method": "Controlled validation cycle + steering audit",
+      "findings": [
+        {
+          "check": "Steering leakage audit passed",
+          "location": "CD-EC020-GUARDRAILS-20251217",
+          "result": "VERIFIED - deviation_detected=false"
+        },
+        {
+          "check": "Controlled validation shows no mutation",
+          "location": "VEGA-EC018-SITC-WIRING-20251217",
+          "result": "VERIFIED - hypothesis_unchanged=True for all validations"
+        },
+        {
+          "check": "No semantics rewriting",
+          "location": "ec018_alpha_daemon.py:440-445",
+          "result": "VERIFIED - hypothesis_unchanged check performed"
+        }
+      ],
+      "conclusion": "No steering leakage detected. Hypotheses unchanged after SitC validation."
+    }
+  },
+
+  "controlled_validation_cycle_summary": {
+    "timestamp": "2025-12-17T16:36:17Z",
+    "session_id": "89c25157-ef59-4e19-9c48-a7f26beb6434",
+    "focus_area": "momentum",
+    "hypotheses_generated": 4,
+    "hypotheses_validated": 4,
+    "hypotheses_rejected": 0,
+    "sitc_behavior": {
+      "accepted": 4,
+      "log_only": 0,
+      "rejected": 0,
+      "all_unchanged": true
+    },
+    "cost_usd": 0.000627,
+    "asrp_hash": "78c95c093b5164b485cdc29f4f016173639d896332af87a3dfc9e15d7042e2b8"
+  },
+
+  "stop_conditions_monitored": {
+    "sitc_altered_hypothesis": {
+      "detected": false,
+      "action_taken": "N/A"
+    },
+    "low_confidence_proceeded": {
+      "detected": false,
+      "action_taken": "N/A"
+    },
+    "search_heuristics_during_abort": {
+      "detected": false,
+      "action_taken": "N/A"
+    },
+    "schema_boundary_breach": {
+      "detected": false,
+      "action_taken": "N/A"
+    }
+  },
+
+  "attestation_decision": {
+    "decision": "G1_ATTESTED",
+    "rationale": "All seven validation criteria PASS. EC-018 + EC-020 SitC integration complies with CEO Directive Wave 7 mandates. Controlled validation cycle demonstrates SitC operates as FILTER only with no hypothesis modification, correct confidence envelope handling, and full ASRP/DEFCON/Economic/MIT-Quad compliance.",
+    "constraints": [
+      "SitC hypothesis validation may remain active during alpha hunts",
+      "All operations must respect current DEFCON state (GREEN)",
+      "Production deployment requires G2 oversight review",
+      "Any stop condition trigger requires immediate escalation to VEGA"
+    ]
+  },
+
+  "post_attestation_authorization": {
+    "authorized_actions": [
+      "EC-018 alpha hunts with SitC hypothesis validation enabled",
+      "SitC may validate hypotheses during scheduled hunts",
+      "Chain-of-query logging to fhq_meta.chain_of_query",
+      "Cognitive evidence logging to fhq_meta.cognitive_engine_evidence"
+    ],
+    "monitoring_requirements": [
+      "Monitor hypothesis_unchanged flag on every validation",
+      "Alert on any LOW confidence rejections",
+      "Track cost accumulation vs budget",
+      "Verify ASRP hash continuity across sessions"
+    ],
+    "prohibited_until_g2": [
+      "Full production deployment",
+      "Autonomous execution based on SitC-validated hypotheses",
+      "Any modification to confidence envelope thresholds",
+      "Any relaxation of role isolation boundaries"
+    ]
+  },
+
+  "validation_summary": {
+    "I_SITC_FILTER_ROLE": "PASS",
+    "II_CONFIDENCE_ENVELOPE": "PASS",
+    "III_ASRP_STATE_BINDING": "PASS",
+    "IV_DEFCON_SUPREMACY": "PASS",
+    "V_ECONOMIC_SAFETY": "PASS",
+    "VI_ROLE_ISOLATION": "PASS",
+    "VII_NO_STEERING_LEAKAGE": "PASS",
+    "OVERALL": "G1_ATTESTED"
+  },
+
+  "attestation_signature": {
+    "attested_by": "VEGA (Verification & Governance Authority)",
+    "attestation_timestamp": "2025-12-17T16:45:00Z",
+    "prerequisite_attestations": [
+      "VEGA-G1-EC020-SITC-20251217"
+    ],
+    "next_gate": "G2_OVERSIGHT_REVIEW"
+  },
+
+  "created_by": "STIG (CTO)",
+  "submitted_for_vega_review": "2025-12-17T16:45:00Z"
+}

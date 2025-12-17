@@ -1,0 +1,292 @@
+{
+  "document_type": "VEGA_G1_ATTESTATION",
+  "attestation_id": "VEGA-G1-EC020-SITC-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date_issued": "2025-12-17",
+
+  "attestation_target": {
+    "component": "EC-020",
+    "name": "SitC (Search-in-the-Chain) Planner",
+    "primary_file": "03_FUNCTIONS/ios020_sitc_planner.py",
+    "lines": 838
+  },
+
+  "directive_reference": {
+    "ceo_directive": "VEGA DIRECTIVE: G1 TECHNICAL VALIDATION - EC-020 SITC PLANNER",
+    "date": "2025-12-17",
+    "evidence_bundle": "VEGA_EC020_SITC_EVIDENCE_BUNDLE_20251217.json"
+  },
+
+  "attestation_status": "G1_ATTESTED",
+
+  "validation_results": {
+    "I_ASRP_STATE_BINDING": {
+      "status": "PASS",
+      "requirement": "Every artifact embeds state_snapshot_hash and state_timestamp",
+      "verification_method": "Direct code inspection + database schema verification",
+      "findings": [
+        {
+          "check": "get_asrp_state() helper function exists",
+          "location": "ios020_sitc_planner.py:192-223",
+          "result": "VERIFIED - Queries fhq_meta.aci_state_snapshot_log WHERE is_atomic=true"
+        },
+        {
+          "check": "ChainNode embeds ASRP fields",
+          "location": "ios020_sitc_planner.py:265-267",
+          "result": "VERIFIED - state_snapshot_hash: str, state_timestamp: datetime"
+        },
+        {
+          "check": "ResearchPlan embeds ASRP fields",
+          "location": "ios020_sitc_planner.py:308-310",
+          "result": "VERIFIED - state_snapshot_hash: str, state_timestamp: datetime"
+        },
+        {
+          "check": "VerificationResult embeds ASRP fields",
+          "location": "ios020_sitc_planner.py:293",
+          "result": "VERIFIED - state_snapshot_hash: str"
+        },
+        {
+          "check": "Source table exists with correct columns",
+          "location": "fhq_meta.aci_state_snapshot_log",
+          "result": "VERIFIED - columns: state_snapshot_hash, vector_timestamp, is_atomic confirmed"
+        },
+        {
+          "check": "Fallback on missing state",
+          "location": "ios020_sitc_planner.py:218-223",
+          "result": "VERIFIED - Generates SHA256 hash from timestamp (fail-safe, not fail-open)"
+        }
+      ],
+      "conclusion": "All SitC artifacts embed ASRP state binding. Source is authoritative."
+    },
+
+    "II_DEFCON_SUPREMACY": {
+      "status": "PASS",
+      "requirement": "SitC blocked when DEFCON >= ORANGE, RED/BLACK causes immediate abort",
+      "verification_method": "Direct code inspection + database state verification",
+      "findings": [
+        {
+          "check": "check_defcon_state() function exists",
+          "location": "ios020_sitc_planner.py:154-185",
+          "result": "VERIFIED - Returns (level, can_execute, reason)"
+        },
+        {
+          "check": "DEFCONViolation exception class exists",
+          "location": "ios020_sitc_planner.py:149-151",
+          "result": "VERIFIED"
+        },
+        {
+          "check": "RED/BLACK raises DEFCONViolation on connect()",
+          "location": "ios020_sitc_planner.py:370-371",
+          "result": "VERIFIED - if self._defcon_level in ('RED', 'BLACK'): raise DEFCONViolation(reason)"
+        },
+        {
+          "check": "RED/BLACK raises DEFCONViolation on create_research_plan()",
+          "location": "ios020_sitc_planner.py:421-423",
+          "result": "VERIFIED - Checks DEFCON before plan creation"
+        },
+        {
+          "check": "ORANGE blocks verification execution",
+          "location": "ios020_sitc_planner.py:542-552",
+          "result": "VERIFIED - verify_node() returns blocked result when can_execute=False"
+        },
+        {
+          "check": "Fail-safe on DB error",
+          "location": "ios020_sitc_planner.py:174-177",
+          "result": "VERIFIED - Returns ('UNKNOWN', False, 'DEFCON check failed') - BLOCKS, not ALLOWS"
+        },
+        {
+          "check": "Defense-in-depth (scheduler + SitC)",
+          "location": "finn_brain_scheduler.py:52-94 + ios020_sitc_planner.py:367-371",
+          "result": "VERIFIED - DEFCON checked at scheduler level AND inside SitC"
+        },
+        {
+          "check": "Current DEFCON state",
+          "location": "fhq_governance.defcon_state",
+          "result": "VERIFIED - GREEN (is_current=true, triggered 2025-12-11)"
+        }
+      ],
+      "conclusion": "DEFCON supremacy enforced. RED/BLACK causes abort. Fail-safe blocks on uncertainty."
+    },
+
+    "III_ECONOMIC_SAFETY": {
+      "status": "PASS",
+      "requirement": "RuntimeEconomicGuardian.check_or_fail() invoked before SEARCH/VERIFICATION, hard abort on failure",
+      "verification_method": "Direct code inspection",
+      "findings": [
+        {
+          "check": "RuntimeEconomicGuardian class exists",
+          "location": "ios020_sitc_planner.py:101-142",
+          "result": "VERIFIED"
+        },
+        {
+          "check": "RuntimeEconomicViolation exception exists",
+          "location": "ios020_sitc_planner.py:96-98",
+          "result": "VERIFIED"
+        },
+        {
+          "check": "check_or_fail() raises on unavailable controller",
+          "location": "ios020_sitc_planner.py:132-137",
+          "result": "VERIFIED - if self._load_failed or self._cost_controller is None: raise RuntimeEconomicViolation"
+        },
+        {
+          "check": "Guardian initialized in connect()",
+          "location": "ios020_sitc_planner.py:379-384",
+          "result": "VERIFIED - Raises RuntimeEconomicViolation if initialize() returns False"
+        },
+        {
+          "check": "check_or_fail() called before VERIFICATION nodes",
+          "location": "ios020_sitc_planner.py:554-568",
+          "result": "VERIFIED - Called inside verify_node() before verification logic"
+        },
+        {
+          "check": "No try/except suppression of check_or_fail()",
+          "location": "ios020_sitc_planner.py:556-558",
+          "result": "VERIFIED - Call is direct, exception propagates up"
+        },
+        {
+          "check": "Abort handled correctly",
+          "location": "ios020_sitc_planner.py:560-568",
+          "result": "VERIFIED - Returns blocked VerificationResult on should_abort"
+        }
+      ],
+      "conclusion": "Economic safety enforced at runtime level. No bypass path exists."
+    },
+
+    "IV_ROLE_ISOLATION_MIT_QUAD": {
+      "status": "PASS",
+      "requirement": "SitC outputs are Evidence only, writes limited to fhq_meta, MITQuadViolation on breach",
+      "verification_method": "Direct code inspection + SQL statement analysis",
+      "findings": [
+        {
+          "check": "ALLOWED_WRITE_SCHEMAS defined",
+          "location": "ios020_sitc_planner.py:67",
+          "result": "VERIFIED - ALLOWED_WRITE_SCHEMAS = ['fhq_meta']"
+        },
+        {
+          "check": "MITQuadViolation exception exists",
+          "location": "ios020_sitc_planner.py:70-72",
+          "result": "VERIFIED"
+        },
+        {
+          "check": "enforce_schema_boundary() function exists",
+          "location": "ios020_sitc_planner.py:75-81",
+          "result": "VERIFIED - Raises MITQuadViolation if schema not in allowed list"
+        },
+        {
+          "check": "enforce_schema_boundary() called in log_chain()",
+          "location": "ios020_sitc_planner.py:669",
+          "result": "VERIFIED - enforce_schema_boundary('fhq_meta', 'chain_of_query')"
+        },
+        {
+          "check": "enforce_schema_boundary() called in _log_cognitive_evidence()",
+          "location": "ios020_sitc_planner.py:739",
+          "result": "VERIFIED - enforce_schema_boundary('fhq_meta', 'cognitive_engine_evidence')"
+        },
+        {
+          "check": "All INSERT statements target fhq_meta only",
+          "location": "ios020_sitc_planner.py:674-712, 743-768",
+          "result": "VERIFIED - Only fhq_meta.chain_of_query and fhq_meta.cognitive_engine_evidence"
+        },
+        {
+          "check": "No writes to fhq_data, fhq_market, fhq_alpha, fhq_execution",
+          "location": "Full file grep",
+          "result": "VERIFIED - No INSERT/UPDATE statements for canonical or execution schemas"
+        },
+        {
+          "check": "Database tables exist",
+          "location": "PostgreSQL verification",
+          "result": "VERIFIED - fhq_meta.chain_of_query (20 columns), fhq_meta.cognitive_engine_evidence (20 columns)"
+        }
+      ],
+      "conclusion": "Role isolation enforced. Evidence-only outputs. No implicit promotion path."
+    },
+
+    "V_WIRING_SCOPE": {
+      "status": "PASS",
+      "requirement": "SitC wired as planner-only, does not trigger execution or learning",
+      "verification_method": "Direct code inspection of finn_cognitive_brain.py integration",
+      "findings": [
+        {
+          "check": "Import statement",
+          "location": "finn_cognitive_brain.py:82-91",
+          "result": "VERIFIED - Imports SitCPlanner, ResearchPlan, ChainNode, NodeType, exceptions"
+        },
+        {
+          "check": "Instance variable",
+          "location": "finn_cognitive_brain.py:311-313",
+          "result": "VERIFIED - self._sitc_planner with 'Research Planning ONLY' comment"
+        },
+        {
+          "check": "Lazy property with safety",
+          "location": "finn_cognitive_brain.py:491-521",
+          "result": "VERIFIED - Catches DEFCONViolation, SitCEconomicViolation on init"
+        },
+        {
+          "check": "Cognitive cycle integration",
+          "location": "finn_cognitive_brain.py:663-697",
+          "result": "VERIFIED - Only calls create_research_plan() and log_chain()"
+        },
+        {
+          "check": "Does NOT trigger execution",
+          "location": "finn_cognitive_brain.py:663-697",
+          "result": "VERIFIED - No calls to paper_adapter, trade_manager, or broker APIs from SitC section"
+        },
+        {
+          "check": "Does NOT trigger learning updates",
+          "location": "Full code review",
+          "result": "VERIFIED - No calls to learning_pipeline from SitC integration"
+        },
+        {
+          "check": "Does NOT mutate IKEA/InForage",
+          "location": "ios020_sitc_planner.py full review",
+          "result": "VERIFIED - No setter methods, no config mutations on external engines"
+        },
+        {
+          "check": "Cleanup on close",
+          "location": "finn_cognitive_brain.py:358-363",
+          "result": "VERIFIED - self._sitc_planner.close() called"
+        }
+      ],
+      "conclusion": "Wiring is planner-only. No execution, learning, or mutation paths."
+    }
+  },
+
+  "attestation_decision": {
+    "decision": "G1_ATTESTED",
+    "rationale": "All five validation criteria PASS. EC-020 SitC Planner implementation complies with CEO Directive mandates I-IV and wiring restrictions.",
+    "constraints": [
+      "SitC may proceed to controlled test cycles",
+      "All test cycles must respect DEFCON state",
+      "Production execution requires G2 oversight review"
+    ]
+  },
+
+  "post_attestation_authorization": {
+    "authorized_actions": [
+      "Run controlled test cycles with SitC enabled",
+      "SitC may create research plans during FINN cognitive cycles",
+      "SitC may log chains to fhq_meta.chain_of_query"
+    ],
+    "prohibited_until_g2": [
+      "Production deployment",
+      "EC-018 integration (hypothesis validation)",
+      "Any modification to role isolation boundaries"
+    ]
+  },
+
+  "validation_summary": {
+    "I_ASRP_STATE_BINDING": "PASS",
+    "II_DEFCON_SUPREMACY": "PASS",
+    "III_ECONOMIC_SAFETY": "PASS",
+    "IV_ROLE_ISOLATION": "PASS",
+    "V_WIRING_SCOPE": "PASS",
+    "OVERALL": "G1_ATTESTED"
+  },
+
+  "attestation_signature": {
+    "attested_by": "VEGA (Verification & Governance Authority)",
+    "attestation_timestamp": "2025-12-17T00:00:00Z",
+    "next_gate": "G2_OVERSIGHT_REVIEW"
+  }
+}

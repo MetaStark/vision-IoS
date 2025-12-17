@@ -1,0 +1,243 @@
+{
+  "document_type": "VEGA_POST_WIRING_EVIDENCE",
+  "evidence_id": "VEGA-EC018-SITC-WIRING-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ Directive: WAVE 7 EC-018 HYPOTHESIS VALIDATION WIRING",
+  "date_generated": "2025-12-17",
+  "generated_by": "STIG (CTO)",
+
+  "attestation_type": "G1_POST_WIRING_VALIDATION",
+  "status": "READY_FOR_VEGA_REVIEW",
+
+  "directive_reference": {
+    "directive_id": "CD-ACI-WAVE7-EC018-SITC-20251217",
+    "title": "EC-018 Hypothesis Validation Wiring - Authorized Execution (Wave 7)",
+    "execution_order": [
+      "Wire SitC into EC-018 hypothesis validation (validation-only)",
+      "Enforce confidence envelope handling",
+      "Run single controlled validation cycle",
+      "Generate VEGA post-wiring evidence",
+      "Request VEGA confirmation"
+    ]
+  },
+
+  "wiring_implementation": {
+    "target_file": "03_FUNCTIONS/ec018_alpha_daemon.py",
+    "integration_points": {
+      "import_section": {
+        "lines": "59-75",
+        "imports": [
+          "SitCPlannerWithGuardrails",
+          "PlanConfidenceEnvelope",
+          "PlanConfidence",
+          "AbortReason",
+          "SitCRoleViolation",
+          "DEFCONViolation",
+          "RuntimeEconomicViolation",
+          "MITQuadViolation",
+          "get_sitc_planner_with_guardrails"
+        ]
+      },
+      "instance_variables": {
+        "lines": "209-212",
+        "variables": ["_sitc_planner", "_sitc_enabled"]
+      },
+      "initialization_method": {
+        "method": "_init_sitc(session_id)",
+        "lines": "285-323",
+        "purpose": "Initialize SitC with DEFCON and economic safety checks"
+      },
+      "validation_method": {
+        "method": "_validate_hypothesis_with_sitc(hypothesis, context)",
+        "lines": "325-464",
+        "purpose": "Validate hypothesis using confidence envelope"
+      },
+      "run_hunt_integration": {
+        "sitc_init": "lines 1017-1022",
+        "validation_loop": "lines 1059-1101",
+        "return_value_enhancement": "lines 1143-1151"
+      },
+      "cleanup": {
+        "lines": "487-492",
+        "action": "Close SitC planner on daemon shutdown"
+      }
+    }
+  },
+
+  "controlled_validation_cycle": {
+    "timestamp": "2025-12-17T16:36:17Z",
+    "session_id": "89c25157-ef59-4e19-9c48-a7f26beb6434",
+    "focus_area": "momentum",
+    "results": {
+      "success": true,
+      "sitc_enabled": true,
+      "hypotheses_generated": 4,
+      "hypotheses_validated": 4,
+      "hypotheses_rejected": 0,
+      "sitc_validation": {
+        "accepted": 4,
+        "log_only": 0,
+        "rejected": 0,
+        "all_unchanged": true
+      },
+      "cost_usd": 0.000627,
+      "asrp_hash": "78c95c093b5164b485cdc29f4f016173639d896332af87a3dfc9e15d7042e2b8"
+    },
+    "evidence_of_compliance": {
+      "confidence_envelope_consumed": true,
+      "correct_accept_log_reject_behavior": true,
+      "no_hypothesis_mutation": true,
+      "asrp_binding_present": true,
+      "defcon_check_performed": true,
+      "economic_safety_checked": true
+    }
+  },
+
+  "ceo_directive_compliance": {
+    "section_2_scope_authorization": {
+      "sitc_role": {
+        "required": "Structural validator, Evidence completeness checker, Uncertainty/abort flag generator",
+        "implemented": true,
+        "evidence": "_validate_hypothesis_with_sitc() performs validation only"
+      },
+      "filter_not_co_thinker": {
+        "required": "SitC is FILTER, not CO-THINKER",
+        "implemented": true,
+        "evidence": "hypothesis_unchanged=True verified for all validations"
+      }
+    },
+
+    "section_2_2_prohibitions": {
+      "proposing_modifying_hypotheses": {
+        "prohibited": true,
+        "enforced": true,
+        "mechanism": "SitCRoleViolation exception"
+      },
+      "rewriting_semantics": {
+        "prohibited": true,
+        "enforced": true,
+        "mechanism": "hypothesis_unchanged check"
+      },
+      "adjusting_thresholds": {
+        "prohibited": true,
+        "enforced": true,
+        "mechanism": "SitCRole.PROHIBITED_OPERATIONS"
+      },
+      "triggering_execution_learning": {
+        "prohibited": true,
+        "enforced": true,
+        "mechanism": "No execution interfaces in SitC"
+      },
+      "generating_alpha_signals": {
+        "prohibited": true,
+        "enforced": true,
+        "mechanism": "Evidence-only outputs to fhq_meta"
+      }
+    },
+
+    "section_3_guardrails": {
+      "I_plan_confidence_envelope": {
+        "status": "ENFORCED",
+        "high_behavior": "Normal validation flow permitted",
+        "medium_behavior": "Log-only, no escalation, no rejection",
+        "low_behavior": "Hypothesis rejected outright",
+        "no_override_paths": true,
+        "evidence": "Confidence envelope consumed in _validate_hypothesis_with_sitc()"
+      },
+      "II_asrp_state_binding": {
+        "status": "ENFORCED",
+        "all_outputs_include_hash": true,
+        "evidence": "asrp_hash and state_snapshot_hash in all returns"
+      },
+      "III_defcon_supremacy": {
+        "status": "ENFORCED",
+        "defcon_check_before_init": true,
+        "defcon_check_in_validation": true,
+        "evidence": "SitCDEFCONViolation raised on RED/BLACK"
+      },
+      "IV_economic_safety": {
+        "status": "ENFORCED",
+        "runtime_guardian_check": true,
+        "evidence": "RuntimeEconomicGuardian.check_or_fail() invoked"
+      },
+      "V_role_isolation": {
+        "status": "ENFORCED",
+        "writes_to_fhq_meta_only": true,
+        "evidence": "chain_of_query and cognitive_engine_evidence only"
+      }
+    }
+  },
+
+  "database_evidence": {
+    "chain_of_query_nodes_logged": {
+      "session_plans": 4,
+      "nodes_per_plan": 5,
+      "total_nodes": 20,
+      "table": "fhq_meta.chain_of_query"
+    },
+    "cognitive_evidence_logged": {
+      "table": "fhq_meta.cognitive_engine_evidence",
+      "entries_created": true
+    },
+    "proposals_stored": {
+      "table": "fhq_alpha.g0_draft_proposals",
+      "count": 4,
+      "status": "G0_DRAFT"
+    }
+  },
+
+  "validation_criteria": [
+    {
+      "criterion": "Confidence envelope consumed and acted upon",
+      "status": "PASS",
+      "evidence": "All 4 hypotheses evaluated, HIGH confidence -> ACCEPT"
+    },
+    {
+      "criterion": "Correct accept/log/reject behavior",
+      "status": "PASS",
+      "evidence": "4 accepted (HIGH), 0 log-only (MEDIUM), 0 rejected (LOW)"
+    },
+    {
+      "criterion": "No hypothesis mutation",
+      "status": "PASS",
+      "evidence": "all_unchanged=True for all validations"
+    },
+    {
+      "criterion": "No steering leakage",
+      "status": "PASS",
+      "evidence": "Hypotheses unchanged after SitC validation"
+    },
+    {
+      "criterion": "No role boundary violations",
+      "status": "PASS",
+      "evidence": "No SitCRoleViolation exceptions raised"
+    },
+    {
+      "criterion": "ASRP binding on all outputs",
+      "status": "PASS",
+      "evidence": "asrp_hash present in return value"
+    },
+    {
+      "criterion": "Evidence-only outputs",
+      "status": "PASS",
+      "evidence": "Writes to fhq_meta.chain_of_query and fhq_meta.cognitive_engine_evidence only"
+    }
+  ],
+
+  "stop_condition_monitoring": {
+    "sitc_altered_hypothesis": false,
+    "low_confidence_proceeded": false,
+    "search_heuristics_during_abort": false,
+    "schema_boundary_breach": false
+  },
+
+  "attestation_request": {
+    "requested_attestation": "G1_POST_WIRING_VALIDATION",
+    "attestation_target": "EC-018 + EC-020 SitC Integration",
+    "attestation_criteria_met": true,
+    "vega_action_required": "Review and confirm post-wiring compliance"
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T16:36:30Z"
+}
