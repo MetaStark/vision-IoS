@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!['BTC-USD', 'ETH-USD', 'GSPC'].includes(ticker)) {
+  const validTickers = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'SPY', 'GLD', 'EUR-USD', 'GSPC']
+  if (!validTickers.includes(ticker)) {
     return NextResponse.json({ error: 'Invalid ticker' }, { status: 400 })
   }
 

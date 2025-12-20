@@ -111,20 +111,6 @@ The Vision-IoS Orchestrator executes Vision-IoS functions (FINN, STIG, LARS) in 
    pip install psycopg2-binary==2.9.9
    ```
 
-### Database Setup
-
-Run migrations in order:
-
-```bash
-# 1. Foundation schema (if not already applied)
-psql $DATABASE_URL -f 04_DATABASE/MIGRATIONS/001_vision_foundation.sql
-
-# 2. Register Vision-IoS functions
-psql $DATABASE_URL -f 04_DATABASE/MIGRATIONS/002_register_vision_functions.sql
-
-# 3. Register orchestrator
-psql $DATABASE_URL -f 04_DATABASE/MIGRATIONS/017_orchestrator_registration.sql
-```
 
 ### Environment Variables
 
