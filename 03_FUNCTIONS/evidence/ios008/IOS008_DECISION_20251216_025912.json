@@ -1,0 +1,218 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T02:59:12.596474+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "31fc844f-2ab3-4b91-9121-b2a63d647bde",
+    "timestamp": "2025-12-16T02:59:12.570542+00:00",
+    "valid_until": "2025-12-16T03:14:12.570542+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 3,
+      "cohesion_score": 1.0,
+      "dominant_direction": "LONG",
+      "confidence_modifier": 1.1
+    },
+    "asset_directives": [
+      {
+        "signal_id": "7ac9439e-c519-4caa-aa2e-ce71abea2b2d",
+        "hypothesis_id": "ALPHA-20241205-V01",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 5500,
+        "confidence_score": 1.1,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+          "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+          "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+          "Current regime = NEUTRAL, DEFCON >=4"
+        ],
+        "exit_conditions": {
+          "stop_loss": "1.5% adverse move from entry",
+          "time_exit": "48 hours after entry",
+          "take_profit": "2.0% profit from entry"
+        }
+      },
+      {
+        "signal_id": "a886c43e-8a7b-4c92-9983-7cd74ccb2742",
+        "hypothesis_id": "ALPHA-20241205-V02",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 5500,
+        "confidence_score": 1.1,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+          "Skew > +0.15 OR skew < -0.10",
+          "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+          "Position delta-hedged daily",
+          "Regime = NEUTRAL for prior 3 days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Skew moves further away by additional 0.10 from entry",
+          "time_exit": "5 days after entry",
+          "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+        }
+      },
+      {
+        "signal_id": "20e26710-185c-4f1e-bd80-d770b6680ed4",
+        "hypothesis_id": "ALPHA-20241205-V03",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 5500,
+        "confidence_score": 1.1,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+          "Ratio > 1.3",
+          "Enter volatility spread trade: short overnight vol, long daytime vol",
+          "Vega-neutral at initiation",
+          "NEUTRAL regime present for >=5 consecutive days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Ratio increases to >1.8",
+          "time_exit": "10 trading days after entry",
+          "take_profit": "Ratio reverts to <=1.0"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "b6829982f66173705d2d92c42fa57c72b695165dfd346b1beb7248fb49aae064",
+      "acl": "593a5f0848f902e9050dae94baa9121db713cb95a828dc8fc31252cd2e122c90",
+      "dsl": "f100ac329bb76e7b5aa483c8738037b4ec7647a54752fc77378a607d251079d8",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "39e46feaca377b2c9bf6085d5259b6336024adda5fc41a75108903495e89a330"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "7ac9439e-c519-4caa-aa2e-ce71abea2b2d",
+      "source_proposal_id": "4017c264-99fd-43a2-8344-14adafbc1ab5",
+      "hypothesis_id": "ALPHA-20241205-V01",
+      "title": "Volatility Compression Breakout Fade in Neutral Regime",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+        "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+        "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+        "Current regime = NEUTRAL, DEFCON >=4"
+      ],
+      "exit_conditions": {
+        "stop_loss": "1.5% adverse move from entry",
+        "time_exit": "48 hours after entry",
+        "take_profit": "2.0% profit from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T03:59:00.631155+01:00",
+      "created_at": "2025-12-16T03:59:00.631155+01:00"
+    },
+    {
+      "signal_id": "a886c43e-8a7b-4c92-9983-7cd74ccb2742",
+      "source_proposal_id": "65c341b8-019e-4b25-85d7-3089be42a1b5",
+      "hypothesis_id": "ALPHA-20241205-V02",
+      "title": "Asymmetric Volatility Skew Reversion in Neutral Markets",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+        "Skew > +0.15 OR skew < -0.10",
+        "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+        "Position delta-hedged daily",
+        "Regime = NEUTRAL for prior 3 days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Skew moves further away by additional 0.10 from entry",
+        "time_exit": "5 days after entry",
+        "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T03:59:00.661346+01:00",
+      "created_at": "2025-12-16T03:59:00.661346+01:00"
+    },
+    {
+      "signal_id": "20e26710-185c-4f1e-bd80-d770b6680ed4",
+      "source_proposal_id": "fe4137a6-7240-4255-a4af-f3488e365626",
+      "hypothesis_id": "ALPHA-20241205-V03",
+      "title": "Overnight vs. Daytime Volatility Carry in Neutral Environment",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+        "Ratio > 1.3",
+        "Enter volatility spread trade: short overnight vol, long daytime vol",
+        "Vega-neutral at initiation",
+        "NEUTRAL regime present for >=5 consecutive days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Ratio increases to >1.8",
+        "time_exit": "10 trading days after entry",
+        "take_profit": "Ratio reverts to <=1.0"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T03:59:00.686988+01:00",
+      "created_at": "2025-12-16T03:59:00.686988+01:00"
+    }
+  ]
+}

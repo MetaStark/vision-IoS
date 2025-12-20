@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T18:09:40.996408+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "5521d8f1-18f9-48a5-82e8-36a68628f375",
+    "timestamp": "2025-12-16T18:09:40.974009+00:00",
+    "valid_until": "2025-12-16T18:24:40.974009+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 2,
+      "cohesion_score": 0.7058823529411765,
+      "dominant_direction": "NEUTRAL",
+      "confidence_modifier": 0.85
+    },
+    "asset_directives": [
+      {
+        "signal_id": "ebf6863a-2407-4895-97b0-589645c22520",
+        "hypothesis_id": "ALPHA-20241206-001",
+        "category": "CROSS_ASSET",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3777,
+        "confidence_score": 0.75548,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Market regime = NEUTRAL (confidence > 60%)",
+          "BTC-ETH 24h correlation > 0.85",
+          "BTC/ETH price ratio crosses +/-2? from 30-day MA",
+          "DEFCON <= 4 (no extreme stress)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Ratio extends to +/-3? from 30-day MA",
+          "time_exit": "5 days after entry",
+          "take_profit": "Ratio returns to within 0.5? of 30-day MA"
+        }
+      },
+      {
+        "signal_id": "38c3fd27-2805-4cad-aa4c-c793243e8ff2",
+        "hypothesis_id": "ALPHA-20241215-002",
+        "category": "CROSS_ASSET",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3777,
+        "confidence_score": 0.75548,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 10-day realized volatility < 30th percentile (90-day lookback)",
+          "SPY 10-day realized volatility > 70th percentile (90-day lookback)",
+          "Divergence persists for 2 consecutive days",
+          "BTC regime = NEUTRAL"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Regime remains NEUTRAL or transitions to RISK_ON after 5 days",
+          "time_exit": "5 trading days after entry",
+          "take_profit": "Regime transitions to RISK_OFF (confirmed by EC-018)"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "c07ffc93cac190b775385ebe2cd802aeb713a6586ce5f1a594119c8f4f44aa5c",
+      "acl": "ff64a41bcd800e25057d78780c962bf1366c7969758b31a5a2f7920788b50794",
+      "dsl": "9833f75574380aca58af4ac320fb8b5c67303d679af525c46b85c76b1c9b4c9f",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "4a5340f2201c46914fd432bbec454a009404f813dd68b79ea4eed79fe54cde42"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "ebf6863a-2407-4895-97b0-589645c22520",
+      "source_proposal_id": "ca007be1-d082-428c-9e85-b5d133dd14d8",
+      "hypothesis_id": "ALPHA-20241206-001",
+      "title": "BTC-ETH Pairs Mean Reversion in Neutral Regime",
+      "category": "CROSS_ASSET",
+      "entry_conditions": [
+        "Market regime = NEUTRAL (confidence > 60%)",
+        "BTC-ETH 24h correlation > 0.85",
+        "BTC/ETH price ratio crosses +/-2? from 30-day MA",
+        "DEFCON <= 4 (no extreme stress)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Ratio extends to +/-3? from 30-day MA",
+        "time_exit": "5 days after entry",
+        "take_profit": "Ratio returns to within 0.5? of 30-day MA"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.0009827063771477506,
+        "win_rate": 0.63,
+        "sharpe_ratio": 5.419525769239064,
+        "profit_factor": 2.2220649008579008,
+        "total_signals": 100,
+        "avg_return_bps": 197.44544999923545,
+        "max_drawdown_pct": 46.62854436481441,
+        "avg_holding_period_hours": 89.76
+      },
+      "confidence_score": 0.8888,
+      "state_hash_at_validation": "2d1e257e2dcdaf92c2ac17f8f9b7aef11c41feb9e1bb3dd17def97788b9b3b78",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:09:12.575337+01:00",
+      "created_at": "2025-12-16T19:09:12.575337+01:00"
+    },
+    {
+      "signal_id": "38c3fd27-2805-4cad-aa4c-c793243e8ff2",
+      "source_proposal_id": "f9b431f5-9293-4500-bd7a-17c4b3087433",
+      "hypothesis_id": "ALPHA-20241215-002",
+      "title": "Cross-Asset Volatility Divergence Regime Precursor",
+      "category": "CROSS_ASSET",
+      "entry_conditions": [
+        "BTC 10-day realized volatility < 30th percentile (90-day lookback)",
+        "SPY 10-day realized volatility > 70th percentile (90-day lookback)",
+        "Divergence persists for 2 consecutive days",
+        "BTC regime = NEUTRAL"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Regime remains NEUTRAL or transitions to RISK_ON after 5 days",
+        "time_exit": "5 trading days after entry",
+        "take_profit": "Regime transitions to RISK_OFF (confirmed by EC-018)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.0009827063771477506,
+        "win_rate": 0.63,
+        "sharpe_ratio": 5.419525769239064,
+        "profit_factor": 2.2220649008579008,
+        "total_signals": 100,
+        "avg_return_bps": 197.44544999923545,
+        "max_drawdown_pct": 46.62854436481441,
+        "avg_holding_period_hours": 89.76
+      },
+      "confidence_score": 0.8888,
+      "state_hash_at_validation": "e4a10ad64dc260679ab3d0c939453e0b23f25b191a04d33e6cea110a6e666326",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:09:39.738000+01:00",
+      "created_at": "2025-12-16T19:09:39.738000+01:00"
+    }
+  ]
+}

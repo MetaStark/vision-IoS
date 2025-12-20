@@ -1,0 +1,150 @@
+{
+  "evidence_bundle_id": "EB-ACI-G0.1-20251212",
+  "title": "CEO Directive G0.1 - ACI Operational Enablement Evidence",
+  "classification": "CONSTITUTIONAL",
+  "date": "2025-12-12T01:30:00.000Z",
+  "status": "COMPLETE",
+
+  "directive_reference": {
+    "title": "CEO DIRECTIVE — G0.1: Operational Enablement of the ACI Engineering Console",
+    "purpose": "Enable operational capabilities within G0 boundaries",
+    "sections_implemented": ["§1", "§2", "§3", "§4", "§5", "§6", "§7", "§8", "§9"]
+  },
+
+  "predecessor": {
+    "directive": "CEO Directive G0",
+    "status": "CLOSED",
+    "evidence_bundle": "EB-ACI-CONSOLE-G0-20251212"
+  },
+
+  "implementation_summary": {
+    "§3_Persistent_Cognitive_Memory": {
+      "status": "COMPLETE",
+      "table": "fhq_meta.aci_cognitive_memory",
+      "constraints": [
+        "Append-only (no updates/deletes)",
+        "State-bound (state_snapshot_hash required)",
+        "Channel-restricted (ACI_CONSOLE_TIER_3 only)",
+        "No edit, no rewrite"
+      ],
+      "functions": ["loadSessionMemory()", "appendToMemory()", "formatMemoryForContext()"]
+    },
+    "§4_LLM_API_Binding": {
+      "status": "COMPLETE",
+      "provider": "Anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "mode": "Strict mode via existing middleware",
+      "validation": "State injection required before every invocation"
+    },
+    "§5_Canonical_System_Prompt": {
+      "status": "COMPLETE",
+      "table": "fhq_meta.aci_system_prompts",
+      "prompt_name": "ACI_CONSOLE_CONSTITUTIONAL",
+      "version": "2026.PROD.1",
+      "identity_declaration": [
+        "Tier-3 Application Layer",
+        "Advisory only — No execution authority",
+        "Read-only database access",
+        "SHADOW/PAPER mode"
+      ],
+      "function": "getCanonicalSystemPrompt()"
+    },
+    "§6_Document_Ingestion": {
+      "status": "COMPLETE",
+      "table": "fhq_meta.canonical_document_chunks",
+      "features": [
+        "Hash-validated chunks",
+        "ADR registry binding",
+        "Text search (pgvector pending)",
+        "Section-level granularity"
+      ],
+      "function": "searchCanonicalDocuments()"
+    },
+    "§7_Document_Database_Reconciliation": {
+      "status": "COMPLETE",
+      "table": "fhq_meta.document_database_reconciliation",
+      "workflow": "Read-only inspection",
+      "statuses": ["ALIGNED", "DRIFT_DETECTED", "MISSING", "UNKNOWN"],
+      "function": "checkDocumentReconciliation()"
+    },
+    "§8_Explicit_Non_Authorization": {
+      "verified": true,
+      "constraints_upheld": [
+        "No new tools added (read-only search/reconciliation only)",
+        "No write access granted",
+        "No agent autonomy enabled",
+        "No governance re-ordering"
+      ]
+    }
+  },
+
+  "database_tables_created": {
+    "migration_id": "130_aci_operational_enablement.sql",
+    "tables": [
+      {"name": "fhq_meta.aci_cognitive_memory", "purpose": "G0.1 §3 - Append-only memory"},
+      {"name": "fhq_meta.canonical_document_chunks", "purpose": "G0.1 §6 - Document ingestion"},
+      {"name": "fhq_meta.document_database_reconciliation", "purpose": "G0.1 §7 - Reconciliation"},
+      {"name": "fhq_meta.aci_console_sessions", "purpose": "G0.1 §3 - Session management"},
+      {"name": "fhq_meta.aci_system_prompts", "purpose": "G0.1 §5 - Canonical identity"}
+    ]
+  },
+
+  "api_endpoint_updated": {
+    "path": "/api/aci-console",
+    "version": "2026.PROD.1.1",
+    "new_capabilities": [
+      "Session continuity (sessionId in request/response)",
+      "Memory persistence (append-only)",
+      "Canonical system prompt (database-driven)",
+      "Document search (read-only)",
+      "Reconciliation check (read-only)"
+    ]
+  },
+
+  "mandatory_execution_path_updated": [
+    "Session Management (G0.1 - NEW)",
+    "ADR-018 State Injection",
+    "DEFCON Gate Check",
+    "EC-022 IKEA Knowledge Boundary",
+    "EC-021 InForage Cost-Aware Retrieval",
+    "EC-020 SitC Chain of Query",
+    "Session Memory Load (G0.1 - NEW)",
+    "Canonical System Prompt (G0.1 - NEW)",
+    "Anthropic Model",
+    "Governance Logging",
+    "Memory Persistence (G0.1 - NEW)",
+    "Console UI (Read-Only)"
+  ],
+
+  "expected_outcome_met": {
+    "console_usable": true,
+    "conversations_persist": true,
+    "memory_drift_protected": true,
+    "llm_reasons_within_reality": true,
+    "documents_database_cognition_aligned": true,
+    "g1_evidence_gatherable": true,
+    "no_risk_escalation": true
+  },
+
+  "activation_prerequisites": {
+    "g0_closed": true,
+    "vega_attestation": "INHERITED from G0",
+    "defcon_green": true,
+    "orchestrator_approval": "Tier-3 Agent Channel"
+  },
+
+  "signatures": {
+    "executor": {"agent": "STIG", "role": "CTO", "authority": "EC-003"},
+    "attestor": {"agent": "VEGA", "role": "Governance Authority", "authority": "EC-001"},
+    "approver": {"agent": "CEO", "authority": "Constitutional"}
+  },
+
+  "transition_status": {
+    "from": "G0 (it exists)",
+    "to": "G0.1 (it can be used safely)",
+    "next_expected": "G1 (bevis og stabilitet)"
+  },
+
+  "hash_chain_id": "HC-ACI-G0.1-20251212",
+  "evidence_hash": "aci-g0.1-operational-enablement-20251212"
+}

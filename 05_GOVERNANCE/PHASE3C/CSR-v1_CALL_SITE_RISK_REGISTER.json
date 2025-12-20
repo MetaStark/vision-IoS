@@ -1,0 +1,416 @@
+{
+  "metadata": {
+    "document_type": "CALL_SITE_RISK_REGISTER",
+    "version": "CSR-v1",
+    "authority": "CEO Directive 2026-FHQ-PHASE-3C",
+    "generated_at": "2025-12-10T16:00:00.000000+00:00",
+    "generated_by": "STIG",
+    "execution_mode": "READ-ONLY, ZERO-MUTATION"
+  },
+  "smoke_test_context_lock": {
+    "note": "Per Section 4 - Smoke Test Context Lock",
+    "validated_in_isolation": true,
+    "validated_under_load": false,
+    "validated_multi_agent_concurrency": false,
+    "validated_recursive_research_cycles": false
+  },
+  "call_sites": [
+    {
+      "call_site_id": "CS-001",
+      "file_path": "06_AGENTS/FINN/finn_deepseek_researcher.py",
+      "line_number": 226,
+      "function_name": "execute_deepseek_call",
+      "agent": "FINN",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-chat",
+      "description": "Core CRIO research engine - analyzes market snapshots for fragility scores",
+      "risk_assessment": {
+        "operational_criticality": "HIGH",
+        "cognitive_sensitivity": "HIGH",
+        "execution_latency_sensitivity": "MEDIUM",
+        "batch_vs_realtime": "BATCH",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 4,
+          "list": ["ceio_shadow_cycle_runner", "finn_night_research_executor", "alpha_graph_edges", "reward_traces"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "Contributes ~60% of daily LLM cost",
+          "system_behavior": "Research pipeline halts, no new fragility scores"
+        },
+        "rollback_difficulty": "MEDIUM",
+        "probability_of_behavioral_drift": "HIGH",
+        "overall_risk_score": 8
+      },
+      "notes": "Primary alpha-generating call site. Wrapping MUST preserve exact output format."
+    },
+    {
+      "call_site_id": "CS-002",
+      "file_path": "03_FUNCTIONS/finn_night_research_executor.py",
+      "line_number": 52,
+      "function_name": "execute_finn_crio_research (import)",
+      "agent": "FINN",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-chat",
+      "description": "Night research cycle - autonomous 02:00-06:00 UTC window",
+      "risk_assessment": {
+        "operational_criticality": "HIGH",
+        "cognitive_sensitivity": "HIGH",
+        "execution_latency_sensitivity": "LOW",
+        "batch_vs_realtime": "BATCH",
+        "coupling_level": "LOOSE",
+        "downstream_dependencies": {
+          "count": 3,
+          "list": ["regime_drift_analysis", "weak_signal_scan", "hcp_pre_validation"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "Fixed window, ~$2-5 per night",
+          "system_behavior": "Night research skipped, stale signals next morning"
+        },
+        "rollback_difficulty": "LOW",
+        "probability_of_behavioral_drift": "MEDIUM",
+        "overall_risk_score": 6
+      },
+      "notes": "Scheduled batch job. Timing not critical - 4 hour window."
+    },
+    {
+      "call_site_id": "CS-003",
+      "file_path": "03_FUNCTIONS/speciale_parser_wrapper.py",
+      "line_number": 44,
+      "function_name": "call_speciale_reasoning",
+      "agent": "CEIO/FINN",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-reasoner (Speciale)",
+      "description": "Two-step wrapper: Speciale reasoning + chat formatting (EXPIRES 2025-12-15)",
+      "risk_assessment": {
+        "operational_criticality": "CRITICAL",
+        "cognitive_sensitivity": "CRITICAL",
+        "execution_latency_sensitivity": "HIGH",
+        "batch_vs_realtime": "REALTIME",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 5,
+          "list": ["context_injection_layer", "orchestrator_daemon", "alpha_graph", "ceio_integration", "hcp_runners"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "Speciale 5x more expensive than chat",
+          "system_behavior": "All advanced reasoning halts"
+        },
+        "rollback_difficulty": "HIGH",
+        "probability_of_behavioral_drift": "CRITICAL",
+        "overall_risk_score": 10
+      },
+      "notes": "TIME-BOMB: Expires 2025-12-15. Wrapping must account for dual-call pattern."
+    },
+    {
+      "call_site_id": "CS-004",
+      "file_path": "03_FUNCTIONS/fhq_domain_controller.py",
+      "line_number": 0,
+      "function_name": "N/A (Supervisor only)",
+      "agent": "STIG",
+      "provider": "N/A",
+      "model": "N/A",
+      "description": "Domain supervisor - monitors ingestion/reasoning domains, no direct LLM calls",
+      "risk_assessment": {
+        "operational_criticality": "N/A",
+        "cognitive_sensitivity": "N/A",
+        "execution_latency_sensitivity": "N/A",
+        "batch_vs_realtime": "N/A",
+        "coupling_level": "N/A",
+        "downstream_dependencies": {
+          "count": 0,
+          "list": []
+        },
+        "failure_impact": {
+          "adr_012_budget": "None - no LLM calls",
+          "system_behavior": "N/A"
+        },
+        "rollback_difficulty": "N/A",
+        "probability_of_behavioral_drift": "N/A",
+        "overall_risk_score": 0
+      },
+      "notes": "FALSE POSITIVE - No LLM call site. Supervisor/health-check only. EXCLUDE from wrapping."
+    },
+    {
+      "call_site_id": "CS-005",
+      "file_path": "03_FUNCTIONS/fhq_streamer_service.py",
+      "line_number": 0,
+      "function_name": "N/A (Watchdog only)",
+      "agent": "LINE",
+      "provider": "N/A",
+      "model": "N/A",
+      "description": "Windows service wrapper for market_streamer_v2.py - no LLM calls",
+      "risk_assessment": {
+        "operational_criticality": "N/A",
+        "cognitive_sensitivity": "N/A",
+        "execution_latency_sensitivity": "N/A",
+        "batch_vs_realtime": "N/A",
+        "coupling_level": "N/A",
+        "downstream_dependencies": {
+          "count": 0,
+          "list": []
+        },
+        "failure_impact": {
+          "adr_012_budget": "None - no LLM calls",
+          "system_behavior": "N/A"
+        },
+        "rollback_difficulty": "N/A",
+        "probability_of_behavioral_drift": "N/A",
+        "overall_risk_score": 0
+      },
+      "notes": "FALSE POSITIVE - No LLM call site. Pure watchdog/subprocess manager. EXCLUDE from wrapping."
+    },
+    {
+      "call_site_id": "CS-006",
+      "file_path": "03_FUNCTIONS/ios013_hcp_g4_runner.py",
+      "line_number": 60,
+      "function_name": "DeepSeekClient (via config)",
+      "agent": "LINE",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-reasoner",
+      "description": "G4 Constitutional HCP runner - Alpaca paper trading with DeepSeek pre-mortem",
+      "risk_assessment": {
+        "operational_criticality": "CRITICAL",
+        "cognitive_sensitivity": "HIGH",
+        "execution_latency_sensitivity": "HIGH",
+        "batch_vs_realtime": "REALTIME",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 4,
+          "list": ["alpaca_paper_trading", "hcp_execution_engine", "ios005_skill_tracking", "governance_attestation"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "~$50/day ceiling enforced",
+          "system_behavior": "Paper trading halts, no position management"
+        },
+        "rollback_difficulty": "HIGH",
+        "probability_of_behavioral_drift": "HIGH",
+        "overall_risk_score": 9
+      },
+      "notes": "Live paper trading loop. 15-minute cycle. Latency-sensitive for market hours."
+    },
+    {
+      "call_site_id": "CS-007",
+      "file_path": "03_FUNCTIONS/ios013_hcp_g3_runner.py",
+      "line_number": 64,
+      "function_name": "HCPExecutionEngine (G2_VALIDATION mode)",
+      "agent": "LINE",
+      "provider": "N/A (simulation)",
+      "model": "N/A",
+      "description": "G3 HCP runner - uses simulation mode, no direct LLM calls",
+      "risk_assessment": {
+        "operational_criticality": "LOW",
+        "cognitive_sensitivity": "LOW",
+        "execution_latency_sensitivity": "LOW",
+        "batch_vs_realtime": "BATCH",
+        "coupling_level": "LOOSE",
+        "downstream_dependencies": {
+          "count": 2,
+          "list": ["ios005_skill_tracking", "g3_exit_criteria"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "None - simulation mode",
+          "system_behavior": "G3 validation delayed"
+        },
+        "rollback_difficulty": "LOW",
+        "probability_of_behavioral_drift": "LOW",
+        "overall_risk_score": 2
+      },
+      "notes": "G3 uses ExecutionMode.G2_VALIDATION (simulation). No live LLM calls. EXCLUDE from initial wrapping."
+    },
+    {
+      "call_site_id": "CS-008",
+      "file_path": "03_FUNCTIONS/ios005_g3_synthesis.py",
+      "line_number": 0,
+      "function_name": "N/A (Pure SQL analytics)",
+      "agent": "STIG",
+      "provider": "N/A",
+      "model": "N/A",
+      "description": "G3 Synthesis report - pure SQL/numpy analytics, no LLM calls",
+      "risk_assessment": {
+        "operational_criticality": "N/A",
+        "cognitive_sensitivity": "N/A",
+        "execution_latency_sensitivity": "N/A",
+        "batch_vs_realtime": "N/A",
+        "coupling_level": "N/A",
+        "downstream_dependencies": {
+          "count": 0,
+          "list": []
+        },
+        "failure_impact": {
+          "adr_012_budget": "None",
+          "system_behavior": "N/A"
+        },
+        "rollback_difficulty": "N/A",
+        "probability_of_behavioral_drift": "N/A",
+        "overall_risk_score": 0
+      },
+      "notes": "FALSE POSITIVE - No LLM call site. Pure correlation/synthesis from DB. EXCLUDE from wrapping."
+    },
+    {
+      "call_site_id": "CS-009",
+      "file_path": "05_ORCHESTRATOR/orchestrator_daemon.py",
+      "line_number": 69,
+      "function_name": "call_deepseek_speciale",
+      "agent": "LARS",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-reasoner",
+      "description": "Brain Bridge - Market Events → Speciale → Alpha Graph edges",
+      "risk_assessment": {
+        "operational_criticality": "CRITICAL",
+        "cognitive_sensitivity": "CRITICAL",
+        "execution_latency_sensitivity": "HIGH",
+        "batch_vs_realtime": "REALTIME",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 5,
+          "list": ["alpha_graph_edges", "causal_edge_extraction", "serper_search", "market_event_processing", "curiosity_engine"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "500 calls/hour burn-in mode - ~$10/hour",
+          "system_behavior": "No new causal edges, alpha graph stagnates"
+        },
+        "rollback_difficulty": "HIGH",
+        "probability_of_behavioral_drift": "CRITICAL",
+        "overall_risk_score": 10
+      },
+      "notes": "Central cognitive synthesis. BURN-IN MODE active. Highest call volume."
+    },
+    {
+      "call_site_id": "CS-010",
+      "file_path": "03_FUNCTIONS/ceio_shadow_cycle_runner.py",
+      "line_number": 56,
+      "function_name": "execute_finn_crio_research (import)",
+      "agent": "CEIO",
+      "provider": "DEEPSEEK",
+      "model": "deepseek-chat",
+      "description": "Shadow cycle - FINN CRIO → CEIO shadow positions → reward traces",
+      "risk_assessment": {
+        "operational_criticality": "HIGH",
+        "cognitive_sensitivity": "HIGH",
+        "execution_latency_sensitivity": "MEDIUM",
+        "batch_vs_realtime": "BATCH",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 4,
+          "list": ["shadow_positions", "reward_traces", "ceio_learning_loop", "price_tracking"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "~$2-5 per cycle",
+          "system_behavior": "CEIO learning halts, no new shadow trades"
+        },
+        "rollback_difficulty": "MEDIUM",
+        "probability_of_behavioral_drift": "HIGH",
+        "overall_risk_score": 7
+      },
+      "notes": "Primary CEIO learning pathway. Shadow-only (no real trades). DEFCON monitored."
+    },
+    {
+      "call_site_id": "CS-011",
+      "file_path": "03_FUNCTIONS/crio_empirical_edge_generator.py",
+      "line_number": 0,
+      "function_name": "N/A (Statistical only)",
+      "agent": "CRIO",
+      "provider": "N/A",
+      "model": "N/A",
+      "description": "Empirical edge generator - statistical correlation, no LLM",
+      "risk_assessment": {
+        "operational_criticality": "N/A",
+        "cognitive_sensitivity": "N/A",
+        "execution_latency_sensitivity": "N/A",
+        "batch_vs_realtime": "N/A",
+        "coupling_level": "N/A",
+        "downstream_dependencies": {
+          "count": 0,
+          "list": []
+        },
+        "failure_impact": {
+          "adr_012_budget": "None",
+          "system_behavior": "N/A"
+        },
+        "rollback_difficulty": "N/A",
+        "probability_of_behavioral_drift": "N/A",
+        "overall_risk_score": 0
+      },
+      "notes": "FALSE POSITIVE - No LLM call. Uses numpy/pandas for statistical analysis. EXCLUDE."
+    },
+    {
+      "call_site_id": "CS-012",
+      "file_path": "03_FUNCTIONS/context_injection_layer.py",
+      "line_number": 0,
+      "function_name": "ContextRetriever",
+      "agent": "ALL",
+      "provider": "N/A",
+      "model": "N/A",
+      "description": "Context prep layer - builds context for LLM calls, no direct LLM calls",
+      "risk_assessment": {
+        "operational_criticality": "CRITICAL",
+        "cognitive_sensitivity": "N/A",
+        "execution_latency_sensitivity": "HIGH",
+        "batch_vs_realtime": "REALTIME",
+        "coupling_level": "TIGHT",
+        "downstream_dependencies": {
+          "count": 6,
+          "list": ["speciale_parser_wrapper", "orchestrator_daemon", "finn_deepseek_researcher", "all_llm_callers", "governance_discrepancy_log", "context_viability_check"]
+        },
+        "failure_impact": {
+          "adr_012_budget": "None directly - but blocks all LLM calls if viability fails",
+          "system_behavior": "All LLM calls blocked if context retrieval fails"
+        },
+        "rollback_difficulty": "N/A",
+        "probability_of_behavioral_drift": "N/A",
+        "overall_risk_score": 0
+      },
+      "notes": "PRE-CALL DEPENDENCY - Not an LLM call site but critical for all calls. Do NOT wrap, but ensure telemetry integrates."
+    }
+  ],
+  "summary": {
+    "total_call_sites_analyzed": 12,
+    "actual_llm_call_sites": 6,
+    "false_positives_excluded": 6,
+    "critical_risk_sites": 3,
+    "high_risk_sites": 2,
+    "medium_risk_sites": 1,
+    "low_risk_sites": 0,
+    "excluded_from_wrapping": ["CS-004", "CS-005", "CS-007", "CS-008", "CS-011", "CS-012"]
+  },
+  "actual_llm_call_sites_for_wrapping": [
+    "CS-001: finn_deepseek_researcher.py (FINN CRIO) - Risk 8",
+    "CS-002: finn_night_research_executor.py (Night Research) - Risk 6",
+    "CS-003: speciale_parser_wrapper.py (Speciale Dual-Call) - Risk 10",
+    "CS-006: ios013_hcp_g4_runner.py (HCP G4 Paper Trading) - Risk 9",
+    "CS-009: orchestrator_daemon.py (Brain Bridge) - Risk 10",
+    "CS-010: ceio_shadow_cycle_runner.py (CEIO Shadow) - Risk 7"
+  ],
+  "safety_lock_amendment_20251210": {
+    "directive": "CEO DIRECTIVE 2026-FHQ-G3C-SPECIALE-SAFETY-LOCK",
+    "timestamp": "2025-12-10T16:38:00Z",
+    "status_changes": {
+      "CS-003": {
+        "previous_status": "RISK_SCORE_10_CRITICAL",
+        "new_status": "RISK_LOCKED_PENDING_MODEL_STABILITY",
+        "wrapping_allowed": false,
+        "unlock_condition": "48-72h post-expiry (earliest 2025-12-17T16:00Z)",
+        "notes": "Speciale expiry fallback verified. Has get_base_url() auto-switch."
+      },
+      "CS-009": {
+        "previous_status": "NOT_SAFE",
+        "new_status": "SAFE_WITH_CONDITIONS",
+        "risk_score_adjusted": "10 → 7 (mitigated by env config)",
+        "wrapping_allowed": false,
+        "unlock_condition": "Post-expiry stability verified + BURN-IN complete",
+        "condition": "Ensure .env FHQ_LLM_URL is loaded at runtime (https://api.deepseek.com/v1), no system-level override to Speciale URL",
+        "notes": "ENV override verified. Test call HTTP 200. Legacy mandate superseded."
+      }
+    },
+    "policy_supersession": {
+      "old_mandate": "CEO MANDATE: Speciale only, no fallback",
+      "new_mandate": "DEEPSEEK must be reachable and telemetry-governed; model-specialization is optimization, not hard requirement",
+      "reference": "MODEL_EXPIRY_VERIFICATION_G3C_FOLLOWUP_001"
+    },
+    "phase4_eligibility": {
+      "eligible_now": ["CS-001", "CS-002", "CS-006", "CS-010"],
+      "locked_until_post_expiry": ["CS-003", "CS-009"]
+    }
+  }
+}

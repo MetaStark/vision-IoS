@@ -1,0 +1,96 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE4-LEARNING-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "ACTIVE",
+
+  "title": "ACI Wave 4: Governance of Learning Loop",
+  "summary": "No automated updates to cognitive engines - all updates staged for G1/VEGA approval",
+
+  "mandate_compliance": {
+    "mandate_iv": {
+      "requirement": "Governance of Learning Loop (ADR-020/021)",
+      "implementation": "All cognitive engine updates submitted to learning_proposals table",
+      "evidence": [
+        "04_DATABASE/MIGRATIONS/151_aci_learning_proposals_governance.sql",
+        "03_FUNCTIONS/learning_feedback_pipeline.py:submit_cognitive_learning_proposals()"
+      ]
+    }
+  },
+
+  "implementation_artifacts": {
+    "database_migration": "151_aci_learning_proposals_governance.sql",
+    "primary_file": "03_FUNCTIONS/learning_feedback_pipeline.py",
+    "database_tables": [
+      "fhq_governance.learning_proposals",
+      "fhq_governance.learning_proposal_audit",
+      "fhq_governance.learning_versions"
+    ]
+  },
+
+  "learning_loop_architecture": {
+    "flow": [
+      "Trade Outcome",
+      "learning_feedback_pipeline.py",
+      "PROPOSAL -> fhq_governance.learning_proposals (Staging)",
+      "[G1 VEGA Attestation Required]",
+      "PRODUCTION -> cognitive engine weights"
+    ]
+  },
+
+  "proposal_methods": {
+    "_propose_ikea_update": {
+      "engine_id": "IKEA",
+      "proposal_type": "BOUNDARY_WEIGHT",
+      "trigger": "Significant trading losses (>2%)"
+    },
+    "_propose_inforage_update": {
+      "engine_id": "INFORAGE",
+      "proposal_type": "SCENT_MODEL",
+      "trigger": "All trade outcomes for scent calibration"
+    },
+    "_propose_sitc_update": {
+      "engine_id": "SITC",
+      "proposal_type": "PLAN_PRIOR",
+      "trigger": "All trades for plan structure calibration"
+    }
+  },
+
+  "approval_workflow": {
+    "submission": "fn_submit_learning_proposal()",
+    "approval": "fn_approve_learning_proposal() - requires VEGA attestation",
+    "rejection": "fn_reject_learning_proposal()",
+    "expiry": "7 days without review -> EXPIRED",
+    "production_activation": "Creates new version in learning_versions table"
+  },
+
+  "prohibited_actions": [
+    "Direct update to IKEA classifier weights",
+    "Direct update to InForage scent model",
+    "Direct update to SitC plan priors",
+    "Any cognitive engine update without VEGA attestation"
+  ],
+
+  "allowed_direct_updates": [
+    "Thompson Bandit posterior updates (per Amendment Section 7)",
+    "Causal RL agent updates (per Amendment Section 7)",
+    "Strategy performance statistics"
+  ],
+
+  "vega_attestation": {
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "target": "ADR-020/021",
+    "gate_level": "G1",
+    "status": "PENDING",
+    "validation_criteria": [
+      "No direct cognitive engine updates",
+      "All proposals written to staging table",
+      "VEGA attestation required for approval"
+    ]
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}

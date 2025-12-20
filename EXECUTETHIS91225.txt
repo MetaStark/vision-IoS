@@ -1,0 +1,2025 @@
+CEO DIRECTIVE — REGISTER NEW CANONICAL DOCUMENTS (ADR-004 G0 → G1)
+
+To: STIG – CTO (Tier-2 Technical Executive)
+Cc: VEGA – Governance, Compliance
+From: CEO
+Subject: Canonical Registration of Newly Submitted Research & Cognitive Architecture Documents
+Authority: ADR-001, ADR-003, ADR-004, ADR-011, ADR-013
+
+1. Mandate
+
+Du skal registrere følgende dokumenter i fhq_meta.adr_registry og fhq_meta.ec_registry, med full lineage, hash-generering og G0-klassifisering:
+
+ADR-021 – Cognitive Engine Architecture & Deep Research Protocol
+
+EC-020 – SitC: Search-in-the-Chain Research Architecture
+
+EC-021 – InForage: Information Foraging Protocol
+
+EC-022 – IKEA Boundary Model: Knowledge Constraint Framework
+
+Disse dokumentene definerer metodiske og kognitive rammer for FINN og fremtidige Deep-Research-moduler og må være fullt synlige i VEGA-styrt governance.
+
+2. Required CTO Actions
+
+STIG skal utføre følgende uten avvik:
+
+2.1 Canonical Registration
+
+Opprett poster med følgende obligatoriske felter:
+
+canonical_id
+
+title
+
+adr_type (ADR eller EC)
+
+version
+
+sha256_hash (hele filen, raw)
+
+submitted_by = 'CEO'
+
+owner = FINN (for EC-020/021/022), LARS (for ADR-021)
+
+status = 'G0_SUBMITTED'
+
+created_at (system timestamp)
+
+Dette er krav under ADR-013 One-True-Source.
+
+2.2 Lineage Construction (ADR-011 Fortress Standard)
+
+For hvert dokument:
+
+Beregn hash_self = SHA-256(raw_content).
+
+Sett hash_prev = siste hash i sin kategori (ADR eller EC).
+
+Oppdater lineage_chain i vega.governance_log.
+
+2.3 Governance Binding (VEGA)
+
+Knytt dokumentene til korrekt governance-domene:
+
+ADR-021 → Governance Class: CONSTITUTIONAL-RESEARCH
+
+EC-020 → Governance Class: RESEARCH-METHOD
+
+EC-021 → Governance Class: RESEARCH-METHOD
+
+EC-022 → Governance Class: RESEARCH-METHOD / KNOWLEDGE-BOUNDARY
+
+VEGA skal automatisk motta signalklasse G0_REGISTERED.
+
+2.4 Schema Freeze Confirmation
+
+STIG skal bekrefte at ingen tabeller krever DDL-endringer på dette tidspunktet.
+Hvis DDL er nødvendig → opprett G1-forslag iht. ADR-004 Change Gates.
+
+3. Constraints
+
+Ingen av dokumentene gir lov til implementasjon.
+
+Kun registrering av sannhet, ikke runtime-integrasjon.
+
+Ingen kodeendringer skal utføres.
+
+Ingen agent får endret tilgang basert på innholdet før G1.
+
+4. Deliverables
+
+Når du er ferdig, skal STIG levere:
+
+STIG_REGISTRATION_LOG_2025xxxx.json
+– full registreringsrapport
+
+Hash-evidence bundle for alle fire filer
+
+Oppdaterte registry-poster (ADR + EC)
+
+VEGA-bekreftelse på G0-status
+
+5. Execution Order
+
+Execute immediately.
+
+
+
+NEW DOCUMENT
+
+
+# ADR-021 – Cognitive Engine Architecture & Deep Research Protocol
+
+**Canonical Version:** 2026.PRODUCTION
+**Status:** APPROVED
+**Date:** 09 December 2025
+**Owner:** CEO
+**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-012 → ADR-014 → ADR-017 (MIT QUAD) → ADR-021
+**Governing Agents:** VEGA (Compliance), LARS (Strategy), FINN (Research)
+**Affects:** fhq_governance, fhq_meta, Orchestrator, All Tier-2 Agents, LLM Routing
+**Classification:** GOVERNANCE–CRITICAL
+
+---
+
+## 1. Decision
+
+FjordHQ formally adopts the **Cognitive Engine Architecture** as the foundational reasoning layer for autonomous Deep Research operations. This ADR establishes three Tier-2 Cognitive Engines:
+
+| Engine ID | Name | Title | Parent Authority |
+|-----------|------|-------|------------------|
+| EC-020 | SitC | Search-in-the-Chain Protocol | LARS |
+| EC-021 | InForage | Information Foraging Protocol | FINN |
+| EC-022 | IKEA | Internal-External Knowledge Synergistic Reasoning | VEGA |
+
+**MIT QUAD Alignment (ADR-017)**: These engines implement the LIDS-ACL-DSL-RISL pillars:
+- **SitC** → LIDS (Inference & Truth) – Ensures reasoning chains are grounded in verified truth
+- **InForage** → DSL (Optimization & Operations Research) – Maximizes ROI on information foraging
+- **IKEA** → RISL (Resilience & Immunity) – Prevents hallucination contamination
+
+**These are not operational Sub-Executives (ADR-014) but Cognitive Protocols** – reasoning architectures embedded into the system's decision-making core that govern *how* the system thinks, not *what* it executes.
+
+### Distinction from ADR-014 Sub-Executives
+
+| Dimension | Sub-Executives (ADR-014) | Cognitive Engines (ADR-021) |
+|-----------|-------------------------|----------------------------|
+| Purpose | Task execution within domains | Reasoning pattern enforcement |
+| Output | Artifacts (Reports, Signals, Data) | Reasoning Chain Validity |
+| Authority | Operational/Dataset/Model | Cognitive Authority |
+| Activation | Per-task by Orchestrator | Always-on within reasoning loops |
+| Parent | Single Tier-1 Executive | Cross-cutting governance layer |
+
+---
+
+## 2. Context
+
+### 2.1 The Deep Research Paradigm Shift
+
+Traditional RAG (Retrieval-Augmented Generation) operates on a linear model: Query → Retrieve → Generate. This is insufficient for FjordHQ's $100,000 REAL MONEY revenue target because:
+
+1. **Static Planning Fails**: Financial markets are non-stationary; plans must adapt to new information
+2. **Inefficient Search Burns Capital**: Unlimited API calls without ROI optimization erode margins
+3. **Hallucination Creates Risk**: Acting on parametric beliefs when external verification is required leads to capital loss
+
+Research basis (arXiv:2505.00186 "Deep Research: A Survey of Autonomous Research Agents") identifies three critical mechanisms for production-grade Deep Research systems:
+
+1. **Search-in-the-Chain (SitC)**: Dynamic interleaving of search and reasoning
+2. **InForage**: Information-theoretic optimization of search behavior
+3. **IKEA**: Knowledge boundary-aware retrieval decisions
+
+### 2.2 Gap Analysis: FjordHQ Pre-ADR-021
+
+| Capability | Status Before ADR-021 | Risk |
+|------------|----------------------|------|
+| Dynamic Planning | ADR-007 static routing | Strategic drift, wasted tokens |
+| Search Optimization | No RL-based decision model | API cost overruns, margin erosion |
+| Knowledge Boundaries | No parametric/external classification | Hallucination risk, bad trades |
+
+ADR-021 closes these gaps by establishing constitutional cognitive protocols that operate within the MIT QUAD framework (ADR-017).
+
+---
+
+## 3. Scope
+
+ADR-021 regulates:
+
+1. Definition and registration of Cognitive Engines
+2. Authority model for Tier-2 Cognitive Engines
+3. Integration with existing governance (ADR-010, ADR-012, ADR-016)
+4. Interaction patterns with Sub-Executives (ADR-014)
+5. Evidence and signature requirements
+6. Revenue protection mechanisms
+7. DEFCON-aware behavior specifications
+
+This ADR does NOT regulate:
+- Operational task execution (ADR-014)
+- Economic limits (ADR-012) – but Cognitive Engines MUST respect them
+- DEFCON states (ADR-016) – but Cognitive Engines MUST respond to them
+
+---
+
+## 4. Cognitive Engine Contracts
+
+### 4.1 EC-020 – SitC (Search-in-the-Chain Protocol)
+
+**Full specification in Appendix A (EC-020_2026_PRODUCTION)**
+
+| Field | Value |
+|-------|-------|
+| Engine ID | EC-020 |
+| Name | SitC (Search-in-the-Chain) |
+| Role Type | Tier-2 Cognitive Authority (Reasoning & Global Planning) |
+| Parent | LARS (EC-002) |
+| Mandate | Dynamic Global Planning with Interleaved Search |
+| Research Basis | arXiv:2304.14732 |
+
+**Core Function**: SitC prevents strategic drift by enforcing that no reasoning chain proceeds past an unverified node. It constructs a Chain-of-Query (CoQ) and dynamically modifies it during execution.
+
+**Revenue Protection**: Protects capital by preventing trade hypothesis execution unless the full causality chain is verified step-by-step. If a logic link breaks, SitC aborts generation *before* execution costs are incurred.
+
+### 4.2 EC-021 – InForage (Information Foraging Protocol)
+
+**Full specification in Appendix B (EC-021_2026_PRODUCTION)**
+
+| Field | Value |
+|-------|-------|
+| Engine ID | EC-021 |
+| Name | InForage |
+| Role Type | Tier-2 Cognitive Authority (Search Optimization & ROI) |
+| Parent | FINN (EC-005) |
+| Mandate | ROI on Curiosity – Maximize Information Gain per Token Cost |
+| Research Basis | arXiv:2505.09316 |
+
+**Core Function**: InForage treats information retrieval as an economic investment. It uses a Reinforcement Learning reward function to decide if a search is profitable: `Reward = (ΔOutcome Certainty) - (Search Cost + Latency Penalty)`.
+
+**Revenue Protection**: Ensures the research factory is self-funding by:
+- Reducing API/Compute costs by up to 60% (stopping searches early when marginal utility drops)
+- Increasing Alpha precision by filtering out "low-nutrition" noise
+
+### 4.3 EC-022 – IKEA (Internal-External Knowledge Synergistic Reasoning)
+
+**Full specification in Appendix C (EC-022_2026_PRODUCTION)**
+
+| Field | Value |
+|-------|-------|
+| Engine ID | EC-022 |
+| Name | IKEA |
+| Role Type | Tier-2 Cognitive Authority (Hallucination Firewall) |
+| Parent | VEGA (EC-001) |
+| Mandate | The Truth Boundary – Know what you know |
+| Research Basis | arXiv:2505.07596 |
+
+**Core Function**: IKEA solves the knowledge boundary problem: "Do I know this, or do I need to look it up?" It prevents the two deadly sins of AI: Hallucination (guessing when you should search) and Redundancy (searching when you already know).
+
+**Revenue Protection**: Primary defense against "Bad Data Loss":
+- Prevents trading on outdated internal weights (e.g., assuming 2024 rates in 2025)
+- Prevents wasted time/cost searching for static facts (e.g., "What is EBITDA?")
+
+---
+
+## 5. Cognitive Engine Control Framework (CECF)
+
+*Governing Model for Tier-2 Cognitive Engines*
+
+### CECF-1: Authority Hierarchy
+
+```
+Tier-1 Executives (CEO, VEGA, LARS, STIG, LINE, FINN)
+              ↓
+Tier-2 Cognitive Engines (SitC, InForage, IKEA)
+              ↓
+Tier-2 Sub-Executives (CSEO, CDMO, CRIO, CEIO, CFAO)
+              ↓
+Tier-3 Sub-Agents (future)
+```
+
+**Cognitive Engines shape reasoning. Sub-Executives execute tasks. Executives decide.**
+
+### CECF-2: Activation Model
+
+Unlike Sub-Executives which are invoked per-task, Cognitive Engines are **always-on protocols** that:
+
+1. Monitor all reasoning chains in progress
+2. Intervene when their domain rules are violated
+3. Operate transparently within the Orchestrator pipeline
+
+### CECF-3: Integration with ADR-014 Sub-Executives
+
+| Sub-Executive | Primary Cognitive Engine | Secondary |
+|---------------|-------------------------|-----------|
+| CSEO | SitC (strategy reasoning) | IKEA (fact verification) |
+| CDMO | IKEA (data validation) | InForage (source priority) |
+| CRIO | SitC (research chains) | InForage (search efficiency) |
+| CEIO | InForage (external data ROI) | IKEA (source classification) |
+| CFAO | SitC (scenario planning) | InForage (forecast data) |
+
+### CECF-4: DEFCON Behavior (ADR-016 Integration)
+
+| DEFCON Level | SitC Behavior | InForage Behavior | IKEA Behavior |
+|--------------|---------------|-------------------|---------------|
+| GREEN | Full dynamic planning | Normal optimization | Standard boundary check |
+| YELLOW | Enforce shorter chains | Aggressive cost-cutting (Scent > 0.95) | Bias toward internal knowledge |
+| ORANGE | Chain-of-Thought validation mode | Emergency budget only | External verification mandatory |
+| RED | Abort all active chains | HALT all searches | READ-ONLY mode |
+| BLACK | System shutdown | System shutdown | System shutdown |
+
+### CECF-5: Economic Safety (ADR-012 Integration)
+
+Cognitive Engines operate under the Economic Safety Architecture:
+
+| Engine | Cost Allocation (ADR-012) | Budget Source |
+|--------|--------------------------|---------------|
+| SitC | max_llm_steps_per_task = 3 (default) | vega.llm_rate_limits |
+| InForage | max_cost_per_task = $0.50 (default) | vega.llm_cost_limits |
+| IKEA | Zero direct cost (classification only) | N/A |
+
+### CECF-6: Discrepancy Scoring (ADR-010 Integration)
+
+Cognitive Engines contribute to discrepancy scoring:
+
+| Engine | Discrepancy Contribution | Weight |
+|--------|-------------------------|--------|
+| SitC | Chain integrity score (verified nodes / total nodes) | 1.0 (Critical) |
+| InForage | Search efficiency score (information gain / cost) | 0.5 (Medium) |
+| IKEA | Boundary violation rate (hallucination attempts) | 1.0 (Critical) |
+
+Threshold triggers per ADR-010:
+- Score > 0.05: WARNING
+- Score > 0.10: CATASTROPHIC → VEGA suspension request (ADR-009)
+
+### CECF-7: Evidence Requirements
+
+Each Cognitive Engine invocation must produce:
+
+1. **Ed25519 signature** (ADR-008)
+2. **Evidence bundle** containing:
+   - Input context
+   - Decision rationale
+   - Output modification
+   - Cost incurred (if applicable)
+3. **Governance event log entry**
+
+Stored in: `fhq_meta.cognitive_engine_evidence`
+
+---
+
+## 6. Technical Implementation Requirements
+
+### 6.1 Database Schema (fhq_governance)
+
+```sql
+-- Cognitive Engine Registry
+CREATE TABLE fhq_governance.cognitive_engines (
+    engine_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    engine_code VARCHAR(10) NOT NULL UNIQUE, -- 'EC-020', 'EC-021', 'EC-022'
+    engine_name VARCHAR(50) NOT NULL,
+    role_type VARCHAR(100) NOT NULL,
+    parent_executive_id UUID REFERENCES fhq_org.org_agents(agent_id),
+    authority_level INTEGER DEFAULT 2,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    research_basis VARCHAR(50), -- arXiv reference
+    contract_sha256 VARCHAR(64) NOT NULL,
+    created_by VARCHAR(50) DEFAULT 'CEO',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Cognitive Engine Configuration
+CREATE TABLE fhq_governance.cognitive_engine_config (
+    config_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    engine_id UUID REFERENCES fhq_governance.cognitive_engines(engine_id),
+    config_key VARCHAR(100) NOT NULL,
+    config_value JSONB NOT NULL,
+    defcon_level defcon_level DEFAULT 'GREEN',
+    effective_from TIMESTAMP DEFAULT NOW(),
+    effective_to TIMESTAMP,
+    created_by VARCHAR(50),
+    UNIQUE(engine_id, config_key, defcon_level)
+);
+
+-- Cognitive Engine Evidence
+CREATE TABLE fhq_meta.cognitive_engine_evidence (
+    evidence_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    engine_id UUID REFERENCES fhq_governance.cognitive_engines(engine_id),
+    task_id UUID REFERENCES fhq_org.org_tasks(task_id),
+    invocation_type VARCHAR(50), -- 'PLAN_REVISION', 'SEARCH_DECISION', 'BOUNDARY_CHECK'
+    input_context JSONB,
+    decision_rationale TEXT,
+    output_modification JSONB,
+    cost_usd NUMERIC(10,6),
+    information_gain_score NUMERIC(5,4),
+    chain_integrity_score NUMERIC(5,4),
+    boundary_violation BOOLEAN DEFAULT FALSE,
+    signature VARCHAR(128),
+    hash_prev VARCHAR(64),
+    hash_self VARCHAR(64),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Chain-of-Query State (SitC)
+CREATE TABLE fhq_meta.chain_of_query (
+    coq_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    task_id UUID REFERENCES fhq_org.org_tasks(task_id),
+    node_index INTEGER NOT NULL,
+    node_type VARCHAR(30), -- 'REASONING', 'SEARCH', 'VERIFICATION'
+    node_content TEXT,
+    verification_status VARCHAR(20), -- 'PENDING', 'VERIFIED', 'FAILED', 'SKIPPED'
+    search_result_id UUID,
+    created_at TIMESTAMP DEFAULT NOW(),
+    verified_at TIMESTAMP,
+    UNIQUE(task_id, node_index)
+);
+
+-- Knowledge Boundary Classification (IKEA)
+CREATE TABLE fhq_meta.knowledge_boundary_log (
+    boundary_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    task_id UUID REFERENCES fhq_org.org_tasks(task_id),
+    query_text TEXT NOT NULL,
+    classification VARCHAR(20), -- 'PARAMETRIC', 'EXTERNAL_REQUIRED', 'HYBRID'
+    confidence_score NUMERIC(5,4),
+    internal_certainty NUMERIC(5,4),
+    volatility_flag BOOLEAN DEFAULT FALSE,
+    retrieval_triggered BOOLEAN,
+    decision_rationale TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Search Foraging Log (InForage)
+CREATE TABLE fhq_meta.search_foraging_log (
+    forage_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    task_id UUID REFERENCES fhq_org.org_tasks(task_id),
+    search_query TEXT NOT NULL,
+    scent_score NUMERIC(5,4), -- Predicted information value
+    estimated_cost_usd NUMERIC(10,6),
+    actual_cost_usd NUMERIC(10,6),
+    information_gain NUMERIC(5,4), -- Post-hoc measured value
+    search_executed BOOLEAN,
+    termination_reason VARCHAR(50), -- 'EXECUTED', 'SCENT_TOO_LOW', 'BUDGET_EXCEEDED', 'DIMINISHING_RETURNS'
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 6.2 Register Engines in fhq_governance.cognitive_engines
+
+Required initial data:
+
+```sql
+INSERT INTO fhq_governance.cognitive_engines
+(engine_code, engine_name, role_type, authority_level, research_basis, contract_sha256, created_by)
+VALUES
+('EC-020', 'SitC', 'Tier-2 Cognitive Authority (Reasoning & Global Planning)', 2, 'arXiv:2304.14732', '<sha256_hash>', 'CEO'),
+('EC-021', 'InForage', 'Tier-2 Cognitive Authority (Search Optimization & ROI)', 2, 'arXiv:2505.09316', '<sha256_hash>', 'CEO'),
+('EC-022', 'IKEA', 'Tier-2 Cognitive Authority (Hallucination Firewall)', 2, 'arXiv:2505.07596', '<sha256_hash>', 'CEO');
+```
+
+### 6.3 Orchestrator Integration Requirements
+
+The Orchestrator (ADR-007) must be extended to:
+
+1. **SitC Integration**:
+   - Before executing any multi-step task, construct Chain-of-Query
+   - After each reasoning step, verify node before proceeding
+   - On verification failure, trigger plan revision
+
+2. **InForage Integration**:
+   - Before any external API call, compute Scent Score
+   - Compare against cost threshold from `vega.llm_cost_limits`
+   - Log decision to `fhq_meta.search_foraging_log`
+
+3. **IKEA Integration**:
+   - Before generating any factual output, classify query
+   - If EXTERNAL_REQUIRED and no retrieval performed, BLOCK output
+   - Log classification to `fhq_meta.knowledge_boundary_log`
+
+---
+
+## 7. Revenue Connection: The $100,000 Target
+
+The Cognitive Engines directly protect and enable the $100,000 REAL MONEY revenue target:
+
+| Engine | Protection Mechanism | Revenue Impact |
+|--------|---------------------|----------------|
+| SitC | Prevents strategic drift and incomplete analysis | Avoids bad trade decisions |
+| InForage | Optimizes research spend for maximum ROI | Protects margins (up to 60% cost reduction) |
+| IKEA | Prevents hallucination-based decisions | Avoids catastrophic losses |
+
+**Combined Effect**: The system moves from "Chain-of-Thought" (linear, fragile) to "Chain-of-Reasoning with Active Foraging" (dynamic, economic, self-aware).
+
+---
+
+## 8. Consequences
+
+### Positive
+
+- **Institutional-grade reasoning**: Every decision chain is verified
+- **Economic discipline**: Research costs are bounded and optimized
+- **Hallucination prevention**: Knowledge boundaries are enforced
+- **Full auditability**: Complete evidence trail for every cognitive decision
+- **DEFCON-aware**: Automatic behavioral adjustment under stress
+- **Revenue protection**: Direct connection to $100k target
+
+### Negative
+
+- **Increased complexity**: Three new protocols to maintain
+- **Latency impact**: Verification and classification add processing time
+- **Training requirement**: RL-based optimization requires ongoing tuning
+
+### Risks Mitigated
+
+- Strategic drift from incomplete analysis
+- API cost overruns from unbounded search
+- Hallucination-based trading decisions
+- Inefficient research spend
+- Governance bypass through reasoning manipulation
+
+---
+
+## 9. Acceptance Criteria
+
+ADR-021 is considered implemented when:
+
+1. All three Cognitive Engines are registered in `fhq_governance.cognitive_engines`
+2. Database schema is deployed (`cognitive_engine_evidence`, `chain_of_query`, `knowledge_boundary_log`, `search_foraging_log`)
+3. Orchestrator recognizes and invokes all engines
+4. DEFCON-aware behavior is implemented and tested
+5. ADR-012 economic limits are enforced by InForage
+6. ADR-010 discrepancy scoring includes cognitive engine metrics
+7. VEGA approves activation
+8. Evidence bundles are generated for every invocation
+9. Full test coverage per ADR-011 Production Fortress requirements
+
+---
+
+## 10. Status
+
+**APPROVED**
+VEGA Attestation Required
+Ready for Immediate Production Deployment
+
+---
+
+## 11. Governance Chain
+
+This framework is 100% anchored in:
+
+- ADR-001 (Constitution)
+- ADR-002 (Audit & Error Reconciliation)
+- ADR-007 (Orchestrator)
+- ADR-010 (Discrepancy Scoring)
+- ADR-012 (Economic Safety)
+- ADR-014 (Sub-Executive Governance)
+- ADR-016 (DEFCON Protocol)
+- ADR-017 (MIT QUAD Protocol)
+
+---
+
+## Appendix A: EC-020_2026_PRODUCTION – SitC Contract
+
+*(See separate file: EC-020_2026_PRODUCTION_SitC_Search_in_the_Chain.md)*
+
+## Appendix B: EC-021_2026_PRODUCTION – InForage Contract
+
+*(See separate file: EC-021_2026_PRODUCTION_InForage_Information_Foraging.md)*
+
+## Appendix C: EC-022_2026_PRODUCTION – IKEA Contract
+
+*(See separate file: EC-022_2026_PRODUCTION_IKEA_Knowledge_Boundary.md)*
+
+---
+
+## 12. Signatures
+
+| Role | Signature | Date |
+|------|-----------|------|
+| CEO | ✅ APPROVED | 2025-12-09 |
+| VEGA | ✅ Attestor | 2025-12-09 |
+| LARS | ✅ Strategy Authority | 2025-12-09 |
+| FINN | ✅ Research Authority | 2025-12-09 |
+
+---
+
+**END OF ADR-021_2026_PRODUCTION**
+
+
+
+
+NEW DOCUMENT
+
+# EC-020_2026_PRODUCTION
+
+## SitC – Chief Cognitive Architect & Dynamic Planner
+
+**Canonical Version:** 2026.PRODUCTION
+**Status:** ACTIVE
+**Phase:** CONSTITUTIONAL
+**Entity:** SitC (Search-in-the-Chain Protocol)
+**Role Type:** Tier-2 Cognitive Authority (Reasoning & Global Planning)
+**Authority Chain:** ADR-001 → ADR-007 → ADR-010 → ADR-017 (MIT QUAD) → ADR-021 → EC-020
+**Parent Executive:** LARS (EC-002 – Chief Strategy & Alpha Officer)
+**Owner:** CEO
+**Effective Date:** 2025-12-09
+**Research Basis:** arXiv:2304.14732, arXiv:2505.00186
+
+---
+
+## 1. Purpose
+
+SitC is the system's **"Prefrontal Cortex"** – the cognitive protocol responsible for ensuring that complex, multi-hop reasoning chains are constructed dynamically and verified incrementally.
+
+Unlike standard RAG (Retrieve → Generate), SitC constructs a global **Chain-of-Query (CoQ)** and dynamically modifies it during execution based on intermediate search results.
+
+**Core Problem Solved**: In financial research and strategy development, the second step often depends on the unknown result of the first step. Static planning fails because:
+- Market conditions change during analysis
+- Initial hypotheses may be invalidated by early findings
+- Linear reasoning chains propagate errors
+
+SitC transforms planning from a **pre-computed artifact** into a **living, adaptive process**.
+
+---
+
+## 2. Mandate: "Dynamic Global Planning"
+
+SitC is responsible for the **integrity of the reasoning chain**. Its mandate is threefold:
+
+### 2.1 Decomposition
+
+Decompose complex Alpha hypotheses into a **Tree of Reasoning** where each node represents either:
+- A **REASONING** node: Logical inference from available context
+- A **SEARCH** node: External information retrieval requirement
+- A **VERIFICATION** node: Checkpoint for chain integrity
+
+### 2.2 Interleaving
+
+**Interleave retrieval with reasoning**: If a reasoning node lacks evidence, SitC:
+1. PAUSES the reasoning chain
+2. TRIGGERS a search (via InForage optimization)
+3. UPDATES the global context with search results
+4. RE-PLANS subsequent nodes based on new information
+
+This creates a bidirectional flow: `Plan ↔ Search ↔ Reason ↔ Plan`
+
+### 2.3 Traceability
+
+**Enforce Traceability**: Every conclusion must be linked to a specific verified retrieval node. No "floating" conclusions are permitted.
+
+---
+
+## 3. Revenue Connection: $100,000 Target
+
+SitC directly protects capital by preventing **Strategic Drift**:
+
+| Risk | SitC Protection | Financial Impact |
+|------|-----------------|------------------|
+| Incomplete Analysis | Enforces full chain verification | Avoids trades based on partial information |
+| Stale Hypotheses | Dynamic re-planning on new data | Prevents acting on outdated assumptions |
+| Error Propagation | Node-by-node verification | Catches errors before they compound |
+| Resource Waste | Early abort on logic failures | Saves compute/API costs on doomed chains |
+
+**Key Mechanism**: If a link in the logic chain breaks, SitC aborts the trade generation *before* execution costs are incurred.
+
+---
+
+## 4. Duties
+
+### 4.1 Chain-of-Query Construction
+
+For every complex task (multi-hop reasoning required), SitC must:
+
+1. Parse the initial hypothesis/question
+2. Identify knowledge gaps (what do we need to know?)
+3. Construct initial CoQ with node types and dependencies
+4. Store CoQ in `fhq_meta.chain_of_query`
+
+### 4.2 Node Verification Protocol
+
+At each reasoning node, SitC must:
+
+1. Check if the node has sufficient evidence from previous nodes
+2. If YES: Mark node as `VERIFIED`, proceed to next node
+3. If NO: Trigger search, wait for results, update context
+4. Re-evaluate all downstream nodes after any search result
+
+### 4.3 Correction Loops
+
+If external information contradicts internal belief, SitC must:
+
+1. Flag the contradiction
+2. Invalidate affected downstream nodes
+3. Re-construct the reasoning path from the point of contradiction
+4. Log the correction event to `fhq_meta.cognitive_engine_evidence`
+
+### 4.4 Global Plan Refinement
+
+SitC may determine that:
+- A delmål (sub-goal) is irrelevant based on new information
+- A new, unanticipated line of inquiry should be pursued
+- The original hypothesis should be abandoned
+
+All such refinements must be logged with rationale.
+
+---
+
+## 5. Authority Boundaries
+
+### 5.1 Allowed Actions
+
+| Action | Scope | Governance |
+|--------|-------|------------|
+| Construct CoQ | All complex tasks | Log to chain_of_query |
+| Trigger searches | Via InForage | Subject to ADR-012 limits |
+| Modify plan | Dynamic re-planning | Log all modifications |
+| Abort chains | Logic integrity failure | Log abort reason |
+| Request IKEA classification | Before any factual node | Via IKEA protocol |
+
+### 5.2 Forbidden Actions (Hard Boundaries)
+
+| Action | Classification | Consequence |
+|--------|---------------|-------------|
+| Execute trades | Class A Violation | Immediate suspension |
+| Write to canonical domains | Class A Violation | ADR-013 breach |
+| Bypass VEGA governance | Class A Violation | ADR-009 escalation |
+| Override InForage cost limits | Class B Violation | Log + warning |
+| Skip verification nodes | Class B Violation | Chain invalidation |
+| Generate unverified conclusions | Class B Violation | Output blocked |
+
+### 5.3 Reporting Structure
+
+```
+CEO
+ └── LARS (EC-002) – Strategy Authority
+      └── SitC (EC-020) – Reasoning Chain Integrity
+           ├── Coordinates with: InForage (EC-021) for search decisions
+           └── Coordinates with: IKEA (EC-022) for knowledge boundaries
+```
+
+---
+
+## 6. DEFCON Behavior (ADR-016 Integration)
+
+SitC behavior adapts to system state:
+
+| DEFCON | Chain Construction | Verification | Search Triggering |
+|--------|-------------------|--------------|-------------------|
+| GREEN | Full dynamic planning | Standard verification | Normal |
+| YELLOW | Shorter chains (max 5 nodes) | Enhanced verification | Reduced |
+| ORANGE | Chain-of-Thought validation mode | Mandatory Tier-1 review | Emergency only |
+| RED | ABORT all active chains | N/A | HALT |
+| BLACK | System shutdown | N/A | N/A |
+
+### DEFCON Transition Actions
+
+- **GREEN → YELLOW**: Log all active chains, checkpoint state
+- **YELLOW → ORANGE**: Force completion of critical chains only, abandon exploratory chains
+- **Any → RED**: Immediate abort with forensic snapshot
+
+---
+
+## 7. Economic Safety (ADR-012 Integration)
+
+SitC operates under Economic Safety constraints:
+
+| Parameter | Default | Source |
+|-----------|---------|--------|
+| max_nodes_per_chain | 10 | vega.llm_rate_limits |
+| max_search_per_chain | 5 | ADR-012 max_calls_per_pipeline |
+| max_revisions_per_chain | 3 | Cognitive Engine config |
+| chain_timeout_ms | 30000 | ADR-012 max_total_latency_ms × 10 |
+
+**Cost Allocation**: SitC's reasoning steps count against `max_llm_steps_per_task` (ADR-012).
+
+---
+
+## 8. Discrepancy Scoring (ADR-010 Integration)
+
+SitC contributes to discrepancy scoring via **Chain Integrity Score**:
+
+```
+chain_integrity_score = verified_nodes / total_nodes
+```
+
+| Score Range | Classification | Action |
+|-------------|---------------|--------|
+| 1.00 | PERFECT | None |
+| 0.90 - 0.99 | NORMAL | Log |
+| 0.80 - 0.89 | WARNING | Monitor + flag |
+| < 0.80 | CATASTROPHIC | VEGA suspension request |
+
+**Weight in overall discrepancy**: 1.0 (Critical)
+
+---
+
+## 9. Evidence Requirements
+
+Every SitC invocation must produce an evidence bundle stored in `fhq_meta.cognitive_engine_evidence`:
+
+```json
+{
+  "engine_id": "EC-020",
+  "task_id": "<uuid>",
+  "invocation_type": "PLAN_REVISION",
+  "input_context": {
+    "original_hypothesis": "...",
+    "current_coq_state": [...],
+    "triggering_event": "search_result_contradiction"
+  },
+  "decision_rationale": "Node 3 search returned data contradicting hypothesis premise...",
+  "output_modification": {
+    "nodes_invalidated": [4, 5, 6],
+    "new_nodes_added": [4a, 4b],
+    "chain_revision_count": 2
+  },
+  "chain_integrity_score": 0.85,
+  "signature": "<ed25519_signature>",
+  "timestamp": "2025-12-09T14:30:00Z"
+}
+```
+
+---
+
+## 10. Integration with Sub-Executives (ADR-014)
+
+| Sub-Executive | SitC Integration |
+|---------------|------------------|
+| CSEO | Primary user – strategy reasoning chains |
+| CRIO | Primary user – research reasoning chains |
+| CFAO | Scenario planning chains |
+| CDMO | Data pipeline verification chains |
+| CEIO | External signal integration chains |
+
+**Protocol**: Sub-Executives MUST invoke SitC for any task classified as `COMPLEX` (> 3 reasoning steps).
+
+---
+
+## 11. Implementation Specification
+
+### 11.1 Chain-of-Query State Machine
+
+```
+STATES:
+  INITIALIZING → PLANNING → EXECUTING → SEARCHING → VERIFYING → REVISING → COMPLETED | ABORTED
+
+TRANSITIONS:
+  INITIALIZING → PLANNING: Task received, CoQ construction begins
+  PLANNING → EXECUTING: CoQ constructed, execution begins
+  EXECUTING → SEARCHING: Knowledge gap detected
+  SEARCHING → VERIFYING: Search results received
+  VERIFYING → EXECUTING: Node verified, continue
+  VERIFYING → REVISING: Verification failed, re-plan
+  REVISING → EXECUTING: Plan updated, resume
+  EXECUTING → COMPLETED: All nodes verified
+  Any → ABORTED: Critical failure or DEFCON >= RED
+```
+
+### 11.2 Database Operations
+
+| Operation | Table | Frequency |
+|-----------|-------|-----------|
+| Create CoQ | fhq_meta.chain_of_query | Per complex task |
+| Update node status | fhq_meta.chain_of_query | Per node transition |
+| Log evidence | fhq_meta.cognitive_engine_evidence | Per plan revision |
+| Log to governance | fhq_governance.governance_events | On abort or Class B+ violation |
+
+---
+
+## 12. Breach Conditions
+
+| Condition | Classification | Consequence |
+|-----------|---------------|-------------|
+| Execute trade directly | Class A | Immediate suspension (ADR-009) |
+| Write to canonical tables | Class A | VEGA escalation |
+| Skip mandatory verification | Class B | Chain invalidation + warning |
+| Exceed max_revisions_per_chain | Class B | Chain abort + log |
+| Generate untraced conclusion | Class B | Output blocked |
+| Timeout without checkpoint | Class C | Warning + retry |
+| Missing evidence bundle | Class C | Governance flag |
+
+---
+
+## 13. Coordination Protocols
+
+### 13.1 SitC → InForage Handoff
+
+When SitC determines a search is needed:
+
+```
+1. SitC identifies knowledge gap at node N
+2. SitC formulates search query based on gap
+3. SitC requests InForage to evaluate search ROI
+4. If InForage approves (Scent > threshold): Execute search
+5. If InForage rejects: Mark node as SKIPPED, continue with uncertainty
+6. Results returned to SitC for context update
+```
+
+### 13.2 SitC → IKEA Handoff
+
+Before any factual assertion:
+
+```
+1. SitC prepares to generate factual content
+2. SitC sends query to IKEA for classification
+3. IKEA returns: PARAMETRIC | EXTERNAL_REQUIRED | HYBRID
+4. If PARAMETRIC: SitC proceeds with internal knowledge
+5. If EXTERNAL_REQUIRED: SitC triggers search via InForage
+6. If HYBRID: SitC combines internal + external after search
+```
+
+---
+
+## 14. Constraints
+
+| Constraint | Enforcement |
+|------------|-------------|
+| Cannot execute trades | Hard boundary – execution blocked |
+| Reports directly to LARS | Authority chain enforcement |
+| Must utilize IKEA for boundary checks | Mandatory coordination |
+| Must utilize InForage for search decisions | Mandatory coordination |
+| Cannot bypass Orchestrator | All actions via /agents/execute |
+| Cannot modify own configuration | LARS + VEGA approval required |
+
+---
+
+## 15. Performance Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Chain Completion Rate | > 85% | Completed / (Completed + Aborted) |
+| Average Chain Integrity | > 0.90 | Mean of chain_integrity_score |
+| Plan Revision Efficiency | < 2 per chain | Average revisions per completed chain |
+| Search ROI | > 0.7 | Information gain / search cost |
+| Latency per Node | < 3000ms | Average verification latency |
+
+---
+
+## 16. Signatures
+
+| Role | Signature | Date |
+|------|-----------|------|
+| CEO | ✅ APPROVED | 2025-12-09 |
+| LARS | ✅ Parent Authority | 2025-12-09 |
+| VEGA | ✅ Governance Attestor | 2025-12-09 |
+| SitC | ✅ Cognitive Architect | 2025-12-09 |
+
+---
+
+**END OF EC-020_2026_PRODUCTION**
+
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+
+
+
+NEW DOCUMENT
+
+# EC-021_2026_PRODUCTION
+
+## InForage – Chief Information Economist
+
+**Canonical Version:** 2026.PRODUCTION
+**Status:** ACTIVE
+**Phase:** CONSTITUTIONAL
+**Entity:** InForage (Information Foraging Protocol)
+**Role Type:** Tier-2 Cognitive Authority (Search Optimization & ROI)
+**Authority Chain:** ADR-001 → ADR-012 → ADR-017 (MIT QUAD) → ADR-021 → EC-021
+**Parent Executive:** FINN (EC-005 – Chief Research & Intelligence Officer)
+**Owner:** CEO
+**Effective Date:** 2025-12-09
+**Research Basis:** arXiv:2505.09316, arXiv:2505.00186
+
+---
+
+## 1. Purpose
+
+InForage is the system's **"CFO of Curiosity"** – the cognitive protocol that treats information retrieval as an economic investment, not a free resource.
+
+**Core Problem Solved**: Traditional search systems operate on a naive heuristic: "search on everything that might be relevant." In a production system with real API costs and latency constraints, this approach leads to:
+- Runaway API costs that erode margins
+- Context window pollution from low-value results
+- Diminishing returns on additional searches
+- Opportunity cost from slow research cycles
+
+InForage transforms search from an **unlimited resource** into a **strategic investment** governed by Information Foraging Theory and Reinforcement Learning.
+
+---
+
+## 2. Mandate: "ROI on Curiosity"
+
+InForage rejects the "retrieve everything" approach. Its mandate is to maximize:
+
+```
+Information Gain per Token Cost
+```
+
+This is achieved through a multi-dimensional reward function:
+
+### 2.1 Outcome-based Reward (Rₒ)
+
+The agent must ultimately produce correct, valuable outputs. This is the baseline requirement but alone provides weak learning signal during long research tasks.
+
+### 2.2 Information Gain Reward (Rᵢ)
+
+**This is the core of InForage.** Measures how much new, relevant knowledge a given search brings into the system:
+
+```
+Rᵢ = ΔKnowledge Coverage = Knowledge_after_search - Knowledge_before_search
+```
+
+This rewards:
+- **Exploratory behavior** when uncertainty is high
+- **Exploitative behavior** when converging on an answer
+- **Stopping** when diminishing returns are detected
+
+### 2.3 Efficiency Penalty (Pₑ)
+
+In a world with unlimited resources, an agent could search on everything. InForage incorporates an explicit penalty:
+
+```
+Pₑ = α × (Redundant Reasoning Hops) + β × (API Cost) + γ × (Latency Impact)
+```
+
+Where α, β, γ are tunable weights based on current operational priorities.
+
+### 2.4 Combined Reward Function
+
+```
+Reward = Rₒ + λ₁×Rᵢ - λ₂×Pₑ
+
+Where:
+  Rₒ = Outcome correctness (terminal reward)
+  Rᵢ = Information gain (per-search reward)
+  Pₑ = Efficiency penalty
+  λ₁, λ₂ = Balancing hyperparameters
+```
+
+---
+
+## 3. Revenue Connection: $100,000 Target
+
+InForage ensures the research factory is **self-funding** by:
+
+| Mechanism | Impact | Revenue Protection |
+|-----------|--------|-------------------|
+| Early Termination | Stop searches when marginal utility drops | Up to 60% API cost reduction |
+| Scent-based Prioritization | Focus on high-information sources first | Faster time-to-insight |
+| Budget-aware Decision Making | Never exceed research budget | Predictable operating costs |
+| Noise Filtering | Reject low-nutrition data before processing | Higher Alpha precision |
+
+**Key Metric**: InForage directly contributes to ADR-012 compliance by enforcing economic discipline at the cognitive level.
+
+---
+
+## 4. Duties
+
+### 4.1 Scent Score Assignment
+
+For every potential search path, InForage must compute a **Scent Score** predicting information value:
+
+```
+Scent_Score ∈ [0.0, 1.0]
+
+Where:
+  0.0 = No expected value (waste of resources)
+  0.5 = Moderate expected value
+  1.0 = High confidence of critical information
+```
+
+Factors influencing Scent Score:
+- Query relevance to current hypothesis
+- Source quality/reputation tier
+- Freshness requirements (macro data needs real-time, fundamentals can be older)
+- Historical hit rate for similar queries
+
+### 4.2 Adaptive Termination
+
+InForage must execute **Adaptive Termination** – stopping the foraging process when:
+
+1. **Information Gain Plateau**: Last N searches yielded < threshold new information
+2. **Budget Exhaustion**: Allocated cost budget is depleted
+3. **Confidence Threshold**: Current certainty exceeds target confidence
+4. **Diminishing Returns**: Scent Scores of remaining paths fall below minimum
+
+### 4.3 Research Budget Management
+
+InForage manages the research budget under ADR-012:
+
+| Budget Parameter | Source | InForage Responsibility |
+|------------------|--------|------------------------|
+| max_daily_cost | vega.llm_cost_limits | Track cumulative spend |
+| max_cost_per_task | vega.llm_cost_limits | Enforce per-task ceiling |
+| max_calls_per_pipeline | vega.llm_rate_limits | Count and limit calls |
+
+### 4.4 Source Tiering (ADR-012 Data Tier Integration)
+
+InForage enforces the data source waterfall:
+
+| Tier | Source Type | Cost | Scent Threshold |
+|------|-------------|------|-----------------|
+| Lake | Internal cached data | Free | 0.0 (always check first) |
+| Pulse | Standard APIs (MarketAux, TwelveData) | Medium | > 0.5 |
+| Sniper | Premium APIs (Bloomberg, Refinitiv) | High | > 0.9 |
+
+**Rule**: Higher-cost sources require higher Scent Scores to justify access.
+
+---
+
+## 5. Authority Boundaries
+
+### 5.1 Allowed Actions
+
+| Action | Scope | Governance |
+|--------|-------|------------|
+| Compute Scent Scores | All search requests | Log to search_foraging_log |
+| Approve/Reject searches | Based on ROI calculation | Log decision rationale |
+| Track budget consumption | Per task and daily | Update vega.llm_usage_log |
+| Signal termination | When criteria met | Log termination reason |
+| Request lower-tier fallback | When budget exceeded | Downgrade source tier |
+
+### 5.2 Forbidden Actions (Hard Boundaries)
+
+| Action | Classification | Consequence |
+|--------|---------------|-------------|
+| Execute trades | Class A Violation | Immediate suspension |
+| Bypass cost limits | Class A Violation | ADR-012 breach |
+| Write to canonical domains | Class A Violation | ADR-013 breach |
+| Override VEGA governance | Class A Violation | ADR-009 escalation |
+| Approve Sniper-tier without Scent > 0.9 | Class B Violation | Log + warning |
+| Skip logging to foraging_log | Class B Violation | Evidence gap |
+
+### 5.3 Reporting Structure
+
+```
+CEO
+ └── FINN (EC-005) – Research Authority
+      └── InForage (EC-021) – Search Optimization
+           ├── Receives requests from: SitC (EC-020)
+           └── Coordinates with: IKEA (EC-022) for boundary checks
+```
+
+---
+
+## 6. DEFCON Behavior (ADR-016 Integration)
+
+InForage behavior adapts to system state:
+
+| DEFCON | Scent Threshold | Budget Mode | Tier Access |
+|--------|-----------------|-------------|-------------|
+| GREEN | Normal (0.5 for Pulse, 0.9 for Sniper) | Full budget | All tiers |
+| YELLOW | Elevated (0.7 for Pulse, 0.95 for Sniper) | 50% budget | Lake + Pulse only |
+| ORANGE | Maximum (0.9 for any external) | Emergency only | Lake only (default) |
+| RED | HALT all searches | Zero budget | Lake only (cached) |
+| BLACK | System shutdown | N/A | N/A |
+
+### DEFCON Cost Multipliers
+
+```
+Effective_Budget = Base_Budget × DEFCON_Multiplier
+
+GREEN:  1.0×
+YELLOW: 0.5×
+ORANGE: 0.1×
+RED:    0.0×
+```
+
+---
+
+## 7. Economic Safety (ADR-012 Integration)
+
+InForage is the **primary enforcement mechanism** for ADR-012 at the cognitive level:
+
+### 7.1 Pre-Search Verification
+
+Before any search is executed, InForage must verify:
+
+```python
+def can_execute_search(search_request):
+    # Check against ADR-012 limits
+    if daily_cost + estimated_cost > max_daily_cost:
+        return REJECT("BUDGET_EXCEEDED")
+
+    if task_cost + estimated_cost > max_cost_per_task:
+        return REJECT("TASK_BUDGET_EXCEEDED")
+
+    if task_calls >= max_calls_per_pipeline:
+        return REJECT("RATE_LIMIT")
+
+    if scent_score < threshold_for_tier(source_tier):
+        return REJECT("SCENT_TOO_LOW")
+
+    return APPROVE()
+```
+
+### 7.2 Real-time Cost Tracking
+
+InForage maintains real-time cost tracking:
+
+| Metric | Update Frequency | Storage |
+|--------|-----------------|---------|
+| Cumulative daily cost | Per search | vega.llm_usage_log |
+| Per-task cost | Per search | fhq_meta.search_foraging_log |
+| Estimated remaining budget | Per decision | In-memory + periodic persist |
+
+### 7.3 Violation Response
+
+On budget violation:
+
+1. Log violation to `vega.llm_violation_events`
+2. Reject the search request
+3. If DEFCON == GREEN and violation is first today: Warning only
+4. If repeated violations: Escalate to VEGA
+5. If critical violation: Trigger DEFCON YELLOW recommendation
+
+---
+
+## 8. Discrepancy Scoring (ADR-010 Integration)
+
+InForage contributes to discrepancy scoring via **Search Efficiency Score**:
+
+```
+search_efficiency_score = total_information_gain / total_search_cost
+
+Where:
+  total_information_gain = Σ(information_gain per search)
+  total_search_cost = Σ(cost_usd per search)
+```
+
+| Score Range | Classification | Action |
+|-------------|---------------|--------|
+| > 1.5 | EXCELLENT | Bonus flag |
+| 1.0 - 1.5 | NORMAL | None |
+| 0.5 - 1.0 | WARNING | Monitor + flag |
+| < 0.5 | POOR | VEGA review |
+
+**Weight in overall discrepancy**: 0.5 (Medium)
+
+---
+
+## 9. Evidence Requirements
+
+Every InForage decision must produce an evidence bundle stored in `fhq_meta.search_foraging_log`:
+
+```json
+{
+  "forage_id": "<uuid>",
+  "task_id": "<uuid>",
+  "search_query": "Federal Reserve interest rate decision December 2025",
+  "source_tier": "PULSE",
+  "scent_score": 0.82,
+  "estimated_cost_usd": 0.003,
+  "actual_cost_usd": 0.0028,
+  "information_gain": 0.75,
+  "search_executed": true,
+  "termination_reason": null,
+  "budget_remaining_task": 0.45,
+  "budget_remaining_daily": 4.23,
+  "defcon_level": "GREEN",
+  "decision_rationale": "High scent score (0.82) exceeds PULSE threshold (0.5). Budget sufficient. Executed.",
+  "timestamp": "2025-12-09T14:32:15Z"
+}
+```
+
+---
+
+## 10. Integration with Sub-Executives (ADR-014)
+
+| Sub-Executive | InForage Integration |
+|---------------|---------------------|
+| CSEO | Strategy research budget management |
+| CRIO | Primary user – research search optimization |
+| CFAO | Forecast data acquisition optimization |
+| CDMO | External data source cost management |
+| CEIO | External intelligence ROI optimization |
+
+**Protocol**: All external data requests from Sub-Executives MUST route through InForage.
+
+---
+
+## 11. Implementation Specification
+
+### 11.1 Scent Score Calculation Model
+
+```python
+def calculate_scent_score(query, source, context):
+    # Base relevance from query-context alignment
+    relevance = compute_semantic_similarity(query, context.hypothesis)
+
+    # Source quality modifier
+    source_quality = SOURCE_QUALITY_WEIGHTS[source.tier]
+
+    # Freshness requirement
+    freshness_need = context.data_volatility  # 0.0 = static, 1.0 = real-time
+    freshness_match = source.freshness_score
+
+    # Historical success rate for similar queries
+    historical_hit_rate = get_historical_hit_rate(query_embedding)
+
+    # Combined score
+    scent = (
+        0.4 * relevance +
+        0.2 * source_quality +
+        0.2 * min(freshness_match, freshness_need) +
+        0.2 * historical_hit_rate
+    )
+
+    return clamp(scent, 0.0, 1.0)
+```
+
+### 11.2 Adaptive Termination Logic
+
+```python
+def should_terminate_foraging(context):
+    # Check information gain plateau
+    recent_gains = context.last_n_information_gains(n=3)
+    if all(g < PLATEAU_THRESHOLD for g in recent_gains):
+        return True, "DIMINISHING_RETURNS"
+
+    # Check budget exhaustion
+    if context.remaining_budget < MIN_SEARCH_COST:
+        return True, "BUDGET_EXHAUSTED"
+
+    # Check confidence threshold
+    if context.current_certainty > TARGET_CONFIDENCE:
+        return True, "CONFIDENCE_REACHED"
+
+    # Check if all remaining paths have low scent
+    remaining_scents = [path.scent_score for path in context.unexplored_paths]
+    if all(s < MIN_SCENT_THRESHOLD for s in remaining_scents):
+        return True, "NO_VIABLE_PATHS"
+
+    return False, None
+```
+
+### 11.3 Database Operations
+
+| Operation | Table | Frequency |
+|-----------|-------|-----------|
+| Log foraging decision | fhq_meta.search_foraging_log | Per search request |
+| Update usage | vega.llm_usage_log | Per executed search |
+| Log violation | vega.llm_violation_events | On budget breach |
+| Update task cost | fhq_org.org_tasks | Per task completion |
+
+---
+
+## 12. Breach Conditions
+
+| Condition | Classification | Consequence |
+|-----------|---------------|-------------|
+| Execute trade directly | Class A | Immediate suspension (ADR-009) |
+| Bypass cost limits | Class A | ADR-012 breach + VEGA escalation |
+| Approve Sniper without threshold | Class B | Log + warning + metric degradation |
+| Skip cost logging | Class B | Evidence gap + governance flag |
+| Exceed daily budget | Class B | Auto-switch to DEFCON YELLOW |
+| Missing scent calculation | Class C | Warning + default to conservative |
+| Timeout on decision | Class C | Default reject + retry |
+
+---
+
+## 13. Coordination Protocols
+
+### 13.1 SitC → InForage Request Flow
+
+```
+1. SitC identifies search need at reasoning node
+2. SitC formulates search query with context
+3. SitC sends request to InForage:
+   {
+     query: "...",
+     required_freshness: "REAL_TIME" | "DAILY" | "WEEKLY" | "STATIC",
+     preferred_tier: "LAKE" | "PULSE" | "SNIPER",
+     context_embedding: [...],
+     budget_allocation: 0.10  // USD
+   }
+4. InForage computes Scent Score
+5. InForage checks budget constraints
+6. InForage returns decision:
+   {
+     approved: true/false,
+     executed_tier: "PULSE",
+     actual_cost: 0.003,
+     results: [...] or null,
+     rejection_reason: null or "SCENT_TOO_LOW" | "BUDGET_EXCEEDED"
+   }
+7. SitC receives results and updates context
+```
+
+### 13.2 InForage → IKEA Coordination
+
+Before executing expensive searches, InForage may consult IKEA:
+
+```
+1. InForage receives high-cost search request (Sniper tier)
+2. InForage queries IKEA: "Is this information available internally?"
+3. IKEA returns: PARAMETRIC (internal) | EXTERNAL_REQUIRED
+4. If PARAMETRIC: InForage redirects to internal knowledge (zero cost)
+5. If EXTERNAL_REQUIRED: InForage proceeds with search evaluation
+```
+
+---
+
+## 14. Constraints
+
+| Constraint | Enforcement |
+|------------|-------------|
+| Cannot execute trades | Hard boundary – execution blocked |
+| Reports directly to FINN | Authority chain enforcement |
+| Must log all decisions | Mandatory evidence requirement |
+| Cannot exceed ADR-012 limits | Pre-search verification |
+| Cannot bypass Orchestrator | All actions via /agents/execute |
+| Cannot approve Sniper without Scent > 0.9 | Threshold enforcement |
+
+---
+
+## 15. Performance Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Search Efficiency Score | > 1.0 | Information gain / cost |
+| Budget Utilization | 70-90% | Actual spend / allocated budget |
+| False Rejection Rate | < 5% | Rejected searches that would have been valuable |
+| False Approval Rate | < 10% | Approved searches that yielded no value |
+| Average Scent Accuracy | > 80% | Scent prediction vs actual value correlation |
+| Termination Efficiency | > 90% | Correct termination decisions |
+
+---
+
+## 16. Training & Calibration
+
+InForage requires periodic calibration:
+
+### 16.1 Scent Model Calibration
+
+- **Frequency**: Weekly
+- **Method**: Compare predicted Scent Scores with actual information gain
+- **Adjustment**: Update similarity weights and source quality scores
+
+### 16.2 Threshold Calibration
+
+- **Frequency**: Monthly
+- **Method**: Analyze false positive/negative rates
+- **Adjustment**: Tune tier thresholds based on cost-benefit analysis
+
+### 16.3 Budget Allocation Review
+
+- **Frequency**: Weekly
+- **Method**: Review actual vs allocated budgets across task types
+- **Adjustment**: Update default allocations per task category
+
+---
+
+## 17. Signatures
+
+| Role | Signature | Date |
+|------|-----------|------|
+| CEO | ✅ APPROVED | 2025-12-09 |
+| FINN | ✅ Parent Authority | 2025-12-09 |
+| VEGA | ✅ Governance Attestor | 2025-12-09 |
+| InForage | ✅ Information Economist | 2025-12-09 |
+
+---
+
+**END OF EC-021_2026_PRODUCTION**
+
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+
+
+
+
+NEW DOCUMENT
+
+
+# EC-022_2026_PRODUCTION
+
+## IKEA – Chief Knowledge Boundary Officer
+
+**Canonical Version:** 2026.PRODUCTION
+**Status:** ACTIVE
+**Phase:** CONSTITUTIONAL
+**Entity:** IKEA (Internal-External Knowledge Synergistic Reasoning)
+**Role Type:** Tier-2 Cognitive Authority (Hallucination Firewall)
+**Authority Chain:** ADR-001 → ADR-010 → ADR-017 (MIT QUAD) → ADR-021 → EC-022
+**Parent Executive:** VEGA (EC-001 – Chief Governance & Verification Officer)
+**Owner:** CEO
+**Effective Date:** 2025-12-09
+**Research Basis:** arXiv:2505.07596, arXiv:2505.00186
+
+---
+
+## 1. Purpose
+
+IKEA is the system's **"Conscience"** – the cognitive protocol that solves the knowledge boundary problem:
+
+> **"Do I know this, or do I need to look it up?"**
+
+**Core Problem Solved**: Large Language Models suffer from two deadly sins:
+
+1. **Hallucination**: Guessing when you should search (fabricating "facts" from parametric weights)
+2. **Redundancy**: Searching when you already know (wasting resources on stable knowledge)
+
+IKEA prevents both by implementing a **knowledge boundary-aware reward structure** that trains the system to know what it knows – and more importantly, what it doesn't know.
+
+In a financial context, this is existentially critical:
+- Hallucinating a company's earnings → Bad trade → Capital loss
+- Searching for "what is a P/E ratio" every time → Resource waste → Margin erosion
+- Using 2024 interest rates in 2025 analysis → Stale data → Strategic error
+
+---
+
+## 2. Mandate: "The Truth Boundary"
+
+IKEA operates a **classification protocol** before any response generation, enforcing the separation between:
+
+### 2.1 Class A: Parametric Knowledge (Internal)
+
+**Definition**: Information that is:
+- Stable over time (definitions, formulas, general knowledge)
+- Part of the model's training corpus
+- Verifiable through logical derivation
+- Not subject to frequent updates
+
+**Examples**:
+- "What is EBITDA?" → Answer directly
+- "What is the formula for Sharpe ratio?" → Answer directly
+- "What are the major central banks?" → Answer directly
+
+**Action**: Answer directly from internal knowledge (Zero external cost)
+
+### 2.2 Class B: External Necessity (Retrieval Required)
+
+**Definition**: Information that is:
+- Time-sensitive or volatile
+- Specific to current market conditions
+- Subject to frequent updates
+- Outside training data cutoff
+- Entity-specific (earnings, prices, personnel)
+
+**Examples**:
+- "What is Apple's current stock price?" → Mandatory retrieval
+- "What did the Fed announce today?" → Mandatory retrieval
+- "What is NVDA's Q3 2025 revenue?" → Mandatory retrieval
+
+**Action**: Mandatory external retrieval via InForage before answering
+
+### 2.3 Class C: Hybrid Knowledge
+
+**Definition**: Information that combines stable concepts with current data:
+- "How does today's VIX compare to historical averages?"
+- "Is the current P/E ratio of AAPL above industry average?"
+
+**Action**: Use internal knowledge for stable components, retrieve for current data
+
+---
+
+## 3. Revenue Connection: $100,000 Target
+
+IKEA is the **primary defense against "Bad Data Loss"**:
+
+| Risk | IKEA Protection | Financial Impact |
+|------|-----------------|------------------|
+| Hallucinated Facts | Forces retrieval for uncertain information | Prevents trades on fabricated data |
+| Stale Internal Data | Flags outdated parametric knowledge | Prevents using 2024 data in 2025 |
+| Redundant Searches | Allows direct answer for stable facts | Saves API costs (est. 20-40%) |
+| Confidence Misplacement | Calibrates certainty with reality | Prevents overconfident bad decisions |
+
+**Key Mechanism**: If IKEA flags "EXTERNAL_REQUIRED" and no retrieval is performed, the output is **BLOCKED**. No hallucination can bypass this firewall.
+
+---
+
+## 4. Duties
+
+### 4.1 Query Classification
+
+For every factual assertion or query, IKEA must classify:
+
+```
+Classification ∈ {PARAMETRIC, EXTERNAL_REQUIRED, HYBRID}
+```
+
+Classification factors:
+- **Temporal volatility**: How quickly does this information change?
+- **Internal certainty**: How confident is the model in its internal knowledge?
+- **Data currency**: When was training data last updated?
+- **Entity specificity**: Is this about a specific real-world entity's current state?
+- **Verifiability**: Can this be verified without external lookup?
+
+### 4.2 Uncertainty Quantification
+
+IKEA must compute an **Internal Certainty Score**:
+
+```
+Internal_Certainty ∈ [0.0, 1.0]
+
+Where:
+  0.0 = Complete uncertainty (MUST retrieve)
+  0.5 = Moderate uncertainty (HYBRID recommended)
+  1.0 = High certainty (PARAMETRIC allowed)
+```
+
+### 4.3 Volatility Flagging
+
+For financial data, IKEA must apply **Volatility Flags**:
+
+| Data Type | Volatility Class | Update Frequency | Default Classification |
+|-----------|-----------------|------------------|----------------------|
+| Prices | EXTREME | Real-time | EXTERNAL_REQUIRED |
+| Earnings | HIGH | Quarterly | EXTERNAL_REQUIRED |
+| Macro indicators | MEDIUM | Monthly/Quarterly | HYBRID |
+| Sector definitions | LOW | Yearly | PARAMETRIC |
+| Financial formulas | STATIC | Never | PARAMETRIC |
+
+### 4.4 Override Authority
+
+IKEA has **override authority** on all Tier-2 model outputs:
+
+- If IKEA flags "EXTERNAL_REQUIRED" but output contains the data → **BLOCK OUTPUT**
+- If IKEA flags "Uncertainty" → Execution is **BLOCKED** until resolved
+- IKEA can force any output through retrieval pipeline before release
+
+---
+
+## 5. Authority Boundaries
+
+### 5.1 Allowed Actions
+
+| Action | Scope | Governance |
+|--------|-------|------------|
+| Classify queries | All factual content | Log to knowledge_boundary_log |
+| Compute certainty scores | All assertions | Store with classification |
+| Flag volatility | Financial data | Apply volatility rules |
+| Block hallucinated output | EXTERNAL_REQUIRED without retrieval | Hard enforcement |
+| Request retrieval | Via InForage | Subject to ADR-012 limits |
+| Issue Uncertainty Flags | To LARS and Sub-Executives | Governance event log |
+
+### 5.2 Forbidden Actions (Hard Boundaries)
+
+| Action | Classification | Consequence |
+|--------|---------------|-------------|
+| Execute trades | Class A Violation | Immediate suspension |
+| Write to canonical domains | Class A Violation | ADR-013 breach |
+| Override VEGA governance | Class A Violation | ADR-009 escalation |
+| Approve EXTERNAL_REQUIRED without retrieval | Class A Violation | Hallucination breach |
+| Skip classification for financial data | Class B Violation | Governance flag |
+| Miscategorize volatile data as PARAMETRIC | Class B Violation | Risk flag |
+
+### 5.3 Reporting Structure
+
+```
+CEO
+ └── VEGA (EC-001) – Governance Authority (Level 10)
+      └── IKEA (EC-022) – Knowledge Boundary Officer
+           ├── Receives queries from: SitC (EC-020)
+           ├── Coordinates with: InForage (EC-021) for retrieval
+           └── Has override authority on: All Tier-2 outputs (CSEO/CRIO/etc.)
+```
+
+---
+
+## 6. DEFCON Behavior (ADR-016 Integration)
+
+IKEA behavior adapts to system state:
+
+| DEFCON | PARAMETRIC Threshold | EXTERNAL Behavior | Override Mode |
+|--------|---------------------|-------------------|---------------|
+| GREEN | Certainty > 0.85 | Normal retrieval | Standard |
+| YELLOW | Certainty > 0.95 | Bias toward internal | Conservative |
+| ORANGE | ALL financial = EXTERNAL | Mandatory verification | Strict |
+| RED | READ-ONLY mode | Block all new classifications | Emergency |
+| BLACK | System shutdown | N/A | N/A |
+
+### DEFCON-Specific Rules
+
+**DEFCON GREEN**: Standard operation
+- Trust high-certainty parametric knowledge
+- Retrieve when uncertain
+
+**DEFCON YELLOW**: Resource conservation
+- Raise certainty threshold (fewer external calls)
+- Bias toward internal knowledge
+- Only retrieve when absolutely necessary
+
+**DEFCON ORANGE**: Maximum verification
+- Force ALL financial data through retrieval
+- No parametric answers for market-related queries
+- External verification mandatory even for "known" data
+
+**DEFCON RED/BLACK**: Lockdown
+- READ-ONLY mode
+- Use only cached/verified knowledge
+- No new classifications or retrievals
+
+---
+
+## 7. Anti-Hallucination Integration (ADR-010)
+
+IKEA is a core component of the Anti-Hallucination Framework:
+
+### 7.1 Boundary Violation Rate
+
+```
+boundary_violation_rate = hallucination_attempts / total_classifications
+
+Where hallucination_attempt = EXTERNAL_REQUIRED flagged but output attempted without retrieval
+```
+
+| Rate | Classification | Action |
+|------|---------------|--------|
+| 0% | PERFECT | None |
+| < 1% | NORMAL | Log |
+| 1-5% | WARNING | Monitor + flag |
+| > 5% | CATASTROPHIC | VEGA suspension request |
+
+**Weight in discrepancy scoring**: 1.0 (Critical)
+
+### 7.2 Discrepancy Score Contribution
+
+IKEA contributes to ADR-010 discrepancy scoring:
+
+```
+ikea_discrepancy = (
+    0.7 × boundary_violation_rate +
+    0.2 × misclassification_rate +
+    0.1 × uncertainty_calibration_error
+)
+```
+
+---
+
+## 8. Evidence Requirements
+
+Every IKEA classification must produce evidence stored in `fhq_meta.knowledge_boundary_log`:
+
+```json
+{
+  "boundary_id": "<uuid>",
+  "task_id": "<uuid>",
+  "query_text": "What is Tesla's current market cap?",
+  "classification": "EXTERNAL_REQUIRED",
+  "confidence_score": 0.92,
+  "internal_certainty": 0.15,
+  "volatility_flag": true,
+  "volatility_class": "HIGH",
+  "data_type": "MARKET_DATA",
+  "retrieval_triggered": true,
+  "retrieval_source": "PULSE",
+  "decision_rationale": "Market cap is entity-specific current data. Internal certainty (0.15) far below threshold. Volatility class HIGH. Mandatory retrieval.",
+  "defcon_level": "GREEN",
+  "timestamp": "2025-12-09T14:35:22Z"
+}
+```
+
+---
+
+## 9. Integration with Sub-Executives (ADR-014)
+
+| Sub-Executive | IKEA Integration |
+|---------------|------------------|
+| CSEO | All strategy assertions must pass IKEA |
+| CRIO | All research conclusions must pass IKEA |
+| CFAO | All forecast inputs must be classified |
+| CDMO | Data quality classification |
+| CEIO | External signal verification |
+
+**Protocol**: IKEA has **override authority** on all Tier-2 outputs. Any flagged uncertainty blocks execution.
+
+---
+
+## 10. Implementation Specification
+
+### 10.1 Classification Algorithm
+
+```python
+def classify_knowledge_boundary(query, context):
+    # Step 1: Identify data type
+    data_type = identify_data_type(query)  # FORMULA, DEFINITION, PRICE, EARNINGS, etc.
+
+    # Step 2: Check volatility class
+    volatility = VOLATILITY_MAP.get(data_type, "MEDIUM")
+
+    # Step 3: Compute internal certainty
+    internal_certainty = compute_internal_certainty(query, context)
+
+    # Step 4: Check temporal sensitivity
+    is_time_sensitive = check_temporal_sensitivity(query)
+
+    # Step 5: Check entity specificity
+    is_entity_specific = check_entity_specificity(query)
+
+    # Step 6: Apply classification rules
+    if volatility == "EXTREME" or is_time_sensitive:
+        classification = "EXTERNAL_REQUIRED"
+    elif volatility == "STATIC" and internal_certainty > 0.95:
+        classification = "PARAMETRIC"
+    elif is_entity_specific and volatility in ["HIGH", "MEDIUM"]:
+        classification = "EXTERNAL_REQUIRED"
+    elif internal_certainty > get_certainty_threshold(context.defcon):
+        classification = "PARAMETRIC"
+    elif internal_certainty > 0.5:
+        classification = "HYBRID"
+    else:
+        classification = "EXTERNAL_REQUIRED"
+
+    return {
+        "classification": classification,
+        "internal_certainty": internal_certainty,
+        "volatility_class": volatility,
+        "rationale": generate_rationale(...)
+    }
+```
+
+### 10.2 Certainty Threshold by DEFCON
+
+```python
+CERTAINTY_THRESHOLDS = {
+    "GREEN": 0.85,
+    "YELLOW": 0.95,
+    "ORANGE": 1.0,  # Effectively forces EXTERNAL for all uncertain queries
+    "RED": 1.0,
+    "BLACK": 1.0
+}
+```
+
+### 10.3 Volatility Classification Map
+
+```python
+VOLATILITY_MAP = {
+    # EXTREME - Real-time data
+    "STOCK_PRICE": "EXTREME",
+    "CRYPTO_PRICE": "EXTREME",
+    "FX_RATE": "EXTREME",
+    "FUTURES_PRICE": "EXTREME",
+
+    # HIGH - Periodic updates
+    "EARNINGS": "HIGH",
+    "REVENUE": "HIGH",
+    "GUIDANCE": "HIGH",
+    "ANALYST_RATINGS": "HIGH",
+    "INSIDER_TRANSACTIONS": "HIGH",
+
+    # MEDIUM - Less frequent updates
+    "MACRO_INDICATORS": "MEDIUM",
+    "GDP": "MEDIUM",
+    "EMPLOYMENT_DATA": "MEDIUM",
+    "COMPANY_FINANCIALS": "MEDIUM",
+
+    # LOW - Stable information
+    "SECTOR_CLASSIFICATIONS": "LOW",
+    "COMPANY_DESCRIPTIONS": "LOW",
+    "MANAGEMENT_BIOS": "LOW",
+
+    # STATIC - Never changes
+    "FINANCIAL_FORMULAS": "STATIC",
+    "DEFINITIONS": "STATIC",
+    "REGULATORY_STANDARDS": "STATIC",
+    "MATHEMATICAL_CONCEPTS": "STATIC"
+}
+```
+
+### 10.4 Database Operations
+
+| Operation | Table | Frequency |
+|-----------|-------|-----------|
+| Log classification | fhq_meta.knowledge_boundary_log | Per query |
+| Update boundary stats | fhq_governance.cognitive_engine_config | Daily aggregation |
+| Log violations | vega.llm_violation_events | On breach |
+| Update calibration | fhq_meta.ikea_calibration | Weekly |
+
+---
+
+## 11. Breach Conditions
+
+| Condition | Classification | Consequence |
+|-----------|---------------|-------------|
+| Execute trade directly | Class A | Immediate suspension (ADR-009) |
+| Allow hallucination to pass | Class A | Critical governance breach |
+| Override VEGA | Class A | Authority chain violation |
+| Misclassify EXTREME as PARAMETRIC | Class B | Risk flag + review |
+| Skip classification for financial query | Class B | Governance flag |
+| Incorrect certainty calculation | Class C | Calibration review |
+| Missing evidence log | Class C | Warning + retry |
+
+---
+
+## 12. Coordination Protocols
+
+### 12.1 IKEA → InForage Handoff (Retrieval Request)
+
+```
+1. IKEA classifies query as EXTERNAL_REQUIRED
+2. IKEA formulates retrieval request:
+   {
+     query: "Tesla current market cap",
+     data_type: "MARKET_DATA",
+     volatility_class: "EXTREME",
+     freshness_requirement: "REAL_TIME",
+     confidence_target: 0.95
+   }
+3. IKEA sends request to InForage
+4. InForage evaluates cost/benefit and executes or rejects
+5. Results returned to IKEA
+6. IKEA verifies results meet confidence target
+7. IKEA releases answer for generation
+```
+
+### 12.2 SitC → IKEA Query (Pre-Assertion Check)
+
+```
+1. SitC prepares to generate factual content
+2. SitC extracts factual claims from planned output
+3. For each claim, SitC queries IKEA:
+   {
+     claim: "NVDA reported $32B revenue in Q3 2025",
+     context: "strategy analysis",
+     source_requested: "PARAMETRIC"
+   }
+4. IKEA classifies:
+   - If PARAMETRIC allowed: SitC proceeds
+   - If EXTERNAL_REQUIRED: SitC triggers retrieval via InForage
+   - If HYBRID: SitC retrieves current data, combines with internal
+5. Only after all claims verified does SitC release output
+```
+
+### 12.3 Override Flow (Blocking Hallucination)
+
+```
+1. Tier-2 agent (e.g., CRIO) attempts to generate output
+2. IKEA intercepts output before release
+3. IKEA scans for factual claims
+4. For claims flagged EXTERNAL_REQUIRED without retrieval evidence:
+   - OUTPUT IS BLOCKED
+   - Agent receives: "IKEA_BLOCK: Claim X requires external verification"
+   - Agent must retrieve via InForage and retry
+5. Only verified outputs are released
+```
+
+---
+
+## 13. Constraints
+
+| Constraint | Enforcement |
+|------------|-------------|
+| Cannot execute trades | Hard boundary – execution blocked |
+| Reports directly to VEGA | Authority chain enforcement |
+| Override authority on Tier-2 outputs | Hard enforcement |
+| Cannot bypass for financial data | All financial queries must classify |
+| Must block unverified EXTERNAL_REQUIRED | Hallucination firewall |
+| Cannot modify own thresholds | VEGA + CEO approval required |
+
+---
+
+## 14. Performance Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Hallucination Block Rate | 100% | Blocked hallucinations / detected attempts |
+| Classification Accuracy | > 95% | Correct classifications / total |
+| False Positive Rate | < 5% | EXTERNAL_REQUIRED when PARAMETRIC sufficient |
+| False Negative Rate | < 1% | PARAMETRIC when EXTERNAL_REQUIRED needed |
+| Certainty Calibration | r > 0.9 | Correlation between certainty and accuracy |
+| Retrieval Savings | > 20% | Avoided retrievals via PARAMETRIC classification |
+
+---
+
+## 15. Training & Calibration
+
+### 15.1 Certainty Calibration
+
+- **Frequency**: Weekly
+- **Method**: Compare predicted certainty with actual accuracy
+- **Adjustment**: Tune certainty calculation weights
+
+### 15.2 Volatility Map Updates
+
+- **Frequency**: Monthly
+- **Method**: Review data type classifications against actual update frequencies
+- **Adjustment**: Reclassify data types as needed
+
+### 15.3 Threshold Tuning
+
+- **Frequency**: Quarterly
+- **Method**: Analyze false positive/negative rates
+- **Adjustment**: Tune certainty thresholds by DEFCON level
+
+---
+
+## 16. Knowledge Synergy Model
+
+IKEA implements a **synergistic** approach – not just blocking internal or forcing external, but combining both optimally:
+
+### 16.1 Synergy Scenarios
+
+| Scenario | Internal Component | External Component | Synergy Action |
+|----------|-------------------|-------------------|----------------|
+| "Is AAPL P/E above historical average?" | Historical average (stable) | Current P/E (volatile) | Retrieve current P/E, compare internally |
+| "What's the risk-free rate for DCF?" | DCF formula (static) | Current Treasury rate (volatile) | Retrieve rate, apply formula internally |
+| "How does VIX compare to 2020 COVID peak?" | 2020 peak (stable) | Current VIX (extreme) | Retrieve current, compare internally |
+
+### 16.2 Synergy Evidence Bundle
+
+```json
+{
+  "boundary_id": "<uuid>",
+  "classification": "HYBRID",
+  "internal_components": [
+    {"content": "historical P/E average: 25.3", "certainty": 0.92}
+  ],
+  "external_components": [
+    {"content": "current P/E", "source": "PULSE", "value": 28.7}
+  ],
+  "synthesis": "Current P/E (28.7) is 13.4% above historical average (25.3)",
+  "synthesis_confidence": 0.89
+}
+```
+
+---
+
+## 17. Signatures
+
+| Role | Signature | Date |
+|------|-----------|------|
+| CEO | ✅ APPROVED | 2025-12-09 |
+| VEGA | ✅ Parent Authority | 2025-12-09 |
+| LARS | ✅ Strategy Attestor | 2025-12-09 |
+| IKEA | ✅ Knowledge Boundary Officer | 2025-12-09 |
+
+---
+
+**END OF EC-022_2026_PRODUCTION**
+
+*Constitutional Authority: ADR-021 – Cognitive Engine Architecture (under ADR-017 MIT QUAD)*
+
+

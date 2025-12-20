@@ -1,0 +1,87 @@
+{
+  "directive": "CEO DIRECTIVE: DATA QUALITY ENFORCEMENT FOR EQUITIES",
+  "document": "EQUITY_DATA_STANDARD_VERIFIED",
+  "status": "VERIFIED",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:30:00Z",
+
+  "verification_summary": {
+    "raw_price_standard": "PASSED",
+    "corporate_actions_integrated": "PASSED",
+    "ta_pipeline_on_raw_data": "PASSED",
+    "zero_governance_violations": true
+  },
+
+  "raw_price_verification": {
+    "source": "Yahoo Chart API v8",
+    "method": "Reverse split-adjustment to recover RAW prices",
+    "nvda_pre_split_verification": {
+      "split_date": "2024-06-10",
+      "split_ratio": "10:1",
+      "pre_split_avg_close": 1214.42,
+      "expected_range": "840-1560",
+      "status": "VERIFIED_RAW"
+    },
+    "data_stored_as": "RAW OHLCV in fhq_market.prices",
+    "source_identifier": "yahoo_chart_v8_raw"
+  },
+
+  "corporate_actions": {
+    "table": "fhq_market.corporate_actions",
+    "schema": {
+      "id": "UUID PRIMARY KEY",
+      "asset_id": "UUID NOT NULL",
+      "canonical_id": "TEXT NOT NULL",
+      "action_date": "DATE NOT NULL",
+      "action_type": "TEXT (DIVIDEND|SPLIT)",
+      "dividend_amount": "DOUBLE PRECISION",
+      "split_numerator": "INTEGER",
+      "split_denominator": "INTEGER",
+      "split_ratio": "DOUBLE PRECISION"
+    },
+    "records": {
+      "NVDA": {"dividends": 21, "splits": 2},
+      "AAPL": {"dividends": 20, "splits": 0},
+      "MSFT": {"dividends": 21, "splits": 0},
+      "SPY": {"dividends": 20, "splits": 0},
+      "QQQ": {"dividends": 21, "splits": 0}
+    },
+    "total_actions": 105
+  },
+
+  "price_data_summary": {
+    "NVDA": {"records": 1276, "days": 1855, "earliest": "2020-11-10", "latest": "2025-12-09", "source": "yahoo_chart_v8_raw"},
+    "AAPL": {"records": 1276, "days": 1855, "earliest": "2020-11-10", "latest": "2025-12-09", "source": "yahoo_chart_v8_raw"},
+    "MSFT": {"records": 1276, "days": 1855, "earliest": "2020-11-10", "latest": "2025-12-09", "source": "yahoo_chart_v8_raw"},
+    "SPY": {"records": 1275, "days": 1854, "earliest": "2020-11-10", "latest": "2025-12-09", "source": "yahoo_chart_v8_raw"},
+    "QQQ": {"records": 1276, "days": 1855, "earliest": "2020-11-10", "latest": "2025-12-09", "source": "yahoo_chart_v8_raw"}
+  },
+
+  "prohibited_sources": [
+    "yfinance (returns adjusted by default)",
+    "TwelveData (returns adjusted prices)",
+    "Any source with auto_adjust=True",
+    "Any source without corporate actions visibility"
+  ],
+
+  "data_contract": {
+    "raw_close": "Stored in 'close' column - used for TA calculations",
+    "adj_close": "Available via corporate_actions table + backward adjustment",
+    "never_use": "Pre-adjusted close from external sources"
+  },
+
+  "adr_compliance": {
+    "ADR-003": "One-Source-Truth for price data",
+    "ADR-013": "Infrastructure sovereignty maintained",
+    "ADR-012": "API waterfall respected (Yahoo = Tier 1 Lake)"
+  },
+
+  "scripts": [
+    "scripts/yahoo_chart_v8_raw.py"
+  ],
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "RAW price standard verified. All equities use unadjusted OHLCV from Yahoo Chart API v8. Corporate actions (105 total) integrated. Split discontinuities preserved. Ready for TA activation."
+  }
+}

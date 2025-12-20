@@ -1,0 +1,387 @@
+{
+  "document_type": "G1_VALIDATION_MATRIX",
+  "document_id": "STIG-G1-MATRIX-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T19:15:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G1 2025-12-09 Section 2.3",
+  "purpose": "Field-to-Document traceability matrix with governance hooks and hash-chain requirements",
+
+  "validation_matrix": [
+    {
+      "field_name": "cognitive_node_id",
+      "defining_document": "ADR-021",
+      "adr_section": "Section 6.1",
+      "physical_table": "fhq_cognition.cognitive_nodes",
+      "physical_type": "UUID",
+      "vega_governance_hook": "VEGA_HASH_ANCHOR_VALIDATION",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Primary key must be hash-anchored per ADR-020 Section 6 for immutable identity"
+    },
+    {
+      "field_name": "modality",
+      "defining_document": "EC-020",
+      "adr_section": "Section 3 (Node Types)",
+      "physical_table": "fhq_cognition.cognitive_nodes",
+      "physical_type": "TEXT (ENUM: cognitive_modality)",
+      "vega_governance_hook": "VEGA_ENUM_CONSTRAINT_CHECK",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Enum-constrained field with database-level CHECK. Row-level hash includes this field."
+    },
+    {
+      "field_name": "causal_links",
+      "defining_document": "EC-020",
+      "adr_section": "Section 4 (Causal Chain)",
+      "physical_table": "fhq_cognition.cognitive_nodes",
+      "physical_type": "JSONB",
+      "vega_governance_hook": "VEGA_JSONB_SCHEMA_VALIDATION",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Causal relationships form chain-of-reasoning. Must be immutable per EC-020 Section 4."
+    },
+    {
+      "field_name": "search_depth",
+      "defining_document": "EC-020",
+      "adr_section": "Section 5 (SitC Protocol)",
+      "physical_table": "fhq_cognition.search_in_chain_events",
+      "physical_type": "INT",
+      "vega_governance_hook": "VEGA_CONSTRAINT_CHECK (>=0)",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Operational metric. Row-level hash includes this field."
+    },
+    {
+      "field_name": "chain_integrity_score",
+      "defining_document": "EC-020",
+      "adr_section": "Section 8 (Verification)",
+      "physical_table": "fhq_cognition.search_in_chain_events",
+      "physical_type": "NUMERIC(5,4)",
+      "vega_governance_hook": "VEGA_CATASTROPHIC_ALERT_TRIGGER",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Critical governance metric. Score < 0.80 triggers CATASTROPHIC alert per EC-020 Section 8."
+    },
+    {
+      "field_name": "scent_score",
+      "defining_document": "EC-021",
+      "adr_section": "Section 4.1 (Information Scent)",
+      "physical_table": "fhq_cognition.information_foraging_paths",
+      "physical_type": "NUMERIC(5,4)",
+      "vega_governance_hook": "VEGA_RANGE_VALIDATION (0-1)",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Predicted value metric. Row-level hash includes this field."
+    },
+    {
+      "field_name": "context_frame",
+      "defining_document": "EC-021",
+      "adr_section": "Section 5 (Context Preservation)",
+      "physical_table": "fhq_cognition.information_foraging_paths",
+      "physical_type": "JSONB",
+      "vega_governance_hook": "VEGA_BCBS239_LINEAGE_CHECK",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "BCBS-239 lineage required per CEO directive. Must be immutable for audit trail."
+    },
+    {
+      "field_name": "estimated_cost_usd",
+      "defining_document": "EC-021",
+      "adr_section": "Section 6 (Economic Optimization)",
+      "physical_table": "fhq_cognition.information_foraging_paths",
+      "physical_type": "NUMERIC(10,4)",
+      "vega_governance_hook": "VEGA_ECONOMIC_CEILING_CHECK",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Cost tracking for ADR-012 economic safety. Must be immutable for budget audit."
+    },
+    {
+      "field_name": "boundary_type",
+      "defining_document": "EC-022",
+      "adr_section": "Section 2 (Classification)",
+      "physical_table": "fhq_cognition.knowledge_boundaries",
+      "physical_type": "TEXT (ENUM: boundary_type)",
+      "vega_governance_hook": "VEGA_HALLUCINATION_FIREWALL",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Critical for hallucination prevention. Classification must be immutable."
+    },
+    {
+      "field_name": "internal_certainty",
+      "defining_document": "EC-022",
+      "adr_section": "Section 4.2 (Uncertainty Quantification)",
+      "physical_table": "fhq_cognition.knowledge_boundaries",
+      "physical_type": "NUMERIC(5,4)",
+      "vega_governance_hook": "VEGA_UNCERTAINTY_THRESHOLD_CHECK",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Confidence metric. Row-level hash includes this field."
+    },
+    {
+      "field_name": "boundary_violation",
+      "defining_document": "EC-022",
+      "adr_section": "Section 7 (Violation Detection)",
+      "physical_table": "fhq_cognition.knowledge_boundaries",
+      "physical_type": "BOOLEAN",
+      "vega_governance_hook": "VEGA_VIOLATION_ALERT_TRIGGER",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Hallucination detection flag. Must be immutable for governance audit."
+    },
+    {
+      "field_name": "volatility_class",
+      "defining_document": "EC-022",
+      "adr_section": "Section 4.3 (Volatility Map)",
+      "physical_table": "fhq_cognition.knowledge_boundaries",
+      "physical_type": "TEXT (ENUM)",
+      "vega_governance_hook": "VEGA_VOLATILITY_REFRESH_CHECK",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Classification metric. Row-level hash includes this field."
+    },
+    {
+      "field_name": "attention_weight",
+      "defining_document": "ADR-021",
+      "adr_section": "Section 4 (Attention Mechanism)",
+      "physical_table": "fhq_cognition.cognitive_nodes",
+      "physical_type": "FLOAT8",
+      "vega_governance_hook": "VEGA_RANGE_VALIDATION (0-1)",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Normalized weight. Row-level hash includes this field."
+    },
+    {
+      "field_name": "defcon_level",
+      "defining_document": "ADR-016",
+      "adr_section": "Integration via ADR-021",
+      "physical_table": "fhq_cognition.knowledge_boundaries, fhq_cognition.research_protocols",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_DEFCON_STATE_CHECK",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "DEFCON state at time of operation. Critical for governance audit."
+    },
+    {
+      "field_name": "hash_self",
+      "defining_document": "ADR-011",
+      "adr_section": "Fortress Standard",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_HASH_CHAIN_INTEGRITY",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Core hash chain field per ADR-011. SHA-256 of current row."
+    },
+    {
+      "field_name": "hash_prev",
+      "defining_document": "ADR-011",
+      "adr_section": "Fortress Standard",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_HASH_CHAIN_INTEGRITY",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Core hash chain field per ADR-011. Reference to previous row's hash."
+    },
+    {
+      "field_name": "lineage_hash",
+      "defining_document": "ADR-011",
+      "adr_section": "Fortress Standard",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_LINEAGE_VALIDATION",
+      "hash_chain_required": true,
+      "hash_chain_rationale": "Full lineage chain per ADR-011. SHA-256 of concatenated previous hashes."
+    },
+    {
+      "field_name": "source_document",
+      "defining_document": "ADR-013",
+      "adr_section": "One-True-Source",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_SOURCE_TRACEABILITY",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Governance traceability. Row-level hash includes this field."
+    },
+    {
+      "field_name": "governance_class",
+      "defining_document": "ADR-013",
+      "adr_section": "Governance Classification",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TEXT",
+      "vega_governance_hook": "VEGA_GOVERNANCE_CLASS_VALIDATION",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Classification for routing. Row-level hash includes this field."
+    },
+    {
+      "field_name": "created_at",
+      "defining_document": "ADR-002",
+      "adr_section": "Audit Charter",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TIMESTAMPTZ",
+      "vega_governance_hook": "VEGA_TIMESTAMP_IMMUTABILITY",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Audit timestamp. Row-level hash includes this field."
+    },
+    {
+      "field_name": "ingested_at",
+      "defining_document": "ADR-002",
+      "adr_section": "Audit Charter",
+      "physical_table": "ALL TABLES",
+      "physical_type": "TIMESTAMPTZ",
+      "vega_governance_hook": "VEGA_TIMESTAMP_IMMUTABILITY",
+      "hash_chain_required": false,
+      "hash_chain_rationale": "Ingestion timestamp. Row-level hash includes this field."
+    }
+  ],
+
+  "document_coverage_summary": {
+    "ADR-021": {
+      "fields_defined": ["cognitive_node_id", "attention_weight"],
+      "governance_tier": "Tier-1 Constitutional",
+      "tables_owned": ["fhq_cognition.cognitive_nodes", "fhq_cognition.research_protocols", "fhq_cognition.lineage_log"]
+    },
+    "EC-020_SitC": {
+      "fields_defined": ["modality", "causal_links", "search_depth", "chain_integrity_score"],
+      "governance_tier": "Tier-2 Cognitive Engine",
+      "tables_owned": ["fhq_cognition.search_in_chain_events"],
+      "mit_quad_pillar": "LIDS"
+    },
+    "EC-021_InForage": {
+      "fields_defined": ["scent_score", "context_frame", "estimated_cost_usd"],
+      "governance_tier": "Tier-2 Cognitive Engine",
+      "tables_owned": ["fhq_cognition.information_foraging_paths"],
+      "mit_quad_pillar": "DSL"
+    },
+    "EC-022_IKEA": {
+      "fields_defined": ["boundary_type", "internal_certainty", "boundary_violation", "volatility_class"],
+      "governance_tier": "Tier-2 Cognitive Engine",
+      "tables_owned": ["fhq_cognition.knowledge_boundaries"],
+      "mit_quad_pillar": "RISL"
+    },
+    "ADR-011_Fortress": {
+      "fields_defined": ["hash_self", "hash_prev", "lineage_hash"],
+      "governance_tier": "Foundation",
+      "tables_owned": "Cross-cutting (all tables)"
+    },
+    "ADR-013_Kernel": {
+      "fields_defined": ["source_document", "governance_class"],
+      "governance_tier": "Foundation",
+      "tables_owned": "Cross-cutting (all tables)"
+    },
+    "ADR-002_Audit": {
+      "fields_defined": ["created_at", "ingested_at"],
+      "governance_tier": "Foundation",
+      "tables_owned": "Cross-cutting (all tables)"
+    },
+    "ADR-016_DEFCON": {
+      "fields_defined": ["defcon_level"],
+      "governance_tier": "Foundation",
+      "tables_owned": "Cross-cutting (selected tables)"
+    }
+  },
+
+  "vega_governance_hooks_catalog": {
+    "VEGA_HASH_ANCHOR_VALIDATION": {
+      "description": "Validates that primary keys are properly hash-anchored per ADR-020 Section 6",
+      "trigger": "INSERT",
+      "severity": "CRITICAL"
+    },
+    "VEGA_ENUM_CONSTRAINT_CHECK": {
+      "description": "Validates enum values against defined constraints",
+      "trigger": "INSERT, UPDATE",
+      "severity": "HIGH"
+    },
+    "VEGA_JSONB_SCHEMA_VALIDATION": {
+      "description": "Validates JSONB structure against defined schema",
+      "trigger": "INSERT, UPDATE",
+      "severity": "HIGH"
+    },
+    "VEGA_CONSTRAINT_CHECK": {
+      "description": "Validates numeric and other constraints",
+      "trigger": "INSERT, UPDATE",
+      "severity": "MEDIUM"
+    },
+    "VEGA_CATASTROPHIC_ALERT_TRIGGER": {
+      "description": "Triggers CATASTROPHIC alert when chain_integrity_score < 0.80",
+      "trigger": "INSERT, UPDATE",
+      "severity": "CATASTROPHIC"
+    },
+    "VEGA_RANGE_VALIDATION": {
+      "description": "Validates that values are within specified range (e.g., 0-1)",
+      "trigger": "INSERT, UPDATE",
+      "severity": "MEDIUM"
+    },
+    "VEGA_BCBS239_LINEAGE_CHECK": {
+      "description": "Validates BCBS-239 compliant lineage in context_frame",
+      "trigger": "INSERT",
+      "severity": "HIGH"
+    },
+    "VEGA_ECONOMIC_CEILING_CHECK": {
+      "description": "Validates cost values against ADR-012 economic ceilings",
+      "trigger": "INSERT, UPDATE",
+      "severity": "HIGH"
+    },
+    "VEGA_HALLUCINATION_FIREWALL": {
+      "description": "Validates boundary_type classification for hallucination prevention",
+      "trigger": "INSERT",
+      "severity": "CRITICAL"
+    },
+    "VEGA_UNCERTAINTY_THRESHOLD_CHECK": {
+      "description": "Validates internal_certainty against threshold requirements",
+      "trigger": "INSERT, UPDATE",
+      "severity": "MEDIUM"
+    },
+    "VEGA_VIOLATION_ALERT_TRIGGER": {
+      "description": "Triggers alert when boundary_violation = true",
+      "trigger": "INSERT, UPDATE",
+      "severity": "HIGH"
+    },
+    "VEGA_VOLATILITY_REFRESH_CHECK": {
+      "description": "Validates volatility classification refresh requirements",
+      "trigger": "INSERT",
+      "severity": "MEDIUM"
+    },
+    "VEGA_DEFCON_STATE_CHECK": {
+      "description": "Validates defcon_level against current system state",
+      "trigger": "INSERT",
+      "severity": "HIGH"
+    },
+    "VEGA_HASH_CHAIN_INTEGRITY": {
+      "description": "Validates hash chain integrity per ADR-011 Fortress Standard",
+      "trigger": "INSERT",
+      "severity": "CRITICAL"
+    },
+    "VEGA_LINEAGE_VALIDATION": {
+      "description": "Validates full lineage hash construction",
+      "trigger": "INSERT",
+      "severity": "CRITICAL"
+    },
+    "VEGA_SOURCE_TRACEABILITY": {
+      "description": "Validates source_document references valid ADR/EC",
+      "trigger": "INSERT",
+      "severity": "MEDIUM"
+    },
+    "VEGA_GOVERNANCE_CLASS_VALIDATION": {
+      "description": "Validates governance_class against allowed values",
+      "trigger": "INSERT",
+      "severity": "MEDIUM"
+    },
+    "VEGA_TIMESTAMP_IMMUTABILITY": {
+      "description": "Ensures timestamps cannot be modified after creation",
+      "trigger": "UPDATE",
+      "severity": "HIGH"
+    }
+  },
+
+  "hash_chain_summary": {
+    "total_fields_requiring_hash_chain": 10,
+    "fields_with_hash_chain": [
+      "cognitive_node_id",
+      "causal_links",
+      "chain_integrity_score",
+      "context_frame",
+      "estimated_cost_usd",
+      "boundary_type",
+      "boundary_violation",
+      "defcon_level",
+      "hash_self",
+      "hash_prev",
+      "lineage_hash"
+    ],
+    "rationale": "Hash chain required for fields that: (1) form immutable identity, (2) represent governance decisions, (3) track economic values, (4) detect hallucinations, or (5) are part of ADR-011 Fortress Standard"
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "This Validation Matrix provides complete field-to-document traceability per CEO Directive G1 Section 2.3. All fields have defined governance hooks and hash-chain requirements. Ready for VEGA G2 evaluation.",
+    "timestamp": "2025-12-09T19:15:00.000Z"
+  }
+}

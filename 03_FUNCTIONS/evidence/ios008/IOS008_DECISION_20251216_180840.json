@@ -1,0 +1,388 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T18:08:40.866742+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "5d8a84ed-7d40-42a6-84ab-f71fee9e9a3e",
+    "timestamp": "2025-12-16T18:08:40.823492+00:00",
+    "valid_until": "2025-12-16T18:23:40.823492+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 6,
+      "cohesion_score": 0.5714285714285714,
+      "dominant_direction": "NEUTRAL",
+      "confidence_modifier": 0.7
+    },
+    "asset_directives": [
+      {
+        "signal_id": "90ea4ae3-1805-4081-88a5-63313052fb2a",
+        "hypothesis_id": "ALPHA-20241215-001",
+        "category": "REGIME_EDGE",
+        "action": "CLOSE",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC in NEUTRAL regime for minimum 5 days",
+          "DEFCON level 4 or 5",
+          "Bollinger Band (20,2) Width < 0.02 for 5 consecutive days",
+          "Price closes outside Bollinger Bands (above upper or below lower)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Price returns inside Bollinger Bands",
+          "time_exit": "3 days if no regime transition",
+          "take_profit": "3 days after entry OR regime transition confirmed"
+        }
+      },
+      {
+        "signal_id": "11c3daa9-f4ed-4fc7-83ae-bfd8907e49c2",
+        "hypothesis_id": "ALPHA-20241215-002",
+        "category": "CROSS_ASSET",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime confirmed (confidence > 60%)",
+          "GLD 5-day return minus QQQ 5-day return > 3%",
+          "BTC daily RSI(14) between 40-60 (neutral zone)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "BTC enters RISK-ON regime (DEFCON 3-4)",
+          "time_exit": "120 hours after entry",
+          "take_profit": "BTC enters RISK-OFF regime (DEFCON 1-2)"
+        }
+      },
+      {
+        "signal_id": "e72e396e-2979-437e-975e-91c2bf53f394",
+        "hypothesis_id": "ALPHA-20241215-001",
+        "category": "REGIME_EDGE",
+        "action": "CLOSE",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 5-day Bollinger Band width (20,2) < 20th percentile of 90-day rolling window",
+          "BTC closes outside Bollinger Bands (either direction)",
+          "Volume > 20-day SMA volume on breakout candle"
+        ],
+        "exit_conditions": {
+          "stop_loss": "2.5% loss from entry",
+          "time_exit": "72 hours after entry",
+          "take_profit": "5% gain from entry"
+        }
+      },
+      {
+        "signal_id": "c57720f8-bc19-407d-adee-2ddd88b07ab6",
+        "hypothesis_id": "ALPHA-20241215-001",
+        "category": "REGIME_EDGE",
+        "action": "LONG",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC price has traded within +/-2.5% of 7-day midpoint for 7 consecutive days",
+          "Price breaks above/below consolidation range with volume >1.5x 20-day average",
+          "DEFCON remains at 4-5 (no elevated risk signals)",
+          "Break occurs during NY trading hours (9:30-16:00 EST)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "1.8% loss from entry",
+          "time_exit": "72 hours after entry",
+          "take_profit": "3.5% profit from entry"
+        }
+      },
+      {
+        "signal_id": "a548145a-b6d8-428c-b8fc-d1e30ccc4459",
+        "hypothesis_id": "ALPHA-20250415-001",
+        "category": "REGIME_EDGE",
+        "action": "CLOSE",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC daily close > Upper Bollinger Band (20,2)",
+          "Daily volume > 1.5 * 20-day average volume",
+          "ATR(14) < 0.8 * ATR(20) for 5+ consecutive days",
+          "Current regime = NEUTRAL",
+          "DEFCON = 5"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Close below 20-day SMA",
+          "time_exit": "5 days without regime change confirmation",
+          "take_profit": "7% gain from entry"
+        }
+      },
+      {
+        "signal_id": "df129e29-edc4-4e1c-9dd7-4b0da5505e1c",
+        "hypothesis_id": "ALPHA-20250401-002",
+        "category": "CROSS_ASSET",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3073,
+        "confidence_score": 0.6146699999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime confirmed (confidence > 60%)",
+          "BTC-SPX 20-day rolling correlation < 0.2",
+          "BTC-GOLD 20-day rolling correlation > 0.4",
+          "Divergence persists for 3 consecutive days",
+          "BTC volatility remains below 35% (no breakout yet)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Correlation convergence (BTC-SPX > 0.4 AND BTC-GOLD < 0.3)",
+          "time_exit": "5 trading days if no regime transition occurs",
+          "take_profit": "Position exited upon regime change confirmation (RISK_ON or RISK_OFF)"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "9d0c5e87a27ccbb4c619a5a725b8ad7a868ddec8a946cb5fe8989a5292048ad1",
+      "acl": "9e7703a8f44f1002775ae6e355ed3a96d4fc7a59f4dc10dda4f2a7026c0cc9a1",
+      "dsl": "a90f26a77ba70df27238bdab7e6caff77153a5c6c967092a5c2a08f0310500ac",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "d4be220548f604254462c692c5816a62b60596f3a0e921abb9c18506de76c18d"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "90ea4ae3-1805-4081-88a5-63313052fb2a",
+      "source_proposal_id": "83ba358c-2bdc-4274-b483-44693e563eea",
+      "hypothesis_id": "ALPHA-20241215-001",
+      "title": "Neutral Regime Volatility Compression Breakout",
+      "category": "REGIME_EDGE",
+      "entry_conditions": [
+        "BTC in NEUTRAL regime for minimum 5 days",
+        "DEFCON level 4 or 5",
+        "Bollinger Band (20,2) Width < 0.02 for 5 consecutive days",
+        "Price closes outside Bollinger Bands (above upper or below lower)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Price returns inside Bollinger Bands",
+        "time_exit": "3 days if no regime transition",
+        "take_profit": "3 days after entry OR regime transition confirmed"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.004100022164733492,
+        "win_rate": 0.62,
+        "sharpe_ratio": 4.688703504606418,
+        "profit_factor": 2.0382560629781676,
+        "total_signals": 100,
+        "avg_return_bps": 148.08354273807146,
+        "max_drawdown_pct": 18.48145403063137,
+        "avg_holding_period_hours": 60.48
+      },
+      "confidence_score": 0.8852,
+      "state_hash_at_validation": "773aa53eb36bef4fbefec1664b0d8e0827ca59c0662491de49ece2e4a4de86cf",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:07:54.133164+01:00",
+      "created_at": "2025-12-16T19:07:54.133164+01:00"
+    },
+    {
+      "signal_id": "11c3daa9-f4ed-4fc7-83ae-bfd8907e49c2",
+      "source_proposal_id": "d304f904-b2a7-4fa7-a6bf-a32f05e81c26",
+      "hypothesis_id": "ALPHA-20241215-002",
+      "title": "Defensive Sector Divergence at Regime Boundaries",
+      "category": "CROSS_ASSET",
+      "entry_conditions": [
+        "NEUTRAL regime confirmed (confidence > 60%)",
+        "GLD 5-day return minus QQQ 5-day return > 3%",
+        "BTC daily RSI(14) between 40-60 (neutral zone)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "BTC enters RISK-ON regime (DEFCON 3-4)",
+        "time_exit": "120 hours after entry",
+        "take_profit": "BTC enters RISK-OFF regime (DEFCON 1-2)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.0009827063771477506,
+        "win_rate": 0.63,
+        "sharpe_ratio": 5.419525769239064,
+        "profit_factor": 2.2220649008579008,
+        "total_signals": 100,
+        "avg_return_bps": 197.44544999923545,
+        "max_drawdown_pct": 46.62854436481441,
+        "avg_holding_period_hours": 89.76
+      },
+      "confidence_score": 0.8888,
+      "state_hash_at_validation": "88c8d6b2578380f28d0d23b46bdaee5e9dc47f1c3018b466c4cc5b944b6801e0",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:07:56.309621+01:00",
+      "created_at": "2025-12-16T19:07:56.309621+01:00"
+    },
+    {
+      "signal_id": "e72e396e-2979-437e-975e-91c2bf53f394",
+      "source_proposal_id": "7c81f63e-fb4c-41f1-837c-b469b266aa29",
+      "hypothesis_id": "ALPHA-20241215-001",
+      "title": "Neutral Regime Compression Breakout Momentum",
+      "category": "REGIME_EDGE",
+      "entry_conditions": [
+        "BTC 5-day Bollinger Band width (20,2) < 20th percentile of 90-day rolling window",
+        "BTC closes outside Bollinger Bands (either direction)",
+        "Volume > 20-day SMA volume on breakout candle"
+      ],
+      "exit_conditions": {
+        "stop_loss": "2.5% loss from entry",
+        "time_exit": "72 hours after entry",
+        "take_profit": "5% gain from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.000600210563275142,
+        "win_rate": 0.58,
+        "sharpe_ratio": 5.65669623715122,
+        "profit_factor": 2.1960877774421816,
+        "total_signals": 100,
+        "avg_return_bps": 114.8991103668784,
+        "max_drawdown_pct": 13.054485443440043,
+        "avg_holding_period_hours": 48.48
+      },
+      "confidence_score": 0.8739,
+      "state_hash_at_validation": "e4a10ad64dc260679ab3d0c939453e0b23f25b191a04d33e6cea110a6e666326",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:08:05.851349+01:00",
+      "created_at": "2025-12-16T19:08:05.851349+01:00"
+    },
+    {
+      "signal_id": "c57720f8-bc19-407d-adee-2ddd88b07ab6",
+      "source_proposal_id": "4c5f128d-c567-4217-a24f-61bd335ff47b",
+      "hypothesis_id": "ALPHA-20241215-001",
+      "title": "Neutral Regime Compression Breakout Momentum",
+      "category": "REGIME_EDGE",
+      "entry_conditions": [
+        "BTC price has traded within +/-2.5% of 7-day midpoint for 7 consecutive days",
+        "Price breaks above/below consolidation range with volume >1.5x 20-day average",
+        "DEFCON remains at 4-5 (no elevated risk signals)",
+        "Break occurs during NY trading hours (9:30-16:00 EST)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "1.8% loss from entry",
+        "time_exit": "72 hours after entry",
+        "take_profit": "3.5% profit from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.004303964519535528,
+        "win_rate": 0.52,
+        "sharpe_ratio": 4.662520211347074,
+        "profit_factor": 1.8885287710456853,
+        "total_signals": 100,
+        "avg_return_bps": 71.31548718294964,
+        "max_drawdown_pct": 10.254485443440167,
+        "avg_holding_period_hours": 42.0
+      },
+      "confidence_score": 0.8551,
+      "state_hash_at_validation": "d3edba8994143f145cbd0fdb43411505c1ed262c74a2a2b95190738432361e8e",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:08:19.083985+01:00",
+      "created_at": "2025-12-16T19:08:19.083985+01:00"
+    },
+    {
+      "signal_id": "a548145a-b6d8-428c-b8fc-d1e30ccc4459",
+      "source_proposal_id": "6779d658-ece3-44d8-8bcc-16dc3e83bfbc",
+      "hypothesis_id": "ALPHA-20250415-001",
+      "title": "Neutral-to-Trend Regime Transition via Volatility Compression Breakout",
+      "category": "REGIME_EDGE",
+      "entry_conditions": [
+        "BTC daily close > Upper Bollinger Band (20,2)",
+        "Daily volume > 1.5 * 20-day average volume",
+        "ATR(14) < 0.8 * ATR(20) for 5+ consecutive days",
+        "Current regime = NEUTRAL",
+        "DEFCON = 5"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Close below 20-day SMA",
+        "time_exit": "5 days without regime change confirmation",
+        "take_profit": "7% gain from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.0007994292863122402,
+        "win_rate": 0.59,
+        "sharpe_ratio": 5.519641290870333,
+        "profit_factor": 2.1202016245360613,
+        "total_signals": 100,
+        "avg_return_bps": 176.53926893146237,
+        "max_drawdown_pct": 21.978926296219726,
+        "avg_holding_period_hours": 80.16
+      },
+      "confidence_score": 0.8768,
+      "state_hash_at_validation": "69fbed1ac517e32a5a3e52015e59ed1761c69af7b4fbeac793b3612d99bfb06c",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:08:20.693358+01:00",
+      "created_at": "2025-12-16T19:08:20.693358+01:00"
+    },
+    {
+      "signal_id": "df129e29-edc4-4e1c-9dd7-4b0da5505e1c",
+      "source_proposal_id": "f66d1d12-0cfa-4d95-b05a-62ee69bc33c1",
+      "hypothesis_id": "ALPHA-20250401-002",
+      "title": "Regime Transition Early Warning via Cross-Asset Divergence",
+      "category": "CROSS_ASSET",
+      "entry_conditions": [
+        "NEUTRAL regime confirmed (confidence > 60%)",
+        "BTC-SPX 20-day rolling correlation < 0.2",
+        "BTC-GOLD 20-day rolling correlation > 0.4",
+        "Divergence persists for 3 consecutive days",
+        "BTC volatility remains below 35% (no breakout yet)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Correlation convergence (BTC-SPX > 0.4 AND BTC-GOLD < 0.3)",
+        "time_exit": "5 trading days if no regime transition occurs",
+        "take_profit": "Position exited upon regime change confirmation (RISK_ON or RISK_OFF)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.0009827063771477506,
+        "win_rate": 0.63,
+        "sharpe_ratio": 5.419525769239064,
+        "profit_factor": 2.2220649008579008,
+        "total_signals": 100,
+        "avg_return_bps": 197.44544999923545,
+        "max_drawdown_pct": 46.62854436481441,
+        "avg_holding_period_hours": 89.76
+      },
+      "confidence_score": 0.8888,
+      "state_hash_at_validation": "ac48264626b194da1229f26cce5ecf058469bdb1d151f30b87fa11d4430d0d08",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T19:08:23.020286+01:00",
+      "created_at": "2025-12-16T19:08:23.020286+01:00"
+    }
+  ]
+}

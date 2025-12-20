@@ -1,0 +1,279 @@
+{
+  "metadata": {
+    "document_type": "TIERED_ROLLOUT_PLAN",
+    "version": "TRP-v1",
+    "authority": "CEO Directive 2026-FHQ-PHASE-3C",
+    "generated_at": "2025-12-10T16:45:00.000000+00:00",
+    "generated_by": "STIG",
+    "purpose": "Blueprint for Phase 4 implementation"
+  },
+  "smoke_test_context_lock": {
+    "validated_in_isolation": true,
+    "validated_under_load": false,
+    "validated_multi_agent_concurrency": false,
+    "validated_recursive_research_cycles": false
+  },
+  "tier_definitions": {
+    "tier_1_safe": {
+      "name": "Safe to Wrap First",
+      "criteria": ["Low risk score (1-3)", "Loose coupling", "Batch processing", "No timing sensitivity"],
+      "rollout_approach": "Direct instrumentation, standard monitoring"
+    },
+    "tier_2_controlled": {
+      "name": "Requires Controlled Burn-In",
+      "criteria": ["Medium risk score (4-6)", "Some downstream dependencies", "May have timing sensitivity"],
+      "rollout_approach": "Shadow mode first, compare telemetry vs baseline, then enable"
+    },
+    "tier_3_high_risk": {
+      "name": "High-Risk, Requires Shadow Wrapping",
+      "criteria": ["High risk score (7-8)", "Tight coupling", "Learning loop impact", "Execution sensitivity"],
+      "rollout_approach": "Dual-write mode: existing behavior + telemetry shadow, no fail-closed initially"
+    },
+    "tier_4_do_not_wrap": {
+      "name": "Do Not Wrap (Yet)",
+      "criteria": ["Critical risk score (9-10)", "Cognitive chain impact", "Model transition pending"],
+      "rollout_approach": "Defer until prerequisites resolved, requires CEO re-authorization"
+    }
+  },
+  "call_site_tier_assignment": {
+    "tier_1_safe": [],
+    "tier_2_controlled": [
+      {
+        "call_site_id": "CS-002",
+        "file": "finn_night_research_executor.py",
+        "risk_score": 6,
+        "justification": "Batch job in isolated time window. No concurrent callers. Retry logic exists.",
+        "pre_conditions": [
+          "Verify 02:00-06:00 UTC window has no other LLM callers",
+          "Ensure retry logic handles TelemetryWriteFailure",
+          "Baseline metrics captured for 3 nights before instrumentation"
+        ],
+        "post_wrap_monitoring": [
+          "telemetry_write_latency_ms",
+          "night_research_total_duration_change",
+          "fragility_score_distribution_shift",
+          "retry_count_increase"
+        ],
+        "rollback_triggers": [
+          "Night research fails to complete within 4-hour window",
+          "telemetry_write_latency > 500ms consistently",
+          "fragility_score mean shifts > 0.1 from baseline"
+        ],
+        "expected_side_effects": [
+          "15-45ms latency increase per CRIO call",
+          "New rows in llm_routing_log for night research"
+        ]
+      }
+    ],
+    "tier_3_high_risk": [
+      {
+        "call_site_id": "CS-001",
+        "file": "finn_deepseek_researcher.py",
+        "risk_score": 8,
+        "justification": "Primary CRIO engine. Imported by CS-002 and CS-010. Wrapping here affects multiple callers.",
+        "pre_conditions": [
+          "CS-002 successfully wrapped and stable for 48 hours",
+          "Shadow write mode tested: telemetry written but fail-closed disabled",
+          "Downstream handlers (CEIO, reward_traces) tested with NULL fragility tolerance"
+        ],
+        "post_wrap_monitoring": [
+          "crio_call_latency_distribution",
+          "fragility_score_output_consistency",
+          "concurrent_call_contention_events",
+          "fail_closed_trigger_count"
+        ],
+        "rollback_triggers": [
+          "fail_closed triggers > 1% of calls",
+          "fragility_score NULL rate > 5%",
+          "database contention errors detected",
+          "CEIO shadow cycle fails due to upstream NULL"
+        ],
+        "expected_side_effects": [
+          "All CRIO callers inherit telemetry overhead",
+          "Reward traces gain telemetry correlation",
+          "Potential concurrent call queueing"
+        ]
+      },
+      {
+        "call_site_id": "CS-010",
+        "file": "ceio_shadow_cycle_runner.py",
+        "risk_score": 7,
+        "justification": "CEIO learning loop. Timing affects reward computation. Inherits CS-001 instrumentation.",
+        "pre_conditions": [
+          "CS-001 instrumentation stable for 72 hours",
+          "Signal timestamp captured at decision point (not telemetry completion)",
+          "Reward trace timing verified against baseline"
+        ],
+        "post_wrap_monitoring": [
+          "shadow_position_entry_timestamp_drift",
+          "reward_trace_timing_correlation",
+          "ceio_learning_signal_distribution",
+          "shadow_pnl_variance_vs_baseline"
+        ],
+        "rollback_triggers": [
+          "Reward timing drift > 100ms consistently",
+          "Shadow P&L variance increases > 10%",
+          "CEIO learning metrics show bias accumulation"
+        ],
+        "expected_side_effects": [
+          "Shadow trades timestamped with telemetry overhead",
+          "Learning signal may have systematic timing bias if not mitigated"
+        ]
+      },
+      {
+        "call_site_id": "CS-006",
+        "file": "ios013_hcp_g4_runner.py",
+        "risk_score": 9,
+        "justification": "Live paper trading on 15-min cycles. Execution timing is market-sensitive.",
+        "pre_conditions": [
+          "Shadow mode: telemetry written but no fail-closed enforcement",
+          "Latency budget mechanism: flag when total_latency > 10 seconds",
+          "Market hours testing only (not overnight)",
+          "Alpaca API latency baseline established"
+        ],
+        "post_wrap_monitoring": [
+          "hcp_cycle_total_duration",
+          "pre_mortem_analysis_latency",
+          "position_entry_timestamp_vs_signal_timestamp",
+          "15_minute_boundary_slip_events"
+        ],
+        "rollback_triggers": [
+          "Cycle duration exceeds 14 minutes (approaching boundary)",
+          "Position entry slips into next candle > 3 times/day",
+          "Alpaca API errors correlate with telemetry writes"
+        ],
+        "expected_side_effects": [
+          "Pre-mortem analysis takes slightly longer",
+          "Potential 15-minute boundary edge cases during high volatility"
+        ]
+      }
+    ],
+    "tier_4_do_not_wrap": [
+      {
+        "call_site_id": "CS-003",
+        "file": "speciale_parser_wrapper.py",
+        "risk_score": 10,
+        "justification": "TIME-BOMB: Speciale expires 2025-12-15. Wrapping now would require handling model transition mid-instrumentation. Wait until post-expiry model stabilizes.",
+        "blocking_issues": [
+          "Model expiry in 5 days - instrumentation would span transition",
+          "Dual-call pattern (reasoning + formatting) requires special handling",
+          "Context injection layer dependency not yet telemetry-aware"
+        ],
+        "pre_conditions_for_future_wrap": [
+          "Speciale expiry passed (after 2025-12-15 16:00 UTC)",
+          "New model (deepseek-reasoner direct) validated in production",
+          "Context injection layer integrated with telemetry",
+          "Special handling for dual-call pattern designed"
+        ],
+        "estimated_defer_until": "2025-12-17 (48h post-expiry stabilization)"
+      },
+      {
+        "call_site_id": "CS-009",
+        "file": "orchestrator_daemon.py",
+        "risk_score": 10,
+        "justification": "Brain Bridge is critical path for alpha graph. BURN-IN MODE active with 500 calls/hour. Temporal skew risk is unacceptable during learning phase.",
+        "blocking_issues": [
+          "Highest call volume in system",
+          "Temporal skew would corrupt alpha graph edge timestamps",
+          "BURN-IN MODE requires stability for baseline establishment",
+          "Curiosity engine (Serper search) adds complexity"
+        ],
+        "pre_conditions_for_future_wrap": [
+          "BURN-IN MODE completed (CEO declares burn-in period over)",
+          "Alpha graph baseline established with known temporal characteristics",
+          "Async telemetry queue implemented (non-blocking writes)",
+          "Event timestamp captured BEFORE LLM call (not after)"
+        ],
+        "estimated_defer_until": "After BURN-IN completion + async telemetry implementation"
+      }
+    ]
+  },
+  "rollout_sequence": {
+    "phase_4a": {
+      "name": "Tier 2 - Night Research",
+      "duration": "48-72 hours",
+      "target": "CS-002 (finn_night_research_executor.py)",
+      "success_criteria": [
+        "3 successful night research cycles with telemetry",
+        "No fail-closed triggers",
+        "Latency increase < 50ms mean",
+        "Fragility scores within baseline distribution"
+      ]
+    },
+    "phase_4b": {
+      "name": "Tier 3 - CRIO Core",
+      "duration": "72-96 hours",
+      "target": "CS-001 (finn_deepseek_researcher.py)",
+      "depends_on": "Phase 4a success",
+      "success_criteria": [
+        "All CRIO callers (CS-002, CS-010) function correctly",
+        "Fail-closed rate < 1%",
+        "No database contention errors",
+        "Reward trace correlation preserved"
+      ]
+    },
+    "phase_4c": {
+      "name": "Tier 3 - CEIO Shadow",
+      "duration": "72 hours",
+      "target": "CS-010 (ceio_shadow_cycle_runner.py)",
+      "depends_on": "Phase 4b success",
+      "success_criteria": [
+        "Shadow position timing drift < 100ms",
+        "Reward trace quality unchanged",
+        "Shadow P&L variance within baseline"
+      ]
+    },
+    "phase_4d": {
+      "name": "Tier 3 - HCP G4 (Shadow Mode)",
+      "duration": "1 week (market hours only)",
+      "target": "CS-006 (ios013_hcp_g4_runner.py)",
+      "depends_on": "Phase 4c success",
+      "mode": "Shadow write only - fail-closed disabled",
+      "success_criteria": [
+        "No 15-minute boundary slips",
+        "Cycle duration stable",
+        "Paper trading performance unchanged"
+      ]
+    },
+    "phase_4e": {
+      "name": "Tier 4 - Speciale Post-Expiry",
+      "duration": "72 hours",
+      "target": "CS-003 (speciale_parser_wrapper.py)",
+      "depends_on": "Speciale expiry + 48h stabilization",
+      "earliest_start": "2025-12-17T16:00:00Z",
+      "success_criteria": [
+        "New model (deepseek-reasoner) stable",
+        "Dual-call handling works correctly",
+        "Context injection integrated"
+      ]
+    },
+    "phase_4f": {
+      "name": "Tier 4 - Brain Bridge",
+      "duration": "1 week",
+      "target": "CS-009 (orchestrator_daemon.py)",
+      "depends_on": "BURN-IN completion + async telemetry",
+      "earliest_start": "CEO declares burn-in over",
+      "success_criteria": [
+        "Alpha graph temporal integrity preserved",
+        "Async writes confirmed non-blocking",
+        "Event timestamps correct"
+      ]
+    }
+  },
+  "global_pre_conditions": [
+    "Phase 3b smoke test PASSED (verified)",
+    "fhq_telemetry module deployed to 03_FUNCTIONS",
+    "All target tables exist and have correct schema",
+    "LLMRouter singleton tested in isolation",
+    "Fail-closed behavior documented and understood by all agents"
+  ],
+  "global_rollback_protocol": {
+    "step_1": "Detect rollback trigger via monitoring",
+    "step_2": "STIG issues immediate PAUSE directive",
+    "step_3": "Disable @metered_execution at call site (remove decorator)",
+    "step_4": "Verify system behavior returns to baseline",
+    "step_5": "Root cause analysis",
+    "step_6": "VEGA governance review",
+    "step_7": "CEO re-authorization before retry"
+  }
+}

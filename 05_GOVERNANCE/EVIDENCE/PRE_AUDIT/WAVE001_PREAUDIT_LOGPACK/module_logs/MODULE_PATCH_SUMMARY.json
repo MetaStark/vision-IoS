@@ -1,0 +1,47 @@
+{
+  "extraction_timestamp": "2025-12-03T20:11:45.020269",
+  "modules": {
+    "IOS012_SYSTEM_LOOP": {
+      "patch_id": "W001-A",
+      "issue": "Unicode box-drawing character (U+2500) caused Windows encoding crash in print_summary()",
+      "fix_applied": "Replaced Unicode char at line 1036 with ASCII dashes",
+      "file": "ios012_g3_system_loop.py",
+      "pre_patch_behavior": "Crash on Windows with UnicodeEncodeError when logging to non-UTF8 console",
+      "post_patch_behavior": "Deterministic ASCII output, no encoding exceptions",
+      "verification": "Check cycle_logs/IOS012_CYCLE_*_POST_PATCH.json for successful completion"
+    },
+    "HMM_BACKFILL_V1": {
+      "patch_id": "W001-B",
+      "issue": "DataFrame index mismatch with numpy array indices during regime prediction",
+      "fix_applied": "Added reset_index(drop=True) and enumerate() at line 628-631",
+      "file": "hmm_backfill_v1.py",
+      "pre_patch_behavior": "IndexError: index N is out of bounds for axis 0 with size M",
+      "post_patch_behavior": "Correct array alignment, deterministic regime predictions",
+      "verification": "Check module_logs/HMM_BACKFILL_EVIDENCE_*.json for successful predictions"
+    },
+    "IOS013_HCP_G3_RUNNER": {
+      "patch_id": "W001-C",
+      "issue": "No error handling for init failures caused hard crash on DB/import errors",
+      "fix_applied": "Added graceful error handling with deterministic exit codes (2=dependency, 3=db, 130=SIGINT)",
+      "file": "ios013_hcp_g3_runner.py",
+      "pre_patch_behavior": "Unhandled exception on DB connection failure, no cleanup",
+      "post_patch_behavior": "Graceful halt with appropriate exit code and status message",
+      "verification": "Check module_logs/IOS013_HCP_SESSION_*.json for proper shutdown"
+    },
+    "CALC_INDICATORS_V1": {
+      "patch_id": "W001-D",
+      "issue": "O(n^2) row-by-row .loc access causing 300s timeout",
+      "fix_applied": "Vectorized all 4 persist functions with DataFrame merge + page_size=1000 batching",
+      "file": "calc_indicators_v1.py",
+      "lines_modified": [
+        230,
+        284,
+        351,
+        405
+      ],
+      "pre_patch_behavior": "Timeout after 300s on large datasets, OOM on continuous load",
+      "post_patch_behavior": "Sub-60s completion, constant memory usage",
+      "verification": "Monitor execution time in governance_actions_log"
+    }
+  }
+}

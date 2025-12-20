@@ -1,0 +1,139 @@
+{
+  "evidence_type": "PATCH_REPORT",
+  "evidence_id": "STIG-CI-20251209-PATCH",
+  "issued_at": "2025-12-09T00:10:30.000Z",
+  "directive_reference": "CI-20251209",
+  "directive_title": "CEO DIRECTIVE - Context Injection Layer",
+  "classification": "IMMEDIATE MANDATE",
+
+  "violation_corrected": {
+    "original_issue": "DeepSeek attempted to reason using training cut-off instead of system state",
+    "root_cause": "Missing Context Injection - ADR-020 Section 3.2 (InForage) + 3.3 (IKEA) violation",
+    "mock_data_purged": true,
+    "mock_records_deleted": {
+      "episodic_memory": 1,
+      "embedding_store": 2
+    }
+  },
+
+  "files_created": [
+    {
+      "file": "03_FUNCTIONS/context_injection_layer.py",
+      "purpose": "Mandatory context injection for all LLM calls",
+      "components": [
+        "ContextRetriever class",
+        "SystemContext dataclass",
+        "context_minimum_viability_check()",
+        "build_contextualized_prompt()",
+        "log_governance_discrepancy()"
+      ]
+    },
+    {
+      "file": "03_FUNCTIONS/line_live_snapshot.py",
+      "purpose": "LINE agent live market snapshot from canonical store",
+      "components": [
+        "fetch_canonical_prices()",
+        "determine_regime_from_data()",
+        "store_live_snapshot()"
+      ]
+    },
+    {
+      "file": "scripts/proof_of_life_v2.py",
+      "purpose": "Context-aware proof of life test",
+      "components": [
+        "execute_contextualized_reasoning()",
+        "verify_context_awareness()"
+      ]
+    }
+  ],
+
+  "files_patched": [
+    {
+      "file": "03_FUNCTIONS/speciale_parser_wrapper.py",
+      "changes": [
+        "Added CI-20251209 directive header",
+        "Imported context_injection_layer components",
+        "Added require_context flag to SpecialeParserWrapper",
+        "Modified reason_and_format() to auto-inject context",
+        "Added skip_context_injection override parameter"
+      ]
+    }
+  ],
+
+  "context_block_specification": {
+    "market_clock": {
+      "fields": ["current_datetime", "time_since_last_event_seconds", "market_session"],
+      "source": "LINE"
+    },
+    "market_state": {
+      "fields": ["btc_price", "eth_price", "usd_nok", "current_regime", "perception_summary"],
+      "source": "fhq_market.prices + fhq_meta.regime_state"
+    },
+    "memory_context": {
+      "fields": ["last_episodic_memory", "permanent_causal_truths", "semantic_hits"],
+      "source": "fhq_memory.episodic_memory + fhq_memory.embedding_store"
+    },
+    "event_context": {
+      "fields": ["recent_events (max 3)"],
+      "source": "fhq_governance.system_events"
+    }
+  },
+
+  "viability_check_requirements": {
+    "mandatory_fields": ["timestamp", "price", "regime", "memory_snapshot", "events"],
+    "missing_action": "BLOCK call + log governance discrepancy (severity=MEDIUM)"
+  },
+
+  "proof_of_life_v2_results": {
+    "api_call_success": true,
+    "model_used": "deepseek-v3.2-speciale",
+    "thinking_mode_active": true,
+    "context_injected": true,
+    "context_hash": "f8afcb07c8e437d2",
+    "context_viable": true,
+    "context_awareness_checks": {
+      "begins_with_context": true,
+      "references_btc_price": true,
+      "references_regime": true,
+      "no_training_cutoff": true,
+      "no_knowledge_limitation": true
+    },
+    "context_awareness_score": "5/5",
+    "token_usage": {
+      "prompt_tokens": 548,
+      "completion_tokens": 1595,
+      "reasoning_tokens": 1128,
+      "total_tokens": 2143
+    }
+  },
+
+  "real_data_used": {
+    "btc_price": 89490.00,
+    "eth_price": 3048.48,
+    "regime": "BULL",
+    "regime_confidence": 0.75,
+    "data_source": "fhq_market.prices (canonical)",
+    "data_timestamp": "2025-12-07T23:00:00Z"
+  },
+
+  "attestation": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "contract": "EC-003_2026_PRODUCTION",
+    "statement": "Context Injection Layer CI-20251209 implemented. All mock data purged. Real canonical data used. Proof of Life V2 passed with 5/5 context awareness checks. DeepSeek now reasons from system state, not training data."
+  },
+
+  "ceo_success_criteria_verification": {
+    "deepseek_cites_btc_price": "PASSED - Referenced $89,490",
+    "deepseek_references_regime": "PASSED - Referenced BULL regime",
+    "no_training_cutoff_mention": "PASSED - No training data references",
+    "begins_with_given_context": "PASSED - Response starts with 'Given the provided context...'"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-STIG-CI-20251209-PATCH",
+    "parent_chains": [
+      "HC-ARO-20251208-IGNITION-AMENDED"
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "evidence_id": "IOS005-G2-GOVERNANCE-20251130005848",
+  "evidence_type": "G2_GOVERNANCE_REVIEW",
+  "module": "IoS-005",
+  "generated_at": "2025-11-30T00:58:48.846469",
+  "generated_by": "VEGA",
+  "authority": [
+    "ADR-001",
+    "ADR-003",
+    "ADR-011",
+    "ADR-004"
+  ],
+  "auditor_certification": {
+    "subject": "IoS-005",
+    "sovereign_auditor_check": {
+      "status": "COMPLIANT",
+      "reads_from": [
+        "fhq_market",
+        "fhq_research",
+        "fhq_positions"
+      ],
+      "writes_to": [
+        "fhq_analytics"
+      ],
+      "execution_schema_access": false,
+      "rationale": "IoS-005 has NO WRITE ACCESS to fhq_positions, fhq_orders, or fhq_execution. Separation of concerns maintained per ADR-013."
+    },
+    "one_true_source_check": {
+      "status": "LINEAGE_VALID",
+      "lineage_hash": "3036bc9093175844d44f1e8662775f1dff8e752f0e368fa33d9af9578f9663ce",
+      "data_hash": "f19b7993b44abc3c_195ba80ba4920f50",
+      "source_parity": {
+        "fhq_research.regime_predictions_v2": 10103,
+        "fhq_positions.target_exposure_daily": 10103
+      },
+      "rationale": "All G1 audit inputs originated from canonical sources. Hash chain integrity verified."
+    },
+    "certification_status": "CERTIFIED",
+    "certification_rationale": "IoS-005 Forecast Calibration & Skill Engine is compliant with all governance requirements. The audit engine operates as a non-interfering observer with read-only access to canonical data and write access only to analytics schema."
+  },
+  "strategy_adjudication": {
+    "subject": "IoS-004",
+    "g1_findings": {
+      "actual_sharpe": 2.6113,
+      "actual_sortino": 3.2277,
+      "actual_calmar": 6.4726,
+      "p_value_bootstrap": 0.501,
+      "p_value_permutation": 0.173,
+      "calibration_status": "WARNING: STRATEGY_NOT_SIGNIFICANT",
+      "n_trading_days": 2058,
+      "data_range": "2020-04-11 to 2025-11-28"
+    },
+    "lars_recommendation": {
+      "classification": "EXPERIMENTAL",
+      "risk_multiplier": 0.5,
+      "rationale": "p > 0.05 indicates strategy performance cannot be statistically distinguished from randomness"
+    },
+    "vega_decision": {
+      "classification": "EXPERIMENTAL",
+      "risk_multiplier": 0.5,
+      "capital_mode": "PRESERVATION",
+      "rationale": "VEGA concurs with LARS recommendation. IoS-004 demonstrates strong absolute performance (Sharpe 2.61) but lacks statistical proof of skill (p_bootstrap=0.501, p_permutation=0.173). Per IoS-005 Expected Null Result Regime clause, this is scientifically expected. Strategy is classified as EXPERIMENTAL with 0.5x risk multiplier until p < 0.05 is achieved across both bootstrap and permutation tests.",
+      "conditions": [
+        "Capital allocation risk-weighted at 0.5x",
+        "Quarterly re-evaluation required",
+        "Out-of-sample validation required before upgrade to PROVEN",
+        "VEGA review mandatory if p < 0.05 achieved"
+      ]
+    }
+  },
+  "risk_determination": {
+    "risk_multiplier": 0.5,
+    "risk_tier": "EXPERIMENTAL",
+    "capital_mode": "PRESERVATION",
+    "max_allocation_pct": 50.0,
+    "rebalance_frequency": "QUARTERLY",
+    "escalation_trigger": "p < 0.05 on both bootstrap and permutation",
+    "downgrade_trigger": "Sharpe < 1.0 rolling 12-month"
+  },
+  "verdict": {
+    "ios_005_attestation": "PASS",
+    "ios_004_classification": "EXPERIMENTAL",
+    "overall_status": "PASS_WITH_CONDITIONS",
+    "conditions": [
+      "IoS-004 tagged as EXPERIMENTAL in fhq_meta.ios_registry",
+      "Risk multiplier 0.5x enforced for capital allocation",
+      "Quarterly scientific re-audit required",
+      "VEGA review mandatory upon significance achievement"
+    ]
+  },
+  "hash_chain_id": "HC-IOS-005-2026",
+  "g1_evidence_hash": "53cc174b0760f0b2ad2d99f9d5a5a2202ebe084e374fe9f2e3f622de0f5feafc",
+  "hash_self": "f06ae7d5febaf05ac2fd1a6aececaa0f1c85758fb664a5bfbd8aff9522bd3012"
+}

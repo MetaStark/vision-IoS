@@ -1,0 +1,223 @@
+{
+  "directive": "OPERATION CAUSAL ENTROPY - TASK E G2",
+  "document": "SHOCK_TAXONOMY_INTEGRATION_G2",
+  "status": "INTEGRATED",
+  "executor": "CRIO (Research Ops)",
+  "support": "CEIO (External Intel)",
+  "contracts": ["EC-013", "EC-009"],
+  "timestamp_utc": "2025-12-09T14:35:00Z",
+  "gate": "G2",
+
+  "shock_integration_summary": {
+    "shock_classes_integrated": 4,
+    "shock_signature_nodes_created": 4,
+    "detection_rules_mapped": 4,
+    "macro_node_bindings": 15,
+    "runtime_propagation": false,
+    "ios003_impact": "NONE",
+    "ios004_impact": "NONE"
+  },
+
+  "shock_signatures_integrated": [
+    {
+      "shock_id": "SHOCK_LIQUIDITY",
+      "shock_type": "SHOCK_LIQUIDITY",
+      "description": "Net Liquidity contraction exceeding 2 sigma within 5 trading days",
+      "primary_indicator": "MACRO_NET_LIQ",
+      "secondary_indicators": ["MACRO_RRP", "MACRO_TGA", "MACRO_FED_BS"],
+      "lookback_window_days": 5,
+      "baseline_period_days": 252,
+
+      "severity_thresholds": {
+        "MINOR": {"zscore_low": -2.0, "zscore_high": -2.5, "confidence": 0.6},
+        "MODERATE": {"zscore_low": -2.5, "zscore_high": -3.0, "confidence": 0.75},
+        "SEVERE": {"zscore_low": -3.0, "zscore_high": -4.0, "confidence": 0.85},
+        "EXTREME": {"zscore_low": -4.0, "zscore_high": null, "confidence": 0.95}
+      },
+
+      "detection_algorithm": {
+        "deterministic": true,
+        "formula": "zscore = (net_liq_5d_change) / rolling_std_252d",
+        "trigger": "zscore < -2.0",
+        "pseudocode": "shock_detected = (net_liq_change / rolling_std) < -2.0"
+      },
+
+      "override_logic": {
+        "condition": "VIX < 20",
+        "action": "DOWNGRADE_SEVERITY",
+        "rationale": "Low VIX suggests market not pricing liquidity stress"
+      },
+
+      "macro_node_bindings": ["MACRO_NET_LIQ", "MACRO_RRP", "MACRO_TGA", "MACRO_FED_BS"],
+      "priority_rank": 4,
+      "g2_integrated": true
+    },
+    {
+      "shock_id": "SHOCK_RATES",
+      "shock_type": "SHOCK_RATES",
+      "description": "10Y Treasury yield change exceeding 15 basis points in 24 hours",
+      "primary_indicator": "US10Y",
+      "secondary_indicators": ["MACRO_MOVE", "MACRO_10Y2Y", "MACRO_BE10Y"],
+      "lookback_window_days": 1,
+      "baseline_period_days": 60,
+
+      "severity_thresholds": {
+        "MINOR": {"bps_low": 15, "bps_high": 20, "confidence": 0.6},
+        "MODERATE": {"bps_low": 20, "bps_high": 30, "confidence": 0.75},
+        "SEVERE": {"bps_low": 30, "bps_high": 50, "confidence": 0.85},
+        "EXTREME": {"bps_low": 50, "bps_high": null, "confidence": 0.95}
+      },
+
+      "detection_algorithm": {
+        "deterministic": true,
+        "formula": "bps_change = (US10Y[t] - US10Y[t-1]) * 100",
+        "trigger": "abs(bps_change) > 15",
+        "pseudocode": "shock_detected = abs(yield_change_bps) > 15"
+      },
+
+      "override_logic": {
+        "condition": "Fed announcement day",
+        "action": "FLAG_EXPECTED_VOLATILITY",
+        "rationale": "Scheduled events have different market absorption characteristics"
+      },
+
+      "macro_node_bindings": ["MACRO_MOVE", "MACRO_10Y2Y", "MACRO_BE10Y", "MACRO_BE5Y"],
+      "priority_rank": 3,
+      "g2_integrated": true
+    },
+    {
+      "shock_id": "SHOCK_VOLATILITY",
+      "shock_type": "SHOCK_VOLATILITY",
+      "description": "VIX increase exceeding 5 points in 24 hours",
+      "primary_indicator": "MACRO_VIX",
+      "secondary_indicators": ["MACRO_MOVE", "MACRO_GVZ", "MACRO_HY_OAS"],
+      "lookback_window_days": 1,
+      "baseline_period_days": 252,
+
+      "severity_thresholds": {
+        "MINOR": {"vix_change_low": 5, "vix_change_high": 8, "confidence": 0.6},
+        "MODERATE": {"vix_change_low": 8, "vix_change_high": 12, "confidence": 0.75},
+        "SEVERE": {"vix_change_low": 12, "vix_change_high": 20, "confidence": 0.85},
+        "EXTREME": {"vix_change_low": 20, "vix_change_high": null, "confidence": 0.95}
+      },
+
+      "detection_algorithm": {
+        "deterministic": true,
+        "formula": "vix_change = VIX[t] - VIX[t-1]",
+        "trigger": "(vix_change > 5) OR (VIX > 30 AND vix_change > 3)",
+        "pseudocode": "shock_detected = (vix_change > 5) OR (vix_level > 30 AND vix_change > 3)"
+      },
+
+      "override_logic": {
+        "condition": "SPY intraday range < 1%",
+        "action": "FLAG_FUTURES_DRIVEN",
+        "rationale": "VIX spike without equity follow-through may be hedging flow"
+      },
+
+      "macro_node_bindings": ["MACRO_VIX", "MACRO_MOVE", "MACRO_GVZ"],
+      "priority_rank": 1,
+      "g2_integrated": true
+    },
+    {
+      "shock_id": "SHOCK_CREDIT",
+      "shock_type": "SHOCK_CREDIT",
+      "description": "High Yield OAS widening exceeding 30 basis points in 5 trading days",
+      "primary_indicator": "MACRO_HY_OAS",
+      "secondary_indicators": ["MACRO_VIX", "MACRO_10Y2Y"],
+      "lookback_window_days": 5,
+      "baseline_period_days": 252,
+
+      "severity_thresholds": {
+        "MINOR": {"oas_change_low": 30, "oas_change_high": 50, "confidence": 0.6},
+        "MODERATE": {"oas_change_low": 50, "oas_change_high": 80, "confidence": 0.75},
+        "SEVERE": {"oas_change_low": 80, "oas_change_high": 120, "confidence": 0.85},
+        "EXTREME": {"oas_change_low": 120, "oas_change_high": null, "confidence": 0.95}
+      },
+
+      "detection_algorithm": {
+        "deterministic": true,
+        "formula": "oas_change = HY_OAS[t] - HY_OAS[t-5]",
+        "trigger": "oas_change > 30",
+        "pseudocode": "shock_detected = oas_5d_change > 30"
+      },
+
+      "override_logic": {
+        "condition": "VIX < 18",
+        "action": "FLAG_IDIOSYNCRATIC",
+        "rationale": "Credit stress without vol spike may be sector-specific"
+      },
+
+      "macro_node_bindings": ["MACRO_HY_OAS", "MACRO_VIX", "MACRO_10Y2Y"],
+      "priority_rank": 2,
+      "g2_integrated": true
+    }
+  ],
+
+  "multi_shock_handling": {
+    "compound_formula": "compound_severity = max(severities) + 0.5 * sum(others)",
+    "severity_cap": "EXTREME",
+    "priority_order": ["SHOCK_VOLATILITY", "SHOCK_CREDIT", "SHOCK_RATES", "SHOCK_LIQUIDITY"],
+    "conflicting_signal_resolution": "Primary signal takes precedence"
+  },
+
+  "propagation_firewall": {
+    "status": "ACTIVE",
+    "blocked_targets": [
+      "IoS-003 Regime Perception",
+      "IoS-004 Allocation Engine",
+      "IoS-005 Skill Measurement",
+      "IoS-008 Decision Loop"
+    ],
+    "reason": "Warmup window active until 2025-12-11 12:00 UTC",
+    "manual_override_required": true
+  },
+
+  "current_shock_status": {
+    "assessment_date": "2025-12-09",
+    "SHOCK_LIQUIDITY": {
+      "status": "MONITORING",
+      "current_zscore": -1.2,
+      "triggered": false
+    },
+    "SHOCK_RATES": {
+      "status": "CLEAR",
+      "last_1d_change_bps": 3,
+      "triggered": false
+    },
+    "SHOCK_VOLATILITY": {
+      "status": "CLEAR",
+      "vix_level": 14.2,
+      "triggered": false
+    },
+    "SHOCK_CREDIT": {
+      "status": "CLEAR",
+      "oas_level": 340,
+      "triggered": false
+    }
+  },
+
+  "ceio_annotations": {
+    "geopolitical_overlay": "MODERATE - Middle East tensions, policy uncertainty",
+    "narrative_watch": [
+      "Fed pivot speculation",
+      "AI capex sustainability",
+      "China stimulus effectiveness"
+    ],
+    "risk_assessment": "Low shock probability in near term, liquidity requires monitoring"
+  },
+
+  "governance_compliance": {
+    "schema_isolation": "COMPLIANT - fhq_macro.shock_signatures only",
+    "warmup_firewall": "ACTIVE",
+    "runtime_propagation": false,
+    "ios003_write": false,
+    "ios004_write": false,
+    "audit_logged": true
+  },
+
+  "signatures": {
+    "crio_signature": "CRIO.shock_taxonomy_integration_g2",
+    "ceio_signature": "CEIO.shock_annotation_g2",
+    "attestation": "TASK E G2 complete. 4 shock signatures integrated into fhq_macro.shock_signatures. Detection rules mapped with deterministic algorithms. Propagation firewall ACTIVE - no runtime impact on IoS-003/004/005/008. Current market: No active shocks detected."
+  }
+}

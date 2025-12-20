@@ -1,0 +1,219 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE6-SITC-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "IMPLEMENTED",
+
+  "title": "ACI Wave 6: SitC Planner Activation",
+  "summary": "EC-020 Search-in-the-Chain Planner activated as Cognitive Orchestration Layer",
+
+  "directive_reference": {
+    "original_directive": "CEO DIRECTIVE: SITC PLANNER ACTIVATION - CONTROLLED DEPLOYMENT (WAVE 6)",
+    "date_received": "2025-12-17",
+    "execution_order": "Sequential: Create -> Wire -> Evidence -> Attest"
+  },
+
+  "role_classification": {
+    "component": "EC-020 SitC",
+    "tier": "Tier-2 Cognitive Orchestration Engine",
+    "roles": [
+      "Cognitive Orchestration Layer",
+      "Evidence Generator",
+      "Chain-of-Query Planner"
+    ],
+    "parent_executive": "LARS (Logic, Analytics & Research Strategy)"
+  },
+
+  "explicit_prohibitions": {
+    "status": "ENFORCED_IN_CODE",
+    "prohibitions": [
+      {
+        "prohibition": "Writing to canonical schemas",
+        "enforcement": "MITQuadViolation exception",
+        "evidence": "ios020_sitc_planner.py:75-81"
+      },
+      {
+        "prohibition": "Mutating IKEA or InForage behavior",
+        "enforcement": "No setter/mutation interfaces provided",
+        "evidence": "Code review - read-only access only"
+      },
+      {
+        "prohibition": "Promoting outputs beyond fhq_meta without G0-G4",
+        "enforcement": "Schema boundary enforcement",
+        "evidence": "ALLOWED_WRITE_SCHEMAS = ['fhq_meta']"
+      },
+      {
+        "prohibition": "Triggering execution",
+        "enforcement": "No execution interfaces",
+        "evidence": "No methods access fhq_execution.* or broker APIs"
+      },
+      {
+        "prohibition": "Triggering learning updates",
+        "enforcement": "No learning_proposals access",
+        "evidence": "No methods write to fhq_governance.learning_proposals"
+      },
+      {
+        "prohibition": "Altering thresholds or priors directly",
+        "enforcement": "Read-only access to engine configs",
+        "evidence": "No parameter mutation methods"
+      }
+    ]
+  },
+
+  "implementation_mandates": {
+    "mandate_i_asrp_state_binding": {
+      "requirement": "All artifacts embed state_snapshot_hash and timestamp",
+      "status": "IMPLEMENTED",
+      "implementation": {
+        "helper_function": "get_asrp_state(conn)",
+        "binding_targets": ["ChainNode", "ResearchPlan", "VerificationResult"],
+        "code_location": "ios020_sitc_planner.py:192-223"
+      }
+    },
+    "mandate_ii_defcon_supremacy": {
+      "requirement": "Subordinate to DEFCON state, RED/BLACK prevents instantiation",
+      "status": "IMPLEMENTED",
+      "implementation": {
+        "helper_function": "check_defcon_state(conn)",
+        "exception_class": "DEFCONViolation",
+        "code_location": "ios020_sitc_planner.py:154-185"
+      }
+    },
+    "mandate_iii_economic_safety": {
+      "requirement": "RuntimeEconomicGuardian.check_or_fail() on SEARCH/VERIFICATION",
+      "status": "IMPLEMENTED",
+      "implementation": {
+        "guardian_class": "RuntimeEconomicGuardian",
+        "exception_class": "RuntimeEconomicViolation",
+        "code_location": "ios020_sitc_planner.py:101-142"
+      }
+    },
+    "mandate_iv_role_isolation": {
+      "requirement": "Write only to fhq_meta, MITQuadViolation on breach",
+      "status": "IMPLEMENTED",
+      "implementation": {
+        "allowed_schemas": ["fhq_meta"],
+        "enforcement_function": "enforce_schema_boundary()",
+        "exception_class": "MITQuadViolation",
+        "code_location": "ios020_sitc_planner.py:67-81"
+      }
+    }
+  },
+
+  "mandatory_interfaces": {
+    "create_research_plan": {
+      "signature": "create_research_plan(hypothesis: str) -> ResearchPlan",
+      "purpose": "Decompose hypothesis into Chain-of-Query nodes",
+      "status": "IMPLEMENTED",
+      "code_location": "ios020_sitc_planner.py:399-473"
+    },
+    "verify_node": {
+      "signature": "verify_node(node: ChainNode) -> VerificationResult",
+      "purpose": "Verify node using IKEA + InForage",
+      "status": "IMPLEMENTED",
+      "code_location": "ios020_sitc_planner.py:527-592"
+    },
+    "revise_plan": {
+      "signature": "revise_plan(node: ChainNode, new_evidence: Any) -> List[ChainNode]",
+      "purpose": "Dynamically revise plan based on new evidence",
+      "status": "IMPLEMENTED",
+      "code_location": "ios020_sitc_planner.py:598-651"
+    },
+    "log_chain": {
+      "signature": "log_chain(nodes: List[ChainNode])",
+      "purpose": "Log to fhq_meta.chain_of_query",
+      "status": "IMPLEMENTED",
+      "code_location": "ios020_sitc_planner.py:657-718"
+    }
+  },
+
+  "wiring_authorization": {
+    "authorized_integrations": [
+      {
+        "target": "FINN cognitive cycle",
+        "mode": "research planning only",
+        "status": "IMPLEMENTED",
+        "code_location": "finn_cognitive_brain.py:663-697"
+      },
+      {
+        "target": "EC-018 hypothesis validation",
+        "mode": "verification only",
+        "status": "NOT_WIRED (Phase 2)"
+      }
+    ],
+    "prohibited_integrations": [
+      "LINE execution engine (no direct execution)",
+      "Alpaca Paper adapter (no broker access)",
+      "Learning feedback pipeline (no learning trigger)"
+    ]
+  },
+
+  "artifacts_created": {
+    "implementation_file": {
+      "path": "03_FUNCTIONS/ios020_sitc_planner.py",
+      "lines": 838,
+      "created_at": "2025-12-17"
+    },
+    "evidence_bundle": {
+      "path": "05_GOVERNANCE/PHASE3/VEGA_EC020_SITC_EVIDENCE_BUNDLE_20251217.json",
+      "created_at": "2025-12-17"
+    },
+    "governance_artifact": {
+      "path": "05_GOVERNANCE/PHASE3/CD_ACI_WAVE6_SITC_ACTIVATION_20251217.json",
+      "created_at": "2025-12-17"
+    }
+  },
+
+  "integration_modifications": {
+    "finn_cognitive_brain.py": {
+      "import_added": "lines 82-91 (SitCPlanner, exceptions)",
+      "instance_variable": "lines 311-313 (_sitc_planner)",
+      "lazy_property": "lines 491-515 (sitc_planner property)",
+      "cognitive_cycle": "lines 663-697 (research planning integration)",
+      "cleanup": "lines 358-363 (close SitC planner)"
+    }
+  },
+
+  "validation_status": {
+    "g0_submission": "COMPLETE (this document)",
+    "g1_technical_validation": "READY_FOR_VEGA",
+    "g2_oversight": "PENDING",
+    "g3_audit": "PENDING",
+    "g4_constitutional": "PENDING"
+  },
+
+  "stop_conditions_monitored": [
+    "MITQuadViolation exception triggered",
+    "DEFCONViolation exception triggered",
+    "RuntimeEconomicViolation exception triggered",
+    "Any write attempt to canonical schemas"
+  ],
+
+  "execution_order_completed": [
+    {
+      "step": 1,
+      "action": "Create ios020_sitc_planner.py",
+      "status": "COMPLETE"
+    },
+    {
+      "step": 2,
+      "action": "Wire into FINN (planner-only)",
+      "status": "COMPLETE"
+    },
+    {
+      "step": 3,
+      "action": "Produce VEGA evidence bundle",
+      "status": "COMPLETE"
+    },
+    {
+      "step": 4,
+      "action": "Request G1 attestation",
+      "status": "READY"
+    }
+  ],
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}

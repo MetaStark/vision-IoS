@@ -1,0 +1,157 @@
+{
+  "document_type": "CODE_FREEZE_REGISTRY",
+  "registry_id": "FREEZE-G2-EC018-EC020-20251217",
+  "classification": "GOVERNANCE-CRITICAL",
+  "authority": "CEO Directive CD-G1-G2-WAVE12-20251217",
+  "date_issued": "2025-12-17",
+  "effective_immediately": true,
+
+  "freeze_context": {
+    "phase": "G1-to-G2 Transition",
+    "trigger": "Wave 11.1 Remediation Success",
+    "purpose": "Preserve exact system state that passed Wave 11.1 for G2 audit",
+    "scope": "EC-018/EC-020 cognitive stack core modules"
+  },
+
+  "frozen_files": {
+    "ec018_alpha_daemon.py": {
+      "full_path": "03_FUNCTIONS/ec018_alpha_daemon.py",
+      "sha256": "195e2d16e1abd99f196abf5ebb2612a3b4ef43ca8316958531b55a33b535fdfd",
+      "size_bytes": 70852,
+      "lines": 1739,
+      "component": "EC-018 Alpha Daemon",
+      "description": "Alpha Daemon core logic - hypothesis generation, causal inference, Live Price Witness precondition, G2 evidentiary reporting",
+      "freeze_timestamp": "2025-12-17T21:50:00Z",
+      "amendment_history": [
+        {
+          "amendment_id": "AMEND-001",
+          "previous_hash": "05f9f508bc508569587aeccb64f49cffcb3b719bfa20e46ad2998d8a596be47f",
+          "new_hash": "f3a078d8601b8809da672abc0862b1fb37c1c952fcbdb36436e3b8827408eff7",
+          "amendment_timestamp": "2025-12-17T20:30:00Z",
+          "authorization": "CEO DIRECTIVE: EC-018 LIVE PRICE PRECONDITION",
+          "authorization_ref": "CD-EC018-LIVE-PRICE-PRECONDITION-20251217",
+          "classification": "CONSTITUTIONAL_REMEDIATION",
+          "changes": [
+            "Added LivePriceWitness class",
+            "Added MAX_WITNESS_AGE_MINUTES = 30 constant",
+            "Added _verify_live_price_precondition() method",
+            "Added blocking precondition in run_hunt()"
+          ],
+          "reason": "Wave 12 INCONCLUSIVE root cause remediation - stale price data prevented EQS evaluation",
+          "vega_attestation_required": true
+        },
+        {
+          "amendment_id": "AMEND-002",
+          "previous_hash": "f3a078d8601b8809da672abc0862b1fb37c1c952fcbdb36436e3b8827408eff7",
+          "new_hash": "195e2d16e1abd99f196abf5ebb2612a3b4ef43ca8316958531b55a33b535fdfd",
+          "amendment_timestamp": "2025-12-17T21:50:00Z",
+          "authorization": "CEO DIRECTIVE: AMEND-002 G2 CONDITIONAL UNFREEZE FOR REPORTING CONTRACT REMEDIATION",
+          "authorization_ref": "CD-AMEND-002-G2-REPORTING-20251217",
+          "classification": "REPORTING_OBSERVABILITY",
+          "changes": [
+            "Added sitc_validations to run_hunt() return payload",
+            "Propagates already-computed EQS scores for G2 governance examination",
+            "NO cognitive/scoring logic modified - purely observational"
+          ],
+          "reason": "Data contract mismatch between EC-018 return structure and Wave 12 framework expectations. EQS was being calculated correctly but not exposed in return payload.",
+          "scope_constraints": [
+            "NO modification to EQS thresholds",
+            "NO modification to SitC scoring logic",
+            "NO modification to stress detection",
+            "NO modification to confidence envelopes",
+            "NO modification to learning behavior",
+            "NO modification to execution logic",
+            "NO modification to canonical persistence behavior"
+          ],
+          "vega_attestation_required": true
+        }
+      ]
+    },
+    "ios020_sitc_planner.py": {
+      "full_path": "03_FUNCTIONS/ios020_sitc_planner.py",
+      "sha256": "2fb7e4ac9db8d076fd204bb752f2d961516f8c99ee33a0eb4c457d4540c41fa0",
+      "size_bytes": 87739,
+      "lines": 2170,
+      "component": "EC-020 SitC Planner",
+      "description": "SitC Planner logic - chain-of-query, confidence evaluation, EQS scoring",
+      "freeze_timestamp": "2025-12-17T19:30:00Z"
+    },
+    "wave11_acceptance_framework.py": {
+      "full_path": "03_FUNCTIONS/wave11_acceptance_framework.py",
+      "sha256": "e62913914347224f59a083ec0aec82fd4d780447e791a6ecdd3f098761b773e4",
+      "size_bytes": 28089,
+      "lines": 777,
+      "component": "Wave 11 Acceptance Framework",
+      "description": "Wave 11 acceptance testing framework - precondition validation, batch execution",
+      "freeze_timestamp": "2025-12-17T19:30:00Z"
+    }
+  },
+
+  "freeze_scope": {
+    "includes": [
+      "Inference parameters",
+      "Thresholds (including EQS 0.85)",
+      "Algorithmic behaviors",
+      "Hypothesis generation logic",
+      "Confidence assignment logic",
+      "Verification flows",
+      "Evidence quality scoring",
+      "Rule of Confluence weights"
+    ],
+    "excludes": [
+      "Bug fixes (with VEGA explicit approval)",
+      "Audit instrumentation (with VEGA explicit approval)"
+    ]
+  },
+
+  "constitutional_parameters_locked": {
+    "EQS_HIGH_THRESHOLD": {
+      "value": 0.85,
+      "location": "ios020_sitc_planner.py",
+      "status": "CONSTITUTIONALLY_LOCKED",
+      "change_authority": "Full ADR revision + CEO approval"
+    },
+    "EQS_MEDIUM_THRESHOLD": {
+      "value": 0.50,
+      "location": "ios020_sitc_planner.py",
+      "status": "LOCKED"
+    },
+    "CONFLUENCE_WEIGHTS": {
+      "price_technical": 0.18,
+      "volume_confirmation": 0.18,
+      "regime_alignment": 0.18,
+      "temporal_coherence": 0.14,
+      "catalyst_present": 0.14,
+      "specificity_bonus": 0.10,
+      "testability_bonus": 0.08,
+      "status": "LOCKED"
+    }
+  },
+
+  "enforcement": {
+    "responsible_party": "STIG (CTO)",
+    "mechanism": "Hash verification before any G2 activity",
+    "verification_frequency": "Before each Wave 12 run and at G2 audit checkpoints",
+    "violation_response": {
+      "detection": "SHA-256 mismatch",
+      "consequence": "Governance breach - G2 process reset",
+      "escalation": "Immediate notification to VEGA and CEO"
+    }
+  },
+
+  "lift_conditions": [
+    "Successful G2 completion",
+    "VEGA certification issued",
+    "Formal promotion to G3 consideration",
+    "CEO approval to lift freeze"
+  ],
+
+  "verification_command": "python 03_FUNCTIONS/verify_code_freeze.py",
+
+  "attestation": {
+    "frozen_by": "STIG (CTO)",
+    "freeze_timestamp": "2025-12-17T19:30:00Z",
+    "vega_acknowledged": "PENDING",
+    "ceo_directive_ref": "CD-G1-G2-WAVE12-20251217"
+  }
+}

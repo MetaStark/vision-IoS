@@ -1,0 +1,258 @@
+{
+  "metadata": {
+    "document_type": "MODEL_EXPIRY_VERIFICATION_AUDIT",
+    "authority": "CEO Request - STIG Verification",
+    "generated_at": "2025-12-10T17:30:00.000000+00:00",
+    "generated_by": "STIG",
+    "execution_mode": "READ-ONLY, DETERMINISTIC"
+  },
+  "question_1": {
+    "question": "Do any active LLM call sites still explicitly reference the Speciale model variant v3.2_speciale_expires_on_20251215?",
+    "answer": "YES",
+    "evidence": [
+      {
+        "file": "03_FUNCTIONS/speciale_parser_wrapper.py",
+        "line": 44,
+        "code": "SPECIALE_BASE_URL = \"https://api.deepseek.com/v3.2_speciale_expires_on_20251215\""
+      },
+      {
+        "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+        "line": 56,
+        "code": "SPECIALE_BASE_URL = \"https://api.deepseek.com/v3.2_speciale_expires_on_20251215\""
+      },
+      {
+        "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+        "line": 68,
+        "code": "DEEPSEEK_API_URL = os.getenv('FHQ_LLM_URL', 'https://api.deepseek.com/v1')",
+        "note": "Uses standard URL from env, but model name is 'deepseek-reasoner' which maps to Speciale"
+      },
+      {
+        "file": "scripts/proof_of_life_v2.py",
+        "line": 33,
+        "code": "SPECIALE_BASE_URL = \"https://api.deepseek.com/v3.2_speciale_expires_on_20251215\""
+      },
+      {
+        "file": "scripts/proof_of_life_speciale.py",
+        "line": 18,
+        "code": "SPECIALE_BASE_URL = \"https://api.deepseek.com/v3.2_speciale_expires_on_20251215\""
+      }
+    ],
+    "total_references": 5
+  },
+  "question_2": {
+    "question": "For each reference, does the code include a documented fallback mechanism?",
+    "answer": "PARTIAL - Only 2 of 5 sites have proper fallback",
+    "analysis": [
+      {
+        "file": "03_FUNCTIONS/speciale_parser_wrapper.py",
+        "has_fallback": true,
+        "mechanism": "(a) Automatic switch to supported model",
+        "evidence": {
+          "function": "get_base_url()",
+          "lines": "95-101",
+          "code_snippet": "try:\n    check_speciale_expiry()\n    return SPECIALE_BASE_URL\nexcept CriticalGovernanceError:\n    return STANDARD_BASE_URL",
+          "fallback_url": "https://api.deepseek.com",
+          "behavior": "On expiry, CriticalGovernanceError is caught and STANDARD_BASE_URL is returned"
+        },
+        "routes_through_llm_router": false,
+        "verdict": "SAFE - Has automatic fallback"
+      },
+      {
+        "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+        "has_fallback": true,
+        "mechanism": "(a) Automatic switch to supported model",
+        "evidence": {
+          "function": "Config.get_deepseek_base_url()",
+          "lines": "80-88",
+          "code_snippet": "Config.check_speciale_expiry()\ncurrent_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')\nif current_date <= Config.SPECIALE_EXPIRY_DATE:\n    return Config.SPECIALE_BASE_URL\nreturn Config.STANDARD_BASE_URL",
+          "fallback_url": "https://api.deepseek.com",
+          "behavior": "Returns STANDARD_BASE_URL after expiry date"
+        },
+        "routes_through_llm_router": false,
+        "verdict": "SAFE - Has automatic fallback"
+      },
+      {
+        "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+        "has_fallback": false,
+        "mechanism": "NONE",
+        "evidence": {
+          "function": "call_deepseek_speciale()",
+          "lines": "662-740",
+          "code_snippet": "DEEPSEEK_MODEL = 'deepseek-reasoner'  # CEO MANDATE: Speciale only, no fallback",
+          "api_url": "DEEPSEEK_API_URL = os.getenv('FHQ_LLM_URL', 'https://api.deepseek.com/v1')",
+          "behavior": "Uses env var or standard URL, but NO expiry check exists in this file"
+        },
+        "routes_through_llm_router": false,
+        "warning": "CRITICAL: No expiry check in orchestrator_daemon.py",
+        "verdict": "UNSAFE - No fallback, no expiry check"
+      },
+      {
+        "file": "scripts/proof_of_life_v2.py",
+        "has_fallback": false,
+        "mechanism": "Hard failure",
+        "evidence": {
+          "function": "check_speciale_expiry()",
+          "lines": "37-44",
+          "behavior": "Raises Exception if expired, NO fallback URL"
+        },
+        "routes_through_llm_router": false,
+        "verdict": "UNSAFE but SCRIPT-ONLY (not production call site)"
+      },
+      {
+        "file": "scripts/proof_of_life_speciale.py",
+        "has_fallback": false,
+        "mechanism": "Hard failure",
+        "evidence": {
+          "function": "check_speciale_expiry()",
+          "lines": "21-28",
+          "behavior": "Raises Exception if expired, NO fallback URL"
+        },
+        "routes_through_llm_router": false,
+        "verdict": "UNSAFE but SCRIPT-ONLY (not production call site)"
+      }
+    ]
+  },
+  "question_3": {
+    "question": "Does the LLM Router currently override model selection?",
+    "answer": "NO",
+    "evidence": {
+      "file": "03_FUNCTIONS/fhq_telemetry/llm_router.py",
+      "analysis": "LLMRouter.create_envelope() accepts provider and model as parameters and passes them through unchanged. No model override logic exists.",
+      "code_reference": "lines 500-525",
+      "relevant_code": "def create_envelope(self, agent_id, task_name, task_type, provider: str, model: str, ...):\n    return TelemetryEnvelope(..., provider=provider, model=model, ...)",
+      "conclusion": "Router is a passthrough for model selection - it records but does NOT override"
+    }
+  },
+  "question_4": {
+    "question": "Is there any scenario where an expired model would bypass telemetry or router controls?",
+    "answer": "YES - CRITICAL RISK IDENTIFIED",
+    "scenarios": [
+      {
+        "scenario_id": "S1",
+        "description": "orchestrator_daemon.py bypasses ALL controls",
+        "risk_level": "CRITICAL",
+        "evidence": {
+          "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+          "lines": "662-740",
+          "issue": "call_deepseek_speciale() makes direct HTTP requests to DeepSeek API without going through LLMRouter",
+          "code": "response = requests.post(f\"{DEEPSEEK_API_URL}/chat/completions\", ...)"
+        },
+        "consequences": {
+          "unmetered_spend": true,
+          "reason": "Cost tracking uses local log_api_call() function, not telemetry_cost_ledger"
+        },
+        "consequences_untracked_failures": {
+          "untracked_failures": true,
+          "reason": "Errors logged locally but not to fhq_governance.telemetry_errors"
+        },
+        "consequences_cascading_errors": {
+          "cascading_errors": true,
+          "reason": "If Speciale URL fails post-expiry, alpha graph edge generation halts. No DEFCON trigger."
+        }
+      },
+      {
+        "scenario_id": "S2",
+        "description": "speciale_parser_wrapper.py has fallback but no router",
+        "risk_level": "MEDIUM",
+        "evidence": {
+          "file": "03_FUNCTIONS/speciale_parser_wrapper.py",
+          "issue": "Has automatic fallback to STANDARD_BASE_URL, but makes direct HTTP calls",
+          "code": "response = self.client.post(f\"{SPECIALE_BASE_URL}/chat/completions\", ...)"
+        },
+        "consequences": {
+          "unmetered_spend": true,
+          "reason": "No telemetry integration currently"
+        },
+        "consequences_untracked_failures": {
+          "untracked_failures": true,
+          "reason": "Errors may be caught and logged locally but not to governance tables"
+        },
+        "consequences_cascading_errors": {
+          "cascading_errors": false,
+          "reason": "Fallback to standard URL means call should succeed post-expiry"
+        }
+      },
+      {
+        "scenario_id": "S3",
+        "description": "Model name confusion post-expiry",
+        "risk_level": "HIGH",
+        "evidence": {
+          "issue": "After 2025-12-15, 'deepseek-reasoner' will still be a valid model name but the v3.2_speciale URL will fail. Sites using standard URL with model='deepseek-reasoner' will work. Sites using Speciale URL will get HTTP errors.",
+          "affected_files": [
+            "orchestrator_daemon.py (uses DEEPSEEK_MODEL='deepseek-reasoner' with env URL)",
+            "speciale_parser_wrapper.py (uses SPECIALE_BASE_URL with 'deepseek-reasoner')"
+          ]
+        },
+        "consequences": {
+          "unmetered_spend": false,
+          "reason": "Failed calls don't incur cost"
+        },
+        "consequences_untracked_failures": {
+          "untracked_failures": true,
+          "reason": "HTTP 404/400 errors not captured in telemetry"
+        },
+        "consequences_cascading_errors": {
+          "cascading_errors": true,
+          "reason": "Alpha graph, CRIO, FINN pipelines all depend on successful LLM calls"
+        }
+      }
+    ]
+  },
+  "conclusion": {
+    "question": "Based on the above, is CS-003 SAFE for Phase 4 instrumentation or MUST be deferred?",
+    "verdict": "MUST BE DEFERRED",
+    "justification": [
+      {
+        "reason": 1,
+        "detail": "speciale_parser_wrapper.py (CS-003) HAS automatic fallback, which is good",
+        "status": "POSITIVE"
+      },
+      {
+        "reason": 2,
+        "detail": "However, fallback changes BASE_URL mid-operation. Telemetry would record Speciale URL pre-expiry, then standard URL post-expiry. This is a model transition that MUST be explicitly handled.",
+        "status": "BLOCKING"
+      },
+      {
+        "reason": 3,
+        "detail": "orchestrator_daemon.py (CS-009) has NO fallback and NO expiry check - wrapping CS-003 without fixing CS-009 creates inconsistent telemetry",
+        "status": "BLOCKING"
+      },
+      {
+        "reason": 4,
+        "detail": "LLM Router does NOT override model selection. If we wrap CS-003 now, post-expiry calls would use STANDARD_BASE_URL but telemetry would still record whatever model name was passed. This could create confusion.",
+        "status": "MODERATE_RISK"
+      },
+      {
+        "reason": 5,
+        "detail": "5 days until expiry is insufficient time to: (a) wrap CS-003, (b) test thoroughly, (c) handle transition, (d) verify post-expiry stability",
+        "status": "BLOCKING"
+      }
+    ],
+    "recommendation": "DEFER CS-003 instrumentation until 48-72 hours post-expiry (after 2025-12-17 16:00 UTC) when the model transition is complete and stable.",
+    "additional_recommendations": [
+      {
+        "priority": "CRITICAL",
+        "action": "Add expiry check to orchestrator_daemon.py BEFORE Phase 4",
+        "reason": "CS-009 has no fallback and will cause cascading failures post-expiry"
+      },
+      {
+        "priority": "HIGH",
+        "action": "Add model_transition_flag to telemetry schema",
+        "reason": "Track when calls switch from Speciale to standard model"
+      },
+      {
+        "priority": "MEDIUM",
+        "action": "Consider LLMRouter model override capability",
+        "reason": "Centralized control over model selection would prevent scattered URL/model configurations"
+      }
+    ]
+  },
+  "signatures": {
+    "stig_cto": {
+      "agent_id": "STIG",
+      "role": "Chief Technology Officer",
+      "attestation": "Deterministic codebase audit complete. CS-003 has fallback logic but model transition timing makes Phase 4 instrumentation unsafe until post-expiry stabilization. orchestrator_daemon.py (CS-009) is CRITICALLY UNSAFE with no expiry handling.",
+      "timestamp": "2025-12-10T17:30:00.000000+00:00"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "governance_artifact": "IOS004_ARCHITECTURE_FREEZE",
+  "directive": "Strategic Directive 2026.SD.04 (REV.1)",
+  "timestamp": "2025-12-16T22:05:00Z",
+  "attestor": "VEGA",
+  "executor": "STIG",
+
+  "status": {
+    "architecture": "VALIDATED",
+    "strategies": "EMPTY",
+    "queue": "FROZEN",
+    "new_submissions": "BLOCKED"
+  },
+
+  "mandates_completed": {
+    "A": {
+      "name": "Strategy Operational Contract (SOC)",
+      "status": "IMPLEMENTED",
+      "evidence": "STRATEGY_REGISTRY with trigger_function_hash validation"
+    },
+    "B": {
+      "name": "Data Availability Kill-Switch",
+      "status": "IMPLEMENTED",
+      "evidence": "FROZEN_STRATEGIES list, hard fail on unavailable data"
+    },
+    "C": {
+      "name": "Vertical Slice Validation",
+      "status": "PASSED",
+      "evidence": {
+        "baseline": {
+          "id": "VERTICAL-SLICE-BASELINE-001",
+          "strategy": "STRATEGY_GENERIC_MEAN_REVERSION_V1",
+          "soc_hash": "d89b70aa3619b88e",
+          "trades": 103,
+          "sharpe": -0.28
+        },
+        "challenger": {
+          "id": "VERTICAL-SLICE-WEEKEND-001",
+          "strategy": "STRATEGY_WEEKEND_LIQUIDITY_GAP_V1",
+          "soc_hash": "975a3829e0a4b156",
+          "trades": 219,
+          "sharpe": -0.56
+        },
+        "non_isomorphism_proof": "DISTINCT outputs (103 vs 219 trades, different hashes)"
+      }
+    },
+    "D": {
+      "name": "Sortino Downgrade",
+      "status": "IMPLEMENTED",
+      "evidence": "Sortino marked DIAGNOSTIC ONLY in calculate_backtest_metrics()"
+    }
+  },
+
+  "soc_registry": {
+    "STRATEGY_GENERIC_MEAN_REVERSION_V1": {
+      "hash": "d89b70aa3619b88e",
+      "signature": ["returns_7d", "returns_3d", "threshold_pct", "regime"],
+      "required_data": ["PRICE"]
+    },
+    "STRATEGY_WEEKEND_LIQUIDITY_GAP_V1": {
+      "hash": "975a3829e0a4b156",
+      "signature": ["weekday", "gap_pct", "friday_close", "monday_open"],
+      "required_data": ["PRICE", "CALENDAR"]
+    }
+  },
+
+  "frozen_artifacts": {
+    "proposals": 152,
+    "status": "FROZEN_SD04"
+  },
+
+  "skin_suit_prohibition": "ENFORCED",
+
+  "next_action": {
+    "awaiting": "CEO_DIRECTIVE",
+    "required_for": "New strategy registration",
+    "constraint": "Must provide SOC-compliant strategy definition"
+  },
+
+  "vega_attestation": {
+    "gate": "G0 -> G1",
+    "decision": "APPROVED",
+    "rationale": "Architecture validated. Vertical slice proves operational distinctiveness. System ready for new strategy intake under SOC framework."
+  }
+}

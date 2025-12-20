@@ -1,0 +1,170 @@
+{
+  "constitutional_amendment": {
+    "amendment_id": "CA-SENTINEL-DB-INTEGRITY-G4-001",
+    "version": "1.0",
+    "effective_date": "2025-12-08",
+    "authority": "CEO Directive - G4 Constitutional Activation",
+    "prepared_by": "VEGA",
+    "classification": "Constitutional"
+  },
+
+  "amendment_declaration": {
+    "subject": "Sentinel_DB_Integrity Constitutional Activation",
+    "ios_id": "IoS-014",
+    "amendment_type": "CONSTITUTIONAL_BINDING",
+    "declaration": "By authority of the CEO and in accordance with ADR-011, ADR-015, and ADR-016, Sentinel_DB_Integrity is hereby elevated to constitutional status within the FjordHQ operational framework."
+  },
+
+  "meta_governance_loop_binding": {
+    "adr_reference": "ADR-015",
+    "binding_status": "PERMANENT",
+    "loop_integration": {
+      "sentinel_role": "Primary data integrity monitor",
+      "output_destination": "fhq_governance.discrepancy_events",
+      "vega_consumption": "All discrepancy events are reviewed by VEGA meta-governance loop",
+      "feedback_mechanism": "Discrepancy severity influences system-wide risk assessment"
+    },
+    "governance_influence": {
+      "discrepancy_events_feed": "Sentinel events contribute to cumulative discrepancy score",
+      "risk_multiplier_impact": "CRITICAL events trigger risk escalation per ADR-010",
+      "suspension_authority_path": "Sentinel can be suspended only by VEGA or CEO per ADR-009"
+    }
+  },
+
+  "event_language_specification": {
+    "status": "LOCKED",
+    "locked_date": "2025-12-08",
+    "event_types": {
+      "DB_LOCK_CONTENTION": {
+        "description": "Lock wait exceeds threshold, potentially blocking critical operations",
+        "severity_levels": ["WARN", "CRITICAL"],
+        "adr_010_score_range": [0.05, 0.15],
+        "immutable": true
+      },
+      "DB_BLOAT_RISK": {
+        "description": "Dead tuple ratio exceeds threshold, risking planner integrity",
+        "severity_levels": ["WARN", "CRITICAL"],
+        "adr_010_score_range": [0.05, 0.15],
+        "immutable": true
+      },
+      "SLOW_QUERY_CANDIDATE": {
+        "description": "Query mean execution time exceeds threshold",
+        "severity_levels": ["WARN"],
+        "adr_010_score_range": [0.025, 0.05],
+        "immutable": true
+      },
+      "SYSTEM_ERROR": {
+        "description": "Sentinel module failure or fault tolerance event",
+        "severity_levels": ["CRITICAL"],
+        "adr_010_score_range": [0.10, 0.15],
+        "immutable": true
+      }
+    },
+    "modification_restriction": "Event types, descriptions, and severity mappings are locked. Any changes require full G0-G4 re-certification."
+  },
+
+  "suspension_override_rules": {
+    "adr_reference": "ADR-009",
+    "suspension_authority": {
+      "primary": "VEGA",
+      "secondary": "CEO",
+      "prohibited": ["STIG", "LINE", "FINN", "CODE"]
+    },
+    "suspension_conditions": [
+      "False positive rate exceeds 10% over 24-hour period",
+      "Resource consumption impacts production system stability",
+      "Configuration error causing invalid events",
+      "Security vulnerability identified in sentinel code"
+    ],
+    "suspension_procedure": {
+      "step_1": "Suspending authority logs intent to fhq_governance.governance_actions_log",
+      "step_2": "Set sentinel.enabled = false in config YAML",
+      "step_3": "Notify CEO and document suspension rationale",
+      "step_4": "Plan re-enablement timeline and conditions"
+    },
+    "override_rules": {
+      "emergency_halt": {
+        "authority": "CEO only",
+        "condition": "Immediate system safety concern",
+        "documentation": "Required within 1 hour of halt"
+      },
+      "threshold_adjustment": {
+        "authority": "STIG with VEGA approval",
+        "condition": "Operational tuning required",
+        "documentation": "Logged to governance_actions_log"
+      }
+    }
+  },
+
+  "constitutional_guarantees": {
+    "continuous_operation": {
+      "guarantee": "Sentinel shall operate continuously unless suspended per ADR-009",
+      "enforcement": "IoS-014 heartbeat integration"
+    },
+    "replay_inclusion": {
+      "guarantee": "All Fortress replays shall include sentinel evidence",
+      "enforcement": "ADR-011 evidence chain requirement"
+    },
+    "backtest_inclusion": {
+      "guarantee": "All backtests shall respect sentinel-identified data quality issues",
+      "enforcement": "Data quality layer integration"
+    },
+    "migration_inclusion": {
+      "guarantee": "All schema migrations shall be validated by sentinel post-deployment",
+      "enforcement": "Orchestrator protocol"
+    }
+  },
+
+  "defcon_protocol_integration": {
+    "adr_reference": "ADR-016",
+    "integration_type": "CIRCUIT_BREAKER_CONTRIBUTOR",
+    "defcon_mapping": {
+      "CRITICAL.DB_LOCK_CONTENTION_persistent": "DEFCON-3",
+      "CRITICAL.DB_BLOAT_RISK_unresolved": "DEFCON-3",
+      "SYSTEM_ERROR_persistent": "DEFCON-2",
+      "multiple_critical_simultaneous": "DEFCON-2"
+    },
+    "automatic_actions": {
+      "DEFCON_3_bloat": "Freeze writes to affected schema",
+      "DEFCON_2": "Full system inspection initiated"
+    }
+  },
+
+  "adr_compliance_certification": {
+    "ADR-002": {
+      "requirement": "Audit trail for all operations",
+      "compliance": "All runs logged to ios_audit_log with evidence hash"
+    },
+    "ADR-009": {
+      "requirement": "Agent suspension procedures",
+      "compliance": "Suspension rules defined and authority assigned"
+    },
+    "ADR-010": {
+      "requirement": "Discrepancy scoring",
+      "compliance": "Severity mapping locked: INFO=0.0, WARN=0.05, CRITICAL=0.15"
+    },
+    "ADR-011": {
+      "requirement": "Fortress evidence chain",
+      "compliance": "Deterministic replay verified in G3"
+    },
+    "ADR-013": {
+      "requirement": "One-True-Source protection",
+      "compliance": "Monitors canonical tables in fhq_market, fhq_perception"
+    },
+    "ADR-015": {
+      "requirement": "Meta-governance loop",
+      "compliance": "Output feeds VEGA governance loop"
+    },
+    "ADR-016": {
+      "requirement": "DEFCON protocol",
+      "compliance": "DEFCON triggers and actions defined"
+    }
+  },
+
+  "governance_signature": {
+    "attested_by": "VEGA",
+    "attestation_type": "CONSTITUTIONAL_AMENDMENT",
+    "effective_immediately": true,
+    "amendment_hash": "pending_vega_signature"
+  }
+}

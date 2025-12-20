@@ -1,0 +1,170 @@
+{
+  "directive": "IOS-001_CANONICAL_REGISTRY_ACTIVATION_20251129",
+  "classification": "IoS MODULE ACTIVATION",
+  "authority_chain": {
+    "authority": "CEO",
+    "strategic": "LARS",
+    "schema_owner": "STIG",
+    "executor": "CODE"
+  },
+  "oversight": "VEGA",
+  "execution_timestamp": "2025-11-28T20:50:34.996Z",
+
+  "executive_summary": {
+    "status": "ACTIVE",
+    "verdict": "IoS-001 ACTIVATED",
+    "rationale": "Canonical Asset & Context Registry successfully deployed. Schema migrations applied non-destructively. Seed data loaded. VEGA attestation completed. System ready for downstream IoS-002..IoS-005 activation."
+  },
+
+  "phase_1_schema_state": {
+    "status": "COMPLETE",
+    "tables": {
+      "fhq_meta.exchanges": {
+        "existed": true,
+        "columns_before": 11,
+        "columns_after": 16,
+        "columns_added": ["region", "settlement_convention", "vega_signature_id", "open_time", "close_time"],
+        "primary_key": "mic",
+        "data_preserved": true
+      },
+      "fhq_meta.assets": {
+        "existed": false,
+        "created": true,
+        "columns": 13,
+        "primary_key": "canonical_id",
+        "foreign_keys": ["exchange_mic → exchanges.mic"]
+      },
+      "fhq_meta.model_context_registry": {
+        "existed": false,
+        "created": true,
+        "columns": 12,
+        "primary_key": "context_id",
+        "foreign_keys": ["canonical_id → assets.canonical_id"]
+      }
+    },
+    "triggers_created": [
+      "trg_assets_updated_at",
+      "trg_model_context_registry_updated_at"
+    ],
+    "indexes_created": [
+      "idx_assets_exchange_mic",
+      "idx_assets_ticker",
+      "idx_assets_active",
+      "idx_model_context_canonical_id",
+      "idx_model_context_regime"
+    ]
+  },
+
+  "phase_2_seed_state": {
+    "status": "COMPLETE",
+    "exchanges": {
+      "count": 4,
+      "records": [
+        {"mic": "BINANCE", "name": "Binance Spot Exchange", "region": "GLOBAL", "timezone": "UTC", "settlement": "T+0"},
+        {"mic": "XNAS", "name": "NASDAQ Stock Exchange", "region": "NORTH_AMERICA", "timezone": "America/New_York", "settlement": "T+2"},
+        {"mic": "XNYS", "name": "New York Stock Exchange", "region": "NORTH_AMERICA", "timezone": "America/New_York", "settlement": "T+2"},
+        {"mic": "XOSL", "name": "Oslo Børs", "region": "EUROPE", "timezone": "Europe/Oslo", "settlement": "T+2"}
+      ]
+    },
+    "assets": {
+      "count": 3,
+      "records": [
+        {"canonical_id": "BTCUSD.BINANCE", "ticker": "BTCUSD", "asset_class": "CRYPTO", "currency": "USD", "sector": "CRYPTOCURRENCY"},
+        {"canonical_id": "ETHUSD.BINANCE", "ticker": "ETHUSD", "asset_class": "CRYPTO", "currency": "USD", "sector": "CRYPTOCURRENCY"},
+        {"canonical_id": "EQNR.XOSL", "ticker": "EQNR", "asset_class": "EQUITY", "currency": "NOK", "sector": "ENERGY"}
+      ]
+    },
+    "model_contexts": {
+      "count": 1,
+      "records": [
+        {
+          "context_id": "e0000001-0001-0001-0001-000000000001",
+          "canonical_id": "BTCUSD.BINANCE",
+          "feature_set": ["RSI", "ICHIMOKU", "ATR"],
+          "regime_model_ref": "REGIME_V1",
+          "forecast_model_ref": "BASELINE_FORECAST_V1",
+          "data_vendor_source": "BINANCE_SPOT"
+        }
+      ]
+    }
+  },
+
+  "phase_3_registry_state": {
+    "status": "COMPLETE",
+    "ios_registry_entry": {
+      "ios_id": "IoS-001",
+      "title": "Canonical Asset & Context Registry",
+      "version": "2026.PRODUCTION",
+      "status": "ACTIVE",
+      "owner_role": "CDMO",
+      "governing_adrs": ["ADR-022", "ADR-023", "ADR-034"],
+      "dependencies": [],
+      "content_hash": "9a191304e7dad0de0c9109c3b6f81c643d129e9f3f524ba81a7c21f72628d561",
+      "spec_location": "/02_IOS/IoS-001_2026_PRODUCTION.md",
+      "activated_at": "2025-11-28T20:50:34.996Z"
+    }
+  },
+
+  "phase_3_governance_state": {
+    "status": "COMPLETE",
+    "vega_attestation": {
+      "attestation_id": "f0000001-0001-0001-0001-000000000001",
+      "target_type": "IOS_MODULE",
+      "target_id": "IoS-001",
+      "target_version": "2026.PRODUCTION",
+      "attestation_type": "IOS_MODULE_REGISTRATION",
+      "attestation_status": "ACTIVE",
+      "vega_public_key": "VEGA_IOS_MODULE_KEY_20251129",
+      "signature_verified": true
+    },
+    "hash_chain": {
+      "chain_id": "HC-IOS-001-20251129",
+      "chain_type": "IOS_MODULE",
+      "chain_scope": "CANONICAL_ASSET_CONTEXT_REGISTRY",
+      "chain_length": 1,
+      "integrity_verified": true
+    },
+    "governance_action": {
+      "action_id": "f0000002-0001-0001-0001-000000000001",
+      "action_type": "IOS_MODULE_REGISTRATION",
+      "action_target": "IoS-001_CANONICAL_ASSET_CONTEXT_REGISTRY",
+      "initiated_by": "CEO",
+      "decision": "APPROVED",
+      "vega_reviewed": true
+    }
+  },
+
+  "cryptographic_seal": {
+    "content_hash": "9a191304e7dad0de0c9109c3b6f81c643d129e9f3f524ba81a7c21f72628d561",
+    "hash_algorithm": "SHA-256",
+    "attestation_id": "f0000001-0001-0001-0001-000000000001",
+    "hash_chain_id": "HC-IOS-001-20251129",
+    "signature_algorithm": "Ed25519",
+    "signed_by": "VEGA"
+  },
+
+  "successor_modules_unlocked": [
+    "IoS-002 (Feature Vectors)",
+    "IoS-003 (Regime Engine)",
+    "IoS-004 (Backtest Engine)",
+    "IoS-005 (Skill Metrics)"
+  ],
+
+  "artifacts_created": [
+    "/02_IOS/IoS-001_2026_PRODUCTION.md",
+    "/scripts/ios001_canonical_registry_activation_20251129.sql",
+    "/scripts/ios001_vega_attestation_20251129.sql",
+    "/evidence/IOS-001_ACTIVATION_REPORT_20251129.json"
+  ],
+
+  "verification_summary": {
+    "schema_migrations": "PASS",
+    "seed_data_loaded": "PASS",
+    "ios_registry_entry": "PASS",
+    "vega_attestation": "PASS",
+    "hash_chain_created": "PASS",
+    "governance_action_logged": "PASS",
+    "non_destructive": "VERIFIED",
+    "backwards_compatible": "VERIFIED"
+  }
+}

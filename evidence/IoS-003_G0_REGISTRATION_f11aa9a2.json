@@ -1,0 +1,385 @@
+{
+  "registration_id": "f11aa9a2-3459-4207-ab5d-240fcbd1dc91",
+  "ios_module": "IoS-003",
+  "module_name": "Meta-Perception Engine (Market Brain)",
+  "registration_type": "G0_SUBMISSION",
+  "version": "2026.DRAFT.1",
+  "timestamp": "2025-11-29T11:17:38.356693+00:00",
+  "submitter": "CEO",
+  "module_definition": {
+    "owner": "LARS",
+    "category": "INTERPRETATION",
+    "dependencies": [
+      "IoS-001",
+      "IoS-002"
+    ],
+    "purpose": "Deterministic perception module producing canonical market regimes, state vectors, semantic summaries, anomaly detection, and hysteresis-stabilised context.",
+    "spec_hash": "ac388194264875768dd19bba19d05ec606ac188c49b791ce7bf7b7224e21435c"
+  },
+  "schema_created": {
+    "schema": "fhq_perception",
+    "tables": [
+      {
+        "name": "regime_daily",
+        "purpose": "Daily regime classification with hysteresis",
+        "key_columns": [
+          "asset_id",
+          "timestamp",
+          "regime_classification",
+          "anomaly_flag"
+        ]
+      },
+      {
+        "name": "state_vectors",
+        "purpose": "Multi-dimensional perception vectors with semantic summaries",
+        "key_columns": [
+          "asset_id",
+          "timestamp",
+          "trend_score",
+          "momentum_score",
+          "volatility_score",
+          "confidence_score",
+          "semantic_context_summary"
+        ]
+      },
+      {
+        "name": "anomaly_log",
+        "purpose": "Structural breaks, extreme events, perception inconsistencies",
+        "key_columns": [
+          "asset_id",
+          "anomaly_type",
+          "severity",
+          "defcon_triggered"
+        ]
+      }
+    ]
+  },
+  "pipeline_stage": {
+    "name": "META_PERCEPTION",
+    "owner": "LARS",
+    "executor": "CODE",
+    "source_schema": "fhq_research",
+    "target_schema": "fhq_perception",
+    "status": "REGISTERED",
+    "activated": false,
+    "note": "Pipeline will not execute until G4 activation"
+  },
+  "governance_prechecks": {
+    "vega": [
+      {
+        "check": "DEPENDENCY_STATUS",
+        "description": "IoS-001 and IoS-002 must be ACTIVE",
+        "result": "PASS",
+        "details": {
+          "IoS-001": "ACTIVE",
+          "IoS-002": "ACTIVE"
+        }
+      },
+      {
+        "check": "SCHEMA_ISOLATION",
+        "description": "fhq_perception schema must exist and be isolated",
+        "result": "PASS"
+      },
+      {
+        "check": "LINEAGE_FIELDS",
+        "description": "All required lineage fields must exist",
+        "result": "PASS",
+        "found": [
+          "created_at",
+          "perception_model_version",
+          "formula_hash",
+          "engine_version",
+          "hash_prev",
+          "hash_self",
+          "lineage_hash"
+        ],
+        "required": [
+          "engine_version",
+          "perception_model_version",
+          "formula_hash",
+          "lineage_hash",
+          "hash_prev",
+          "hash_self",
+          "created_at"
+        ]
+      },
+      {
+        "check": "ADR_COMPLIANCE",
+        "description": "ADR-001 through ADR-016 must be declared",
+        "result": "PASS",
+        "count": 13
+      }
+    ],
+    "stig": [
+      {
+        "check": "TABLE_STRUCTURE_REGIME_DAILY",
+        "result": "PASS",
+        "column_count": 19
+      },
+      {
+        "check": "TABLE_STRUCTURE_STATE_VECTORS",
+        "result": "PASS",
+        "column_count": 23
+      },
+      {
+        "check": "TABLE_STRUCTURE_ANOMALY_LOG",
+        "result": "PASS",
+        "column_count": 23
+      },
+      {
+        "check": "INDEX_COUNT",
+        "result": "PASS",
+        "count": 15
+      },
+      {
+        "check": "CONSTRAINT_COUNT",
+        "result": "PASS",
+        "count": 54
+      },
+      {
+        "check": "HASH_FIELDS",
+        "result": "PASS",
+        "fields": [
+          "formula_hash",
+          "lineage_hash",
+          "hash_prev",
+          "hash_self",
+          "formula_hash",
+          "lineage_hash",
+          "hash_prev",
+          "hash_self"
+        ]
+      }
+    ]
+  },
+  "registration_log": [
+    {
+      "step": 1,
+      "action": "REGISTER_IOS_MODULE",
+      "target": "fhq_meta.ios_registry",
+      "ios_id": "IoS-003",
+      "status": "G0_SUBMITTED",
+      "version": "2026.DRAFT.1",
+      "result": "COMPLETE"
+    },
+    {
+      "step": 2,
+      "action": "CREATE_SCHEMA",
+      "target": "fhq_perception",
+      "result": "COMPLETE"
+    },
+    {
+      "step": 3,
+      "action": "CREATE_TABLE",
+      "target": "fhq_perception.regime_daily",
+      "columns": [
+        "asset_id",
+        "timestamp",
+        "regime_classification",
+        "regime_stability_flag",
+        "anomaly_flag",
+        "engine_version",
+        "perception_model_version",
+        "formula_hash",
+        "lineage_hash",
+        "hash_prev",
+        "hash_self"
+      ],
+      "result": "COMPLETE"
+    },
+    {
+      "step": 4,
+      "action": "CREATE_TABLE",
+      "target": "fhq_perception.state_vectors",
+      "columns": [
+        "asset_id",
+        "timestamp",
+        "trend_score",
+        "momentum_score",
+        "volatility_score",
+        "confidence_score",
+        "semantic_context_summary",
+        "regime_classification",
+        "engine_version",
+        "perception_model_version",
+        "formula_hash",
+        "lineage_hash",
+        "hash_prev",
+        "hash_self"
+      ],
+      "result": "COMPLETE"
+    },
+    {
+      "step": 5,
+      "action": "CREATE_TABLE",
+      "target": "fhq_perception.anomaly_log",
+      "columns": [
+        "asset_id",
+        "timestamp",
+        "detection_date",
+        "anomaly_type",
+        "severity",
+        "description",
+        "trigger_values",
+        "defcon_triggered",
+        "engine_version",
+        "perception_model_version"
+      ],
+      "result": "COMPLETE"
+    },
+    {
+      "step": 6,
+      "action": "REGISTER_PIPELINE_STAGE",
+      "target": "fhq_perception",
+      "task_name": "META_PERCEPTION",
+      "task_id": "38fc6689-c51e-4df5-9dc1-1a252b7923b1",
+      "owner": "LARS",
+      "executor": "CODE",
+      "source": "fhq_research",
+      "status": "REGISTERED",
+      "activated": false,
+      "result": "COMPLETE"
+    },
+    {
+      "step": 7,
+      "action": "LOG_G0_SUBMISSION",
+      "target": "fhq_governance.governance_actions_log",
+      "registration_id": "f11aa9a2-3459-4207-ab5d-240fcbd1dc91",
+      "result": "COMPLETE"
+    },
+    {
+      "step": 8,
+      "action": "VEGA_PRE_CHECKS",
+      "checks": [
+        {
+          "check": "DEPENDENCY_STATUS",
+          "description": "IoS-001 and IoS-002 must be ACTIVE",
+          "result": "PASS",
+          "details": {
+            "IoS-001": "ACTIVE",
+            "IoS-002": "ACTIVE"
+          }
+        },
+        {
+          "check": "SCHEMA_ISOLATION",
+          "description": "fhq_perception schema must exist and be isolated",
+          "result": "PASS"
+        },
+        {
+          "check": "LINEAGE_FIELDS",
+          "description": "All required lineage fields must exist",
+          "result": "PASS",
+          "found": [
+            "created_at",
+            "perception_model_version",
+            "formula_hash",
+            "engine_version",
+            "hash_prev",
+            "hash_self",
+            "lineage_hash"
+          ],
+          "required": [
+            "engine_version",
+            "perception_model_version",
+            "formula_hash",
+            "lineage_hash",
+            "hash_prev",
+            "hash_self",
+            "created_at"
+          ]
+        },
+        {
+          "check": "ADR_COMPLIANCE",
+          "description": "ADR-001 through ADR-016 must be declared",
+          "result": "PASS",
+          "count": 13
+        }
+      ],
+      "result": "COMPLETE"
+    },
+    {
+      "step": 9,
+      "action": "STIG_PRE_CHECKS",
+      "checks": [
+        {
+          "check": "TABLE_STRUCTURE_REGIME_DAILY",
+          "result": "PASS",
+          "column_count": 19
+        },
+        {
+          "check": "TABLE_STRUCTURE_STATE_VECTORS",
+          "result": "PASS",
+          "column_count": 23
+        },
+        {
+          "check": "TABLE_STRUCTURE_ANOMALY_LOG",
+          "result": "PASS",
+          "column_count": 23
+        },
+        {
+          "check": "INDEX_COUNT",
+          "result": "PASS",
+          "count": 15
+        },
+        {
+          "check": "CONSTRAINT_COUNT",
+          "result": "PASS",
+          "count": 54
+        },
+        {
+          "check": "HASH_FIELDS",
+          "result": "PASS",
+          "fields": [
+            "formula_hash",
+            "lineage_hash",
+            "hash_prev",
+            "hash_self",
+            "formula_hash",
+            "lineage_hash",
+            "hash_prev",
+            "hash_self"
+          ]
+        }
+      ],
+      "result": "COMPLETE"
+    }
+  ],
+  "adr_compliance": [
+    "ADR-001",
+    "ADR-002",
+    "ADR-003",
+    "ADR-004",
+    "ADR-006",
+    "ADR-007",
+    "ADR-009",
+    "ADR-010",
+    "ADR-011",
+    "ADR-012",
+    "ADR-013",
+    "ADR-014",
+    "ADR-016"
+  ],
+  "constraints": {
+    "no_computation_until_g4": true,
+    "no_inference_until_g4": true,
+    "no_perception_events_until_g4": true,
+    "read_only_to_ios001_ios002": true,
+    "write_only_to_fhq_perception": true
+  },
+  "next_steps": [
+    "G1_TECHNICAL_VALIDATION: STIG validates deterministic math, schema, reproducibility",
+    "G2_GOVERNANCE_VALIDATION: VEGA validates role isolation, semantic determinism, ADR compliance",
+    "G3_AUDIT: Golden Sample tests for perception vector consistency",
+    "G4_ACTIVATION: CEO activates META_PERCEPTION pipeline"
+  ],
+  "status": "G0_REGISTERED",
+  "bundle_hash": "1104354a8f3ceedac0e1db3e6ae6dea2529693ee819667911490e2561c1694dc",
+  "ceo_signature": {
+    "signer": "CEO",
+    "sign_time": "2025-11-29T11:17:38.356693+00:00",
+    "registration_id": "f11aa9a2-3459-4207-ab5d-240fcbd1dc91",
+    "bundle_hash": "1104354a8f3ceedac0e1db3e6ae6dea2529693ee819667911490e2561c1694dc",
+    "authority": "ADR-001 through ADR-016",
+    "directive": "No computation, no inference, and no perception events may occur until G4 activation."
+  }
+}

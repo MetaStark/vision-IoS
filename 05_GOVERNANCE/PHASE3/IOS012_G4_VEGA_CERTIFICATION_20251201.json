@@ -1,0 +1,400 @@
+{
+  "evidence_type": "VEGA_G4_CONSTITUTIONAL_CERTIFICATION",
+  "ios_id": "IoS-012",
+  "title": "Execution Engine - VEGA Constitutional Audit Certification",
+  "certification_id": "VEGA-IOS012-G4-CERT-20251201",
+  "audit_timestamp": "2025-12-01T19:45:00.000Z",
+  "audit_date": "2025-12-01",
+
+  "audit_authority": {
+    "auditor": "VEGA",
+    "role": "Verification & Governance Authority",
+    "mandate": "Independent constitutional review per CEO directive",
+    "adr_references": ["ADR-004", "ADR-008", "ADR-011", "ADR-012", "ADR-013", "ADR-016"]
+  },
+
+  "audit_scope": {
+    "implementation_path": "trade_engine/",
+    "files_audited": [
+      "engine.py",
+      "models.py",
+      "risk.py",
+      "pnl.py",
+      "position_sizing.py",
+      "trade_generator.py",
+      "signal_interpreter.py",
+      "exceptions.py"
+    ],
+    "total_lines_reviewed": 1357,
+    "artifacts_reviewed": [
+      "IOS012_G4_TECHNICAL_READINESS_20251201.json",
+      "IOS012_G4_VEGA_REVIEW_BUNDLE_20251201.json",
+      "04_DATABASE/MIGRATIONS/052_ios012_execution_engine.sql",
+      "04_DATABASE/MIGRATIONS/053_ios012_g2_paper_trading.sql",
+      "04_DATABASE/MIGRATIONS/054_ios012_g3_governance_infrastructure.sql",
+      "04_DATABASE/MIGRATIONS/058_ios012_g4_review_initiation.sql"
+    ]
+  },
+
+  "section_1_technical_integrity": {
+    "title": "THE CODE - Technical Integrity Verification",
+    "adr_reference": "ADR-004, ADR-011",
+    "overall_status": "PASSED_WITH_WARNINGS",
+    "findings": {
+      "pure_function_guarantee": {
+        "status": "VERIFIED",
+        "evidence": "All core functions are pure with no side effects. run_trade_engine() receives explicit inputs and returns explicit outputs. No global state mutation.",
+        "files_verified": ["engine.py", "position_sizing.py", "trade_generator.py", "signal_interpreter.py", "risk.py", "pnl.py"]
+      },
+      "pydantic_immutability": {
+        "status": "VERIFIED",
+        "evidence": "All data models use Pydantic with frozen=True: SignalSnapshot (line 72), Signal (line 100), Position (line 175), TargetPosition (line 307), RiskLimits (line 121), RiskConfig (line 143). PortfolioState uses frozen=False for update operations (line 243).",
+        "exception_noted": "PortfolioState.model_config frozen=False is acceptable for portfolio modification operations"
+      },
+      "deterministic_execution": {
+        "status": "WARNING",
+        "evidence": "Core logic is deterministic except for trade_id generation",
+        "violation": {
+          "file": "models.py",
+          "line": 265,
+          "code": "trade_id: str = Field(default_factory=lambda: str(uuid4()))",
+          "issue": "uuid4() introduces non-determinism. Same inputs will produce different trade_ids across runs.",
+          "severity": "MEDIUM",
+          "remediation": "Accept trade_id as parameter or use deterministic hash-based ID generation"
+        }
+      },
+      "dependency_tree": {
+        "status": "VERIFIED",
+        "evidence": "Minimal dependencies: pydantic>=2.0, datetime (stdlib), typing (stdlib), uuid (stdlib), logging (stdlib). No external API dependencies.",
+        "external_calls": "NONE"
+      },
+      "test_coverage": {
+        "status": "WARNING",
+        "evidence": "No test files found in trade_engine/tests/. G3 integration tests exist externally but unit test suite is missing.",
+        "severity": "LOW",
+        "remediation": "Add comprehensive unit test suite before LIVE activation"
+      }
+    }
+  },
+
+  "section_2_economic_safety": {
+    "title": "THE CONSTRAINTS - Economic Safety Verification",
+    "adr_reference": "ADR-012",
+    "overall_status": "PASSED_WITH_WARNINGS",
+    "findings": {
+      "nlv_accounting_identity": {
+        "status": "VERIFIED",
+        "evidence": "PortfolioState.total_equity() at models.py:204-234 correctly implements NLV accounting identity: Total Equity = Cash Balance + Sum(Position Values). LONG positions add notional value, SHORT positions add P&L (entry_price - current_price).",
+        "formula_verified": "equity = cash_balance + sum(position_values)",
+        "implementation_correct": true
+      },
+      "circuit_breakers": {
+        "status": "VERIFIED",
+        "evidence": "Three circuit breakers implemented: (1) InsufficientCapitalError when equity <= 0, (2) MissingPriceError when price data unavailable, (3) RiskLimitViolation on configuration errors.",
+        "stress_scenarios_tested": 3,
+        "all_scenarios_handled": true
+      },
+      "exposure_controls": {
+        "status": "VERIFIED",
+        "evidence": "Four exposure limits enforced in position_sizing.py: max_gross_exposure (173-181), max_single_asset_weight (183-191), max_leverage (193-210), max_position_size_notional (184-191).",
+        "leverage_boundary": "Projected leverage computed before sizing, scaled down if exceeds limit"
+      },
+      "defcon_integration": {
+        "status": "FAILED",
+        "evidence": "No DEFCON circuit breaker integration found. grep for 'circuit_breaker|defcon|DEFCON|halt|freeze|emergency' returned no matches in trade_engine/.",
+        "severity": "HIGH",
+        "remediation": "Add DEFCON-aware halt mechanism before LIVE activation (ADR-016 compliance)"
+      },
+      "volatility_blocks": {
+        "status": "WARNING",
+        "evidence": "volatility_scaling parameter exists but is placeholder only. No actual volatility-based position scaling implemented.",
+        "severity": "MEDIUM",
+        "remediation": "Implement volatility-adjusted position sizing before LIVE activation"
+      },
+      "margin_requirements": {
+        "status": "WARNING",
+        "evidence": "V1 simplified model - no explicit margin calculation. exceptions.py notes 'V1 simplified - no explicit margin calculation yet'.",
+        "severity": "MEDIUM",
+        "remediation": "Implement margin requirements before SHORT position authorization"
+      }
+    }
+  },
+
+  "section_3_secrets_security": {
+    "title": "THE KEYS - Secrets & Security Verification",
+    "adr_reference": "ADR-008",
+    "overall_status": "PASSED",
+    "findings": {
+      "secrets_in_code": {
+        "status": "VERIFIED",
+        "evidence": "grep for 'api_key|API_KEY|secret|SECRET|password|PASSWORD|credential|token|TOKEN' returned 0 matches. No hardcoded secrets.",
+        "matches_found": 0
+      },
+      "environment_variable_access": {
+        "status": "VERIFIED",
+        "evidence": "grep for 'os.environ|getenv' returned 0 matches. Module does not access environment variables.",
+        "matches_found": 0
+      },
+      "network_libraries": {
+        "status": "VERIFIED",
+        "evidence": "grep for 'import os|requests|urllib|http' returned 0 matches. No network libraries imported.",
+        "matches_found": 0
+      },
+      "vault_injection_only": {
+        "status": "VERIFIED",
+        "evidence": "Module is secrets-agnostic. Any future broker API keys must be injected via Vault/ENV at integration layer, not within IoS-012 core."
+      },
+      "log_leakage_risk": {
+        "status": "VERIFIED",
+        "evidence": "Logging uses standard Python logging with non-sensitive data (trade IDs, quantities, prices). No credential logging risk."
+      },
+      "introspection_safety": {
+        "status": "VERIFIED",
+        "evidence": "Pydantic models use default __repr__. No sensitive data exposure via model introspection."
+      }
+    }
+  },
+
+  "section_4_constitutional_alignment": {
+    "title": "THE LAW - Constitutional Alignment Verification",
+    "adr_reference": "ADR-004, ADR-008, ADR-013, ADR-016",
+    "overall_status": "FAILED_CRITICAL",
+    "findings": {
+      "ed25519_signature_validation": {
+        "status": "FAILED",
+        "evidence": "grep for 'Ed25519|signature|verify' returned 0 matches in trade_engine/. No cryptographic signature validation for execution mandates.",
+        "severity": "CRITICAL",
+        "adr_violated": "ADR-008",
+        "remediation": "Implement Ed25519 signature verification for all execution mandates before LIVE activation"
+      },
+      "execution_guard_pattern": {
+        "status": "FAILED",
+        "evidence": "grep for 'ExecutionGuard|execution_authority|can_execute|is_authorized' returned 0 matches. No execution authority checking mechanism.",
+        "severity": "CRITICAL",
+        "adr_violated": "ADR-012",
+        "remediation": "Implement ExecutionGuard pattern to verify execution authority before trade generation"
+      },
+      "ios_008_source_mandate": {
+        "status": "FAILED",
+        "evidence": "No validation that signals originate from IoS-008 Runtime Decision Engine. source_signal_id is passed through without verification (trade_generator.py:167).",
+        "severity": "HIGH",
+        "adr_violated": "ADR-013",
+        "remediation": "Add IoS-008 source validation to reject signals from non-canonical sources"
+      },
+      "sha256_lineage_signatures": {
+        "status": "PENDING",
+        "evidence": "Per STIG's Technical Readiness report, SHA-256 lineage signatures to be added at integration layer. Not present in core engine.",
+        "severity": "MEDIUM",
+        "remediation": "Implement lineage signatures at G4 integration layer"
+      },
+      "two_man_rule_compliance": {
+        "status": "VERIFIED",
+        "evidence": "G4 activation requires CEO signature + VEGA certification per review bundle. Constraint enforced at governance layer."
+      },
+      "change_gate_discipline": {
+        "status": "VERIFIED",
+        "evidence": "Module has progressed through G0→G1→G2→G3 gates per governance artifacts. G4 review properly initiated with CEO directive."
+      }
+    }
+  },
+
+  "constitutional_violations_summary": {
+    "critical_violations": [
+      {
+        "id": "CV-001",
+        "adr": "ADR-008",
+        "description": "No Ed25519 signature validation for execution mandates",
+        "remediation_required": true,
+        "blocks_live_activation": true
+      },
+      {
+        "id": "CV-002",
+        "adr": "ADR-012",
+        "description": "No ExecutionGuard pattern to verify execution authority",
+        "remediation_required": true,
+        "blocks_live_activation": true
+      }
+    ],
+    "high_severity_violations": [
+      {
+        "id": "HV-001",
+        "adr": "ADR-013",
+        "description": "No IoS-008 source mandate enforcement for signals",
+        "remediation_required": true,
+        "blocks_live_activation": true
+      },
+      {
+        "id": "HV-002",
+        "adr": "ADR-016",
+        "description": "No DEFCON circuit breaker integration",
+        "remediation_required": true,
+        "blocks_live_activation": true
+      }
+    ],
+    "medium_severity_warnings": [
+      {
+        "id": "MW-001",
+        "description": "uuid4() introduces non-determinism in trade_id generation",
+        "remediation_recommended": true,
+        "blocks_live_activation": false
+      },
+      {
+        "id": "MW-002",
+        "description": "Volatility scaling is placeholder only",
+        "remediation_recommended": true,
+        "blocks_live_activation": false
+      },
+      {
+        "id": "MW-003",
+        "description": "No margin calculation for SHORT positions",
+        "remediation_recommended": true,
+        "blocks_live_activation": false
+      }
+    ]
+  },
+
+  "vega_decision": {
+    "certification_status": "G4_WARN",
+    "decision_code": "CONDITIONAL_PASS",
+    "decision_timestamp": "2025-12-01T19:45:00.000Z",
+    "rationale": "IoS-012 Execution Engine demonstrates strong fundamentals: pure-function design, NLV accounting identity verified, comprehensive exposure controls, and secrets-safe implementation. However, critical constitutional violations exist in ADR-008 (Ed25519 signatures) and ADR-012 (ExecutionGuard pattern) that MUST be remediated before LIVE activation. PAPER environment activation is authorized under strict conditions.",
+
+    "authorization_scope": {
+      "paper_environment": "AUTHORIZED",
+      "live_environment": "BLOCKED",
+      "rationale": "PAPER activation allows validation of trade generation logic without economic risk. LIVE activation requires complete remediation of all CRITICAL and HIGH violations."
+    },
+
+    "conditions_for_paper_activation": [
+      "CEO signature obtained (Two-Man Rule)",
+      "Execution authority limited to PAPER environment only",
+      "All trades marked as SIMULATED",
+      "No outbound API calls to brokers",
+      "Daily governance review of paper trading results"
+    ],
+
+    "conditions_for_live_activation": [
+      "Remediate CV-001: Implement Ed25519 signature validation",
+      "Remediate CV-002: Implement ExecutionGuard pattern",
+      "Remediate HV-001: Implement IoS-008 source mandate enforcement",
+      "Remediate HV-002: Implement DEFCON circuit breaker integration",
+      "Complete G4 re-review by VEGA after remediations",
+      "Multi-year backtest with economic risk dossier",
+      "VaR computation implementation"
+    ]
+  },
+
+  "recommended_remediations": {
+    "priority_1_critical": [
+      {
+        "id": "R-001",
+        "target": "trade_engine/engine.py or integration layer",
+        "action": "Add Ed25519 signature verification wrapper",
+        "pattern": "Verify signature on SignalSnapshot before processing",
+        "adr_compliance": "ADR-008"
+      },
+      {
+        "id": "R-002",
+        "target": "trade_engine/engine.py",
+        "action": "Add ExecutionGuard check at entry point",
+        "pattern": "Verify execution_authority is TRUE before generating trades",
+        "adr_compliance": "ADR-012"
+      }
+    ],
+    "priority_2_high": [
+      {
+        "id": "R-003",
+        "target": "trade_engine/models.py or engine.py",
+        "action": "Add IoS-008 source validation",
+        "pattern": "Verify signal.source == 'IoS-008' before processing",
+        "adr_compliance": "ADR-013"
+      },
+      {
+        "id": "R-004",
+        "target": "trade_engine/engine.py",
+        "action": "Add DEFCON-aware halt mechanism",
+        "pattern": "Query DEFCON level, halt if >= DEFCON-2",
+        "adr_compliance": "ADR-016"
+      }
+    ],
+    "priority_3_medium": [
+      {
+        "id": "R-005",
+        "target": "trade_engine/models.py:265",
+        "action": "Replace uuid4() with deterministic ID generation",
+        "pattern": "trade_id = hash(signal_id + asset_id + timestamp)"
+      },
+      {
+        "id": "R-006",
+        "target": "trade_engine/position_sizing.py",
+        "action": "Implement volatility-adjusted position sizing"
+      },
+      {
+        "id": "R-007",
+        "target": "trade_engine/",
+        "action": "Add comprehensive unit test suite"
+      }
+    ]
+  },
+
+  "governance_actions": {
+    "registry_update": {
+      "table": "fhq_meta.ios_registry",
+      "ios_id": "IoS-012",
+      "new_governance_state": "G4_CONDITIONAL",
+      "new_status": "G4_CONDITIONAL_PAPER_ONLY"
+    },
+    "review_completion": {
+      "table": "fhq_governance.ios012_g4_review",
+      "vega_decision": "G4_WARN",
+      "vega_decision_at": "2025-12-01T19:45:00.000Z",
+      "vega_notes": "Conditional pass for PAPER environment. LIVE activation blocked pending remediations."
+    },
+    "governance_log": {
+      "table": "fhq_governance.governance_actions_log",
+      "action_type": "G4_VEGA_CERTIFICATION",
+      "action_target": "IoS-012",
+      "decision": "G4_WARN",
+      "hash_chain_id": "HC-VEGA-IOS012-G4-CERT-20251201-194500"
+    }
+  },
+
+  "next_steps": {
+    "immediate": [
+      "1. CEO reviews this certification and provides signature if accepting conditions",
+      "2. If CEO signs, IoS-012 elevated to G4_CONDITIONAL status",
+      "3. PAPER environment activation proceeds under stated conditions"
+    ],
+    "short_term": [
+      "1. STIG remediates CRITICAL and HIGH violations (R-001 through R-004)",
+      "2. VEGA conducts follow-up review of remediations",
+      "3. Full G4 re-certification for LIVE environment authorization"
+    ],
+    "long_term": [
+      "1. Complete multi-year backtest with IoS-010 Prediction Ledger",
+      "2. VaR computation implementation",
+      "3. Full economic risk dossier production"
+    ]
+  },
+
+  "signatures": {
+    "vega_signature": {
+      "agent": "VEGA",
+      "role": "Verification & Governance Authority",
+      "action": "G4 Constitutional Audit Certification",
+      "decision": "G4_WARN (CONDITIONAL PASS)",
+      "signed_at": "2025-12-01T19:45:00.000Z",
+      "attestation": "I, VEGA, have conducted an independent constitutional audit of IoS-012 Execution Engine. The module demonstrates strong technical foundations but has critical constitutional violations that block LIVE activation. PAPER environment activation is authorized under stated conditions."
+    },
+    "ceo_signature": {
+      "status": "PENDING",
+      "required_for": "G4_CONDITIONAL activation and Two-Man Rule compliance",
+      "expected_action": "Accept conditions and authorize PAPER activation OR request remediations before any activation"
+    }
+  },
+
+  "certification_hash": {
+    "lineage_hash": "VEGA-IOS012-G4-AUDIT-20251201-194500",
+    "hash_self": "PENDING_COMPUTATION_ON_COMMIT"
+  }
+}

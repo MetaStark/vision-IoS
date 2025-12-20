@@ -1,0 +1,256 @@
+{
+  "validation_id": "f71a4d9a-20ee-4468-a76c-e0b0302f066f",
+  "ios_module": "IoS-002",
+  "module_name": "Indicator Engine (Sensory Cortex)",
+  "validation_type": "G1_TECHNICAL",
+  "timestamp": "2025-11-29T01:47:39.757079+00:00",
+  "validator": "STIG",
+  "overall_status": "G1_PASS",
+  "checks": [
+    {
+      "check_id": "G1-001",
+      "check_name": "Indicator Tables Exist",
+      "status": "PASS",
+      "details": {
+        "required": [
+          "indicator_trend",
+          "indicator_momentum",
+          "indicator_volatility",
+          "indicator_ichimoku"
+        ],
+        "found": [
+          "indicator_ichimoku",
+          "indicator_momentum",
+          "indicator_trend",
+          "indicator_volatility"
+        ],
+        "missing": [],
+        "column_counts": {
+          "indicator_ichimoku": 8,
+          "indicator_momentum": 8,
+          "indicator_trend": 8,
+          "indicator_volatility": 8
+        }
+      },
+      "adr_reference": "IoS-002 Section 5"
+    },
+    {
+      "check_id": "G1-002",
+      "check_name": "Lineage Columns Present",
+      "status": "PASS",
+      "details": {
+        "required_columns": [
+          "engine_version",
+          "formula_hash",
+          "lineage_hash",
+          "created_at"
+        ],
+        "missing": [],
+        "tables_checked": [
+          "indicator_trend",
+          "indicator_momentum",
+          "indicator_volatility",
+          "indicator_ichimoku"
+        ]
+      },
+      "adr_reference": "ADR-002, ADR-003"
+    },
+    {
+      "check_id": "G1-003",
+      "check_name": "CALC_INDICATORS Pipeline Binding",
+      "status": "PASS",
+      "details": {
+        "task": {
+          "task_name": "CALC_INDICATORS",
+          "task_type": "PIPELINE_STAGE",
+          "owned_by_agent": "FINN",
+          "executed_by_agent": "CODE",
+          "reads_from_schemas": [
+            "fhq_market"
+          ],
+          "writes_to_schemas": [
+            "fhq_research"
+          ],
+          "task_status": "REGISTERED"
+        },
+        "issues": []
+      },
+      "adr_reference": "ADR-007"
+    },
+    {
+      "check_id": "G1-004",
+      "check_name": "Canonical Prices Available",
+      "status": "PASS",
+      "details": {
+        "total_rows": 11187,
+        "assets": 4,
+        "date_range": {
+          "earliest": "2015-12-02 00:00:00",
+          "latest": "2025-11-28 00:00:00"
+        },
+        "required_assets": 4
+      },
+      "adr_reference": "ADR-013, IoS-001"
+    },
+    {
+      "check_id": "G1-005",
+      "check_name": "DEFCON Status GREEN",
+      "status": "PASS",
+      "details": {
+        "current_level": "GREEN",
+        "active_circuit_breakers": [],
+        "system_state": {
+          "current_defcon": "GREEN",
+          "active_circuit_breakers": [],
+          "reason": "System initialization - nominal operations",
+          "triggered_at": "2025-11-28 12:48:00.639978+00:00"
+        },
+        "last_transition": null
+      },
+      "adr_reference": "ADR-016"
+    },
+    {
+      "check_id": "G1-006",
+      "check_name": "Economic Safety Invariants",
+      "status": "PASS",
+      "details": {
+        "api_tiers": [
+          {
+            "usage_tier": "LAKE",
+            "providers": 2,
+            "active": 2
+          },
+          {
+            "usage_tier": "PULSE",
+            "providers": 3,
+            "active": 3
+          },
+          {
+            "usage_tier": "SNIPER",
+            "providers": 3,
+            "active": 3
+          }
+        ],
+        "has_lake_tier": true,
+        "has_pulse_tier": true,
+        "has_sniper_tier": true,
+        "circuit_breakers": {
+          "total": 8,
+          "enabled": 8
+        }
+      },
+      "adr_reference": "ADR-012"
+    },
+    {
+      "check_id": "G1-007",
+      "check_name": "Deterministic Calculation",
+      "status": "PASS",
+      "details": {
+        "test_indicator": "RSI-14",
+        "input_prices": [
+          44.0,
+          44.25,
+          44.5,
+          43.75,
+          44.5,
+          44.25,
+          44.0,
+          43.5,
+          43.0,
+          43.5,
+          44.0,
+          44.5,
+          45.0,
+          45.5,
+          46.0
+        ],
+        "result_1": 65.38461538,
+        "result_2": 65.38461538,
+        "identical": "True",
+        "formula_hash": "a5e957933af4c503",
+        "tolerance": "0.00000001"
+      },
+      "adr_reference": "IoS-002 Section 4.1"
+    }
+  ],
+  "evidence": {
+    "schema_hash": "ea9b8f4e63a0b09ee7a2fbef102fb189f1dcb658936aaa99be9d568b0f5ed012",
+    "pipeline_binding_hash": "2dd78f5fcb1890f1225f7b377a5c1c69b8648bdb75eb2a2e911f45e01da0c8ab",
+    "lineage_snapshot": {
+      "source_table": "fhq_market.prices",
+      "target_schema": "fhq_research",
+      "assets": [
+        {
+          "canonical_id": "BTC-USD",
+          "rows": 3650,
+          "start": "2015-12-02 00:00:00",
+          "end": "2025-11-28 00:00:00"
+        },
+        {
+          "canonical_id": "ETH-USD",
+          "rows": 2942,
+          "start": "2017-11-09 00:00:00",
+          "end": "2025-11-28 00:00:00"
+        },
+        {
+          "canonical_id": "EURUSD",
+          "rows": 2536,
+          "start": "2015-12-02 00:00:00",
+          "end": "2025-11-28 00:00:00"
+        },
+        {
+          "canonical_id": "SOL-USD",
+          "rows": 2059,
+          "start": "2020-04-10 00:00:00",
+          "end": "2025-11-28 00:00:00"
+        }
+      ],
+      "snapshot_time": "2025-11-29T01:47:39.756040+00:00"
+    },
+    "deterministic_replay_proof": {
+      "test_performed": true,
+      "indicator": "RSI-14",
+      "result": {
+        "test_indicator": "RSI-14",
+        "input_prices": [
+          44.0,
+          44.25,
+          44.5,
+          43.75,
+          44.5,
+          44.25,
+          44.0,
+          43.5,
+          43.0,
+          43.5,
+          44.0,
+          44.5,
+          45.0,
+          45.5,
+          46.0
+        ],
+        "result_1": 65.38461538,
+        "result_2": 65.38461538,
+        "identical": "True",
+        "formula_hash": "a5e957933af4c503",
+        "tolerance": "0.00000001"
+      },
+      "proof_hash": "d8db8c0f0a7342be4dc0b4a25cf48c7f266f775be2e31f91c60070365632ba8d"
+    }
+  },
+  "signature_log": {
+    "signer": "STIG",
+    "sign_time": "2025-11-29T01:47:39.757079+00:00",
+    "bundle_hash": "a7f3b9cb4bad404c5ceb1a341bb6b3b873509c24c3269246a28a2f82ed3ce862"
+  },
+  "adr_compliance": [
+    "ADR-001",
+    "ADR-002",
+    "ADR-003",
+    "ADR-007",
+    "ADR-012",
+    "ADR-013",
+    "ADR-016"
+  ],
+  "next_gate": "G2_GOVERNANCE"
+}

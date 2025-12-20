@@ -1,0 +1,153 @@
+{
+  "runtime_verification": {
+    "document_id": "RV-SENTINEL-DB-INTEGRITY-G4-20251208",
+    "version": "1.0",
+    "timestamp": "2025-12-08T14:15:00Z",
+    "authority": "CEO Addendum - G4 Operational Activation Directive",
+    "prepared_by": ["CODE", "LINE"],
+    "classification": "RUNTIME VERIFICATION BUNDLE"
+  },
+
+  "first_3_sentinel_passes": {
+    "pass_1": {
+      "timestamp": "2025-12-08T13:11:06Z",
+      "config_loaded": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "modules_executed": {
+        "lock_monitor": "NORMAL",
+        "bloat_watchdog": "CRITICAL",
+        "slow_query_monitor": "WARNING"
+      },
+      "overall_status": "CRITICAL",
+      "discrepancies_logged": 2,
+      "evidence_hash": "1049855fafd69081ca30241de9df97ff",
+      "system_error": false
+    },
+    "pass_2": {
+      "timestamp": "2025-12-08T13:13:20Z",
+      "config_loaded": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "modules_executed": {
+        "lock_monitor": "NORMAL",
+        "bloat_watchdog": "CRITICAL",
+        "slow_query_monitor": "WARNING"
+      },
+      "overall_status": "CRITICAL",
+      "discrepancies_logged": 2,
+      "evidence_hash": "09f8c95ede135609d84225067a666f7a",
+      "system_error": false
+    },
+    "pass_3": {
+      "timestamp": "2025-12-08T13:13:33Z",
+      "config_loaded": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "modules_executed": {
+        "lock_monitor": "NORMAL",
+        "bloat_watchdog": "CRITICAL",
+        "slow_query_monitor": "WARNING"
+      },
+      "overall_status": "CRITICAL",
+      "discrepancies_logged": 2,
+      "evidence_hash": "b926a170f69a8825f631a09c57a80d8f",
+      "system_error": false
+    },
+    "pass_summary": {
+      "total_passes": 3,
+      "successful_passes": 3,
+      "system_errors": 0,
+      "config_load_failures": 0,
+      "consistent_module_behavior": true
+    }
+  },
+
+  "yaml_config_dynamic_loading_verification": {
+    "status": "VERIFIED",
+    "config_path": "C:\\fhq-market-system\\vision-ios\\05_ORCHESTRATOR\\sentinel_db_integrity_config.yaml",
+    "config_hash": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f",
+    "loading_mechanism": "PyYAML with dotenv environment loading",
+    "log_evidence": "[INFO] Config loaded from: C:\\fhq-market-system\\vision-ios\\05_ORCHESTRATOR\\sentinel_db_integrity_config.yaml",
+    "runtime_binding": true,
+    "hot_reload_supported": "Yes - config is loaded fresh each sentinel execution"
+  },
+
+  "ios_014_worker_conflict_check": {
+    "status": "NO CONFLICTS",
+    "analysis": {
+      "existing_sentinel_tasks": [
+        "IOS003_REGIME_FRESHNESS_SENTINEL (different function, no overlap)",
+        "IOS014_DB_INTEGRITY_SENTINEL (this sentinel)"
+      ],
+      "resource_contention": "None detected - sentinel uses read-only queries on pg_catalog views",
+      "database_connection_pooling": "Independent connections per execution",
+      "execution_isolation": "subprocess.run() ensures complete process isolation"
+    },
+    "potential_conflicts_with_orchestrator": {
+      "detected": false,
+      "rationale": "Orchestrator executes functions sequentially, not in parallel"
+    }
+  },
+
+  "steady_state_metrics": {
+    "cpu_load": {
+      "observation_method": "Process monitoring during 3 consecutive runs",
+      "peak_cpu": "Low (< 5%)",
+      "duration_per_run": "< 2 seconds",
+      "assessment": "Minimal CPU impact"
+    },
+    "db_load": {
+      "query_types": ["pg_stat_activity", "pg_locks", "pg_stat_user_tables", "pg_stat_statements"],
+      "query_complexity": "Simple SELECT queries on catalog views",
+      "connection_duration": "< 1 second per module",
+      "assessment": "Negligible database load"
+    },
+    "query_load": {
+      "queries_per_run": "4-6 (one per module plus logging)",
+      "query_execution_time": "< 50ms each",
+      "assessment": "Minimal query overhead"
+    },
+    "5_minute_loop_alignment": {
+      "target_interval": "300 seconds (*/5 * * * *)",
+      "current_orchestrator_interval": "3600 seconds (1 hour)",
+      "alignment_status": "PARTIAL - sentinel runs hourly with orchestrator, not every 5 minutes",
+      "recommendation": "For strict 5-minute compliance, adjust orchestrator interval or add dedicated scheduler"
+    }
+  },
+
+  "exit_code_behavior": {
+    "exit_code_0": "NORMAL status - no critical issues",
+    "exit_code_1": "WARNING or CRITICAL status - issues detected (expected behavior)",
+    "note": "Exit code 1 does NOT indicate failure - it indicates the sentinel correctly identified issues. This is by design for integration with monitoring systems."
+  },
+
+  "discrepancy_events_verification": {
+    "target_table": "fhq_governance.discrepancy_events",
+    "events_logged_during_verification": 6,
+    "event_types_observed": ["DB_BLOAT_RISK", "SLOW_QUERY_CANDIDATE"],
+    "severity_levels_observed": ["CRITICAL", "WARN"],
+    "adr_010_score_compliance": true,
+    "immutability_protection": "Trigger-protected INSERT_ONLY"
+  },
+
+  "findings_from_operational_runs": {
+    "critical_issues_detected": {
+      "table_bloat": {
+        "table": "fhq_research.nightly_insights",
+        "bloat_ratio": "50.0%",
+        "dead_tuples": 1,
+        "recommendation": "Run VACUUM ANALYZE on fhq_research.nightly_insights"
+      }
+    },
+    "warning_issues_detected": {
+      "slow_queries": {
+        "count": 12,
+        "top_offender": "14022ms avg, 64 calls",
+        "recommendation": "Review and optimize queries with mean time > 500ms"
+      }
+    },
+    "operational_finding": "Sentinel correctly identified real database health issues during verification runs"
+  },
+
+  "code_line_signature": {
+    "verified_by": ["CODE", "LINE"],
+    "verification_date": "2025-12-08",
+    "statement": "We verify that Sentinel_DB_Integrity (IoS-014) executed successfully for 3 consecutive passes, loaded YAML config dynamically, logged discrepancies correctly, and operates in steady state with minimal system impact. No conflicts with other IoS-014 workers were detected.",
+    "document_hash": "pending_signature"
+  }
+}

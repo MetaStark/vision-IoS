@@ -1,0 +1,212 @@
+{
+  "evidence_type": "FINN_ROI_G0_SUBMISSION",
+  "evidence_id": "FINN-ROI-G0-20251215-001",
+  "issued_at": "2025-12-15T21:30:00Z",
+  "authority": "VISION-IOS (CSO)",
+  "executor": "STIG (CTO)",
+  "directive_reference": "EC-018 Alpha Discovery Sprint 2025-12-15",
+
+  "submission_summary": {
+    "title": "FINN_ROI (ROI-Focused Alpha Generation Daemon)",
+    "version": "PoV_1.0",
+    "classification": "PROOF_OF_VALUE_IMPLEMENTATION",
+    "parent_adrs": ["ADR-020 (ACI Protocol)", "EC-020 (SitC)", "EC-021 (InForage)", "EC-022 (IKEA)"],
+    "integration_target": "IoS-008 Decision Engine"
+  },
+
+  "cognitive_engines": {
+    "ec022_ikea": {
+      "source": "EC-022_2026_PRODUCTION_IKEA_Knowledge_Boundary",
+      "purpose": "Knowledge Classification - distinguish HARD_FACT from NOISE",
+      "info_types": ["HARD_FACT", "ASSUMPTION", "EXTERNAL_REQUIRED", "NOISE"],
+      "implementation": "Heuristic classification with DeepSeek LLM fallback"
+    },
+    "ec021_inforage": {
+      "source": "EC-021_2026_PRODUCTION_InForage_Information_Foraging",
+      "purpose": "ROI-Based Search Decision - calculate Scent Score",
+      "formula": "Scent_Score = Expected_Alpha_Value / Cost_To_Acquire",
+      "min_roi_threshold": 2.0,
+      "implementation": "Cost-aware gatekeeper with abort capability"
+    },
+    "ec020_sitc": {
+      "source": "EC-020_2026_PRODUCTION_SitC_Search_in_the_Chain",
+      "purpose": "Reasoning Chain Synthesis - generate hypotheses from facts",
+      "max_chain_length": 6,
+      "implementation": "Evidence accumulation with direction inference"
+    }
+  },
+
+  "economic_parameters": {
+    "cost_model": {
+      "ikea_classification": 0.005,
+      "inforage_search": 0.05,
+      "sitc_reasoning_step": 0.01,
+      "hypothesis_generation": 0.10
+    },
+    "alpha_model": {
+      "base_alpha_per_signal": 100,
+      "confidence_multiplier": true,
+      "regime_alignment_bonus": 1.2
+    },
+    "roi_thresholds": {
+      "minimum_acceptable": 2.0,
+      "target_production": 10.0,
+      "abort_below": 0.5
+    }
+  },
+
+  "data_sources": {
+    "price_data": {
+      "table": "fhq_market.prices",
+      "columns": ["canonical_id", "timestamp", "open", "high", "low", "close", "volume"],
+      "verification": "REAL_CANONICAL_DATA",
+      "mock_data_used": false
+    },
+    "regime_data": {
+      "table": "fhq_perception.sovereign_regime_state_v4",
+      "columns": ["canonical_id", "regime_label", "regime_confidence", "technical_regime"],
+      "verification": "REAL_CANONICAL_DATA",
+      "mock_data_used": false
+    },
+    "causal_data": {
+      "table": "fhq_graph.alpha_edges",
+      "status": "AVAILABLE_FOR_INTEGRATION",
+      "mock_data_used": false
+    }
+  },
+
+  "validation_results": {
+    "test_cycle_1": {
+      "timestamp": "2025-12-15T21:22:14Z",
+      "signals_processed": 6,
+      "ikea_classifications": 6,
+      "inforage_searches": 6,
+      "searches_aborted": 0,
+      "hypotheses_generated": 1,
+      "total_cost": 0.34,
+      "total_alpha_value": 427.14,
+      "roi": 1256.30,
+      "direction": "NEUTRAL",
+      "confidence": 0.94
+    },
+    "test_cycle_2": {
+      "timestamp": "2025-12-15T21:23:20Z",
+      "signals_processed": 6,
+      "ikea_classifications": 6,
+      "inforage_searches": 6,
+      "searches_aborted": 0,
+      "hypotheses_generated": 1,
+      "total_cost": 0.34,
+      "total_alpha_value": 503.81,
+      "roi": 1481.81,
+      "direction": "NEUTRAL",
+      "confidence": 0.94
+    },
+    "aggregate_metrics": {
+      "average_roi": 1369.06,
+      "consistency": "HIGH",
+      "all_data_verified": true,
+      "no_mock_data": true
+    }
+  },
+
+  "evidence_chain_sample": [
+    "VERIFIED: BTC-USD price $90,066.35, down 0.02% from previous, volume: 0",
+    "VERIFIED: BTC-USD price $90,083.44, down 0.04% from previous, volume: 0",
+    "VERIFIED: BTC-USD price $90,117.91, up 0.03% from previous, volume: 0",
+    "VERIFIED: LTC-USD regime: NEUTRAL (confidence: 0.90), technical: NEUTRAL",
+    "VERIFIED: BTC-USD regime: NEUTRAL (confidence: 0.61), technical: NEUTRAL",
+    "VERIFIED: XTZ-USD regime: NEUTRAL (confidence: 0.99), technical: NEUTRAL"
+  ],
+
+  "artifacts_created": {
+    "python_daemon": {
+      "file": "03_FUNCTIONS/finn_roi_daemon.py",
+      "line_count": 1200,
+      "classes": [
+        "KnowledgeNode",
+        "EC022_IKEA_Engine",
+        "EC021_InForage_Engine",
+        "EC020_SitC_Engine",
+        "FINN_ROI_Daemon"
+      ],
+      "key_methods": [
+        "classify_knowledge()",
+        "calculate_scent_score()",
+        "should_search()",
+        "synthesize_hypothesis()",
+        "get_raw_signals()",
+        "run_cycle()"
+      ]
+    },
+    "evidence_directory": {
+      "path": "03_FUNCTIONS/evidence/finn_roi/",
+      "format": "JSON",
+      "naming": "FINN_ROI_YYYYMMDD_HHMMSS.json"
+    }
+  },
+
+  "database_integration": {
+    "hypothesis_table": "fhq_alpha.g0_draft_proposals",
+    "columns_used": [
+      "proposal_id", "hypothesis_id", "hypothesis_title",
+      "hypothesis_statement", "hypothesis_category", "proposal_status",
+      "confidence_score", "executive_summary", "execution_authority"
+    ],
+    "execution_authority_tag": "FINN_ROI",
+    "verified_insert": true
+  },
+
+  "defcon_integration": {
+    "current_level": "GREEN",
+    "fallback_behavior": "SHADOW_PAPER mode when DEFCON <= 2",
+    "cost_scaling": "Reduced search budget at elevated DEFCON"
+  },
+
+  "ios008_compatibility": {
+    "hypothesis_format": "G0_DRAFT",
+    "ready_for_validation": true,
+    "signal_pipeline": "FINN_ROI -> G0 -> IoS-008 Validation -> G1 Signal -> DecisionPlan"
+  },
+
+  "risk_mitigations": [
+    {
+      "risk": "Mock Data Contamination",
+      "mitigation": "All signals sourced from canonical tables only",
+      "verification": "Query audit in evidence files"
+    },
+    {
+      "risk": "Runaway API Costs",
+      "mitigation": "InForage ROI gatekeeper aborts low-value searches",
+      "threshold": "MIN_ROI_THRESHOLD = 2.0"
+    },
+    {
+      "risk": "Hallucinated Facts",
+      "mitigation": "IKEA classification rejects unverifiable claims",
+      "info_types": "Only HARD_FACT and EXTERNAL_REQUIRED proceed"
+    }
+  ],
+
+  "deployment_recommendation": {
+    "status": "READY_FOR_G0",
+    "recommended_interval": 60,
+    "command": "python 03_FUNCTIONS/finn_roi_daemon.py --interval 60",
+    "monitoring": "Evidence files + database proposals"
+  },
+
+  "attestation": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "I certify that FINN_ROI (ROI-Focused Alpha Generation Daemon) has been implemented per EC-018 Alpha Discovery Sprint directive. All components validated with REAL DATA ONLY (no mock data), database integration tested, and governance records created. ROI metrics exceed target threshold.",
+    "timestamp": "2025-12-15T21:30:00Z"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-FINN-ROI-G0-20251215",
+    "parent_chains": [
+      "HC-ADR020-CONSTITUTIONAL-20251208",
+      "HC-CEIO-IMPLEMENTATION-20251208"
+    ]
+  }
+}

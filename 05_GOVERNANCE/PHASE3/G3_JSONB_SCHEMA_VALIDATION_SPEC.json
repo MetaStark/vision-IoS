@@ -1,0 +1,421 @@
+{
+  "document_type": "G3_JSONB_SCHEMA_VALIDATION_SPECIFICATION",
+  "document_id": "G3-JSONB-SPEC-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T20:05:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G3 2025-12-09 Section 2.2",
+  "purpose": "Define formal JSONB schemas and validation triggers for Cognitive Domain data integrity",
+
+  "jsonb_field_schemas": {
+    "causal_links": {
+      "table": "fhq_cognition.cognitive_nodes",
+      "field": "causal_links",
+      "adr_reference": "EC-020 Section 4",
+      "json_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["target_node_id", "link_type", "strength"],
+          "properties": {
+            "target_node_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the target cognitive node"
+            },
+            "link_type": {
+              "type": "string",
+              "enum": ["CAUSES", "ENABLES", "INHIBITS", "CORRELATES", "DEPENDS_ON"],
+              "description": "Type of causal relationship"
+            },
+            "strength": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Strength of causal relationship (0-1)"
+            },
+            "evidence_source": {
+              "type": "string",
+              "description": "Optional: ADR/EC reference for the relationship"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "When this link was established"
+            }
+          },
+          "additionalProperties": false
+        },
+        "maxItems": 20,
+        "description": "Array of causal relationships to other nodes. Limited to 20 links per node."
+      },
+      "governance_traceability": {
+        "source_document_required": true,
+        "hash_included_in_lineage": true
+      }
+    },
+
+    "verification_evidence": {
+      "table": "fhq_cognition.search_in_chain_events",
+      "field": "verification_evidence",
+      "adr_reference": "EC-020 Section 8",
+      "json_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "required": ["verification_method", "verified_at"],
+        "properties": {
+          "verification_method": {
+            "type": "string",
+            "enum": ["INTERNAL_CHECK", "EXTERNAL_VALIDATION", "CROSS_REFERENCE", "HASH_VERIFICATION", "MANUAL_REVIEW"],
+            "description": "How the node was verified"
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of verification"
+          },
+          "verified_by": {
+            "type": "string",
+            "description": "Agent or system that performed verification"
+          },
+          "confidence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Confidence in verification result"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_type": {"type": "string"},
+                "source_id": {"type": "string"},
+                "relevance": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            },
+            "maxItems": 10,
+            "description": "Sources used for verification"
+          },
+          "discrepancies": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Any discrepancies found during verification"
+          }
+        },
+        "additionalProperties": false
+      },
+      "governance_traceability": {
+        "source_document_required": false,
+        "hash_included_in_lineage": true
+      }
+    },
+
+    "scent_components": {
+      "table": "fhq_cognition.information_foraging_paths",
+      "field": "scent_components",
+      "adr_reference": "EC-021 Section 4.1",
+      "json_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "required": ["relevance", "freshness", "authority"],
+        "properties": {
+          "relevance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How relevant the information is to the query"
+          },
+          "freshness": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How recent/timely the information is"
+          },
+          "authority": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Trustworthiness of the information source"
+          },
+          "specificity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How specific vs general the information is"
+          },
+          "cost_efficiency": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Information value per token cost"
+          },
+          "composite_formula": {
+            "type": "string",
+            "description": "Formula used to compute final scent_score"
+          }
+        },
+        "additionalProperties": false
+      },
+      "governance_traceability": {
+        "source_document_required": false,
+        "hash_included_in_lineage": true
+      }
+    },
+
+    "context_frame": {
+      "table": "fhq_cognition.information_foraging_paths",
+      "field": "context_frame",
+      "adr_reference": "EC-021 Section 5, BCBS-239",
+      "json_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "required": ["lineage_id", "query_context", "created_at"],
+        "properties": {
+          "lineage_id": {
+            "type": "string",
+            "description": "BCBS-239 lineage identifier for audit trail"
+          },
+          "query_context": {
+            "type": "object",
+            "properties": {
+              "original_query": {"type": "string"},
+              "refined_query": {"type": "string"},
+              "query_intent": {"type": "string"}
+            },
+            "required": ["original_query"]
+          },
+          "protocol_context": {
+            "type": "object",
+            "properties": {
+              "protocol_id": {"type": "string", "format": "uuid"},
+              "protocol_stage": {"type": "string"},
+              "hypothesis": {"type": "string"}
+            }
+          },
+          "defcon_context": {
+            "type": "object",
+            "properties": {
+              "level_at_creation": {"type": "string"},
+              "constraints_applied": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previous_frame_hash": {
+            "type": "string",
+            "description": "Hash of previous context frame for lineage chain"
+          }
+        },
+        "additionalProperties": false
+      },
+      "governance_traceability": {
+        "source_document_required": true,
+        "hash_included_in_lineage": true,
+        "bcbs_239_compliant": true
+      }
+    },
+
+    "evidence_bundle": {
+      "table": "fhq_cognition.lineage_log",
+      "field": "evidence_bundle",
+      "adr_reference": "ADR-011, ADR-013",
+      "json_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "attestation_type": {
+            "type": "string",
+            "enum": ["G0", "G1", "G2", "G3", "G4", "RUNTIME", "AUDIT"],
+            "description": "Type of governance attestation"
+          },
+          "attestation_id": {
+            "type": "string",
+            "description": "Unique identifier for the attestation"
+          },
+          "attesting_agent": {
+            "type": "string",
+            "description": "Agent providing attestation"
+          },
+          "evidence_hashes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "SHA-256 hashes of supporting evidence"
+          },
+          "adr_references": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "ADR/EC documents referenced"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Ed25519 signature placeholder"
+          }
+        },
+        "additionalProperties": true
+      },
+      "governance_traceability": {
+        "source_document_required": true,
+        "hash_included_in_lineage": true
+      }
+    }
+  },
+
+  "trigger_designs": {
+    "note": "These triggers are DESIGNED but NOT INSTALLED per G3 prohibition",
+
+    "trg_validate_causal_links": {
+      "trigger_name": "trg_validate_causal_links",
+      "table": "fhq_cognition.cognitive_nodes",
+      "timing": "BEFORE INSERT OR UPDATE",
+      "for_each": "ROW",
+      "purpose": "Validate causal_links JSONB against schema",
+      "pseudo_code": [
+        "IF NEW.causal_links IS NOT NULL THEN",
+        "  -- Validate array structure",
+        "  IF NOT jsonb_typeof(NEW.causal_links) = 'array' THEN",
+        "    RAISE EXCEPTION 'causal_links must be an array';",
+        "  END IF;",
+        "  -- Validate max items",
+        "  IF jsonb_array_length(NEW.causal_links) > 20 THEN",
+        "    RAISE EXCEPTION 'causal_links exceeds maximum 20 items';",
+        "  END IF;",
+        "  -- Validate each item has required fields",
+        "  FOR link IN SELECT * FROM jsonb_array_elements(NEW.causal_links) LOOP",
+        "    IF NOT (link ? 'target_node_id' AND link ? 'link_type' AND link ? 'strength') THEN",
+        "      RAISE EXCEPTION 'causal_links item missing required fields';",
+        "    END IF;",
+        "    -- Validate strength range",
+        "    IF (link->>'strength')::numeric < 0 OR (link->>'strength')::numeric > 1 THEN",
+        "      RAISE EXCEPTION 'causal_links strength must be between 0 and 1';",
+        "    END IF;",
+        "  END LOOP;",
+        "END IF;"
+      ],
+      "status": "DESIGNED (NOT INSTALLED)"
+    },
+
+    "trg_validate_context_frame": {
+      "trigger_name": "trg_validate_context_frame",
+      "table": "fhq_cognition.information_foraging_paths",
+      "timing": "BEFORE INSERT",
+      "for_each": "ROW",
+      "purpose": "Validate context_frame JSONB for BCBS-239 compliance",
+      "pseudo_code": [
+        "IF NEW.context_frame IS NOT NULL THEN",
+        "  -- Validate required fields for BCBS-239",
+        "  IF NOT (NEW.context_frame ? 'lineage_id') THEN",
+        "    RAISE EXCEPTION 'context_frame missing required lineage_id (BCBS-239)';",
+        "  END IF;",
+        "  IF NOT (NEW.context_frame ? 'query_context') THEN",
+        "    RAISE EXCEPTION 'context_frame missing required query_context';",
+        "  END IF;",
+        "  IF NOT (NEW.context_frame ? 'created_at') THEN",
+        "    RAISE EXCEPTION 'context_frame missing required created_at';",
+        "  END IF;",
+        "  -- Log BCBS-239 lineage event",
+        "  INSERT INTO fhq_meta.adr_audit_log (event_type, event_data)",
+        "  VALUES ('BCBS239_LINEAGE', jsonb_build_object(",
+        "    'lineage_id', NEW.context_frame->>'lineage_id',",
+        "    'table', 'information_foraging_paths',",
+        "    'record_id', NEW.forage_id",
+        "  ));",
+        "END IF;"
+      ],
+      "status": "DESIGNED (NOT INSTALLED)"
+    },
+
+    "trg_validate_scent_components": {
+      "trigger_name": "trg_validate_scent_components",
+      "table": "fhq_cognition.information_foraging_paths",
+      "timing": "BEFORE INSERT OR UPDATE",
+      "for_each": "ROW",
+      "purpose": "Validate scent_components JSONB and verify scent_score computation",
+      "pseudo_code": [
+        "IF NEW.scent_components IS NOT NULL THEN",
+        "  -- Validate required fields",
+        "  IF NOT (NEW.scent_components ? 'relevance' AND",
+        "          NEW.scent_components ? 'freshness' AND",
+        "          NEW.scent_components ? 'authority') THEN",
+        "    RAISE EXCEPTION 'scent_components missing required fields';",
+        "  END IF;",
+        "  -- Validate ranges",
+        "  IF (NEW.scent_components->>'relevance')::numeric NOT BETWEEN 0 AND 1 OR",
+        "     (NEW.scent_components->>'freshness')::numeric NOT BETWEEN 0 AND 1 OR",
+        "     (NEW.scent_components->>'authority')::numeric NOT BETWEEN 0 AND 1 THEN",
+        "    RAISE EXCEPTION 'scent_components values must be between 0 and 1';",
+        "  END IF;",
+        "END IF;"
+      ],
+      "status": "DESIGNED (NOT INSTALLED)"
+    },
+
+    "trg_validate_verification_evidence": {
+      "trigger_name": "trg_validate_verification_evidence",
+      "table": "fhq_cognition.search_in_chain_events",
+      "timing": "BEFORE INSERT OR UPDATE",
+      "for_each": "ROW",
+      "purpose": "Validate verification_evidence JSONB structure",
+      "pseudo_code": [
+        "IF NEW.verification_evidence IS NOT NULL THEN",
+        "  -- Validate verification_method is valid enum",
+        "  IF NOT (NEW.verification_evidence->>'verification_method' IN ",
+        "          ('INTERNAL_CHECK', 'EXTERNAL_VALIDATION', 'CROSS_REFERENCE', 'HASH_VERIFICATION', 'MANUAL_REVIEW')) THEN",
+        "    RAISE EXCEPTION 'Invalid verification_method in verification_evidence';",
+        "  END IF;",
+        "  -- Validate verified_at is present",
+        "  IF NOT (NEW.verification_evidence ? 'verified_at') THEN",
+        "    RAISE EXCEPTION 'verification_evidence missing required verified_at';",
+        "  END IF;",
+        "END IF;"
+      ],
+      "status": "DESIGNED (NOT INSTALLED)"
+    }
+  },
+
+  "adr_013_compliance_mapping": {
+    "description": "How each JSONB field maps to ADR-013 One-True-Source requirements",
+    "mappings": [
+      {
+        "field": "causal_links",
+        "source_document_field": "evidence_source in each link item",
+        "traceability": "Each causal relationship can reference its ADR/EC origin"
+      },
+      {
+        "field": "verification_evidence",
+        "source_document_field": "sources array with source_type and source_id",
+        "traceability": "Verification sources are enumerated and auditable"
+      },
+      {
+        "field": "scent_components",
+        "source_document_field": "Parent row has source_document = 'EC-021'",
+        "traceability": "Component formula traceable to InForage specification"
+      },
+      {
+        "field": "context_frame",
+        "source_document_field": "lineage_id provides BCBS-239 chain",
+        "traceability": "Full context lineage via previous_frame_hash"
+      },
+      {
+        "field": "evidence_bundle",
+        "source_document_field": "adr_references array",
+        "traceability": "Explicit ADR/EC references in evidence"
+      }
+    ]
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "This specification defines formal JSON schemas for all JSONB fields in the Cognitive Domain per CEO Directive G3 Section 2.2. All schemas enforce structural integrity while maintaining ADR-013 traceability. Trigger designs are complete but NOT INSTALLED per G3 prohibition.",
+    "timestamp": "2025-12-09T20:05:00.000Z"
+  }
+}

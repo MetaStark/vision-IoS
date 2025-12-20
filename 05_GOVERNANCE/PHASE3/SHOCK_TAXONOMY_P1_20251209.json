@@ -1,0 +1,293 @@
+{
+  "directive": "OPERATION CAUSAL ENTROPY - TASK C",
+  "document": "SHOCK_TAXONOMY_P1",
+  "status": "DESIGN_COMPLETE",
+  "executor": "CRIO (Research Ops)",
+  "support": "CEIO (External Intel)",
+  "timestamp_utc": "2025-12-09T13:30:00Z",
+  "gate": "G0",
+
+  "shock_classification_framework": {
+    "purpose": "Detect, classify, and propagate market shock signals through Alpha Graph",
+    "design_principles": [
+      "Deterministic detection algorithms",
+      "Time-normalized feature vectors",
+      "Confidence scoring with uncertainty bounds",
+      "Override logic for conflicting signals"
+    ]
+  },
+
+  "shock_classes": {
+    "SHOCK_LIQUIDITY": {
+      "shock_id": "SHOCK_LIQ",
+      "description": "Net Liquidity contraction exceeding 2 sigma within 5 trading days",
+      "severity_levels": ["MINOR", "MODERATE", "SEVERE", "EXTREME"],
+
+      "feature_vector": {
+        "primary_indicator": "MACRO_NET_LIQ",
+        "secondary_indicators": ["MACRO_RRP", "MACRO_TGA", "MACRO_FED_BS"],
+        "features": [
+          {"name": "net_liq_5d_change", "type": "FLOAT", "unit": "BILLIONS_USD"},
+          {"name": "net_liq_5d_zscore", "type": "FLOAT", "unit": "STANDARD_DEVIATIONS"},
+          {"name": "net_liq_percentile", "type": "FLOAT", "unit": "PERCENTILE"},
+          {"name": "tga_change_5d", "type": "FLOAT", "unit": "BILLIONS_USD"},
+          {"name": "rrp_change_5d", "type": "FLOAT", "unit": "BILLIONS_USD"},
+          {"name": "fed_bs_change_5d", "type": "FLOAT", "unit": "BILLIONS_USD"}
+        ]
+      },
+
+      "time_normalization": {
+        "lookback_window": 5,
+        "unit": "TRADING_DAYS",
+        "baseline_period": 252,
+        "baseline_unit": "TRADING_DAYS"
+      },
+
+      "detection_algorithm": {
+        "step_1": "Calculate net_liq_5d_change = NET_LIQ[t] - NET_LIQ[t-5]",
+        "step_2": "Calculate rolling_mean = mean(NET_LIQ, window=252)",
+        "step_3": "Calculate rolling_std = std(NET_LIQ, window=252)",
+        "step_4": "Calculate zscore = (net_liq_5d_change) / rolling_std",
+        "step_5": "IF zscore < -2.0 THEN SHOCK_LIQUIDITY = TRUE",
+        "pseudocode": "shock_detected = (net_liq_change / rolling_std) < -2.0"
+      },
+
+      "severity_thresholds": {
+        "MINOR": {"zscore_range": [-2.0, -2.5], "confidence": 0.6},
+        "MODERATE": {"zscore_range": [-2.5, -3.0], "confidence": 0.75},
+        "SEVERE": {"zscore_range": [-3.0, -4.0], "confidence": 0.85},
+        "EXTREME": {"zscore_range": [-4.0, null], "confidence": 0.95}
+      },
+
+      "confidence_score": {
+        "formula": "base_confidence + secondary_confirmation_bonus",
+        "base_confidence": "Derived from severity level",
+        "secondary_confirmation": {
+          "tga_spike": "+0.1 if TGA 5d change > 1 sigma",
+          "rrp_drop": "+0.1 if RRP 5d change < -1 sigma",
+          "fed_bs_drop": "+0.1 if Fed BS 5d change < -1 sigma"
+        },
+        "max_confidence": 1.0
+      },
+
+      "override_logic": {
+        "condition": "If SHOCK_LIQUIDITY detected but VIX < 20",
+        "action": "Downgrade severity by one level",
+        "rationale": "Low VIX suggests market not pricing liquidity stress"
+      }
+    },
+
+    "SHOCK_RATES": {
+      "shock_id": "SHOCK_RATES",
+      "description": "10Y Treasury yield change exceeding 15 basis points in 24 hours",
+      "severity_levels": ["MINOR", "MODERATE", "SEVERE", "EXTREME"],
+
+      "feature_vector": {
+        "primary_indicator": "US10Y",
+        "secondary_indicators": ["MACRO_MOVE", "MACRO_10Y2Y", "MACRO_BE10Y"],
+        "features": [
+          {"name": "yield_1d_change", "type": "FLOAT", "unit": "BASIS_POINTS"},
+          {"name": "yield_1d_zscore", "type": "FLOAT", "unit": "STANDARD_DEVIATIONS"},
+          {"name": "move_percentile", "type": "FLOAT", "unit": "PERCENTILE"},
+          {"name": "curve_1d_change", "type": "FLOAT", "unit": "BASIS_POINTS"},
+          {"name": "breakeven_1d_change", "type": "FLOAT", "unit": "BASIS_POINTS"}
+        ]
+      },
+
+      "time_normalization": {
+        "lookback_window": 1,
+        "unit": "TRADING_DAYS",
+        "baseline_period": 60,
+        "baseline_unit": "TRADING_DAYS"
+      },
+
+      "detection_algorithm": {
+        "step_1": "Calculate yield_1d_change = US10Y[t] - US10Y[t-1]",
+        "step_2": "Convert to basis points: bps_change = yield_1d_change * 100",
+        "step_3": "Calculate scaled_change = bps_change * sqrt(252) for annualization context",
+        "step_4": "IF abs(bps_change) > 15 THEN SHOCK_RATES = TRUE",
+        "pseudocode": "shock_detected = abs(yield_change_bps) > 15"
+      },
+
+      "severity_thresholds": {
+        "MINOR": {"bps_range": [15, 20], "confidence": 0.6},
+        "MODERATE": {"bps_range": [20, 30], "confidence": 0.75},
+        "SEVERE": {"bps_range": [30, 50], "confidence": 0.85},
+        "EXTREME": {"bps_range": [50, null], "confidence": 0.95}
+      },
+
+      "confidence_score": {
+        "formula": "base_confidence + secondary_confirmation_bonus",
+        "secondary_confirmation": {
+          "move_spike": "+0.1 if MOVE percentile > 80",
+          "curve_move": "+0.1 if 10Y2Y change > 10 bps same direction"
+        }
+      },
+
+      "override_logic": {
+        "condition": "If SHOCK_RATES detected during scheduled Fed announcement day",
+        "action": "Flag as EXPECTED_VOLATILITY, reduce propagation weight by 50%",
+        "rationale": "Scheduled events have different market absorption characteristics"
+      }
+    },
+
+    "SHOCK_VOLATILITY": {
+      "shock_id": "SHOCK_VOL",
+      "description": "VIX increase exceeding 5 points in 24 hours",
+      "severity_levels": ["MINOR", "MODERATE", "SEVERE", "EXTREME"],
+
+      "feature_vector": {
+        "primary_indicator": "MACRO_VIX",
+        "secondary_indicators": ["MACRO_MOVE", "MACRO_GVZ", "MACRO_HY_OAS"],
+        "features": [
+          {"name": "vix_1d_change", "type": "FLOAT", "unit": "INDEX_POINTS"},
+          {"name": "vix_level", "type": "FLOAT", "unit": "INDEX_POINTS"},
+          {"name": "vix_percentile", "type": "FLOAT", "unit": "PERCENTILE"},
+          {"name": "move_1d_change", "type": "FLOAT", "unit": "INDEX_POINTS"},
+          {"name": "hy_oas_1d_change", "type": "FLOAT", "unit": "BASIS_POINTS"}
+        ]
+      },
+
+      "time_normalization": {
+        "lookback_window": 1,
+        "unit": "TRADING_DAYS",
+        "baseline_period": 252,
+        "baseline_unit": "TRADING_DAYS"
+      },
+
+      "detection_algorithm": {
+        "step_1": "Calculate vix_1d_change = VIX[t] - VIX[t-1]",
+        "step_2": "Calculate vix_level = VIX[t]",
+        "step_3": "IF vix_1d_change > 5 THEN SHOCK_VOLATILITY = TRUE",
+        "step_4": "Additional: IF vix_level > 30 AND vix_1d_change > 3 THEN also TRUE",
+        "pseudocode": "shock_detected = (vix_change > 5) OR (vix_level > 30 AND vix_change > 3)"
+      },
+
+      "severity_thresholds": {
+        "MINOR": {"vix_change_range": [5, 8], "confidence": 0.6},
+        "MODERATE": {"vix_change_range": [8, 12], "confidence": 0.75},
+        "SEVERE": {"vix_change_range": [12, 20], "confidence": 0.85},
+        "EXTREME": {"vix_change_range": [20, null], "confidence": 0.95}
+      },
+
+      "confidence_score": {
+        "formula": "base_confidence + secondary_confirmation_bonus",
+        "secondary_confirmation": {
+          "move_spike": "+0.1 if MOVE 1d change > 10",
+          "credit_widen": "+0.1 if HY OAS 1d change > 20 bps",
+          "gold_vol_spike": "+0.05 if GVZ 1d change > 3"
+        }
+      },
+
+      "override_logic": {
+        "condition": "If SHOCK_VOLATILITY detected but SPY intraday range < 1%",
+        "action": "Flag as FUTURES_DRIVEN, assess overnight gap risk",
+        "rationale": "VIX spike without equity follow-through may be hedging flow"
+      }
+    },
+
+    "SHOCK_CREDIT": {
+      "shock_id": "SHOCK_CREDIT",
+      "description": "High Yield OAS widening exceeding 30 basis points in 5 trading days",
+      "severity_levels": ["MINOR", "MODERATE", "SEVERE", "EXTREME"],
+
+      "feature_vector": {
+        "primary_indicator": "MACRO_HY_OAS",
+        "secondary_indicators": ["MACRO_VIX", "MACRO_10Y2Y"],
+        "features": [
+          {"name": "oas_5d_change", "type": "FLOAT", "unit": "BASIS_POINTS"},
+          {"name": "oas_level", "type": "FLOAT", "unit": "BASIS_POINTS"},
+          {"name": "oas_percentile", "type": "FLOAT", "unit": "PERCENTILE"},
+          {"name": "vix_level", "type": "FLOAT", "unit": "INDEX_POINTS"}
+        ]
+      },
+
+      "time_normalization": {
+        "lookback_window": 5,
+        "unit": "TRADING_DAYS",
+        "baseline_period": 252,
+        "baseline_unit": "TRADING_DAYS"
+      },
+
+      "detection_algorithm": {
+        "step_1": "Calculate oas_5d_change = HY_OAS[t] - HY_OAS[t-5]",
+        "step_2": "Calculate oas_level = HY_OAS[t]",
+        "step_3": "IF oas_5d_change > 30 THEN SHOCK_CREDIT = TRUE",
+        "pseudocode": "shock_detected = oas_5d_change > 30"
+      },
+
+      "severity_thresholds": {
+        "MINOR": {"oas_change_range": [30, 50], "confidence": 0.6},
+        "MODERATE": {"oas_change_range": [50, 80], "confidence": 0.75},
+        "SEVERE": {"oas_change_range": [80, 120], "confidence": 0.85},
+        "EXTREME": {"oas_change_range": [120, null], "confidence": 0.95}
+      },
+
+      "confidence_score": {
+        "formula": "base_confidence + secondary_confirmation_bonus",
+        "secondary_confirmation": {
+          "vix_elevated": "+0.15 if VIX > 25",
+          "curve_inversion": "+0.1 if 10Y2Y < 0"
+        }
+      },
+
+      "override_logic": {
+        "condition": "If SHOCK_CREDIT detected but VIX < 18",
+        "action": "Flag as IDIOSYNCRATIC, limit equity transmission",
+        "rationale": "Credit stress without vol spike may be sector-specific"
+      }
+    }
+  },
+
+  "multi_shock_handling": {
+    "simultaneous_detection": {
+      "rule": "When multiple shocks detected simultaneously, calculate compound severity",
+      "compound_formula": "compound_severity = max(individual_severities) + 0.5 * sum(other_severities)",
+      "cap": "EXTREME"
+    },
+    "conflicting_signals": {
+      "example": "SHOCK_LIQUIDITY with contracting net_liq but VIX < 15",
+      "resolution": "Primary signal takes precedence, secondary used for confidence adjustment only",
+      "priority_order": ["SHOCK_VOLATILITY", "SHOCK_CREDIT", "SHOCK_RATES", "SHOCK_LIQUIDITY"]
+    }
+  },
+
+  "propagation_to_alpha_graph": {
+    "shock_node_injection": {
+      "description": "When shock detected, inject temporary SHOCK node into graph",
+      "node_lifetime": "Until shock severity drops to NONE",
+      "edge_type": "SHOCK_TRANSMITS",
+      "transmission_targets": "All equity nodes with exposure > 0"
+    },
+    "regime_override": {
+      "description": "SEVERE or EXTREME shocks can override asset regime to BEAR",
+      "duration": "Minimum 3 trading days",
+      "decay": "Gradual return to base regime if shock subsides"
+    }
+  },
+
+  "schema_alignment": {
+    "shock_events_table": "fhq_macro.shock_events",
+    "columns": [
+      "shock_id", "shock_type", "detected_at", "severity", "confidence_score",
+      "feature_vector", "secondary_confirmations", "override_applied", "propagated_at"
+    ]
+  },
+
+  "ceio_annotations": {
+    "current_shock_assessment": {
+      "SHOCK_LIQUIDITY": {"status": "MONITORING", "last_zscore": -1.2},
+      "SHOCK_RATES": {"status": "CLEAR", "last_1d_change_bps": 3},
+      "SHOCK_VOLATILITY": {"status": "CLEAR", "vix_level": 14.2},
+      "SHOCK_CREDIT": {"status": "CLEAR", "oas_level": 340}
+    },
+    "geopolitical_risk_overlay": "MODERATE - Middle East tensions, US election uncertainty",
+    "narrative_watch": ["Fed pivot speculation", "AI capex sustainability", "China stimulus"]
+  },
+
+  "signatures": {
+    "crio_signature": "CRIO.shock_taxonomy_p1",
+    "ceio_signature": "CEIO.shock_annotation_p1",
+    "attestation": "TASK C complete. 4 shock classes defined with deterministic detection algorithms. Feature vectors, time normalization, confidence scoring, and override logic specified. Multi-shock handling rules established. Ready for G1 validation."
+  }
+}

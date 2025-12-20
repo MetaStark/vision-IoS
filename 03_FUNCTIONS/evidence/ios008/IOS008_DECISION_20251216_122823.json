@@ -1,0 +1,1448 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T12:28:23.795173+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "0659952a-8614-4e7d-9d0b-19f4445aa371",
+    "timestamp": "2025-12-16T12:28:23.757969+00:00",
+    "valid_until": "2025-12-16T12:43:23.757969+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 24,
+      "cohesion_score": 0.6666666666666666,
+      "dominant_direction": "NEUTRAL",
+      "confidence_modifier": 0.85
+    },
+    "asset_directives": [
+      {
+        "signal_id": "fb0f4244-05f3-4c9d-8a9c-eafe52be6c98",
+        "hypothesis_id": "ALPHA-20241205-V02",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC experiences -3% to -5% move in a single 4-hour candle",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "No major scheduled events in next 24 hours",
+          "Volatility skew (put IV - call IV) < 15% (not already pricing in asymmetry)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Price recovers to within 1% of pre-shock level within 6 hours",
+          "time_exit": "24 hours after entry",
+          "take_profit": "24-hour realized volatility reaches 1.8x pre-shock levels"
+        }
+      },
+      {
+        "signal_id": "0afec93f-3e72-45a6-adcc-2ef4023e4486",
+        "hypothesis_id": "ALPHA-20241215-004",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Regime = NEUTRAL",
+          "DEFCON = 5",
+          "BTC 7-day IV > 30-day IV by >=2 percentage points",
+          "Spot volume < 0.7x 20-day average",
+          "Term structure inversion persists for 2 consecutive days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "IV continues declining for 3 days",
+          "time_exit": "5 days",
+          "take_profit": "IV term structure normalizes OR regime changes"
+        }
+      },
+      {
+        "signal_id": "819e7f65-3843-4281-a4ca-c3c16f8abe31",
+        "hypothesis_id": "ALPHA-20250401-004",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime with confidence > 60%",
+          "20-day historical volatility < 25%",
+          "1-month ATM implied volatility > 35%",
+          "Volatility risk premium (IV-HV) > 10%",
+          "Term structure in contango (2-month IV > 1-month IV)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "HV expands above 35% OR regime transitions to RISK_OFF",
+          "time_exit": "7 days after entry",
+          "take_profit": "7-day holding period OR volatility risk premium compresses to < 5%"
+        }
+      },
+      {
+        "signal_id": "2119995d-c906-45c9-815b-aa2fdc824af7",
+        "hypothesis_id": "ALPHA-20241205-V01",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+          "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+          "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+          "Current regime = NEUTRAL, DEFCON >=4"
+        ],
+        "exit_conditions": {
+          "stop_loss": "1.5% adverse move from entry",
+          "time_exit": "48 hours after entry",
+          "take_profit": "2.0% profit from entry"
+        }
+      },
+      {
+        "signal_id": "20613009-31df-4228-a847-1e9805f5e575",
+        "hypothesis_id": "ALPHA-20241205-V03",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+          "Ratio > 1.3",
+          "Enter volatility spread trade: short overnight vol, long daytime vol",
+          "Vega-neutral at initiation",
+          "NEUTRAL regime present for >=5 consecutive days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Ratio increases to >1.8",
+          "time_exit": "10 trading days after entry",
+          "take_profit": "Ratio reverts to <=1.0"
+        }
+      },
+      {
+        "signal_id": "e9b40cc1-1ba3-4178-b7c6-3c573e480229",
+        "hypothesis_id": "ALPHA-20241205-V01",
+        "category": "VOLATILITY",
+        "action": "CLOSE",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 4-hour Bollinger Band Width (20,2) < 0.1 for at least 12 consecutive periods",
+          "Subsequent 4-hour candle closes with >2.5% move outside the Bollinger Bands",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "DEFCON level >= 4 (no extreme risk conditions)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Price moves another 2.0% against position beyond entry",
+          "time_exit": "48 hours after entry if neither TP nor SL hit",
+          "take_profit": "Position reaches 1.8% profit target"
+        }
+      },
+      {
+        "signal_id": "79d5ee88-3270-43f1-ad89-c6b26df37d49",
+        "hypothesis_id": "ALPHA-20250401-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime confirmed by EC-018",
+          "Major regulatory headline (MiCA/SEC) confirmed",
+          "BTC 30-day IV spikes >50% above 30-day average",
+          "IV percentile > 70 (1-year lookback)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "200% of credit received",
+          "time_exit": "10 days to expiration",
+          "take_profit": "50% of max credit received"
+        }
+      },
+      {
+        "signal_id": "375c1836-c47f-47e1-b0f8-b33d684a76f2",
+        "hypothesis_id": "ALPHA-20241215-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "VIX daily increase > 30%",
+          "BTC in NEUTRAL regime for at least 3 days",
+          "SPY down > 1.5% on VIX spike day",
+          "BTC correlation to SPY over past 5 days > 0.6"
+        ],
+        "exit_conditions": {
+          "stop_loss": "2% adverse move",
+          "time_exit": "48 hours after entry",
+          "take_profit": "3% BTC move OR 24-hour time horizon"
+        }
+      },
+      {
+        "signal_id": "cde6b987-fe2e-44a9-8898-05d383dd4dc6",
+        "hypothesis_id": "ALPHA-20241215-002",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "10-day realized volatility < 0.3 * 30-day realized volatility",
+          "Current regime = NEUTRAL for at least 10 days",
+          "DEFCON 4-5 (stable risk environment)",
+          "No major scheduled events next 48h (FOMC, CPI, etc.)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Volatility remains compressed for 5 more days",
+          "time_exit": "5 days after entry",
+          "take_profit": "Regime transition confirmed (system signal)"
+        }
+      },
+      {
+        "signal_id": "5a92510e-54b8-4312-bb26-474e65bde303",
+        "hypothesis_id": "ALPHA-20241205-V02",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+          "Skew > +0.15 OR skew < -0.10",
+          "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+          "Position delta-hedged daily",
+          "Regime = NEUTRAL for prior 3 days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Skew moves further away by additional 0.10 from entry",
+          "time_exit": "5 days after entry",
+          "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+        }
+      },
+      {
+        "signal_id": "54eea417-3c5d-40ce-a5d5-4b1da526f4d5",
+        "hypothesis_id": "ALPHA-20250402-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Crypto news sentiment volatility index > 2 STD above 30-day average",
+          "BTC 10-day historical volatility < 20th percentile (compressed)",
+          "DEFCON = 5 (low systemic risk but news catalyst present)",
+          "Entry: Purchase ATM BTC options straddle with 3-5 day expiry"
+        ],
+        "exit_conditions": {
+          "stop_loss": "50% loss on straddle premium",
+          "time_exit": "At options expiry",
+          "take_profit": "100% gain on straddle premium"
+        }
+      },
+      {
+        "signal_id": "2c71a98d-ec52-429a-ac6f-57c542e6c7fb",
+        "hypothesis_id": "ALPHA-20241205-V03",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Ratio of 1-hour volatility to 4-hour volatility > 1.4 for 3 consecutive hours",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "Absolute price change < 2% during the 3-hour period (compression before expansion)",
+          "Volume increase < 50% (not yet widely recognized)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Volatility ratio normalizes to <1.1 for 2 consecutive hours",
+          "time_exit": "12 hours after entry",
+          "take_profit": "4-hour volatility increases by 80% from entry level"
+        }
+      },
+      {
+        "signal_id": "068c23f4-47e9-442c-85f8-40a3834fead9",
+        "hypothesis_id": "ALPHA-20241215-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "VIX daily increase > 30%",
+          "BTC in NEUTRAL regime for at least 3 days",
+          "SPY down > 1.5% on VIX spike day",
+          "BTC correlation to SPY over past 5 days > 0.6"
+        ],
+        "exit_conditions": {
+          "stop_loss": "2% adverse move",
+          "time_exit": "48 hours after entry",
+          "take_profit": "3% BTC move OR 24-hour time horizon"
+        }
+      },
+      {
+        "signal_id": "a8b04609-a677-4fe8-a4bf-05ebfcf18ac0",
+        "hypothesis_id": "ALPHA-20241215-004",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Regime = NEUTRAL",
+          "DEFCON = 5",
+          "BTC 7-day IV > 30-day IV by >=2 percentage points",
+          "Spot volume < 0.7x 20-day average",
+          "Term structure inversion persists for 2 consecutive days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "IV continues declining for 3 days",
+          "time_exit": "5 days",
+          "take_profit": "IV term structure normalizes OR regime changes"
+        }
+      },
+      {
+        "signal_id": "f5bc035a-4ac6-44c6-ad7b-fb70a0227a45",
+        "hypothesis_id": "ALPHA-20241215-002",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "10-day realized volatility < 0.3 * 30-day realized volatility",
+          "Current regime = NEUTRAL for at least 10 days",
+          "DEFCON 4-5 (stable risk environment)",
+          "No major scheduled events next 48h (FOMC, CPI, etc.)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Volatility remains compressed for 5 more days",
+          "time_exit": "5 days after entry",
+          "take_profit": "Regime transition confirmed (system signal)"
+        }
+      },
+      {
+        "signal_id": "b5aa928e-7a5c-4368-887f-3efd50e0919f",
+        "hypothesis_id": "ALPHA-20250401-004",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime with confidence > 60%",
+          "20-day historical volatility < 25%",
+          "1-month ATM implied volatility > 35%",
+          "Volatility risk premium (IV-HV) > 10%",
+          "Term structure in contango (2-month IV > 1-month IV)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "HV expands above 35% OR regime transitions to RISK_OFF",
+          "time_exit": "7 days after entry",
+          "take_profit": "7-day holding period OR volatility risk premium compresses to < 5%"
+        }
+      },
+      {
+        "signal_id": "5e5ed7ef-d25b-451c-b40a-30a36a739d27",
+        "hypothesis_id": "ALPHA-20241205-V01",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+          "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+          "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+          "Current regime = NEUTRAL, DEFCON >=4"
+        ],
+        "exit_conditions": {
+          "stop_loss": "1.5% adverse move from entry",
+          "time_exit": "48 hours after entry",
+          "take_profit": "2.0% profit from entry"
+        }
+      },
+      {
+        "signal_id": "a3a81f72-9003-45bb-94bd-eedddb2493cc",
+        "hypothesis_id": "ALPHA-20241205-V02",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+          "Skew > +0.15 OR skew < -0.10",
+          "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+          "Position delta-hedged daily",
+          "Regime = NEUTRAL for prior 3 days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Skew moves further away by additional 0.10 from entry",
+          "time_exit": "5 days after entry",
+          "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+        }
+      },
+      {
+        "signal_id": "7c68032b-40a6-43ee-baed-f2187105706b",
+        "hypothesis_id": "ALPHA-20241205-V03",
+        "category": "VOLATILITY",
+        "action": "LONG",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+          "Ratio > 1.3",
+          "Enter volatility spread trade: short overnight vol, long daytime vol",
+          "Vega-neutral at initiation",
+          "NEUTRAL regime present for >=5 consecutive days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Ratio increases to >1.8",
+          "time_exit": "10 trading days after entry",
+          "take_profit": "Ratio reverts to <=1.0"
+        }
+      },
+      {
+        "signal_id": "5fb729b3-06d9-4f81-a80c-3a83ed174508",
+        "hypothesis_id": "ALPHA-20250402-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Crypto news sentiment volatility index > 2 STD above 30-day average",
+          "BTC 10-day historical volatility < 20th percentile (compressed)",
+          "DEFCON = 5 (low systemic risk but news catalyst present)",
+          "Entry: Purchase ATM BTC options straddle with 3-5 day expiry"
+        ],
+        "exit_conditions": {
+          "stop_loss": "50% loss on straddle premium",
+          "time_exit": "At options expiry",
+          "take_profit": "100% gain on straddle premium"
+        }
+      },
+      {
+        "signal_id": "7a121470-658b-4038-89d7-471d50ceea5c",
+        "hypothesis_id": "ALPHA-20241205-V01",
+        "category": "VOLATILITY",
+        "action": "CLOSE",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC 4-hour Bollinger Band Width (20,2) < 0.1 for at least 12 consecutive periods",
+          "Subsequent 4-hour candle closes with >2.5% move outside the Bollinger Bands",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "DEFCON level >= 4 (no extreme risk conditions)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Price moves another 2.0% against position beyond entry",
+          "time_exit": "48 hours after entry if neither TP nor SL hit",
+          "take_profit": "Position reaches 1.8% profit target"
+        }
+      },
+      {
+        "signal_id": "18ad5b1d-c8d1-405d-8477-dedfa32e5611",
+        "hypothesis_id": "ALPHA-20241205-V02",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "BTC experiences -3% to -5% move in a single 4-hour candle",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "No major scheduled events in next 24 hours",
+          "Volatility skew (put IV - call IV) < 15% (not already pricing in asymmetry)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Price recovers to within 1% of pre-shock level within 6 hours",
+          "time_exit": "24 hours after entry",
+          "take_profit": "24-hour realized volatility reaches 1.8x pre-shock levels"
+        }
+      },
+      {
+        "signal_id": "307068aa-bb74-4c5e-a9e5-6b8bd6a49244",
+        "hypothesis_id": "ALPHA-20241205-V03",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Ratio of 1-hour volatility to 4-hour volatility > 1.4 for 3 consecutive hours",
+          "Current regime = NEUTRAL (confidence > 50%)",
+          "Absolute price change < 2% during the 3-hour period (compression before expansion)",
+          "Volume increase < 50% (not yet widely recognized)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Volatility ratio normalizes to <1.1 for 2 consecutive hours",
+          "time_exit": "12 hours after entry",
+          "take_profit": "4-hour volatility increases by 80% from entry level"
+        }
+      },
+      {
+        "signal_id": "03245961-18dd-4263-b014-40987478021a",
+        "hypothesis_id": "ALPHA-20250401-003",
+        "category": "VOLATILITY",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 4250,
+        "confidence_score": 0.85,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "NEUTRAL regime confirmed by EC-018",
+          "Major regulatory headline (MiCA/SEC) confirmed",
+          "BTC 30-day IV spikes >50% above 30-day average",
+          "IV percentile > 70 (1-year lookback)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "200% of credit received",
+          "time_exit": "10 days to expiration",
+          "take_profit": "50% of max credit received"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "fe65fec9686470de2385e1aa4cbfe8c23319c1b9f645e00d24aea3f86aa00824",
+      "acl": "55d95e998890e60ab5ed389f5288c0ac551e266599846739d74c99fd574717ee",
+      "dsl": "dcc687a6aa4cf60d9b9a7621dc0491ab4305000c02d0b681af4326d7950b970d",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "2833a4c2bada0a8be714870417c21d2d5bef3367c033a443b1a7f59dd304dbea"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "fb0f4244-05f3-4c9d-8a9c-eafe52be6c98",
+      "source_proposal_id": "73b61fb2-1a2c-43a7-8ac6-96bce716265b",
+      "hypothesis_id": "ALPHA-20241205-V02",
+      "title": "Asymmetric Volatility Response to Negative vs Positive Shocks in Neutral Conditions",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC experiences -3% to -5% move in a single 4-hour candle",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "No major scheduled events in next 24 hours",
+        "Volatility skew (put IV - call IV) < 15% (not already pricing in asymmetry)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Price recovers to within 1% of pre-shock level within 6 hours",
+        "time_exit": "24 hours after entry",
+        "take_profit": "24-hour realized volatility reaches 1.8x pre-shock levels"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:39.212135+01:00",
+      "created_at": "2025-12-16T13:27:39.212135+01:00"
+    },
+    {
+      "signal_id": "0afec93f-3e72-45a6-adcc-2ef4023e4486",
+      "source_proposal_id": "4573218b-7242-4dde-869b-6f524ba92311",
+      "hypothesis_id": "ALPHA-20241215-004",
+      "title": "Volatility Regime Transition via Term Structure Inversion",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Regime = NEUTRAL",
+        "DEFCON = 5",
+        "BTC 7-day IV > 30-day IV by >=2 percentage points",
+        "Spot volume < 0.7x 20-day average",
+        "Term structure inversion persists for 2 consecutive days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "IV continues declining for 3 days",
+        "time_exit": "5 days",
+        "take_profit": "IV term structure normalizes OR regime changes"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "809159111a0ddd3409822bd7452dcae7e4559ea480f1a86fe53ea0b4eac8b4c1",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:39.588824+01:00",
+      "created_at": "2025-12-16T13:27:39.588824+01:00"
+    },
+    {
+      "signal_id": "819e7f65-3843-4281-a4ca-c3c16f8abe31",
+      "source_proposal_id": "006eeaeb-2d62-4907-bee5-3e2d91f89b59",
+      "hypothesis_id": "ALPHA-20250401-004",
+      "title": "Volatility Regime Transition Arbitrage",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "NEUTRAL regime with confidence > 60%",
+        "20-day historical volatility < 25%",
+        "1-month ATM implied volatility > 35%",
+        "Volatility risk premium (IV-HV) > 10%",
+        "Term structure in contango (2-month IV > 1-month IV)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "HV expands above 35% OR regime transitions to RISK_OFF",
+        "time_exit": "7 days after entry",
+        "take_profit": "7-day holding period OR volatility risk premium compresses to < 5%"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "ac48264626b194da1229f26cce5ecf058469bdb1d151f30b87fa11d4430d0d08",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:39.991129+01:00",
+      "created_at": "2025-12-16T13:27:39.991129+01:00"
+    },
+    {
+      "signal_id": "2119995d-c906-45c9-815b-aa2fdc824af7",
+      "source_proposal_id": "4017c264-99fd-43a2-8344-14adafbc1ab5",
+      "hypothesis_id": "ALPHA-20241205-V01",
+      "title": "Volatility Compression Breakout Fade in Neutral Regime",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+        "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+        "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+        "Current regime = NEUTRAL, DEFCON >=4"
+      ],
+      "exit_conditions": {
+        "stop_loss": "1.5% adverse move from entry",
+        "time_exit": "48 hours after entry",
+        "take_profit": "2.0% profit from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:40.134509+01:00",
+      "created_at": "2025-12-16T13:27:40.134509+01:00"
+    },
+    {
+      "signal_id": "20613009-31df-4228-a847-1e9805f5e575",
+      "source_proposal_id": "fe4137a6-7240-4255-a4af-f3488e365626",
+      "hypothesis_id": "ALPHA-20241205-V03",
+      "title": "Overnight vs. Daytime Volatility Carry in Neutral Environment",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+        "Ratio > 1.3",
+        "Enter volatility spread trade: short overnight vol, long daytime vol",
+        "Vega-neutral at initiation",
+        "NEUTRAL regime present for >=5 consecutive days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Ratio increases to >1.8",
+        "time_exit": "10 trading days after entry",
+        "take_profit": "Ratio reverts to <=1.0"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:40.162905+01:00",
+      "created_at": "2025-12-16T13:27:40.162905+01:00"
+    },
+    {
+      "signal_id": "e9b40cc1-1ba3-4178-b7c6-3c573e480229",
+      "source_proposal_id": "ce3a26e5-1065-4fa2-8886-0b15e407d299",
+      "hypothesis_id": "ALPHA-20241205-V01",
+      "title": "Volatility Compression Breakout Fade in Neutral Regime",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC 4-hour Bollinger Band Width (20,2) < 0.1 for at least 12 consecutive periods",
+        "Subsequent 4-hour candle closes with >2.5% move outside the Bollinger Bands",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "DEFCON level >= 4 (no extreme risk conditions)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Price moves another 2.0% against position beyond entry",
+        "time_exit": "48 hours after entry if neither TP nor SL hit",
+        "take_profit": "Position reaches 1.8% profit target"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:40.503882+01:00",
+      "created_at": "2025-12-16T13:27:40.503882+01:00"
+    },
+    {
+      "signal_id": "79d5ee88-3270-43f1-ad89-c6b26df37d49",
+      "source_proposal_id": "70d7c5fe-471c-4ca6-9806-fdd0b28d2feb",
+      "hypothesis_id": "ALPHA-20250401-003",
+      "title": "Volatility Regime Transition via News Implied Volatility Spike",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "NEUTRAL regime confirmed by EC-018",
+        "Major regulatory headline (MiCA/SEC) confirmed",
+        "BTC 30-day IV spikes >50% above 30-day average",
+        "IV percentile > 70 (1-year lookback)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "200% of credit received",
+        "time_exit": "10 days to expiration",
+        "take_profit": "50% of max credit received"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "090e28a410fcc636c9bf2d4c6ed649c202b123a1d349fa678d848e39db955f53",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:40.913633+01:00",
+      "created_at": "2025-12-16T13:27:40.913633+01:00"
+    },
+    {
+      "signal_id": "375c1836-c47f-47e1-b0f8-b33d684a76f2",
+      "source_proposal_id": "3a1f7bfa-2fc6-4dd4-b33a-b5ead048aef7",
+      "hypothesis_id": "ALPHA-20241215-003",
+      "title": "Neutral Regime VIX Spike Reversion",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "VIX daily increase > 30%",
+        "BTC in NEUTRAL regime for at least 3 days",
+        "SPY down > 1.5% on VIX spike day",
+        "BTC correlation to SPY over past 5 days > 0.6"
+      ],
+      "exit_conditions": {
+        "stop_loss": "2% adverse move",
+        "time_exit": "48 hours after entry",
+        "take_profit": "3% BTC move OR 24-hour time horizon"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "88c8d6b2578380f28d0d23b46bdaee5e9dc47f1c3018b466c4cc5b944b6801e0",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:41.214813+01:00",
+      "created_at": "2025-12-16T13:27:41.214813+01:00"
+    },
+    {
+      "signal_id": "cde6b987-fe2e-44a9-8898-05d383dd4dc6",
+      "source_proposal_id": "fd8a730c-07b5-4bf9-adb6-f1edf6a07cfe",
+      "hypothesis_id": "ALPHA-20241215-002",
+      "title": "Volatility Contraction to Regime Transition Signal",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "10-day realized volatility < 0.3 * 30-day realized volatility",
+        "Current regime = NEUTRAL for at least 10 days",
+        "DEFCON 4-5 (stable risk environment)",
+        "No major scheduled events next 48h (FOMC, CPI, etc.)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Volatility remains compressed for 5 more days",
+        "time_exit": "5 days after entry",
+        "take_profit": "Regime transition confirmed (system signal)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "d3edba8994143f145cbd0fdb43411505c1ed262c74a2a2b95190738432361e8e",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:41.311123+01:00",
+      "created_at": "2025-12-16T13:27:41.311123+01:00"
+    },
+    {
+      "signal_id": "5a92510e-54b8-4312-bb26-474e65bde303",
+      "source_proposal_id": "65c341b8-019e-4b25-85d7-3089be42a1b5",
+      "hypothesis_id": "ALPHA-20241205-V02",
+      "title": "Asymmetric Volatility Skew Reversion in Neutral Markets",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+        "Skew > +0.15 OR skew < -0.10",
+        "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+        "Position delta-hedged daily",
+        "Regime = NEUTRAL for prior 3 days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Skew moves further away by additional 0.10 from entry",
+        "time_exit": "5 days after entry",
+        "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:41.481310+01:00",
+      "created_at": "2025-12-16T13:27:41.481310+01:00"
+    },
+    {
+      "signal_id": "54eea417-3c5d-40ce-a5d5-4b1da526f4d5",
+      "source_proposal_id": "beee2938-715c-4ea0-a7fe-4c643bbe66ee",
+      "hypothesis_id": "ALPHA-20250402-003",
+      "title": "Volatility Regime Shift Anticipation via News Sentiment Spike",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Crypto news sentiment volatility index > 2 STD above 30-day average",
+        "BTC 10-day historical volatility < 20th percentile (compressed)",
+        "DEFCON = 5 (low systemic risk but news catalyst present)",
+        "Entry: Purchase ATM BTC options straddle with 3-5 day expiry"
+      ],
+      "exit_conditions": {
+        "stop_loss": "50% loss on straddle premium",
+        "time_exit": "At options expiry",
+        "take_profit": "100% gain on straddle premium"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "bc4a639631de16a1c17d1f80d4b7452254f795d1576a8144326eebce6d27bc44",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:41.588748+01:00",
+      "created_at": "2025-12-16T13:27:41.588748+01:00"
+    },
+    {
+      "signal_id": "2c71a98d-ec52-429a-ac6f-57c542e6c7fb",
+      "source_proposal_id": "b79653b6-04b0-4f7f-a818-4a7dbc5c1559",
+      "hypothesis_id": "ALPHA-20241205-V03",
+      "title": "Intraday Volatility Regime Transition Detection",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Ratio of 1-hour volatility to 4-hour volatility > 1.4 for 3 consecutive hours",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "Absolute price change < 2% during the 3-hour period (compression before expansion)",
+        "Volume increase < 50% (not yet widely recognized)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Volatility ratio normalizes to <1.1 for 2 consecutive hours",
+        "time_exit": "12 hours after entry",
+        "take_profit": "4-hour volatility increases by 80% from entry level"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:41.724602+01:00",
+      "created_at": "2025-12-16T13:27:41.724602+01:00"
+    },
+    {
+      "signal_id": "068c23f4-47e9-442c-85f8-40a3834fead9",
+      "source_proposal_id": "3a1f7bfa-2fc6-4dd4-b33a-b5ead048aef7",
+      "hypothesis_id": "ALPHA-20241215-003",
+      "title": "Neutral Regime VIX Spike Reversion",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "VIX daily increase > 30%",
+        "BTC in NEUTRAL regime for at least 3 days",
+        "SPY down > 1.5% on VIX spike day",
+        "BTC correlation to SPY over past 5 days > 0.6"
+      ],
+      "exit_conditions": {
+        "stop_loss": "2% adverse move",
+        "time_exit": "48 hours after entry",
+        "take_profit": "3% BTC move OR 24-hour time horizon"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "88c8d6b2578380f28d0d23b46bdaee5e9dc47f1c3018b466c4cc5b944b6801e0",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:42.381230+01:00",
+      "created_at": "2025-12-16T13:27:42.381230+01:00"
+    },
+    {
+      "signal_id": "a8b04609-a677-4fe8-a4bf-05ebfcf18ac0",
+      "source_proposal_id": "4573218b-7242-4dde-869b-6f524ba92311",
+      "hypothesis_id": "ALPHA-20241215-004",
+      "title": "Volatility Regime Transition via Term Structure Inversion",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Regime = NEUTRAL",
+        "DEFCON = 5",
+        "BTC 7-day IV > 30-day IV by >=2 percentage points",
+        "Spot volume < 0.7x 20-day average",
+        "Term structure inversion persists for 2 consecutive days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "IV continues declining for 3 days",
+        "time_exit": "5 days",
+        "take_profit": "IV term structure normalizes OR regime changes"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "809159111a0ddd3409822bd7452dcae7e4559ea480f1a86fe53ea0b4eac8b4c1",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:42.452660+01:00",
+      "created_at": "2025-12-16T13:27:42.452660+01:00"
+    },
+    {
+      "signal_id": "f5bc035a-4ac6-44c6-ad7b-fb70a0227a45",
+      "source_proposal_id": "fd8a730c-07b5-4bf9-adb6-f1edf6a07cfe",
+      "hypothesis_id": "ALPHA-20241215-002",
+      "title": "Volatility Contraction to Regime Transition Signal",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "10-day realized volatility < 0.3 * 30-day realized volatility",
+        "Current regime = NEUTRAL for at least 10 days",
+        "DEFCON 4-5 (stable risk environment)",
+        "No major scheduled events next 48h (FOMC, CPI, etc.)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Volatility remains compressed for 5 more days",
+        "time_exit": "5 days after entry",
+        "take_profit": "Regime transition confirmed (system signal)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "d3edba8994143f145cbd0fdb43411505c1ed262c74a2a2b95190738432361e8e",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:43.370879+01:00",
+      "created_at": "2025-12-16T13:27:43.370879+01:00"
+    },
+    {
+      "signal_id": "b5aa928e-7a5c-4368-887f-3efd50e0919f",
+      "source_proposal_id": "006eeaeb-2d62-4907-bee5-3e2d91f89b59",
+      "hypothesis_id": "ALPHA-20250401-004",
+      "title": "Volatility Regime Transition Arbitrage",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "NEUTRAL regime with confidence > 60%",
+        "20-day historical volatility < 25%",
+        "1-month ATM implied volatility > 35%",
+        "Volatility risk premium (IV-HV) > 10%",
+        "Term structure in contango (2-month IV > 1-month IV)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "HV expands above 35% OR regime transitions to RISK_OFF",
+        "time_exit": "7 days after entry",
+        "take_profit": "7-day holding period OR volatility risk premium compresses to < 5%"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "ac48264626b194da1229f26cce5ecf058469bdb1d151f30b87fa11d4430d0d08",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:43.571500+01:00",
+      "created_at": "2025-12-16T13:27:43.571500+01:00"
+    },
+    {
+      "signal_id": "5e5ed7ef-d25b-451c-b40a-30a36a739d27",
+      "source_proposal_id": "4017c264-99fd-43a2-8344-14adafbc1ab5",
+      "hypothesis_id": "ALPHA-20241205-V01",
+      "title": "Volatility Compression Breakout Fade in Neutral Regime",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC 4-hour Bollinger Band Width (20,2) < 0.1 (compression)",
+        "BTC price then moves >=2.5% from compression midpoint within 4 hours",
+        "Enter opposite position at close of breakout candle (short if breakout up, long if breakout down)",
+        "Current regime = NEUTRAL, DEFCON >=4"
+      ],
+      "exit_conditions": {
+        "stop_loss": "1.5% adverse move from entry",
+        "time_exit": "48 hours after entry",
+        "take_profit": "2.0% profit from entry"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:43.831639+01:00",
+      "created_at": "2025-12-16T13:27:43.831639+01:00"
+    },
+    {
+      "signal_id": "a3a81f72-9003-45bb-94bd-eedddb2493cc",
+      "source_proposal_id": "65c341b8-019e-4b25-85d7-3089be42a1b5",
+      "hypothesis_id": "ALPHA-20241205-V02",
+      "title": "Asymmetric Volatility Skew Reversion in Neutral Markets",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 25-delta skew = (25? put IV - 25? call IV) / at-the-money IV",
+        "Skew > +0.15 OR skew < -0.10",
+        "Enter when skew crosses threshold (long vol via strangle if skew >+0.15, short vol via iron condor if skew <-0.10)",
+        "Position delta-hedged daily",
+        "Regime = NEUTRAL for prior 3 days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Skew moves further away by additional 0.10 from entry",
+        "time_exit": "5 days after entry",
+        "take_profit": "Skew reverts to within +/-0.05 of its 20-day average"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:43.874429+01:00",
+      "created_at": "2025-12-16T13:27:43.874429+01:00"
+    },
+    {
+      "signal_id": "7c68032b-40a6-43ee-baed-f2187105706b",
+      "source_proposal_id": "fe4137a6-7240-4255-a4af-f3488e365626",
+      "hypothesis_id": "ALPHA-20241205-V03",
+      "title": "Overnight vs. Daytime Volatility Carry in Neutral Environment",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Calculate 5-day realized volatility ratio: overnight RV / daytime RV",
+        "Ratio > 1.3",
+        "Enter volatility spread trade: short overnight vol, long daytime vol",
+        "Vega-neutral at initiation",
+        "NEUTRAL regime present for >=5 consecutive days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Ratio increases to >1.8",
+        "time_exit": "10 trading days after entry",
+        "take_profit": "Ratio reverts to <=1.0"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "73fd1ca6c9a1ad4d08ed3d7a9a7f1c35a51ce62d4ca4607254d1f3cc3be1a60b",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:43.909570+01:00",
+      "created_at": "2025-12-16T13:27:43.909570+01:00"
+    },
+    {
+      "signal_id": "5fb729b3-06d9-4f81-a80c-3a83ed174508",
+      "source_proposal_id": "beee2938-715c-4ea0-a7fe-4c643bbe66ee",
+      "hypothesis_id": "ALPHA-20250402-003",
+      "title": "Volatility Regime Shift Anticipation via News Sentiment Spike",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Crypto news sentiment volatility index > 2 STD above 30-day average",
+        "BTC 10-day historical volatility < 20th percentile (compressed)",
+        "DEFCON = 5 (low systemic risk but news catalyst present)",
+        "Entry: Purchase ATM BTC options straddle with 3-5 day expiry"
+      ],
+      "exit_conditions": {
+        "stop_loss": "50% loss on straddle premium",
+        "time_exit": "At options expiry",
+        "take_profit": "100% gain on straddle premium"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "bc4a639631de16a1c17d1f80d4b7452254f795d1576a8144326eebce6d27bc44",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:44.083202+01:00",
+      "created_at": "2025-12-16T13:27:44.083202+01:00"
+    },
+    {
+      "signal_id": "7a121470-658b-4038-89d7-471d50ceea5c",
+      "source_proposal_id": "ce3a26e5-1065-4fa2-8886-0b15e407d299",
+      "hypothesis_id": "ALPHA-20241205-V01",
+      "title": "Volatility Compression Breakout Fade in Neutral Regime",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC 4-hour Bollinger Band Width (20,2) < 0.1 for at least 12 consecutive periods",
+        "Subsequent 4-hour candle closes with >2.5% move outside the Bollinger Bands",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "DEFCON level >= 4 (no extreme risk conditions)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Price moves another 2.0% against position beyond entry",
+        "time_exit": "48 hours after entry if neither TP nor SL hit",
+        "take_profit": "Position reaches 1.8% profit target"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:44.439053+01:00",
+      "created_at": "2025-12-16T13:27:44.439053+01:00"
+    },
+    {
+      "signal_id": "18ad5b1d-c8d1-405d-8477-dedfa32e5611",
+      "source_proposal_id": "73b61fb2-1a2c-43a7-8ac6-96bce716265b",
+      "hypothesis_id": "ALPHA-20241205-V02",
+      "title": "Asymmetric Volatility Response to Negative vs Positive Shocks in Neutral Conditions",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "BTC experiences -3% to -5% move in a single 4-hour candle",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "No major scheduled events in next 24 hours",
+        "Volatility skew (put IV - call IV) < 15% (not already pricing in asymmetry)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Price recovers to within 1% of pre-shock level within 6 hours",
+        "time_exit": "24 hours after entry",
+        "take_profit": "24-hour realized volatility reaches 1.8x pre-shock levels"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:44.460243+01:00",
+      "created_at": "2025-12-16T13:27:44.460243+01:00"
+    },
+    {
+      "signal_id": "307068aa-bb74-4c5e-a9e5-6b8bd6a49244",
+      "source_proposal_id": "b79653b6-04b0-4f7f-a818-4a7dbc5c1559",
+      "hypothesis_id": "ALPHA-20241205-V03",
+      "title": "Intraday Volatility Regime Transition Detection",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "Ratio of 1-hour volatility to 4-hour volatility > 1.4 for 3 consecutive hours",
+        "Current regime = NEUTRAL (confidence > 50%)",
+        "Absolute price change < 2% during the 3-hour period (compression before expansion)",
+        "Volume increase < 50% (not yet widely recognized)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Volatility ratio normalizes to <1.1 for 2 consecutive hours",
+        "time_exit": "12 hours after entry",
+        "take_profit": "4-hour volatility increases by 80% from entry level"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "6e0e112a5577465701861e3a0e8130bc5afb162ae42fc804ec30694c2e0e17a7",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:44.481301+01:00",
+      "created_at": "2025-12-16T13:27:44.481301+01:00"
+    },
+    {
+      "signal_id": "03245961-18dd-4263-b014-40987478021a",
+      "source_proposal_id": "70d7c5fe-471c-4ca6-9806-fdd0b28d2feb",
+      "hypothesis_id": "ALPHA-20250401-003",
+      "title": "Volatility Regime Transition via News Implied Volatility Spike",
+      "category": "VOLATILITY",
+      "entry_conditions": [
+        "NEUTRAL regime confirmed by EC-018",
+        "Major regulatory headline (MiCA/SEC) confirmed",
+        "BTC 30-day IV spikes >50% above 30-day average",
+        "IV percentile > 70 (1-year lookback)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "200% of credit received",
+        "time_exit": "10 days to expiration",
+        "take_profit": "50% of max credit received"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 1.9524118681093453e-07,
+        "win_rate": 1.0,
+        "sharpe_ratio": 18.089021838498322,
+        "profit_factor": 999,
+        "total_signals": 34,
+        "avg_return_bps": 322.7751406820761,
+        "max_drawdown_pct": 0.0,
+        "avg_holding_period_hours": 120.0
+      },
+      "confidence_score": 1.0,
+      "state_hash_at_validation": "090e28a410fcc636c9bf2d4c6ed649c202b123a1d349fa678d848e39db955f53",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T13:27:44.602093+01:00",
+      "created_at": "2025-12-16T13:27:44.602093+01:00"
+    }
+  ]
+}

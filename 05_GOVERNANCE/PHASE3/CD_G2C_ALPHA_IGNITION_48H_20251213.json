@@ -1,0 +1,103 @@
+{
+  "directive_id": "CD-G2C-ALPHA-IGNITION-48H-2025-12-13",
+  "amendment_id": "CD-G2C-ALPHA-IGNITION-48H-A1",
+  "classification": "G2-C CONSTRAINED ALPHA EXPLORATION",
+  "authority": "CEO (Sole Human Authority)",
+  "effective_from": "2025-12-13T03:00:00Z",
+  "duration_hours": 48,
+  "hard_stop": "2025-12-15T03:00:00Z",
+  "execution_mode": "NON-EXECUTING (Forecast & Research Only)",
+
+  "executive_intent": "Generate statistically meaningful forecast-outcome pairs for IoS-010 skill scoring",
+
+  "authorized_actors": {
+    "tier_1_oversight": ["LARS", "VEGA (passive)"],
+    "tier_2_research": ["CEIO", "CRIO", "FINN"],
+    "not_activated": ["SitC", "InForage", "IKEA"]
+  },
+
+  "forecast_volume_requirements": {
+    "STRAT_SEC_V1": {
+      "timeframe": "SECONDS",
+      "min_forecasts_48h": 480,
+      "rate": "~10/hour",
+      "operational_meaning": "Capture microstructure & momentum"
+    },
+    "STRAT_HOUR_V1": {
+      "timeframe": "HOURS",
+      "min_forecasts_48h": 96,
+      "rate": "~2/hour",
+      "operational_meaning": "Intraday regime responsiveness"
+    },
+    "STRAT_DAY_V1": {
+      "timeframe": "DAYS",
+      "min_forecasts_48h": 30,
+      "rate": "~0.6/hour",
+      "operational_meaning": "Daily horizon skill separation"
+    },
+    "STRAT_WEEK_V1": {
+      "timeframe": "WEEKS",
+      "min_forecasts_48h": 30,
+      "rate": "~0.6/hour",
+      "operational_meaning": "Macro / slow-signal calibration"
+    }
+  },
+
+  "strict_constraints": {
+    "no_execution_escalation": {
+      "rule": "IoS-012 remains PAPER-ONLY",
+      "details": ["No live trades", "No sizing changes", "No leverage changes"]
+    },
+    "no_strategy_mutation": {
+      "rule": "Agents forbidden from modifying",
+      "frozen_components": [
+        "IoS-003 regime logic",
+        "IoS-007 causal graph structure",
+        "IoS-008 decision formulas",
+        "Strategy weights, thresholds, dependencies"
+      ],
+      "anti_p_hacking": "MANDATORY"
+    },
+    "ttl_hash_integrity": {
+      "rule": "valid_until MUST be included in hash",
+      "enforcement": "IoS-012 MUST reject stale plans",
+      "violation_consequence": "Automatic halt"
+    },
+    "budget_constraints": {
+      "llm_budget_daily": 5.00,
+      "currency": "USD",
+      "enforcement": "ADR-012",
+      "exhaustion_consequence": "Hard stop"
+    }
+  },
+
+  "success_criteria": {
+    "minimum_closed_pairs_per_strategy": 30,
+    "ios010_populated_with": ["FSS", "Brier score", "95% confidence intervals"],
+    "dashboard_showing": [
+      "Non-zero sample sizes",
+      "Strategy differentiation",
+      "Governance scorecard movement"
+    ],
+    "primary_metric": "Skill separation (NOT PnL)"
+  },
+
+  "implementation": {
+    "engine_script": "03_FUNCTIONS/g2c_continuous_forecast_engine.py",
+    "forecast_target_table": "fhq_research.forecast_ledger",
+    "skill_metrics_table": "fhq_execution.g2c_skill_metrics",
+    "dashboard": "/skill (Alpha Epistemology)"
+  },
+
+  "ceo_statement": "The system is no longer in readiness. It is now in thought. Generate forecasts, close outcomes, and let skill speak. Freedom comes from evidence, not intention.",
+
+  "governance_observability": {
+    "all_activity_logged": true,
+    "all_forecasts_auditable": true,
+    "all_outcomes_reconcilable": true,
+    "vega_role": "Observes only - no intervention unless violation occurs"
+  },
+
+  "created_at": "2025-12-13T03:00:00Z",
+  "created_by": "CEO"
+}

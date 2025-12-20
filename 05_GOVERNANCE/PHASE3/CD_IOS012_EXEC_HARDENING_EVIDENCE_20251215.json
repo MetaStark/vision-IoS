@@ -1,0 +1,99 @@
+{
+  "attestation_type": "CEO_DIRECTIVE_COMPLIANCE",
+  "directive_id": "CD-IOS-012-EXEC-HARDENING",
+  "module": "IoS-012",
+  "timestamp": "2025-12-15T16:35:53.212624+00:00",
+  "technical_lead": "STIG",
+  "governance_witness": "VEGA",
+  "sections_implemented": {
+    "section_1_cryptographic_verification": {
+      "status": "IMPLEMENTED",
+      "function": "verify_ed25519_signature",
+      "adr": "ADR-008",
+      "fail_closed": true,
+      "description": "Ed25519 signature validation with FAIL-CLOSED behavior"
+    },
+    "section_2_execution_guard": {
+      "status": "IMPLEMENTED",
+      "function": "execution_guard_check",
+      "adr": "ADR-012",
+      "fail_closed": true,
+      "description": "Economic safety enforcement with skill threshold and position limits"
+    },
+    "section_3_ios008_mandate": {
+      "status": "IMPLEMENTED",
+      "function": "enforce_ios008_mandate",
+      "adr": "ADR-013",
+      "fail_closed": true,
+      "description": "Single origin rule - only IoS-008 signals accepted"
+    },
+    "section_4_defcon_circuit_breaker": {
+      "status": "IMPLEMENTED",
+      "function": "enforce_defcon_circuit_breaker",
+      "adr": "ADR-016",
+      "fail_closed": true,
+      "description": "DEFCON state binding - DEFCON 1/2 blocks execution"
+    },
+    "section_5_backup_restoration": {
+      "status": "IMPLEMENTED",
+      "description": "Post-restore behavior identical to pre-restore hardened state",
+      "migration": "136_ios012_g4_constitutional_remediation.sql"
+    },
+    "section_6_attestation_audit": {
+      "status": "IMPLEMENTED",
+      "function": "validate_execution_request",
+      "description": "Unified constitutional validation with audit trail"
+    }
+  },
+  "violations_remediated": {
+    "CV-001": {
+      "adr": "ADR-008",
+      "description": "Ed25519 signature validation"
+    },
+    "CV-002": {
+      "adr": "ADR-012",
+      "description": "ExecutionGuard economic safety"
+    },
+    "HV-001": {
+      "adr": "ADR-013",
+      "description": "IoS-008 source mandate"
+    },
+    "HV-002": {
+      "adr": "ADR-016",
+      "description": "DEFCON circuit breaker"
+    }
+  },
+  "files_modified": [
+    "04_DATABASE/MIGRATIONS/136_ios012_g4_constitutional_remediation.sql",
+    "03_FUNCTIONS/ios012_g1_integration.py"
+  ],
+  "functions_created": [
+    "fhq_governance.verify_ed25519_signature",
+    "fhq_governance.execution_guard_check",
+    "fhq_governance.enforce_ios008_mandate",
+    "fhq_governance.enforce_defcon_circuit_breaker",
+    "fhq_governance.validate_execution_request"
+  ],
+  "python_integration": {
+    "methods_added": [
+      "enforce_defcon_circuit_breaker",
+      "enforce_ios008_mandate",
+      "execution_guard_check",
+      "validate_execution_request"
+    ],
+    "execute_decision_plan_updated": true,
+    "constitutional_checks_in_lifecycle": [
+      "HV001_IOS008_MANDATE",
+      "HV002_DEFCON_CIRCUIT_BREAKER",
+      "CV002_EXECUTION_GUARD"
+    ]
+  },
+  "compliance_verification": {
+    "all_checks_fail_closed": true,
+    "security_alerts_logged": true,
+    "audit_trail_enabled": true,
+    "defcon_binding_active": true,
+    "ios008_single_origin": true
+  },
+  "integrity_hash": "820e1a3d5704e26f74dc10e29020b64f5375fd99e7a52d591613f375ee8fe6a0"
+}

@@ -1,0 +1,180 @@
+{
+  "report_type": "POST_G4_HEALTHCHECK",
+  "report_id": "POST-G4-HEALTH-20251129-153700",
+  "timestamp": "2025-11-29T15:37:01.752Z",
+  "generated_by": "STIG",
+  "authority_chain": "CEO -> ADR-004, ADR-014",
+  "contract_reference": "EC-003_2026_PRODUCTION",
+
+  "executive_summary": {
+    "activation_status": "SUCCESS",
+    "ios003_status": "ACTIVE",
+    "ios003_version": "2026.PROD.1",
+    "system_health": "HEALTHY",
+    "defcon_level": "GREEN",
+    "hash_chains_verified": "132/132",
+    "ready_for_inference": true
+  },
+
+  "activation_verification": {
+    "sql_script_executed": "scripts/ios003_g4_activation.sql",
+    "execution_result": "COMMIT",
+    "changes_applied": {
+      "ios_registry_updated": true,
+      "governance_action_logged": true,
+      "hash_chain_created": true,
+      "vega_attestation_created": true
+    }
+  },
+
+  "ios_registry_status": {
+    "IoS-001": {
+      "title": "Canonical Asset & Context Registry",
+      "status": "ACTIVE",
+      "version": "2026.PROD.2",
+      "owner": "CDMO"
+    },
+    "IoS-002": {
+      "title": "Indicator Engine – Sensory Cortex",
+      "status": "ACTIVE",
+      "version": "2026.PROD.1",
+      "owner": "FINN"
+    },
+    "IoS-003": {
+      "title": "Meta-Perception Engine (Market Brain)",
+      "status": "ACTIVE",
+      "version": "2026.PROD.1",
+      "owner": "LARS",
+      "activated_at": "2025-11-29T15:37:01.752Z"
+    }
+  },
+
+  "perception_tables_status": {
+    "fhq_perception.regime_daily": {
+      "rows": 0,
+      "status": "READY",
+      "note": "Schema validated, awaiting first inference cycle"
+    },
+    "fhq_perception.state_vectors": {
+      "rows": 0,
+      "status": "READY",
+      "note": "Schema validated, awaiting first inference cycle"
+    },
+    "fhq_perception.anomaly_log": {
+      "rows": 0,
+      "status": "READY",
+      "note": "Schema validated, awaiting first inference cycle"
+    }
+  },
+
+  "input_data_ready": {
+    "fhq_market.prices": {
+      "rows": 11187,
+      "assets": ["BTC-USD", "ETH-USD", "EURUSD", "SOL-USD"],
+      "status": "POPULATED"
+    },
+    "fhq_research.indicator_momentum": {"rows": 11135, "status": "POPULATED"},
+    "fhq_research.indicator_trend": {"rows": 11187, "status": "POPULATED"},
+    "fhq_research.indicator_volatility": {"rows": 11111, "status": "POPULATED"},
+    "fhq_research.indicator_ichimoku": {"rows": 11155, "status": "POPULATED"},
+    "total_indicator_rows": 44588
+  },
+
+  "hash_chain_status": {
+    "total_chains": 132,
+    "verified_chains": 132,
+    "broken_chains": 0,
+    "new_chain_created": {
+      "chain_id": "HC-IOS-003-20251129",
+      "chain_type": "IOS_MODULE",
+      "chain_scope": "META_PERCEPTION_ENGINE",
+      "integrity_verified": true
+    }
+  },
+
+  "governance_verification": {
+    "g4_action_logged": {
+      "action_type": "IOS_MODULE_G4_ACTIVATION",
+      "action_target": "IoS-003",
+      "initiated_by": "CEO",
+      "decision": "APPROVED",
+      "initiated_at": "2025-11-29T15:37:01.752Z"
+    },
+    "vega_attestation": {
+      "attestation_type": "IOS_MODULE_G4_ACTIVATION",
+      "target_id": "IoS-003",
+      "attestation_status": "ACTIVE",
+      "signature_verified": true
+    }
+  },
+
+  "defcon_status": {
+    "current_level": "GREEN",
+    "is_active": true,
+    "api_budget_pct": "100.00",
+    "discrepancy_score": "0.0000",
+    "error_rate_pct": "0.00",
+    "active_circuit_breakers": 0
+  },
+
+  "pipeline_configuration": {
+    "daily_ingest_pipeline": {
+      "schedule": "5 0 * * * UTC",
+      "stages": ["FETCH_PRICES", "GAP_DETECTION", "BACKFILL", "STAGING", "RECONCILE", "CANONICALIZE"],
+      "status": "CONFIGURED"
+    },
+    "calc_indicators_stage": {
+      "function": "03_FUNCTIONS/calc_indicators_v1.py",
+      "bound_to": "IoS-002",
+      "status": "READY"
+    },
+    "meta_perception_stage": {
+      "function": "PENDING_CREATION",
+      "bound_to": "IoS-003",
+      "status": "SCHEMA_READY",
+      "note": "Function to compute regime_daily, state_vectors, anomaly_log from indicators - to be created"
+    }
+  },
+
+  "next_steps": [
+    {
+      "priority": 1,
+      "action": "Create meta_perception_v1.py function",
+      "description": "Implement regime classification and state vector computation from IoS-002 indicators",
+      "owner": "STIG/CODE"
+    },
+    {
+      "priority": 2,
+      "action": "Integrate META_PERCEPTION stage into orchestrator",
+      "description": "Add META_PERCEPTION stage to daily pipeline after CALC_INDICATORS",
+      "owner": "LARS"
+    },
+    {
+      "priority": 3,
+      "action": "Run first inference cycle",
+      "description": "Execute perception engine to populate fhq_perception.* tables",
+      "owner": "LARS/CODE"
+    }
+  ],
+
+  "healthcheck_verdict": {
+    "activation": "SUCCESS",
+    "schema": "VALIDATED",
+    "governance": "COMPLIANT",
+    "hash_chains": "INTACT",
+    "defcon": "GREEN",
+    "input_data": "READY",
+    "output_tables": "READY_FOR_INFERENCE",
+    "pipeline": "PENDING_FUNCTION_CREATION"
+  },
+
+  "stig_attestation": {
+    "g4_executed_successfully": true,
+    "ios003_now_active": true,
+    "all_verification_passed": true,
+    "no_errors_encountered": true,
+    "system_healthy": true
+  },
+
+  "hash_chain_id": "POST-G4-HEALTH-20251129-153700-STIG"
+}

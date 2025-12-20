@@ -1,0 +1,145 @@
+{
+  "evidence_bundle_id": "EB-G0.2-EAM-20251212",
+  "title": "CEO Directive G0.2 - Evidence Accumulation Activation",
+  "classification": "CONSTITUTIONAL PROOF LAYER",
+  "date": "2025-12-12T01:49:48.684998Z",
+  "status": "ACTIVE",
+
+  "directive_reference": {
+    "id": "CD-G0.2-EVIDENCE-ACCUMULATION",
+    "title": "CEO DIRECTIVE — G0.2: Evidence Accumulation Activation",
+    "purpose": "Generate admissible proof for G1 trust decision",
+    "sections_implemented": ["§1", "§2", "§3", "§4", "§5", "§6", "§7", "§8", "§9", "§10"]
+  },
+
+  "preconditions_verified": {
+    "g0_closeout": {"status": "COMPLETE", "evidence": "EB-ACI-CONSOLE-G0-20251212"},
+    "g0_1_operational_enablement": {"status": "COMPLETE", "evidence": "EB-ACI-G0.1-20251212"}
+  },
+
+  "evidence_accumulation_mode": {
+    "eam_start_timestamp": "2025-12-12T01:49:48.684998Z",
+    "eam_target_end": "2026-01-11T01:49:48.684998Z",
+    "eam_status": "ACTIVE",
+    "minimum_duration_days": 30,
+
+    "classification": {
+      "all_invocations": "G1 Evidence-Candidate Events",
+      "prior_invocations": "DO NOT QUALIFY",
+      "logs": "Evidentiary",
+      "failures": "Admissible"
+    }
+  },
+
+  "evidence_domains": {
+    "domain_1_state_integrity": {
+      "adr_reference": "ADR-018",
+      "thresholds": {
+        "consecutive_invocations": {"required": 1000, "type": "MINIMUM"},
+        "missing_state_tolerance": {"required": 0, "type": "MAXIMUM"}
+      },
+      "current_count": 0
+    },
+    "domain_2_cognitive_fidelity": {
+      "adr_reference": "ADR-021",
+      "thresholds": {
+        "sitc_chain_rate": {"required": 95, "type": "PERCENTAGE"},
+        "ikea_classification_rate": {"required": 99, "type": "PERCENTAGE"},
+        "inforage_cost_optimal_rate": {"required": 90, "type": "PERCENTAGE"}
+      },
+      "current_counts": {"sitc": 0, "ikea": 0, "inforage": 0}
+    },
+    "domain_3_hallucination_containment": {
+      "adr_reference": "ADR-012, EC-022",
+      "thresholds": {
+        "bypass_tolerance": {"required": 0, "type": "MAXIMUM"}
+      },
+      "current_rejections": 0,
+      "current_bypasses": 0
+    },
+    "domain_4_canonical_truth": {
+      "adr_reference": "ADR-013",
+      "thresholds": {
+        "citation_hash_rate": {"required": 100, "type": "PERCENTAGE"},
+        "unresolved_drift_tolerance": {"required": 0, "type": "MAXIMUM"}
+      },
+      "current_citations": 0,
+      "drift_events": 0
+    },
+    "domain_5_operational_stability": {
+      "thresholds": {
+        "minimum_days": {"required": 30, "type": "MINIMUM"},
+        "emergency_interventions": {"required": 0, "type": "MAXIMUM"},
+        "governance_overrides": {"required": 0, "type": "MAXIMUM"},
+        "quick_fixes_outside_gates": {"required": 0, "type": "MAXIMUM"}
+      },
+      "current_days": 0,
+      "human_stability_confirmed": false
+    }
+  },
+
+  "database_infrastructure": {
+    "migration_id": "131_g0_2_evidence_accumulation_mode.sql",
+    "tables_created": [
+      {
+        "name": "fhq_meta.g1_evidence_accumulation",
+        "purpose": "EAM status and cumulative counters"
+      },
+      {
+        "name": "fhq_meta.g1_evidence_daily_snapshot",
+        "purpose": "Daily evidence rollups"
+      },
+      {
+        "name": "fhq_meta.g1_qualification_thresholds",
+        "purpose": "Read-only G1 entry criteria (12 thresholds)"
+      }
+    ],
+    "registry_entries": [
+      {"adr_id": "CD-G0.2-EAM", "status": "APPROVED"},
+      {"adr_id": "ACI-EAM-START", "status": "APPROVED"}
+    ]
+  },
+
+  "api_endpoint_updated": {
+    "path": "/api/aci-console",
+    "new_features": [
+      "EAM status check on every invocation",
+      "Automatic evidence counter increments",
+      "EAM status included in response",
+      "Daily snapshot updates"
+    ]
+  },
+
+  "g1_entry_mechanism": {
+    "step_1": "STIG submits G1 Evidence Dossier (facts only)",
+    "step_2": "VEGA performs independent attestation",
+    "step_3": "CEO issues binary G1 Entry Decision",
+    "conditional_approvals": false
+  },
+
+  "explicit_non_authorization": [
+    "New tools",
+    "Write access",
+    "Agent autonomy",
+    "Automated execution",
+    "Performance optimization",
+    "UX enhancement"
+  ],
+
+  "signatures": {
+    "executor": {"agent": "STIG", "role": "CTO", "authority": "EC-003"},
+    "attestor": {"agent": "VEGA", "role": "Governance Authority", "authority": "EC-001"},
+    "approver": {"agent": "CEO", "authority": "Constitutional"}
+  },
+
+  "transition_status": {
+    "from": "G0.1 (operationally usable)",
+    "to": "G0.2 (proving trustworthiness)",
+    "next_expected": "G1 (earned by evidence, not promise)"
+  },
+
+  "ceo_closing_statement": "G0.2 ensures that G1 is not entered by hope, habit, or elapsed time — but by observable, constrained, constitutional behavior. The organism is now allowed to prove itself.",
+
+  "hash_chain_id": "HC-G0.2-EAM-20251212",
+  "evidence_hash": "g0.2-evidence-accumulation-activation-20251212"
+}

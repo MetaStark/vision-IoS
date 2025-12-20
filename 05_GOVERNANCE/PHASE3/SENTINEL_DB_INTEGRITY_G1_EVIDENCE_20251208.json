@@ -1,0 +1,120 @@
+{
+  "governance_record": {
+    "record_id": "SENTINEL-DB-INTEGRITY-G1-20251208",
+    "gate_level": "G1",
+    "gate_name": "Technical Validation",
+    "authority": "CEO Directive - Sentinel_DB_Integrity G1 Activation",
+    "adr_binding": ["ADR-001", "ADR-002", "ADR-003", "ADR-010", "ADR-011", "ADR-012", "ADR-013", "ADR-015"],
+    "ec_binding": "EC-003",
+    "timestamp": "2025-12-08T12:08:35Z",
+    "executor": "STIG"
+  },
+  "g1_requirements": {
+    "externalize_config": {
+      "status": "COMPLETE",
+      "description": "All thresholds externalized to YAML config file",
+      "config_file": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "config_hash_sha256": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f",
+      "thresholds_externalized": [
+        "lock_monitor.warn_wait_seconds",
+        "lock_monitor.critical_consecutive",
+        "lock_monitor.critical_schemas",
+        "bloat_watchdog.warn_bloat_ratio",
+        "bloat_watchdog.critical_bloat_ratio",
+        "bloat_watchdog.critical_vacuum_days",
+        "bloat_watchdog.critical_tables",
+        "slow_query.mean_time_warn_ms",
+        "slow_query.min_calls",
+        "slow_query.top_n_queries",
+        "slow_query.focus_schemas",
+        "fault_tolerance.max_retries",
+        "fault_tolerance.retry_delay_seconds",
+        "fault_tolerance.module_timeout_seconds",
+        "fault_tolerance.continue_on_module_failure",
+        "fault_tolerance.error_event_type"
+      ]
+    },
+    "fault_tolerance": {
+      "status": "COMPLETE",
+      "description": "Sentinel fails silently with SYSTEM_ERROR events",
+      "features_implemented": [
+        "Connection retry with configurable max_retries",
+        "_run_module_safe wrapper for each module",
+        "continue_on_module_failure flag",
+        "SYSTEM_ERROR discrepancy event on failure",
+        "Audit log fault tolerance"
+      ]
+    },
+    "discrepancy_logging": {
+      "status": "COMPLETE",
+      "description": "ADR-010 compliant discrepancy event logging",
+      "table": "fhq_governance.discrepancy_events",
+      "event_types": [
+        "DB_LOCK_CONTENTION",
+        "DB_BLOAT_RISK",
+        "SLOW_QUERY_CANDIDATE",
+        "SYSTEM_ERROR"
+      ],
+      "severity_mapping": {
+        "NORMAL": {"db_severity": "INFO", "score": 0.0},
+        "WARNING": {"db_severity": "WARN", "score": 0.05},
+        "CRITICAL": {"db_severity": "CRITICAL", "score": 0.15}
+      }
+    }
+  },
+  "validation_results": {
+    "test_timestamp": "2025-12-08T12:08:35Z",
+    "config_source": "YAML",
+    "yaml_loaded": true,
+    "module_results": {
+      "lock_monitor": {"status": "NORMAL", "waiting_processes": 0, "max_wait_seconds": 0.0},
+      "bloat_watchdog": {"status": "WARNING", "total_dead_tuples": 2549, "critical_tables_at_risk": 0},
+      "slow_query_monitor": {"status": "WARNING", "queries_analyzed": 20, "above_threshold": 12}
+    },
+    "overall_status": "WARNING",
+    "discrepancies_logged": 2,
+    "module_errors": 0
+  },
+  "dummy_events_for_vega": {
+    "total_created": 4,
+    "events": [
+      {"discrepancy_type": "DB_LOCK_CONTENTION", "severity": "WARN", "detection_method": "G1_VALIDATION_TEST"},
+      {"discrepancy_type": "DB_BLOAT_RISK", "severity": "WARN", "detection_method": "G1_VALIDATION_TEST"},
+      {"discrepancy_type": "SLOW_QUERY_CANDIDATE", "severity": "WARN", "detection_method": "G1_VALIDATION_TEST"},
+      {"discrepancy_type": "SYSTEM_ERROR", "severity": "CRITICAL", "detection_method": "G1_VALIDATION_TEST"}
+    ],
+    "created_at": "2025-12-08T12:08:23Z"
+  },
+  "real_events_logged": {
+    "total": 2,
+    "events": [
+      {"discrepancy_type": "DB_BLOAT_RISK", "severity": "WARN", "detection_method": "SENTINEL_DB_INTEGRITY"},
+      {"discrepancy_type": "SLOW_QUERY_CANDIDATE", "severity": "WARN", "detection_method": "SENTINEL_DB_INTEGRITY"}
+    ]
+  },
+  "code_artifacts": {
+    "sentinel_script": {
+      "path": "03_FUNCTIONS/ios_db_integrity_sentinel.py",
+      "sha256": "b9e88b35d7b4c74955b43c6fcc3fa967d138bf85f65ea7e703f0c12bd6732c1d",
+      "version": "1.0",
+      "lines_of_code": 1020
+    },
+    "config_file": {
+      "path": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "sha256": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f"
+    }
+  },
+  "governance_attestation": {
+    "designed_by": "STIG",
+    "gate_status": "G1_TECHNICAL_VALIDATION_COMPLETE",
+    "exit_criteria_met": {
+      "config_externalized": true,
+      "fault_tolerance_implemented": true,
+      "discrepancy_logging_works": true,
+      "dummy_events_created": true,
+      "real_events_logged": true
+    },
+    "next_gate": "G2_GOVERNANCE_REVIEW",
+    "vega_attestation_required": true
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "governance_record": {
+    "record_id": "SENTINEL-DB-INTEGRITY-G0-20251208",
+    "gate_level": "G0",
+    "authority": "CEO Directive - Sentinel_DB_Integrity v1.0",
+    "adr_binding": ["ADR-001", "ADR-002", "ADR-003", "ADR-010", "ADR-011", "ADR-012", "ADR-013", "ADR-015"],
+    "ec_binding": "EC-003",
+    "timestamp": "2025-12-08T11:48:00Z",
+    "executor": "STIG"
+  },
+  "specification": {
+    "sentinel_name": "Sentinel_DB_Integrity",
+    "version": "1.0",
+    "operational_rhythm": {
+      "interval_seconds": 300,
+      "mode": "read-only",
+      "logging": "canonical discrepancy/governance tables"
+    },
+    "modules": [
+      {
+        "name": "Lock Monitor",
+        "priority": 1,
+        "category": "Correctness/Availability",
+        "data_sources": ["pg_stat_activity", "pg_locks"],
+        "thresholds": {
+          "warn_wait_seconds": 10,
+          "critical_consecutive": 2
+        },
+        "critical_schemas": ["fhq_market", "fhq_perception", "fhq_research", "fhq_positions"],
+        "discrepancy_type": "DB_LOCK_CONTENTION"
+      },
+      {
+        "name": "Vacuum & Bloat Watchdog",
+        "priority": 2,
+        "category": "Stability/Planner Integrity",
+        "data_sources": ["pg_stat_user_tables"],
+        "thresholds": {
+          "warn_bloat_ratio": 0.10,
+          "critical_bloat_ratio": 0.25,
+          "critical_vacuum_days": 7
+        },
+        "critical_tables": [
+          "fhq_market.prices",
+          "fhq_market.staging_prices",
+          "fhq_perception.regime_daily",
+          "fhq_research.regime_predictions_v2",
+          "fhq_research.nightly_insights"
+        ],
+        "discrepancy_type": "DB_BLOAT_RISK"
+      },
+      {
+        "name": "High-Impact Slow Query Monitor",
+        "priority": 3,
+        "category": "Performance",
+        "data_sources": ["pg_stat_statements"],
+        "thresholds": {
+          "mean_time_warn_ms": 500,
+          "min_calls": 10,
+          "top_n_queries": 10
+        },
+        "focus_schemas": ["fhq_market", "fhq_perception", "fhq_research", "fhq_positions"],
+        "discrepancy_type": "SLOW_QUERY_CANDIDATE"
+      }
+    ]
+  },
+  "validation_results": {
+    "test_timestamp": "2025-12-08T11:48:20Z",
+    "module_1_lock_monitor": {
+      "status": "NORMAL",
+      "waiting_processes": 0,
+      "max_wait_seconds": 0.0
+    },
+    "module_2_bloat_watchdog": {
+      "status": "CRITICAL",
+      "findings": [
+        {"table": "fhq_perception.regime_daily", "bloat_ratio": 0.615},
+        {"table": "fhq_research.nightly_insights", "bloat_ratio": 0.80}
+      ],
+      "action_taken": "VACUUM ANALYZE executed"
+    },
+    "module_3_slow_query": {
+      "status": "WARNING",
+      "queries_above_threshold": 11,
+      "top_query_mean_ms": 13108
+    },
+    "overall_status": "CRITICAL",
+    "evidence_hash": "bb7290ab832807730c868df62f99162d"
+  },
+  "governance_attestation": {
+    "designed_by": "STIG",
+    "gate_status": "G0_SPECIFICATION_COMPLETE",
+    "next_gate": "G1_TECHNICAL_VALIDATION",
+    "file_created": "03_FUNCTIONS/ios_db_integrity_sentinel.py"
+  }
+}

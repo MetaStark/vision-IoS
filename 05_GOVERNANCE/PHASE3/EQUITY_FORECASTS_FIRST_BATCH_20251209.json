@@ -1,0 +1,132 @@
+{
+  "directive": "CEO DIRECTIVE: EQUITY FORECASTS FIRST BATCH",
+  "document": "EQUITY_FORECASTS_FIRST_BATCH",
+  "status": "ACTIVE",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:18:22Z",
+
+  "ios010_integration": {
+    "description": "First probability forecasts emitted to Prediction Ledger",
+    "table": "fhq_research.forecast_ledger",
+    "forecast_type": "PRICE_DIRECTION",
+    "forecast_source": "ios003_regime_v1",
+    "horizon_hours": 24
+  },
+
+  "forecasts": {
+    "AAPL": {
+      "forecast_id": "24c1da40-3d88-4384-8798-47179f8b1c60",
+      "forecast_domain": "EQUITY_AAPL",
+      "forecast_value": "UP",
+      "probability": 0.8204,
+      "confidence": 0.95,
+      "regime": "BULL",
+      "state_vector_hash": "cd94fe4dad4990ee1ec6ff3496edd136",
+      "feature_set": {
+        "rsi_14": 66.57,
+        "macd": 4.15,
+        "current_exposure": 0.0475,
+        "regime_confidence": 0.95
+      },
+      "tags": ["equity:onboarding", "p3:first_batch", "asset:AAPL"]
+    },
+    "MSFT": {
+      "forecast_id": "4b6c9dcf-01d9-49c4-9983-6ef37441ddfc",
+      "forecast_domain": "EQUITY_MSFT",
+      "forecast_value": "DOWN",
+      "probability": 0.2485,
+      "confidence": 0.95,
+      "regime": "BEAR",
+      "state_vector_hash": "56b6ae92ff7ae73dab93e6bc4633cf04",
+      "feature_set": {
+        "rsi_14": 47.19,
+        "macd": -6.22,
+        "current_exposure": 0,
+        "regime_confidence": 0.95
+      },
+      "tags": ["equity:onboarding", "p3:first_batch", "asset:MSFT"]
+    },
+    "NVDA": {
+      "forecast_id": "73c9015c-deb1-4f18-91b4-7a403a28d720",
+      "forecast_domain": "EQUITY_NVDA",
+      "forecast_value": "DOWN",
+      "probability": 0.4744,
+      "confidence": 0.60,
+      "regime": "NEUTRAL",
+      "state_vector_hash": "5ea753f0bc9a342ff7a6ed3216205946",
+      "feature_set": {
+        "rsi_14": 57.53,
+        "macd": -1.28,
+        "current_exposure": 0.0125,
+        "regime_confidence": 0.60
+      },
+      "tags": ["equity:onboarding", "p3:first_batch", "asset:NVDA"]
+    },
+    "QQQ": {
+      "forecast_id": "1ffe115a-4e0e-4464-8f4d-c96cdeebe5af",
+      "forecast_domain": "EQUITY_QQQ",
+      "forecast_value": "UP",
+      "probability": 0.8483,
+      "confidence": 0.95,
+      "regime": "BULL",
+      "state_vector_hash": "fc3684570c04d1cd9b46291600df4b03",
+      "feature_set": {
+        "rsi_14": 72.16,
+        "macd": 3.84,
+        "current_exposure": 0.0475,
+        "regime_confidence": 0.95
+      },
+      "tags": ["equity:onboarding", "p3:first_batch", "asset:QQQ"]
+    },
+    "SPY": {
+      "forecast_id": "03b3315e-9eb4-4603-bb31-612cac9cb19f",
+      "forecast_domain": "EQUITY_SPY",
+      "forecast_value": "UP",
+      "probability": 0.8475,
+      "confidence": 0.95,
+      "regime": "BULL",
+      "state_vector_hash": "5707f02ac63f30304cf73f9a813222c8",
+      "feature_set": {
+        "rsi_14": 71.99,
+        "macd": 3.58,
+        "current_exposure": 0.0475,
+        "regime_confidence": 0.95
+      },
+      "tags": ["equity:onboarding", "p3:first_batch", "asset:SPY"]
+    }
+  },
+
+  "forecast_summary": {
+    "total_forecasts": 5,
+    "up_forecasts": 3,
+    "down_forecasts": 2,
+    "average_probability": 0.6478,
+    "average_confidence": 0.88,
+    "bullish_assets": ["AAPL", "QQQ", "SPY"],
+    "bearish_assets": ["MSFT"],
+    "neutral_assets": ["NVDA"]
+  },
+
+  "probability_methodology": {
+    "formula": "P(UP) = base_50% + regime_adjustment + indicator_adjustment",
+    "regime_adjustment": {
+      "BULL": "+25% * confidence",
+      "BEAR": "-25% * confidence",
+      "NEUTRAL": "MACD_tilt / 50"
+    },
+    "indicator_adjustment": "(RSI - 50) / 200",
+    "clamping": "[0.15, 0.85] to prevent overconfidence"
+  },
+
+  "audit_compliance": {
+    "hash_chain_prefix": "EQUITY_P3_",
+    "state_vectors_computed": true,
+    "content_hashes_computed": true,
+    "ledger_entries_immutable": true
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "First equity probability forecasts generated. 5 directional forecasts emitted to Prediction Ledger (3 UP, 2 DOWN). All forecasts tagged with equity:onboarding metadata. State vectors and content hashes computed for audit trail. IoS-010 integration complete."
+  }
+}

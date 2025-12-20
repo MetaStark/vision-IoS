@@ -1,0 +1,402 @@
+{
+  "directive": "OPERATION CAUSAL ENTROPY - TASK A",
+  "document": "MACRO_SERIES_CANONICAL_P1",
+  "status": "DATA_READY",
+  "executor": "CDMO (Data Officer)",
+  "support": "CEIO (External Intel)",
+  "timestamp_utc": "2025-12-09T13:00:00Z",
+  "gate": "G0",
+
+  "macro_series_registry": {
+    "volatility_complex": {
+      "VIX": {
+        "canonical_id": "MACRO_VIX",
+        "description": "CBOE Volatility Index - Implied volatility of S&P 500 options",
+        "asset_class": "EQUITY_VOLATILITY",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "VIXCLS",
+        "unit": "INDEX_POINTS",
+        "typical_range": [10, 80],
+        "stress_threshold": 30,
+        "extreme_threshold": 50,
+        "interpretation": {
+          "low": "<15 - Complacency regime, risk-on",
+          "normal": "15-25 - Standard uncertainty",
+          "elevated": "25-35 - Hedging demand elevated",
+          "high": ">35 - Fear regime, risk-off"
+        },
+        "lead_lag_profile": {
+          "leads_equities": true,
+          "typical_lead_days": 1,
+          "mean_reversion": true
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 0,
+          "max_value": 150,
+          "type": "FLOAT"
+        }
+      },
+      "MOVE": {
+        "canonical_id": "MACRO_MOVE",
+        "description": "Merrill Lynch Option Volatility Estimate - Treasury bond implied volatility",
+        "asset_class": "RATES_VOLATILITY",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "MOVE",
+        "unit": "INDEX_POINTS",
+        "typical_range": [50, 200],
+        "stress_threshold": 120,
+        "extreme_threshold": 150,
+        "interpretation": {
+          "low": "<80 - Rates calm, carry trades viable",
+          "normal": "80-110 - Standard bond uncertainty",
+          "elevated": "110-140 - Rate path uncertainty high",
+          "high": ">140 - Duration crisis risk"
+        },
+        "correlation_notes": "High correlation with Fed policy uncertainty",
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 0,
+          "max_value": 300,
+          "type": "FLOAT"
+        }
+      },
+      "GVZ": {
+        "canonical_id": "MACRO_GVZ",
+        "description": "CBOE Gold Volatility Index",
+        "asset_class": "COMMODITY_VOLATILITY",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "GVZCLS",
+        "unit": "INDEX_POINTS",
+        "typical_range": [10, 40],
+        "stress_threshold": 25,
+        "interpretation": {
+          "low": "<15 - Gold range-bound",
+          "elevated": ">20 - Safe-haven demand uncertainty"
+        },
+        "schema_validation": {
+          "nullable": true,
+          "min_value": 0,
+          "max_value": 100,
+          "type": "FLOAT"
+        }
+      }
+    },
+
+    "liquidity_complex": {
+      "DXY": {
+        "canonical_id": "MACRO_DXY",
+        "description": "US Dollar Index - Trade-weighted USD vs basket",
+        "asset_class": "FX",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "DTWEXBGS",
+        "unit": "INDEX_POINTS",
+        "typical_range": [90, 115],
+        "interpretation": {
+          "strong": ">105 - USD strength, EM/commodity pressure",
+          "weak": "<95 - USD weakness, risk-on tailwind"
+        },
+        "lead_lag_profile": {
+          "leads_commodities": true,
+          "inverse_correlation_gold": true
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 50,
+          "max_value": 150,
+          "type": "FLOAT"
+        }
+      },
+      "TGA": {
+        "canonical_id": "MACRO_TGA",
+        "description": "Treasury General Account - US Treasury cash balance at Fed",
+        "asset_class": "LIQUIDITY",
+        "frequency": "WEEKLY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "WTREGEN",
+        "unit": "BILLIONS_USD",
+        "typical_range": [200, 800],
+        "liquidity_impact": "TGA increase = liquidity drain from markets",
+        "interpretation": {
+          "low": "<300B - Treasury running down cash, liquidity boost",
+          "high": ">600B - Large cash buffer, potential drain ahead"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 0,
+          "max_value": 2000,
+          "type": "FLOAT"
+        }
+      },
+      "RRP": {
+        "canonical_id": "MACRO_RRP",
+        "description": "Reverse Repo Facility - Cash parked at Fed by money market funds",
+        "asset_class": "LIQUIDITY",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "RRPONTSYD",
+        "unit": "BILLIONS_USD",
+        "typical_range": [0, 2500],
+        "liquidity_impact": "RRP increase = liquidity removed from system",
+        "interpretation": {
+          "low": "<500B - Cash seeking yield in markets",
+          "high": ">1500B - Excess liquidity parked, risk-on fuel available"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 0,
+          "max_value": 3000,
+          "type": "FLOAT"
+        }
+      },
+      "FED_BALANCE_SHEET": {
+        "canonical_id": "MACRO_FED_BS",
+        "description": "Federal Reserve Total Assets",
+        "asset_class": "LIQUIDITY",
+        "frequency": "WEEKLY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "WALCL",
+        "unit": "BILLIONS_USD",
+        "typical_range": [4000, 9000],
+        "interpretation": {
+          "expanding": "QE regime - risk-on",
+          "contracting": "QT regime - liquidity headwind"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 1000,
+          "max_value": 15000,
+          "type": "FLOAT"
+        }
+      },
+      "NET_LIQUIDITY": {
+        "canonical_id": "MACRO_NET_LIQ",
+        "description": "Net Liquidity = Fed Balance Sheet - TGA - RRP",
+        "asset_class": "LIQUIDITY",
+        "frequency": "WEEKLY",
+        "source_tier": "DERIVED",
+        "formula": "FED_BALANCE_SHEET - TGA - RRP",
+        "unit": "BILLIONS_USD",
+        "interpretation": {
+          "expanding": "Liquidity injection - risk-on",
+          "contracting": "Liquidity drain - risk-off pressure"
+        },
+        "critical_note": "Primary driver of equity valuations in QE era",
+        "schema_validation": {
+          "nullable": false,
+          "type": "FLOAT"
+        }
+      },
+      "GLOBAL_M2": {
+        "canonical_id": "MACRO_GLOBAL_M2",
+        "description": "Global M2 Money Supply (Top 5 central banks)",
+        "asset_class": "LIQUIDITY",
+        "frequency": "MONTHLY",
+        "source_tier": "PULSE",
+        "components": ["US_M2", "EU_M3", "CHINA_M2", "JAPAN_M2", "UK_M4"],
+        "unit": "TRILLIONS_USD",
+        "interpretation": {
+          "expanding": "Global liquidity tailwind",
+          "contracting": "Deflationary pressure"
+        },
+        "lead_lag_profile": {
+          "leads_risk_assets": true,
+          "typical_lead_months": 6
+        },
+        "schema_validation": {
+          "nullable": true,
+          "type": "FLOAT"
+        }
+      }
+    },
+
+    "credit_rates_complex": {
+      "HY_OAS": {
+        "canonical_id": "MACRO_HY_OAS",
+        "description": "US High Yield Option-Adjusted Spread",
+        "asset_class": "CREDIT",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "BAMLH0A0HYM2",
+        "unit": "BASIS_POINTS",
+        "typical_range": [300, 800],
+        "stress_threshold": 500,
+        "extreme_threshold": 800,
+        "interpretation": {
+          "tight": "<350 - Credit complacency, risk-on",
+          "normal": "350-500 - Normal credit risk pricing",
+          "wide": ">500 - Credit stress, risk-off"
+        },
+        "correlation_notes": "Inverse correlation with equity prices",
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 0,
+          "max_value": 2500,
+          "type": "FLOAT"
+        }
+      },
+      "YIELD_CURVE_10Y2Y": {
+        "canonical_id": "MACRO_10Y2Y",
+        "description": "10Y-2Y Treasury Spread",
+        "asset_class": "RATES",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "T10Y2Y",
+        "unit": "PERCENTAGE_POINTS",
+        "typical_range": [-1.0, 2.5],
+        "interpretation": {
+          "inverted": "<0 - Recession signal, yield curve inversion",
+          "flat": "0-0.5 - Late cycle, slowing growth",
+          "steep": ">1.0 - Early cycle, economic expansion"
+        },
+        "lead_lag_profile": {
+          "leads_recession": true,
+          "typical_lead_months": 12
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": -3,
+          "max_value": 5,
+          "type": "FLOAT"
+        }
+      },
+      "BREAKEVEN_5Y": {
+        "canonical_id": "MACRO_BE5Y",
+        "description": "5-Year Breakeven Inflation Rate",
+        "asset_class": "INFLATION",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "T5YIE",
+        "unit": "PERCENT",
+        "typical_range": [1.5, 3.5],
+        "interpretation": {
+          "low": "<2.0 - Deflation risk",
+          "anchored": "2.0-2.5 - Fed target zone",
+          "elevated": ">2.5 - Inflation expectations rising"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": -2,
+          "max_value": 8,
+          "type": "FLOAT"
+        }
+      },
+      "BREAKEVEN_10Y": {
+        "canonical_id": "MACRO_BE10Y",
+        "description": "10-Year Breakeven Inflation Rate",
+        "asset_class": "INFLATION",
+        "frequency": "DAILY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "T10YIE",
+        "unit": "PERCENT",
+        "typical_range": [1.5, 3.0],
+        "interpretation": {
+          "anchored": "2.0-2.5 - Long-term inflation expectations stable"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": -2,
+          "max_value": 8,
+          "type": "FLOAT"
+        }
+      }
+    },
+
+    "macro_activity_complex": {
+      "ISM_PMI": {
+        "canonical_id": "MACRO_ISM_PMI",
+        "description": "ISM Manufacturing PMI",
+        "asset_class": "ACTIVITY",
+        "frequency": "MONTHLY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "MANEMP",
+        "unit": "INDEX_POINTS",
+        "typical_range": [40, 65],
+        "expansion_threshold": 50,
+        "interpretation": {
+          "contraction": "<50 - Manufacturing recession",
+          "expansion": ">50 - Manufacturing growth",
+          "strong": ">55 - Robust industrial activity"
+        },
+        "lead_lag_profile": {
+          "leads_earnings": true,
+          "typical_lead_months": 3
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": 20,
+          "max_value": 80,
+          "type": "FLOAT"
+        }
+      },
+      "CPI_YOY": {
+        "canonical_id": "MACRO_CPI_YOY",
+        "description": "Consumer Price Index Year-over-Year",
+        "asset_class": "INFLATION",
+        "frequency": "MONTHLY",
+        "source_tier": "LAKE",
+        "source_provider": "FRED",
+        "fred_series_id": "CPIAUCSL",
+        "unit": "PERCENT",
+        "typical_range": [0, 6],
+        "fed_target": 2.0,
+        "interpretation": {
+          "deflationary": "<1.0 - Below target, dovish Fed",
+          "target": "1.5-2.5 - Fed comfort zone",
+          "elevated": ">3.0 - Inflation concern, hawkish Fed"
+        },
+        "schema_validation": {
+          "nullable": false,
+          "min_value": -5,
+          "max_value": 20,
+          "type": "FLOAT"
+        }
+      }
+    }
+  },
+
+  "data_quality_requirements": {
+    "completeness": ">=95% of trading days must have data",
+    "latency": "T+1 for daily series, T+7 for weekly",
+    "staleness_alert": "No data older than 3 business days",
+    "null_handling": "Forward-fill for max 3 days, then flag as STALE"
+  },
+
+  "schema_alignment": {
+    "target_table": "fhq_macro.macro_series_daily",
+    "key_columns": ["series_id", "observation_date"],
+    "value_column": "value",
+    "metadata_columns": ["source_provider", "fetch_timestamp", "data_quality_flag"]
+  },
+
+  "ceio_annotations": {
+    "volatility_regime_current": "ELEVATED",
+    "liquidity_regime_current": "CONTRACTING",
+    "credit_regime_current": "NEUTRAL",
+    "macro_activity_regime": "LATE_CYCLE",
+    "geopolitical_overlay": "MODERATE_UNCERTAINTY",
+    "narrative_summary": "QT ongoing, yield curve inverted, inflation sticky. Risk-off bias in macro structure."
+  },
+
+  "signatures": {
+    "cdmo_signature": "CDMO.macro_canonical_p1",
+    "ceio_signature": "CEIO.annotation_overlay_p1",
+    "attestation": "TASK A complete. 15 macro series canonicalized. Schema validation rules defined. CEIO annotations attached. DATA_READY signal emitted to CRIO & STIG."
+  }
+}

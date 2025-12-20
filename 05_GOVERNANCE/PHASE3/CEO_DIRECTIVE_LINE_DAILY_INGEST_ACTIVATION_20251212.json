@@ -1,0 +1,125 @@
+{
+  "document_id": "CEO_DIRECTIVE_LINE_DAILY_INGEST_ACTIVATION_20251212",
+  "document_type": "CEO_DIRECTIVE",
+  "classification": "OPERATIONAL_MANDATE",
+
+  "from": "CEO, FjordHQ",
+  "to": "LINE (EC-004) - Local Infrastructure, Network & Execution",
+  "cc": ["STIG (EC-003)", "VEGA (EC-002)"],
+  "date": "2025-12-12",
+  "priority": "HIGH",
+
+  "subject": "ACTIVATE DAILY PRICE INGESTION FOR ALL 466 VEGA-ATTESTERTE ASSETS",
+
+  "authority_chain": [
+    "ADR-013 (Infrastructure Sovereignty)",
+    "ADR-007 (Orchestrator Architecture)",
+    "IoS-001 (Market Truth - G4_CONSTITUTIONAL)",
+    "IoS-003 v4.0 (Sovereign Perception - G4_CONSTITUTIONAL)"
+  ],
+
+  "directive": {
+    "summary": "Establish continuous daily price ingestion to maintain data freshness for all 466 VEGA-attesterte assets across CRYPTO, EQUITY, and FX asset classes.",
+
+    "requirements": {
+      "1_asset_coverage": {
+        "description": "Full coverage of all IoS-001 registered assets with HMM regime data",
+        "total_assets": 466,
+        "breakdown": {
+          "CRYPTO": 47,
+          "EQUITY": 394,
+          "FX": 25
+        }
+      },
+
+      "2_schedule_configuration": {
+        "description": "Asset-class specific scheduling to respect market hours and weekends",
+        "schedules": {
+          "CRYPTO": {
+            "cron": "0 1 * * *",
+            "description": "Daily at 01:00 UTC (24/7 markets)",
+            "weekend_enabled": true
+          },
+          "EQUITY": {
+            "cron": "0 22 * * 1-5",
+            "description": "Weekdays at 22:00 UTC (after US market close)",
+            "weekend_enabled": false
+          },
+          "FX": {
+            "cron": "0 22 * * 0-4",
+            "description": "Sunday-Thursday at 22:00 UTC (FX week)",
+            "weekend_enabled": false
+          }
+        }
+      },
+
+      "3_vendor_waterfall": {
+        "description": "IoS-006 compliant vendor chain with fallback",
+        "primary": "yfinance (Tier 1 - Lake)",
+        "fallback_chain": ["TWELVEDATA", "BINANCE_PUBLIC", "ALPHAVANTAGE"],
+        "rate_limits": {
+          "yfinance": "2s between calls",
+          "batch_size": 50,
+          "batch_delay": "30s between batches"
+        }
+      },
+
+      "4_orchestrator_integration": {
+        "description": "Sync with LARS orchestrator cycle",
+        "orchestrator_schedule": "Hourly at :00",
+        "ingest_must_complete_before": "Next orchestrator cycle",
+        "signal_on_completion": "fhq_execution.ingest_completion_signal"
+      },
+
+      "5_regime_refresh": {
+        "description": "Trigger IoS-003 regime update after price ingest",
+        "trigger_ios003": true,
+        "ios003_script": "03_FUNCTIONS/ios003_daily_regime_update.py",
+        "dependencies": ["Price data canonicalized", "At least 30 days history"]
+      },
+
+      "6_monitoring": {
+        "heartbeat_table": "fhq_monitoring.system_heartbeats",
+        "alert_on_failure": true,
+        "max_staleness_hours": {
+          "CRYPTO": 26,
+          "EQUITY": 50,
+          "FX": 50
+        }
+      }
+    },
+
+    "deliverables": {
+      "1": "Extend daily_ingest_worker.py to support full 466-asset universe",
+      "2": "Create ios001_scheduled_ingest.py with asset-class specific schedules",
+      "3": "Register schedules in fhq_execution.ingest_schedule",
+      "4": "Implement weekend/holiday detection for EQUITY and FX",
+      "5": "Create heartbeat monitoring for data freshness",
+      "6": "Integrate with ios003_daily_regime_update.py for regime refresh"
+    },
+
+    "acceptance_criteria": {
+      "1": "All 466 assets have price data <= 26 hours old (CRYPTO) or 50 hours old (EQUITY/FX)",
+      "2": "HMM regimes are updated within 1 hour of price canonicalization",
+      "3": "No manual intervention required for normal operation",
+      "4": "Failure recovery with automatic retry (max 3 attempts)",
+      "5": "Evidence trail in fhq_market.reconciliation_log"
+    }
+  },
+
+  "timeline": {
+    "implementation_start": "Immediate",
+    "first_production_run": "2025-12-12 22:00 UTC",
+    "full_operational": "2025-12-13 00:00 UTC"
+  },
+
+  "escalation": {
+    "on_failure": "Notify STIG for infrastructure review",
+    "on_quota_exhaustion": "Escalate to CEO for vendor budget approval"
+  },
+
+  "signatures": {
+    "ceo_authorization": "APPROVED",
+    "ceo_signature_time": "2025-12-12T00:30:00Z"
+  }
+}

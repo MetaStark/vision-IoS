@@ -1,0 +1,223 @@
+{
+  "report_id": "STIG-DISCREPANCY-MAP-20251210-001",
+  "report_type": "PHASE_1_DISCREPANCY_ANALYSIS",
+  "authority": "CEO Directive - PHASE 1",
+  "compliance": ["ADR-001", "ADR-003", "ADR-011", "ADR-013", "ADR-018"],
+  "executor": "STIG",
+  "timestamp_utc": "2025-12-10T14:05:00Z",
+
+  "discrepancies": [
+    {
+      "id": "DISC-001",
+      "domain": "LLM_TELEMETRY",
+      "expected_behaviour": "All LLM calls route through governance middleware and log to telemetry_cost_ledger",
+      "observed_behaviour": "555 LLM calls made via direct requests.post(), bypassing telemetry_cost_ledger entirely",
+      "discrepancy_type": "TOTAL_BYPASS",
+      "severity": "CRITICAL",
+      "source_files": [
+        "scripts/research_daemon.py:245",
+        "scripts/research_daemon.py:504",
+        "scripts/crio_night_watch.py:451",
+        "scripts/crio_night_watch.py:587",
+        "06_AGENTS/FINN/finn_deepseek_researcher.py:227",
+        "05_ORCHESTRATOR/orchestrator_daemon.py:703",
+        "scripts/force_batch_reasoning.py:142"
+      ],
+      "remediation_preconditions": [
+        "Define LLM middleware contract",
+        "Create @metered_execution decorator",
+        "Implement routing layer with telemetry capture",
+        "Add trigger on llm_routing_log for cost calculation"
+      ],
+      "evidence": {
+        "telemetry_cost_ledger_rows": 0,
+        "llm_routing_log_rows": 0,
+        "actual_calls_in_reward_traces": 555,
+        "actual_tokens_consumed": 1114555
+      }
+    },
+    {
+      "id": "DISC-002",
+      "domain": "AGENT_TASK_ENRICHMENT",
+      "expected_behaviour": "agent_task_log entries include provider, cost_usd, and latency_ms",
+      "observed_behaviour": "45 tasks logged with 0% enrichment (all provider/cost/latency fields NULL)",
+      "discrepancy_type": "MISSING_METADATA",
+      "severity": "HIGH",
+      "source_files": [
+        "Scripts logging to agent_task_log without LLM metadata"
+      ],
+      "remediation_preconditions": [
+        "Identify all INSERT points for agent_task_log",
+        "Modify INSERT statements to include provider/cost/latency",
+        "Connect to LLM middleware for cost capture"
+      ],
+      "evidence": {
+        "total_tasks": 45,
+        "has_provider": 0,
+        "has_cost": 0,
+        "has_latency": 0,
+        "enrichment_rate": "0%"
+      }
+    },
+    {
+      "id": "DISC-003",
+      "domain": "TELEMETRY_INFRASTRUCTURE",
+      "expected_behaviour": "telemetry_config and telemetry_errors tables exist for configuration and error tracking",
+      "observed_behaviour": "Tables do not exist in any schema",
+      "discrepancy_type": "MISSING_INFRASTRUCTURE",
+      "severity": "MEDIUM",
+      "source_files": [],
+      "remediation_preconditions": [
+        "Design telemetry_config schema",
+        "Design telemetry_errors schema",
+        "Create migration for both tables",
+        "Implement error capture logic"
+      ],
+      "evidence": {
+        "telemetry_config_exists": false,
+        "telemetry_errors_exists": false
+      }
+    },
+    {
+      "id": "DISC-004",
+      "domain": "API_BUDGET_TRACKING",
+      "expected_behaviour": "api_budget_log tracks DEEPSEEK usage with accurate request counts",
+      "observed_behaviour": "DEEPSEEK entry shows 0 requests despite 555 actual LLM calls",
+      "discrepancy_type": "DATA_MISMATCH",
+      "severity": "CRITICAL",
+      "source_files": [
+        "All files making DeepSeek calls bypass budget tracking"
+      ],
+      "remediation_preconditions": [
+        "Implement budget increment on each LLM call",
+        "Connect LLM middleware to api_budget_log",
+        "Add daily budget enforcement"
+      ],
+      "evidence": {
+        "api_budget_log_deepseek_requests": 0,
+        "actual_deepseek_calls": 555,
+        "last_budget_update": "2025-12-04"
+      }
+    },
+    {
+      "id": "DISC-005",
+      "domain": "COGNITIVE_ENGINES",
+      "expected_behaviour": "SitC, InForage, IKEA engines write to fhq_cognition tables during operation",
+      "observed_behaviour": "All fhq_cognition tables empty except lineage_log (genesis only)",
+      "discrepancy_type": "NOT_ACTIVATED",
+      "severity": "MEDIUM",
+      "source_files": [],
+      "remediation_preconditions": [
+        "Implement SitC Chain-of-Query engine",
+        "Implement InForage information foraging engine",
+        "Implement IKEA knowledge boundary engine",
+        "Connect to fhq_cognition tables"
+      ],
+      "evidence": {
+        "cognitive_metrics_rows": 0,
+        "cognitive_nodes_rows": 0,
+        "information_foraging_paths_rows": 0,
+        "knowledge_boundaries_rows": 0,
+        "research_protocols_rows": 0,
+        "search_in_chain_events_rows": 0,
+        "lineage_log_rows": 1
+      }
+    },
+    {
+      "id": "DISC-006",
+      "domain": "GII_DEVIATIONS",
+      "expected_behaviour": "All agents maintain GII_STATE = GREEN with score >= 95",
+      "observed_behaviour": "2 agents (CDMO, CRIO) in YELLOW state with blocked operations",
+      "discrepancy_type": "GOVERNANCE_DEVIATION",
+      "severity": "LOW",
+      "source_files": [],
+      "remediation_preconditions": [
+        "Investigate CDMO blocked operation",
+        "Investigate CRIO 4 blocked operations",
+        "Resolve underlying issues before score drops further"
+      ],
+      "evidence": {
+        "cdmo_gii_state": "YELLOW",
+        "cdmo_gii_score": 95,
+        "cdmo_blocked_ops": 1,
+        "crio_gii_state": "YELLOW",
+        "crio_gii_score": 80,
+        "crio_blocked_ops": 4
+      }
+    },
+    {
+      "id": "DISC-007",
+      "domain": "REWARD_TRACES_ROUTING",
+      "expected_behaviour": "LLM telemetry flows to governance tables (telemetry_cost_ledger, llm_routing_log)",
+      "observed_behaviour": "LLM usage tracked in fhq_optimization.reward_traces instead of governance tables",
+      "discrepancy_type": "PARALLEL_SYSTEM",
+      "severity": "HIGH",
+      "source_files": [
+        "Code writing to reward_traces but not telemetry tables"
+      ],
+      "remediation_preconditions": [
+        "Decision: Consolidate to governance tables OR bridge reward_traces to telemetry",
+        "Implement chosen unification strategy",
+        "Ensure single source of truth for LLM cost"
+      ],
+      "evidence": {
+        "reward_traces_rows": 555,
+        "reward_traces_has_tokens": true,
+        "reward_traces_has_model": true,
+        "telemetry_cost_ledger_rows": 0,
+        "llm_routing_log_rows": 0
+      }
+    },
+    {
+      "id": "DISC-008",
+      "domain": "SIGNATURE_ACTIVITY",
+      "expected_behaviour": "Continuous signature generation for all critical operations",
+      "observed_behaviour": "0 new operation signatures in last 7 days despite active system",
+      "discrepancy_type": "SIGNATURE_GAP",
+      "severity": "MEDIUM",
+      "source_files": [],
+      "remediation_preconditions": [
+        "Review signature trigger conditions",
+        "Ensure Ed25519 signing for all critical paths",
+        "Audit signature coverage"
+      ],
+      "evidence": {
+        "operation_signatures_total": 94,
+        "operation_signatures_7d": 0,
+        "gateway_integrity_signatures": 1,
+        "gateway_request_log_7d": 2
+      }
+    }
+  ],
+
+  "severity_summary": {
+    "CRITICAL": 2,
+    "HIGH": 2,
+    "MEDIUM": 3,
+    "LOW": 1,
+    "total_discrepancies": 8
+  },
+
+  "root_cause_analysis": {
+    "primary_root_cause": "LLM calls made via direct HTTP requests without middleware interception",
+    "contributing_factors": [
+      "No @metered_execution decorator implemented",
+      "No centralized LLM router",
+      "reward_traces captures data but not connected to governance telemetry",
+      "api_budget_log not updated by LLM call paths",
+      "Cognitive engines registered but not activated"
+    ],
+    "system_impact": {
+      "cost_visibility": "ZERO (actual costs unknown to governance)",
+      "budget_enforcement": "BYPASSED (ADR-012 not enforceable)",
+      "audit_trail": "PARTIAL (reward_traces only, not governance)",
+      "cognitive_intelligence": "DORMANT (ACI not operational)"
+    }
+  },
+
+  "extraction_metadata": {
+    "queries_executed": 28,
+    "write_operations": 0,
+    "compliance_verified": true
+  }
+}

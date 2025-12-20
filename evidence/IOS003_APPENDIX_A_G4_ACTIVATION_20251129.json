@@ -1,0 +1,178 @@
+{
+  "report_type": "G4_ACTIVATION_EVIDENCE",
+  "report_id": "IOS003-APPENDIX-A-G4-20251129-183317",
+  "timestamp": "2025-11-29T18:33:17.457Z",
+  "generated_by": "STIG",
+  "authority_chain": "CEO -> ADR-004, ADR-014",
+
+  "executive_summary": {
+    "activation_target": "IoS-003_Appendix_A_HMM_REGIME",
+    "activation_status": "SUCCESS",
+    "ceo_approval": "EXPLICIT",
+    "module_status": "PRODUCTION_ACTIVE",
+    "schema_freeze": "IN_EFFECT"
+  },
+
+  "activation_details": {
+    "appendix_registry": {
+      "ios_id": "IoS-003",
+      "appendix_code": "Appendix_A_HMM_REGIME",
+      "status": "ACTIVE",
+      "version": "2026.PROD.1",
+      "activated_at": "2025-11-29T18:33:17.457Z"
+    },
+    "task_registry": {
+      "task_name": "META_PERCEPTION_HMM_PIPELINE",
+      "task_status": "ACTIVE",
+      "gate_approved": true,
+      "vega_reviewed": false
+    },
+    "governance_action": {
+      "action_type": "IOS_APPENDIX_G4_ACTIVATION",
+      "action_target": "IoS-003_Appendix_A_HMM_REGIME",
+      "initiated_by": "CEO",
+      "decision": "APPROVED"
+    },
+    "hash_chain": {
+      "chain_id": "HC-IOS-003-APPENDIX-A-20251129",
+      "chain_length": 2,
+      "integrity_verified": true
+    },
+    "vega_attestation": {
+      "attestation_type": "G4_ACTIVATION",
+      "target_id": "IoS-003_Appendix_A_HMM_REGIME",
+      "attestation_status": "APPROVED",
+      "signature_verified": true
+    }
+  },
+
+  "gate_pipeline_summary": {
+    "g0_submission": {
+      "status": "PASS",
+      "completed_at": "2025-11-29T17:27:53.997Z"
+    },
+    "g1_technical_validation": {
+      "status": "PASS",
+      "checks": ["schema_integrity", "constraints", "indexes", "lineage_architecture", "deterministic_logic", "pipeline_binding", "adr011_fortress"]
+    },
+    "g2_governance_validation": {
+      "status": "PASS",
+      "checks": ["permission_matrix", "one_true_source", "defcon_behavior", "discrepancy_events", "governance_action_logged"]
+    },
+    "g3_audit_validation": {
+      "status": "PASS",
+      "checks": ["hash_chain_integrity", "content_hash", "determinism_constraints", "formula_identity", "source_data_ready"]
+    },
+    "g3b_triple_verification": {
+      "status": "PASS",
+      "pass_1_hash_verification": "100% MATCH",
+      "pass_2_schema_integrity_scan": "100% MATCH",
+      "pass_3_semantic_replay_review": "PASS (infrastructure only)"
+    },
+    "g4_activation": {
+      "status": "PASS",
+      "ceo_approval": "EXPLICIT",
+      "completed_at": "2025-11-29T18:33:17.457Z"
+    }
+  },
+
+  "infrastructure_activated": {
+    "tables": [
+      {
+        "table": "fhq_research.regime_model_registry",
+        "columns": 16,
+        "status": "READY",
+        "purpose": "HMM model parameters and metadata"
+      },
+      {
+        "table": "fhq_perception.hmm_features_daily",
+        "columns": 17,
+        "status": "READY",
+        "purpose": "7 canonical HMM input features (252-day z-scores)"
+      },
+      {
+        "table": "fhq_research.regime_predictions_v2",
+        "columns": 12,
+        "status": "READY",
+        "purpose": "HMM regime predictions with lineage"
+      },
+      {
+        "table": "fhq_meta.ios_appendix_registry",
+        "columns": 11,
+        "status": "ACTIVE",
+        "purpose": "Appendix tracking for IoS modules"
+      }
+    ],
+    "pipeline": {
+      "task_name": "META_PERCEPTION_HMM_PIPELINE",
+      "status": "ACTIVE",
+      "gate_approved": true,
+      "ready_for_execution": true
+    }
+  },
+
+  "canonical_features": [
+    "return_z - Log returns z-score (252-day)",
+    "volatility_z - 20-day rolling std dev z-score (252-day)",
+    "drawdown_z - Drawdown from peak z-score (252-day)",
+    "macd_diff_z - MACD histogram z-score (252-day)",
+    "bb_width_z - Bollinger Band width z-score (252-day)",
+    "rsi_14_z - RSI-14 z-score (252-day)",
+    "roc_20_z - 20-day Rate of Change z-score (252-day)"
+  ],
+
+  "regime_states": [
+    "STRONG_BULL",
+    "BULL",
+    "RANGE_UP",
+    "NEUTRAL",
+    "RANGE_DOWN",
+    "BEAR",
+    "STRONG_BEAR",
+    "PARABOLIC",
+    "BROKEN",
+    "UNTRUSTED"
+  ],
+
+  "schema_freeze": {
+    "effective_from": "2025-11-29T18:33:17.457Z",
+    "frozen_tables": [
+      "fhq_research.regime_model_registry",
+      "fhq_perception.hmm_features_daily",
+      "fhq_research.regime_predictions_v2"
+    ],
+    "modification_requires": "G4 CEO approval + full re-gate (G0-G4)"
+  },
+
+  "next_steps": [
+    {
+      "priority": 1,
+      "action": "Create meta_perception_hmm_v1.py function",
+      "description": "Implement HMM feature computation and regime classification",
+      "owner": "STIG/CODE"
+    },
+    {
+      "priority": 2,
+      "action": "Register model in regime_model_registry",
+      "description": "Insert trained HMM model parameters with lineage",
+      "owner": "LARS"
+    },
+    {
+      "priority": 3,
+      "action": "Execute first inference cycle",
+      "description": "Populate hmm_features_daily and regime_predictions_v2",
+      "owner": "LARS/CODE"
+    }
+  ],
+
+  "stig_attestation": {
+    "g4_executed_successfully": true,
+    "appendix_now_active": true,
+    "pipeline_gate_approved": true,
+    "schema_freeze_in_effect": true,
+    "all_verification_passed": true,
+    "ready_for_inference": true
+  },
+
+  "hash_self": "G4-IOS003-APPENDIX-A-HMM-REGIME-20251129-STIG"
+}

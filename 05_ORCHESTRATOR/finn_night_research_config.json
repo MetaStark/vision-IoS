@@ -1,0 +1,136 @@
+{
+  "config_name": "FINN_NIGHT_RESEARCH_V1",
+  "version": "2026.PROD.1",
+  "created_at": "2025-12-02T21:30:00.000Z",
+  "created_by": "STIG",
+  "authority": {
+    "directive": "CEO_DIRECTIVE_FINN_NIGHT_RESEARCH",
+    "hash_chain": "HC-CEO-FINN-NIGHT-20251202",
+    "adrs": ["ADR-001", "ADR-003", "ADR-010", "ADR-012"],
+    "contract": "EC-004"
+  },
+
+  "task": {
+    "task_id": "FINN_NIGHT_RESEARCH_V1",
+    "owner": "FINN",
+    "executor": "FINN",
+    "mode": "AUTONOMOUS_RESEARCH",
+    "status": "ACTIVE"
+  },
+
+  "schedule": {
+    "type": "NIGHTLY",
+    "preferred_window": "02:00-06:00 UTC",
+    "max_duration_hours": 4
+  },
+
+  "research_tasks": [
+    {
+      "task_id": "A",
+      "name": "Regime Drift Analysis",
+      "description": "Evaluate IoS-003 regime against 24-72h price data, identify mismatch and drift-score",
+      "ios_reference": "IoS-003",
+      "input_schemas": ["fhq_perception", "fhq_data"],
+      "output_table": "fhq_research.regime_drift_reports",
+      "required": true
+    },
+    {
+      "task_id": "B",
+      "name": "Weak Signal Scan",
+      "description": "Detect weak signals: vol-of-vol, cross-asset divergence, macro-stress, funding rate drift",
+      "ios_reference": "IoS-006",
+      "input_schemas": ["fhq_macro", "fhq_data", "fhq_research"],
+      "output_table": "fhq_research.weak_signal_summary",
+      "signal_types": [
+        "VOL_OF_VOL",
+        "CROSS_ASSET_DIVERGENCE",
+        "MACRO_STRESS",
+        "FUNDING_RATE_DRIFT"
+      ],
+      "required": true
+    },
+    {
+      "task_id": "C",
+      "name": "HCP Pre-Validation",
+      "description": "Evaluate HCP drafts from IoS-013: signal strength, consistency, noise level",
+      "ios_reference": "IoS-013.HCP-LAB",
+      "input_schemas": ["fhq_positions"],
+      "output_table": "fhq_research.hcp_prevalidation",
+      "forward_to": "LARS",
+      "required": true
+    }
+  ],
+
+  "deliverables": [
+    {
+      "name": "Regime Drift Report",
+      "table": "fhq_research.regime_drift_reports",
+      "format": "STRUCTURED"
+    },
+    {
+      "name": "Weak Signal Summary",
+      "table": "fhq_research.weak_signal_summary",
+      "format": "STRUCTURED"
+    },
+    {
+      "name": "HCP Pre-Validation Pack",
+      "table": "fhq_research.hcp_prevalidation",
+      "format": "STRUCTURED"
+    },
+    {
+      "name": "Canonical Insight Pack",
+      "table": "fhq_research.canonical_insight_packs",
+      "format": "EC-004"
+    }
+  ],
+
+  "boundaries": {
+    "strict_research_only": true,
+    "forbidden_actions": [
+      "MODEL_CREATE",
+      "RUNTIME_CHANGE",
+      "LOOP_START",
+      "SIGNAL_TO_LINE",
+      "TRADE_PROPOSAL",
+      "IOS_MODIFICATION"
+    ],
+    "forbidden_writes": [
+      "fhq_perception",
+      "fhq_macro",
+      "fhq_execution",
+      "fhq_governance"
+    ]
+  },
+
+  "data_access": {
+    "mode": "READ_ONLY",
+    "ios_access": ["IoS-003", "IoS-006", "IoS-013.HCP-LAB"],
+    "read_schemas": [
+      "fhq_perception",
+      "fhq_macro",
+      "fhq_positions",
+      "fhq_research",
+      "fhq_graph",
+      "fhq_data"
+    ],
+    "write_schemas": [
+      "fhq_research"
+    ]
+  },
+
+  "governance": {
+    "discrepancy_threshold": 0.08,
+    "auto_escalate_to_vega": true,
+    "signature_required": true,
+    "signature_algorithm": "Ed25519",
+    "vega_monitoring": true
+  },
+
+  "monitoring": {
+    "log_start": true,
+    "log_end": true,
+    "log_each_task": true,
+    "alert_on_boundary_violation": true,
+    "alert_on_discrepancy_threshold": true
+  }
+}

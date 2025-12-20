@@ -1,0 +1,118 @@
+{
+  "directive_id": "CD-G2-C-DASH-SKILL-SCORECARD-2025-12-13",
+  "implementation_date": "2025-12-13T02:30:00Z",
+  "classification": "G2-C Read-Only Observability - Non-Executing",
+  "implementer": "CODE",
+  "reviewer": "STIG",
+  "validator": "VEGA",
+
+  "implementation_summary": {
+    "dashboard_tab": "Alpha Epistemology - Skill & Governance",
+    "route": "/skill",
+    "file_created": "dashboard-2026/app/skill/page.tsx",
+    "navigation_updated": "dashboard-2026/components/Navigation.tsx",
+    "build_status": "SUCCESS"
+  },
+
+  "acceptance_criteria_verification": {
+    "read_only_guarantee": {
+      "status": "PASS",
+      "evidence": "No write paths, mutations, or control elements in page.tsx. All data fetched via read-only SELECT queries."
+    },
+    "metric_traceability": {
+      "status": "PASS",
+      "evidence": "Each metric maps to defined table/view with explicit SQL queries. Data provenance footer displays source tables."
+    },
+    "strategy_parity": {
+      "status": "PASS",
+      "evidence": "SEC/HOUR/DAY/WEEK tiles use identical StrategyTile component with consistent structure."
+    },
+    "governance_gamification": {
+      "status": "PASS",
+      "evidence": "Architect (TTL), Gatekeeper (LLM Budget), Fortress (Streak) implemented with exact definitions from directive."
+    },
+    "skill_gamification": {
+      "status": "PASS",
+      "evidence": "Alchemist (FSS), Oracle (Brier), Stabilizer (CI Width) leaderboards implemented with MIN_SAMPLE_SIZE gating."
+    },
+    "calibration_curves": {
+      "status": "PASS",
+      "evidence": "CalibrationChart component per strategy with 'insufficient data' placeholder when resolved_count < 10."
+    },
+    "no_pnl_headline": {
+      "status": "PASS",
+      "evidence": "Primary UI emphasizes FSS, Brier Score, CI Width. No PnL, equity curve, or ROI as headline metrics."
+    }
+  },
+
+  "data_sources_verified": {
+    "skill_metrics": "fhq_execution.g2c_skill_metrics",
+    "forecast_metrics": "fhq_research.forecast_skill_metrics",
+    "decision_log": "fhq_governance.decision_log",
+    "failure_events": "fhq_execution.g2c_failure_events",
+    "cost_ledger": "fhq_governance.telemetry_cost_ledger"
+  },
+
+  "gamification_definitions": {
+    "architect_ttl_compliance": {
+      "formula": "(total_plans - expired_count) / total_plans * 100",
+      "window": "24 hours",
+      "thresholds": {
+        "GREEN": ">= 99.5%",
+        "YELLOW": "98.0% - 99.49%",
+        "RED": "< 98.0%"
+      }
+    },
+    "gatekeeper_llm_budget": {
+      "formula": "spend_today vs $5.00 daily limit",
+      "thresholds": {
+        "GREEN": "< 70% of budget",
+        "YELLOW": "70% - 89% of budget",
+        "RED": ">= 90% of budget"
+      }
+    },
+    "fortress_streak": {
+      "formula": "days since last HALT_TRIGGER/CIRCUIT_BREAKER/RISK_BREACH",
+      "target": "7-day milestone",
+      "thresholds": {
+        "GREEN": ">= 7 days",
+        "YELLOW": "2-6 days",
+        "RED": "0-1 days"
+      }
+    }
+  },
+
+  "anti_p_hacking_measures": {
+    "min_sample_size": 30,
+    "sample_size_fixed": true,
+    "sample_size_adjustable_from_dashboard": false,
+    "status_badges": ["NOT_ENOUGH_DATA", "EMERGING", "SIGNIFICANT"],
+    "significant_threshold": "N >= 30 AND CI_width < 0.2"
+  },
+
+  "adr_compliance": {
+    "ADR-004": {
+      "status": "COMPLIANT",
+      "evidence": "No schema mutations. Read-only queries only."
+    },
+    "ADR-012": {
+      "status": "COMPLIANT",
+      "evidence": "$5.00 daily LLM budget enforced and displayed. Economic safety constraints respected."
+    },
+    "ADR-013": {
+      "status": "COMPLIANT",
+      "evidence": "Dashboard is projection layer only. No mechanism mutations."
+    },
+    "IoS-010": {
+      "status": "COMPLIANT",
+      "evidence": "Skill scoring displayed from canonical sources without client-side recalculation."
+    }
+  },
+
+  "vega_attestation": {
+    "status": "APPROVED",
+    "statement": "VEGA confirms the Alpha Epistemology dashboard tab meets all requirements of CEO Directive CD-G2-C-DASH-SKILL-SCORECARD-2025-12-13. The implementation is read-only, audit-defensible, and correctly gamifies governance and skill metrics without incentivizing reckless behavior. No ADR violations detected.",
+    "signature_agent": "VEGA",
+    "signature_timestamp": "2025-12-13T02:35:00Z"
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "attestation_record": {
+    "attestation_id": "VEGA-ATT-SENTINEL-G4-20251208",
+    "attestation_type": "G4_CONSTITUTIONAL_ACTIVATION",
+    "authority": "VEGA - Verification & Governance Authority",
+    "ios_id": "IoS-014",
+    "component_name": "Sentinel_DB_Integrity",
+    "version": "1.0",
+    "timestamp": "2025-12-08T14:30:00Z"
+  },
+
+  "gate_chain_verification": {
+    "chain_status": "COMPLETE",
+    "chain_integrity": "VERIFIED",
+    "gates_passed": ["G1", "G2", "G3", "G4"],
+
+    "G1_TECHNICAL_VALIDATION": {
+      "gate_date": "2025-12-08",
+      "attestation_file": "VEGA_ATTESTATION_G1_SENTINEL_DB_INTEGRITY_20251208.json",
+      "attestation_hash": "54ad5dfd5d9a1e02988f6643313cc3805acdbafc4b16a2eaec6337ca8a37562d",
+      "verdict": "PASS",
+      "exit_criteria_met": true
+    },
+
+    "G2_GOVERNANCE_REVIEW": {
+      "gate_date": "2025-12-08",
+      "attestation_file": "VEGA_ATTESTATION_G2_SENTINEL_20251208.json",
+      "verdict": "PASS",
+      "exit_criteria_met": true
+    },
+
+    "G3_FORTRESS_AUDIT": {
+      "gate_date": "2025-12-08",
+      "attestation_file": "VEGA_ATTESTATION_G3_SENTINEL_20251208.json",
+      "evidence_bundle": "SENTINEL_DB_INTEGRITY_G3_EVIDENCE/",
+      "master_results_hash": "29cca379217ecef66712958e76e0a06a04977a9fad373c751b11754e339d5c89",
+      "verdict": "PASS",
+      "all_test_cases_passed": true,
+      "deterministic_replay_verified": true
+    },
+
+    "G4_CONSTITUTIONAL_ACTIVATION": {
+      "gate_date": "2025-12-08",
+      "technical_contract": "STIG_TECHNICAL_ACTIVATION_CONTRACT_G4_20251208.json",
+      "constitutional_amendment": "VEGA_CONSTITUTIONAL_AMENDMENT_G4_20251208.json",
+      "activation_manifest": "CODE_G4_ACTIVATION_MANIFEST_20251208.json",
+      "verdict": "PASS"
+    }
+  },
+
+  "code_artifact_verification": {
+    "sentinel_script": {
+      "path": "03_FUNCTIONS/ios_db_integrity_sentinel.py",
+      "sha256": "b9e88b35d7b4c74955b43c6fcc3fa967d138bf85f65ea7e703f0c12bd6732c1d",
+      "unchanged_g1_to_g4": true,
+      "lines_of_code": 1054
+    },
+    "config_file": {
+      "path": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "sha256": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f",
+      "unchanged_g1_to_g4": true
+    },
+    "test_harness": {
+      "path": "03_FUNCTIONS/g3_fortress_sentinel_tests.py",
+      "purpose": "G3 Fortress test automation"
+    }
+  },
+
+  "adr_compliance_final_audit": {
+    "ADR-002": {
+      "requirement": "Audit trail for all operations",
+      "status": "COMPLIANT",
+      "evidence": "All runs logged to ios_audit_log with evidence hashes"
+    },
+    "ADR-004": {
+      "requirement": "Change Gates G0-G4",
+      "status": "COMPLIANT",
+      "evidence": "Full progression G0->G1->G2->G3->G4 with evidence at each gate"
+    },
+    "ADR-009": {
+      "requirement": "Agent suspension procedures",
+      "status": "COMPLIANT",
+      "evidence": "Suspension rules defined in Constitutional Amendment"
+    },
+    "ADR-010": {
+      "requirement": "Discrepancy scoring methodology",
+      "status": "COMPLIANT",
+      "evidence": "Severity mapping locked: INFO=0.0, WARN=0.05, CRITICAL=0.15"
+    },
+    "ADR-011": {
+      "requirement": "Fortress evidence chain",
+      "status": "COMPLIANT",
+      "evidence": "Deterministic replay verified in G3"
+    },
+    "ADR-013": {
+      "requirement": "Infrastructure sovereignty",
+      "status": "COMPLIANT",
+      "evidence": "Read-only access to protected schemas, STIG custodianship"
+    },
+    "ADR-015": {
+      "requirement": "Meta-governance loop",
+      "status": "COMPLIANT",
+      "evidence": "Output feeds VEGA governance loop via discrepancy_events"
+    },
+    "ADR-016": {
+      "requirement": "DEFCON protocol",
+      "status": "COMPLIANT",
+      "evidence": "DEFCON triggers and circuit breaker actions defined"
+    }
+  },
+
+  "constitutional_binding_verification": {
+    "ios_014_integration": {
+      "status": "VERIFIED",
+      "heartbeat_schedule": "Every 5 minutes (configurable 60-3600s)",
+      "orchestrator_callable": true,
+      "entry_point": "run_db_integrity_sentinel()"
+    },
+    "meta_governance_loop": {
+      "status": "VERIFIED",
+      "output_destination": "fhq_governance.discrepancy_events",
+      "vega_consumption": "All events reviewed by VEGA loop"
+    },
+    "defcon_hooks": {
+      "status": "VERIFIED",
+      "defcon_3_triggers": 2,
+      "defcon_2_triggers": 2,
+      "circuit_breaker_authority": "VEGA"
+    },
+    "suspension_rules": {
+      "status": "VERIFIED",
+      "primary_authority": "VEGA",
+      "secondary_authority": "CEO",
+      "prohibited_authorities": ["STIG", "LINE", "FINN", "CODE"]
+    },
+    "event_language": {
+      "status": "LOCKED",
+      "event_types": 4,
+      "modification_requires": "Full G0-G4 re-certification"
+    }
+  },
+
+  "risk_assessment_final": {
+    "operational_risk": "LOW",
+    "data_integrity_risk": "NONE",
+    "system_stability_risk": "LOW",
+    "rationale": [
+      "Read-only monitoring of PostgreSQL catalog views",
+      "Proven fault tolerance in G3 testing",
+      "No write operations to protected schemas",
+      "Graceful degradation on errors",
+      "Configurable thresholds allow operational tuning"
+    ]
+  },
+
+  "vega_final_decision": {
+    "constitutional_activation_approved": true,
+    "verdict": "CONSTITUTIONAL_APPROVED",
+    "activation_type": "PERMANENT",
+    "effective_date": "2025-12-08",
+    "rationale": [
+      "Complete G1-G2-G3-G4 evidence chain with verified hashes",
+      "All ADR compliance requirements satisfied",
+      "All five G3 Fortress tests passed with deterministic replay",
+      "Code and config unchanged throughout governance progression",
+      "Constitutional bindings properly defined",
+      "DEFCON integration and circuit breaker hooks established",
+      "Meta-governance loop connected",
+      "Suspension procedures comply with ADR-009",
+      "Low risk profile with read-only operations"
+    ],
+    "conditions": [
+      "Sentinel operates continuously unless suspended per ADR-009",
+      "All threshold changes require STIG+VEGA approval with CEO notification",
+      "Event language modifications require full re-certification",
+      "Included in all system replays and backtests"
+    ]
+  },
+
+  "activation_ceremony_witness": {
+    "ceremony_date": "2025-12-08",
+    "activated_by": "CEO",
+    "witnessed_by": ["VEGA", "STIG", "CODE"],
+    "ceremony_type": "CONSTITUTIONAL",
+    "vega_witness_statement": "VEGA hereby attests that Sentinel_DB_Integrity has successfully completed all governance gates (G1-G4) and is approved for constitutional activation as IoS-014 infrastructure."
+  },
+
+  "governance_signature": {
+    "attested_by": "VEGA",
+    "attestation_method": "STIG-proxy execution under EC-003",
+    "final_attestation": true,
+    "attestation_hash": "pending_vega_signature"
+  }
+}

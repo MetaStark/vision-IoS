@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "document_type": "IOS006_G4_ACTIVATION",
+    "module": "IoS-006",
+    "module_name": "Global Macro & Factor Integration Engine",
+    "phase": "G4 - Governance Activation (CORRECTED)",
+    "generated_at": "2025-11-30T17:29:13.060336+00:00",
+    "generated_by": "STIG",
+    "authority": "LARS (CEO Explicit Approval)",
+    "auditor": "VEGA (Tier-1 Oversight)",
+    "adr_compliance": [
+      "ADR-004",
+      "ADR-011",
+      "ADR-013",
+      "ADR-014"
+    ],
+    "hash_chain_id": "HC-IOS-006-2026",
+    "correction_applied": true,
+    "correction_timestamp": "2025-11-30T17:29:13.060336+00:00"
+  },
+  "activation_summary": {
+    "prior_status": "G3_COMPLETE",
+    "new_status": "GOVERNANCE-ACTIVE",
+    "version": "2026.PROD.1",
+    "role": "CANONICAL_DATA_SUPPLIER",
+    "downstream_modules": [
+      "IoS-007",
+      "IoS-005"
+    ],
+    "definition": "Canonical Truth Source (not a decision engine)"
+  },
+  "step_a_registry": {
+    "table": "fhq_meta.ios_registry",
+    "updates": {
+      "status": "GOVERNANCE-ACTIVE",
+      "version": "2026.PROD.1",
+      "canonical": true,
+      "immutability_level": "FROZEN",
+      "modification_requires": "G1-G4 Full Cycle (ADR-004, ADR-013)"
+    },
+    "status": "COMPLETE"
+  },
+  "step_b_feature_lockdown": {
+    "canonical_features": [
+      {
+        "feature_id": "GLOBAL_M2_USD",
+        "status": "CANONICAL",
+        "locked": true
+      },
+      {
+        "feature_id": "US_10Y_REAL_RATE",
+        "status": "CANONICAL",
+        "locked": true
+      }
+    ],
+    "redundant_backup": [
+      {
+        "feature_id": "US_M2_YOY",
+        "status": "REDUNDANT_BACKUP",
+        "lock_period": "12 months"
+      }
+    ],
+    "rejected": [
+      {
+        "feature_id": "FED_RRP_BALANCE",
+        "status": "REJECTED",
+        "retest_window": "90 days"
+      }
+    ],
+    "rejected_archive": [
+      "US_HY_SPREAD",
+      "US_IG_SPREAD",
+      "US_YIELD_CURVE_10Y2Y",
+      "TED_SPREAD",
+      "US_FED_FUNDS_RATE"
+    ],
+    "pending_fix": [
+      "MOVE_INDEX"
+    ],
+    "deferred": [
+      "VIX_INDEX",
+      "VIX_TERM_STRUCTURE",
+      "VIX9D_INDEX",
+      "SPX_RVOL_20D",
+      "VIX_RVOL_SPREAD",
+      "DXY_INDEX",
+      "NDX_INDEX"
+    ],
+    "status": "COMPLETE (CORRECTED)"
+  },
+  "step_c_fortress_protocol": {
+    "schema": "fhq_macro",
+    "tables_frozen": [
+      "fhq_macro.raw_staging",
+      "fhq_macro.canonical_series",
+      "fhq_macro.stationarity_tests",
+      "fhq_macro.feature_significance"
+    ],
+    "schema_frozen": true,
+    "schema_hash": "f7d605f9bcc47e18328819fcec66ff2ed5fe9e9dd91c914d5103396da4e52eb8",
+    "schema_hash_signature": "85817675-9535-414f-a0d5-17bbde78cf93",
+    "hash_chain_id": "HC-IOS-006-2026",
+    "modification_constraint": "No feature may be added, modified or reactivated without full G1-G4 cycle",
+    "adr_reference": "ADR-011 Section 5.1",
+    "status": "COMPLETE (CORRECTED)"
+  },
+  "step_d_handover": {
+    "target_module": "IoS-007",
+    "input_contract": {
+      "contract_id": "67332ba6-b180-4cee-b027-ec2e737fb351",
+      "consumer": "IoS-007",
+      "supplier": "IoS-006",
+      "permitted_sources": [
+        "GLOBAL_M2_USD",
+        "US_10Y_REAL_RATE"
+      ],
+      "prohibited_sources": [
+        "US_M2_YOY",
+        "US_HY_SPREAD",
+        "VIX_INDEX",
+        "raw_staging",
+        "rejected",
+        "deferred"
+      ],
+      "constraint_rule": "IoS-007 is forbidden from reading any macro feature outside the CANONICAL set. Access to raw_staging, rejected, or deferred features is blocked at DATABASE level.",
+      "enforcement_level": "DATABASE",
+      "adr_reference": "ADR-014"
+    },
+    "authorized_views": [
+      "fhq_macro.golden_features",
+      "fhq_macro.canonical_series (read-only)",
+      "fhq_macro.feature_significance (read-only)"
+    ],
+    "status": "COMPLETE (CORRECTED)"
+  },
+  "verification_results": {
+    "test_1_lineage": "PASS - Chain Unbroken",
+    "test_2_determinism": "PASS - Zero Drift",
+    "test_3_contract": "PASS - Contract Valid"
+  },
+  "governance_trail": {
+    "g2_closeout": "0913dcb5-7e81-41b1-b86a-e8c36b098054",
+    "g3_liquidity": "1eccb4b3-b514-4097-a26c-49c32ecaa6cb",
+    "g3_credit": "aea956a7-a56a-40ed-af34-9aabc3cc9882",
+    "g3_factor": "716c1b4d-4aa6-4b19-a646-859bf468d5ef",
+    "g3_synthesis": "3e635ade-99c9-4706-8d84-59b45d2459c5",
+    "module_completion": "06b54058-4005-4c17-9043-5b16473f9cb9",
+    "g4_activation": "add98cf1-63fa-4dd7-ba9b-fed9eccdd529",
+    "g4_correction": "decfe310-c8c5-48f7-9bbc-103af9a46bcf"
+  },
+  "exit_criteria": {
+    "ios_registry_updated": true,
+    "canonical_flags_locked": true,
+    "schema_frozen": true,
+    "schema_hash_logged": true,
+    "input_contract_registered": true,
+    "evidence_generated": true,
+    "vega_attestation_pending": true
+  },
+  "vega_attestation": {
+    "required": true,
+    "attested": false,
+    "attestor": null,
+    "timestamp": null,
+    "notes": "Awaiting VEGA final attestation for G4 completion (CORRECTED)"
+  },
+  "integrity_hash": "5b83fc11910f8346ad33dc4a867734969772aebf31d83dd43e8dc662b1be43c1"
+}

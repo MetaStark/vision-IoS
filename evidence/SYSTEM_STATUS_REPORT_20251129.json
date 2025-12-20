@@ -1,0 +1,191 @@
+{
+  "report_type": "COMPLETE_SYSTEM_STATUS_REPORT",
+  "report_id": "SYS-RPT-20251129-160000",
+  "timestamp": "2025-11-29T16:00:00.000Z",
+  "generated_by": "STIG",
+  "authority_chain": "CEO -> ADR-001, ADR-004, ADR-013",
+  "contract_reference": "EC-003_2026_PRODUCTION",
+
+  "executive_summary": {
+    "system_health": "HEALTHY",
+    "defcon_level": "GREEN",
+    "ios_modules_active": 2,
+    "ios_modules_pending": 1,
+    "hash_chains_verified": 131,
+    "hash_chains_broken": 0,
+    "open_discrepancies": 0,
+    "active_agents": 11
+  },
+
+  "defcon_status": {
+    "current_level": "GREEN",
+    "is_active": true,
+    "api_budget_pct": "100.00",
+    "discrepancy_score": "0.0000",
+    "error_rate_pct": "0.00",
+    "active_circuit_breakers": 0,
+    "status": "ALL_SYSTEMS_NOMINAL"
+  },
+
+  "ios_registry": {
+    "IoS-001": {
+      "title": "Canonical Asset & Context Registry",
+      "status": "ACTIVE",
+      "version": "2026.PROD.2",
+      "owner": "CDMO",
+      "description": "Foundation layer providing canonical asset definitions and context"
+    },
+    "IoS-002": {
+      "title": "Indicator Engine – Sensory Cortex",
+      "status": "ACTIVE",
+      "version": "2026.PROD.1",
+      "owner": "FINN",
+      "description": "Technical indicator computation engine with full lineage tracking"
+    },
+    "IoS-003": {
+      "title": "Meta-Perception Engine (Market Brain)",
+      "status": "DRAFT",
+      "version": "2026.DRAFT.1",
+      "owner": "LARS",
+      "description": "Market regime classification and state vector computation",
+      "note": "G1-G3 PASSED, G4 APPROVED - Awaiting SQL execution for database update"
+    }
+  },
+
+  "canonical_assets": {
+    "total_assets": 4,
+    "assets": [
+      {"canonical_id": "BTC-USD", "asset_class": "CRYPTO", "price_rows": 2942, "date_range": "2017-11-09 to 2025-11-28"},
+      {"canonical_id": "ETH-USD", "asset_class": "CRYPTO", "price_rows": 2942, "date_range": "2017-11-09 to 2025-11-28"},
+      {"canonical_id": "EURUSD", "asset_class": "FX", "price_rows": 3650, "date_range": "2015-12-02 to 2025-11-28"},
+      {"canonical_id": "SOL-USD", "asset_class": "CRYPTO", "price_rows": 2059, "date_range": "2020-04-10 to 2025-11-28"}
+    ],
+    "total_price_rows": 11187
+  },
+
+  "data_population": {
+    "foundation_layer": {
+      "fhq_market.prices": {"rows": 11187, "status": "POPULATED"}
+    },
+    "research_layer": {
+      "fhq_research.indicator_momentum": {"rows": 11135, "status": "POPULATED"},
+      "fhq_research.indicator_trend": {"rows": 11187, "status": "POPULATED"},
+      "fhq_research.indicator_volatility": {"rows": 11111, "status": "POPULATED"},
+      "fhq_research.indicator_ichimoku": {"rows": 11155, "status": "POPULATED"},
+      "total_indicator_rows": 44588
+    },
+    "perception_layer": {
+      "fhq_perception.regime_daily": {"rows": 0, "status": "READY"},
+      "fhq_perception.state_vectors": {"rows": 0, "status": "READY"},
+      "fhq_perception.anomaly_log": {"rows": 0, "status": "READY"},
+      "note": "Awaiting IoS-003 activation completion"
+    }
+  },
+
+  "schema_inventory": {
+    "fhq_meta": {"tables": 77, "purpose": "Metadata, ADR registry, IoS registry"},
+    "fhq_market": {"tables": 6, "purpose": "Price data, canonical market data"},
+    "fhq_research": {"tables": 27, "purpose": "Technical indicators, research data"},
+    "fhq_perception": {"tables": 3, "purpose": "Regime classification, state vectors"},
+    "fhq_governance": {"tables": 26, "purpose": "Governance actions, contracts, attestations"},
+    "vision_verification": {"tables": 2, "purpose": "Hash chains, operation signatures"},
+    "vision_core": {"tables": 7, "purpose": "Vision-IoS core tables"},
+    "vision_signals": {"tables": 2, "purpose": "Signal generation"},
+    "vision_autonomy": {"tables": 2, "purpose": "Autonomous operations"},
+    "total_tables": 152
+  },
+
+  "hash_chain_integrity": {
+    "total_chains": 131,
+    "verified_chains": 131,
+    "broken_chains": 0,
+    "integrity_status": "ALL_CHAINS_VERIFIED",
+    "chain_breakdown": {
+      "GENESIS_RECONCILED": {"total": 126, "verified": 126},
+      "IOS_MODULE": {"total": 2, "verified": 2},
+      "IOS_MODULE_CORRECTION": {"total": 1, "verified": 1},
+      "OMEGA_CHECK": {"total": 1, "verified": 1},
+      "BOARDROOM_DIRECTIVE": {"total": 1, "verified": 1}
+    }
+  },
+
+  "governance_status": {
+    "adr_registry": {
+      "total_adrs": 16,
+      "approved": 16,
+      "pending": 0
+    },
+    "employment_contracts": {
+      "total_active": 11,
+      "agents": ["VEGA", "LARS", "STIG", "FINN", "LINE", "CSEO", "CDMO", "CRIO", "CEIO", "CFAO", "CODE"]
+    },
+    "vega_attestations": {
+      "total": 168,
+      "active": 136,
+      "approved": 28,
+      "pending": 2,
+      "passed": 2
+    },
+    "operation_signatures": {
+      "deprecated": 75,
+      "active": 0,
+      "note": "75 stale signatures deprecated per ADR-002 rule 5.4"
+    },
+    "discrepancy_events": {
+      "open": 0,
+      "resolved": 1,
+      "status": "NO_BLOCKING_DISCREPANCIES"
+    }
+  },
+
+  "recent_governance_actions": [
+    {"action": "CALC_INDICATORS_EXECUTION", "target": "fhq_research.indicator_*", "by": "CODE", "decision": "APPROVED"},
+    {"action": "SIGNATURE_DEPRECATION", "target": "operation_signatures", "by": "STIG", "decision": "APPROVED"},
+    {"action": "IOS_MODULE_G1_TECHNICAL", "target": "IoS-003", "by": "STIG", "decision": "APPROVED"},
+    {"action": "IOS_MODULE_G0_SUBMISSION", "target": "IoS-003", "by": "CEO", "decision": "APPROVED"},
+    {"action": "IOS_MODULE_G4_ACTIVATION", "target": "IoS-002", "by": "CEO", "decision": "APPROVED"}
+  ],
+
+  "ios003_gate_status": {
+    "G0_SUBMISSION": "PASS - CEO approved",
+    "G1_TECHNICAL": "PASS - Schema, constraints, indexes, dependencies verified",
+    "G2_GOVERNANCE": "PASS - ADRs, contracts, tier enforcement verified",
+    "G3_AUDIT": "PASS - Hash chains, golden samples, lineage verified",
+    "G4_ACTIVATION": "APPROVED - Awaiting SQL execution",
+    "evidence_files": [
+      "evidence/IOS003_G1_TECHNICAL_VALIDATION_20251129.json",
+      "evidence/IOS003_G2_GOVERNANCE_REVIEW_20251129.json",
+      "evidence/IOS003_G3_AUDIT_GOLDEN_SAMPLE_20251129.json",
+      "evidence/IOS003_G4_ACTIVATION_20251129.json"
+    ],
+    "activation_script": "scripts/ios003_g4_activation.sql"
+  },
+
+  "evidence_bundle": {
+    "total_evidence_files": 32,
+    "ios003_specific": 8,
+    "genesis_reconciliation": 3,
+    "ios001_related": 2,
+    "ios002_related": 10,
+    "system_reports": 9
+  },
+
+  "action_required": {
+    "priority_1": {
+      "action": "Execute IoS-003 G4 activation SQL",
+      "command": "psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f scripts/ios003_g4_activation.sql",
+      "effect": "Updates IoS-003 status DRAFT -> ACTIVE, creates hash chain, logs governance action"
+    }
+  },
+
+  "system_verdict": {
+    "overall_health": "HEALTHY",
+    "governance_compliance": "FULL",
+    "data_integrity": "VERIFIED",
+    "hash_chains": "INTACT",
+    "defcon": "GREEN",
+    "ready_for_production": true
+  },
+
+  "hash_chain_id": "SYS-RPT-20251129-160000-STIG"
+}

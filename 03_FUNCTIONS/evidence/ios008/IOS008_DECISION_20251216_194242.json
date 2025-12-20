@@ -1,0 +1,218 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T19:42:42.261126+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "c9093aea-19be-4d21-bff9-a1275448bd0b",
+    "timestamp": "2025-12-16T19:42:42.232597+00:00",
+    "valid_until": "2025-12-16T19:57:42.232597+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 3,
+      "cohesion_score": 0.6666666666666666,
+      "dominant_direction": "NEUTRAL",
+      "confidence_modifier": 0.85
+    },
+    "asset_directives": [
+      {
+        "signal_id": "fa21ae86-d83a-4b8e-985c-b0eccfb4e752",
+        "hypothesis_id": "ALPHA-20241215-004",
+        "category": "TIMING",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3720,
+        "confidence_score": 0.7440899999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Weekly Fed balance sheet increase > $10B",
+          "Reverse repo facility usage drops > $50B weekly",
+          "BTC 20-day volatility < 40% (confirming NEUTRAL regime)",
+          "No major macroeconomic events scheduled in next 5 days"
+        ],
+        "exit_conditions": {
+          "stop_loss": "BTC enters RISK-OFF regime (DEFCON 1-2)",
+          "time_exit": "168 hours after entry",
+          "take_profit": "BTC enters RISK-ON regime (DEFCON 3-4)"
+        }
+      },
+      {
+        "signal_id": "e06736a4-a349-49e6-9080-fdc80245cd78",
+        "hypothesis_id": "ALPHA-20241205-003",
+        "category": "TIMING",
+        "action": "CLOSE",
+        "target_allocation_bps": 3720,
+        "confidence_score": 0.7440899999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Friday trading range < 1.5x 7-day average daily range",
+          "Friday volume declines >25% from Thursday's average hourly volume",
+          "Monday opens with >0.8% gap from Friday close",
+          "Gap direction opposite to Friday's final 2-hour trend",
+          "Current VIX term structure in contango (indicating expected volatility increase)"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Gap extends additional 50% beyond initial gap size",
+          "time_exit": "8 hours after Monday market open",
+          "take_profit": "Gap fully filled (price returns to Friday close level)"
+        }
+      },
+      {
+        "signal_id": "7c42284c-4e4a-4a70-a18f-72d38de90235",
+        "hypothesis_id": "ALPHA-20251212-002",
+        "category": "TIMING",
+        "action": "NEUTRAL",
+        "target_allocation_bps": 3720,
+        "confidence_score": 0.7440899999999999,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Regime = NEUTRAL",
+          "DEFCON level changes from 5 to 4",
+          "Wait 2 hours after DEFCON change confirmation",
+          "If price has moved >1.5% in direction of DEFCON improvement (lower number = improvement), enter counter-trend",
+          "Entry at 2-hour mark after DEFCON change"
+        ],
+        "exit_conditions": {
+          "stop_loss": "50% continuation beyond the 2-hour extreme",
+          "time_exit": "6 hours after entry",
+          "take_profit": "Return to price level at moment of DEFCON change"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "193ed089e28d055116d9810dbc417038688812e25f0d9846cd93bed6edff170c",
+      "acl": "760940ed819e76574ef2c5a7be9f635e098aece72e2a3ca121e841720cca2985",
+      "dsl": "56fe80e1cd4adeea1ae982d61a265fb0635e30ececbee66690a42a2c83f6dd71",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "731555043e32245c364092fcafadcd625acba6a4300f002ac69a43b8a4f7f28f"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "fa21ae86-d83a-4b8e-985c-b0eccfb4e752",
+      "source_proposal_id": "8f0f3007-501e-493c-b4d8-77827e2017c5",
+      "hypothesis_id": "ALPHA-20241215-004",
+      "title": "Liquidity Pulse Regime Transition",
+      "category": "TIMING",
+      "entry_conditions": [
+        "Weekly Fed balance sheet increase > $10B",
+        "Reverse repo facility usage drops > $50B weekly",
+        "BTC 20-day volatility < 40% (confirming NEUTRAL regime)",
+        "No major macroeconomic events scheduled in next 5 days"
+      ],
+      "exit_conditions": {
+        "stop_loss": "BTC enters RISK-OFF regime (DEFCON 1-2)",
+        "time_exit": "168 hours after entry",
+        "take_profit": "BTC enters RISK-ON regime (DEFCON 3-4)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.00694364148650374,
+        "win_rate": 0.5346534653465347,
+        "sharpe_ratio": 0.8416250539496127,
+        "profit_factor": 1.8440711563980057,
+        "total_signals": 101,
+        "avg_return_bps": 180.45267015212676,
+        "max_drawdown_pct": 30.907920313121693,
+        "avg_holding_period_hours": 91.72277227722772
+      },
+      "confidence_score": 0.859,
+      "state_hash_at_validation": "88c8d6b2578380f28d0d23b46bdaee5e9dc47f1c3018b466c4cc5b944b6801e0",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T20:41:43.620334+01:00",
+      "created_at": "2025-12-16T20:41:43.620334+01:00"
+    },
+    {
+      "signal_id": "e06736a4-a349-49e6-9080-fdc80245cd78",
+      "source_proposal_id": "27ff484a-4a46-4895-87b8-4c08b1049527",
+      "hypothesis_id": "ALPHA-20241205-003",
+      "title": "Weekend Liquidity Gap Exhaustion Patterns",
+      "category": "TIMING",
+      "entry_conditions": [
+        "Friday trading range < 1.5x 7-day average daily range",
+        "Friday volume declines >25% from Thursday's average hourly volume",
+        "Monday opens with >0.8% gap from Friday close",
+        "Gap direction opposite to Friday's final 2-hour trend",
+        "Current VIX term structure in contango (indicating expected volatility increase)"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Gap extends additional 50% beyond initial gap size",
+        "time_exit": "8 hours after Monday market open",
+        "take_profit": "Gap fully filled (price returns to Friday close level)"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.01750266368756706,
+        "win_rate": 0.6237623762376238,
+        "sharpe_ratio": 0.7302144805916825,
+        "profit_factor": 1.850649137731301,
+        "total_signals": 101,
+        "avg_return_bps": 164.928920568369,
+        "max_drawdown_pct": 27.144972987600042,
+        "avg_holding_period_hours": 66.53465346534654
+      },
+      "confidence_score": 0.8836,
+      "state_hash_at_validation": "1bfa4b959f46a14b7e7f26af711e17e4682be4a25c086da96c9482690b8f0737",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T20:42:14.068800+01:00",
+      "created_at": "2025-12-16T20:42:14.068800+01:00"
+    },
+    {
+      "signal_id": "7c42284c-4e4a-4a70-a18f-72d38de90235",
+      "source_proposal_id": "0dd1a662-5f3c-41a5-8ed8-f87d18a3725a",
+      "hypothesis_id": "ALPHA-20251212-002",
+      "title": "Defcon-5 to Defcon-4 Transition Momentum Fade",
+      "category": "TIMING",
+      "entry_conditions": [
+        "Regime = NEUTRAL",
+        "DEFCON level changes from 5 to 4",
+        "Wait 2 hours after DEFCON change confirmation",
+        "If price has moved >1.5% in direction of DEFCON improvement (lower number = improvement), enter counter-trend",
+        "Entry at 2-hour mark after DEFCON change"
+      ],
+      "exit_conditions": {
+        "stop_loss": "50% continuation beyond the 2-hour extreme",
+        "time_exit": "6 hours after entry",
+        "take_profit": "Return to price level at moment of DEFCON change"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.01750266368756706,
+        "win_rate": 0.6237623762376238,
+        "sharpe_ratio": 0.7302144805916825,
+        "profit_factor": 1.850649137731301,
+        "total_signals": 101,
+        "avg_return_bps": 164.928920568369,
+        "max_drawdown_pct": 27.144972987600042,
+        "avg_holding_period_hours": 66.53465346534654
+      },
+      "confidence_score": 0.8836,
+      "state_hash_at_validation": "4c974b1929f2c47cbddc76ed4ea6a98c20210c83605c95fda7048b10c7291cdf",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T20:42:15.666683+01:00",
+      "created_at": "2025-12-16T20:42:15.666683+01:00"
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "document_type": "G3_RECURSIVE_SAFETY_SPECIFICATION",
+  "document_id": "G3-MAX-DEPTH-SPEC-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T20:00:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G3 2025-12-09 Section 2.1",
+  "purpose": "Define constitutional constants for recursive safety in Cognitive Domain",
+
+  "constitutional_constants": {
+    "MAX_DEPTH": {
+      "constant_id": "CONST-SITC-001",
+      "name": "MAX_DEPTH",
+      "value": 10,
+      "type": "INTEGER",
+      "scope": "SitC Chain-of-Query depth limit",
+      "adr_reference": "EC-020 Section 5",
+      "rationale": "Based on cognitive science research: humans rarely exceed 7±2 reasoning steps. 10 provides headroom while preventing runaway chains.",
+      "enforcement": "CHECK constraint on search_in_chain_events.search_depth",
+      "sql_constraint": "CHECK (search_depth >= 0 AND search_depth <= 10)",
+      "violation_action": "REJECT INSERT with error: 'MAX_DEPTH exceeded. Chain terminated.'",
+      "override_authority": "CEO only via G4 amendment"
+    },
+    "MAX_BRANCHING_FACTOR": {
+      "constant_id": "CONST-SITC-002",
+      "name": "MAX_BRANCHING_FACTOR",
+      "value": 5,
+      "type": "INTEGER",
+      "scope": "Maximum child nodes per cognitive node",
+      "adr_reference": "EC-020 Section 4",
+      "rationale": "Prevents combinatorial explosion. 5^10 = 9.7M theoretical paths, but with MAX_DEPTH=10 and budget constraints, practical limit is much lower.",
+      "enforcement": "Application-level validation before INSERT",
+      "validation_query": "SELECT COUNT(*) FROM search_in_chain_events WHERE protocol_id = ? AND parent_node_index = ?",
+      "violation_action": "REJECT new branch with error: 'MAX_BRANCHING_FACTOR exceeded. Consider alternative reasoning path.'",
+      "override_authority": "CEO only via G4 amendment"
+    },
+    "MAX_TOTAL_NODES_PER_PROTOCOL": {
+      "constant_id": "CONST-SITC-003",
+      "name": "MAX_TOTAL_NODES_PER_PROTOCOL",
+      "value": 100,
+      "type": "INTEGER",
+      "scope": "Absolute ceiling on nodes in a single protocol",
+      "adr_reference": "EC-020, ADR-012",
+      "rationale": "Hard stop for resource consumption. Even with MAX_DEPTH=10 and MAX_BRANCHING=5, we cap at 100 nodes total.",
+      "enforcement": "BEFORE INSERT trigger (designed, not installed)",
+      "validation_query": "SELECT COUNT(*) FROM search_in_chain_events WHERE protocol_id = ?",
+      "violation_action": "ABORT protocol with status='ABORTED', reason='MAX_TOTAL_NODES exceeded'",
+      "override_authority": "CEO only via G4 amendment"
+    },
+    "MAX_SEARCH_CALLS_PER_PROTOCOL": {
+      "constant_id": "CONST-INFORAGE-001",
+      "name": "MAX_SEARCH_CALLS_PER_PROTOCOL",
+      "value": 5,
+      "type": "INTEGER",
+      "scope": "Maximum external API calls per research protocol",
+      "adr_reference": "EC-021 Section 6, ADR-012",
+      "rationale": "Economic safety. Each search has cost. 5 calls provides sufficient exploration while controlling spend.",
+      "enforcement": "CHECK constraint on research_protocols",
+      "sql_constraint": "CHECK (search_calls_made <= max_search_calls AND max_search_calls <= 5)",
+      "violation_action": "REJECT search attempt. Trigger InForage BUDGET_EXCEEDED termination.",
+      "override_authority": "DEFCON YELLOW+ can reduce to 2, CEO can increase via G4"
+    },
+    "MAX_BUDGET_PER_PROTOCOL_USD": {
+      "constant_id": "CONST-ECON-001",
+      "name": "MAX_BUDGET_PER_PROTOCOL_USD",
+      "value": 0.50,
+      "type": "NUMERIC(10,4)",
+      "scope": "Maximum USD spend per research protocol",
+      "adr_reference": "ADR-012 Section 3",
+      "rationale": "Per FINN Tier-2 constraints: $0.50/summary max. Prevents single protocol from consuming excessive resources.",
+      "enforcement": "CHECK constraint on research_protocols",
+      "sql_constraint": "CHECK (budget_allocated_usd <= 0.50)",
+      "violation_action": "REJECT protocol creation with error: 'Budget exceeds maximum allowed.'",
+      "defcon_modifiers": {
+        "GREEN": 0.50,
+        "YELLOW": 0.25,
+        "ORANGE": 0.10,
+        "RED": 0.00
+      },
+      "override_authority": "CEO via G4 amendment"
+    }
+  },
+
+  "failsafe_triggers": {
+    "VEGA_END_OF_THOUGHT_TRIGGER": {
+      "trigger_id": "FAILSAFE-001",
+      "name": "End of Thought",
+      "description": "VEGA forcibly terminates cognitive chain when safety boundaries are breached",
+      "activation_conditions": [
+        {
+          "condition": "search_depth >= MAX_DEPTH",
+          "action": "Set protocol.status = 'COMPLETED', log reason = 'MAX_DEPTH reached'"
+        },
+        {
+          "condition": "total_nodes >= MAX_TOTAL_NODES_PER_PROTOCOL",
+          "action": "Set protocol.status = 'ABORTED', log reason = 'Node limit exceeded'"
+        },
+        {
+          "condition": "budget_consumed_usd >= budget_allocated_usd",
+          "action": "Set protocol.status = 'COMPLETED', log reason = 'Budget exhausted'"
+        },
+        {
+          "condition": "search_calls_made >= max_search_calls",
+          "action": "Block further searches, continue with internal reasoning only"
+        },
+        {
+          "condition": "chain_integrity_score < 0.80",
+          "action": "CATASTROPHIC alert, protocol.status = 'ABORTED', DEFCON escalation consideration"
+        },
+        {
+          "condition": "DEFCON level changes to RED during execution",
+          "action": "Immediately abort all non-critical protocols, preserve state for recovery"
+        }
+      ],
+      "logging": "All failsafe activations logged to fhq_governance.governance_alerts with severity='HIGH'",
+      "governance_hook": "VEGA_FAILSAFE_ACTIVATION notifies VEGA via governance_actions_log"
+    },
+    "INFINITE_LOOP_DETECTOR": {
+      "trigger_id": "FAILSAFE-002",
+      "name": "Infinite Loop Detection",
+      "description": "Detects and terminates circular reasoning patterns",
+      "detection_method": "Hash-based cycle detection on node_content within protocol",
+      "activation_conditions": [
+        {
+          "condition": "Same node_content hash appears twice in chain",
+          "action": "Terminate chain at duplicate, log 'Circular reasoning detected'"
+        },
+        {
+          "condition": "Same query_text submitted more than 2 times per protocol",
+          "action": "Block query, suggest alternative approach"
+        }
+      ],
+      "implementation_note": "Uses hash_self comparison for efficient cycle detection"
+    },
+    "RESOURCE_EXHAUSTION_GUARD": {
+      "trigger_id": "FAILSAFE-003",
+      "name": "Resource Exhaustion Guard",
+      "description": "Monitors aggregate resource consumption across all active protocols",
+      "thresholds": {
+        "max_concurrent_protocols": 10,
+        "max_aggregate_budget_per_hour": 5.00,
+        "max_aggregate_search_calls_per_hour": 100
+      },
+      "activation_conditions": [
+        {
+          "condition": "Concurrent active protocols >= 10",
+          "action": "Queue new protocols, do not start until slot available"
+        },
+        {
+          "condition": "Hourly spend approaching $5.00",
+          "action": "Reduce new protocol budgets to 50% of requested"
+        },
+        {
+          "condition": "Hourly search calls approaching 100",
+          "action": "Throttle search execution, prioritize high-scent paths only"
+        }
+      ]
+    }
+  },
+
+  "defcon_integration": {
+    "description": "How DEFCON levels affect cognitive constraints",
+    "modifiers": {
+      "GREEN": {
+        "max_depth": 10,
+        "max_branching": 5,
+        "max_budget": 0.50,
+        "max_searches": 5,
+        "description": "Normal operations. Full cognitive capacity."
+      },
+      "YELLOW": {
+        "max_depth": 7,
+        "max_branching": 3,
+        "max_budget": 0.25,
+        "max_searches": 3,
+        "description": "Elevated caution. Reduced exploration depth."
+      },
+      "ORANGE": {
+        "max_depth": 5,
+        "max_branching": 2,
+        "max_budget": 0.10,
+        "max_searches": 1,
+        "description": "High alert. Minimal external calls, focused reasoning."
+      },
+      "RED": {
+        "max_depth": 3,
+        "max_branching": 1,
+        "max_budget": 0.00,
+        "max_searches": 0,
+        "description": "Critical. Internal reasoning only. No external API calls."
+      },
+      "BLACK": {
+        "max_depth": 0,
+        "max_branching": 0,
+        "max_budget": 0.00,
+        "max_searches": 0,
+        "description": "System freeze. All cognitive operations suspended."
+      }
+    }
+  },
+
+  "enforcement_design": {
+    "database_level": {
+      "constraints": [
+        "CHECK (search_depth >= 0 AND search_depth <= 10)",
+        "CHECK (search_calls_made <= max_search_calls)",
+        "CHECK (budget_consumed_usd <= budget_allocated_usd)",
+        "CHECK (budget_allocated_usd <= 0.50)"
+      ],
+      "status": "DESIGNED (to be added in FINAL_MIGRATION_SCRIPT.sql)"
+    },
+    "application_level": {
+      "validations": [
+        "MAX_BRANCHING_FACTOR check before node creation",
+        "MAX_TOTAL_NODES_PER_PROTOCOL check before node creation",
+        "Infinite loop detection via hash comparison",
+        "Aggregate resource monitoring"
+      ],
+      "status": "DESIGNED (to be implemented in orchestrator)"
+    },
+    "trigger_level": {
+      "triggers": [
+        "BEFORE INSERT on search_in_chain_events: Validate depth and branching",
+        "AFTER INSERT on search_in_chain_events: Check for circular reasoning",
+        "AFTER UPDATE on research_protocols: Check budget exhaustion"
+      ],
+      "status": "DESIGNED (NOT INSTALLED per G3 prohibition)"
+    }
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "These constitutional constants define the hard safety boundaries for the Cognitive Domain per CEO Directive G3 Section 2.1. MAX_DEPTH=10, MAX_BRANCHING_FACTOR=5, and associated constraints prevent infinite loops and resource exhaustion. Failsafe triggers ensure VEGA can forcibly terminate any cognitive process that violates boundaries.",
+    "timestamp": "2025-12-09T20:00:00.000Z"
+  }
+}

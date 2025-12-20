@@ -1,0 +1,73 @@
+{
+  "module_id": "IoS-004",
+  "gate": "G1_TECHNICAL_VALIDATION",
+  "status": "PASS",
+  "validated_by": "STIG (EC-003)",
+  "validation_timestamp": "2025-11-29T21:17:00.000Z",
+
+  "g1_1_schema_integrity": {
+    "status": "PASS",
+    "table": "fhq_positions.target_exposure_daily",
+    "columns_verified": 12,
+    "columns": [
+      {"name": "asset_id", "type": "text", "nullable": false},
+      {"name": "timestamp", "type": "date", "nullable": false},
+      {"name": "exposure_raw", "type": "numeric", "nullable": false},
+      {"name": "exposure_constrained", "type": "numeric", "nullable": false},
+      {"name": "cash_weight", "type": "numeric", "nullable": false},
+      {"name": "model_id", "type": "uuid", "nullable": false},
+      {"name": "regime_label", "type": "text", "nullable": false},
+      {"name": "confidence", "type": "numeric", "nullable": false},
+      {"name": "lineage_hash", "type": "text", "nullable": false},
+      {"name": "hash_prev", "type": "text", "nullable": false},
+      {"name": "hash_self", "type": "text", "nullable": false},
+      {"name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()"}
+    ],
+    "primary_key": "(asset_id, timestamp)",
+    "check_constraints": [
+      "chk_exposure_raw_range: [0,1]",
+      "chk_exposure_constrained_range: [0,1]",
+      "chk_cash_weight_range: [0,1]",
+      "chk_confidence_range: [0,1]",
+      "chk_regime_label_valid: 9 canonical states"
+    ]
+  },
+
+  "g1_2_portfolio_invariant": {
+    "status": "PASS",
+    "trigger_name": "trg_validate_portfolio_invariant",
+    "function_name": "fhq_positions.validate_portfolio_invariant()",
+    "test_valid_insert": "SUCCESS - row accepted when SUM(exposure_constrained) + cash_weight = 1.0",
+    "test_invalid_insert": "REJECTED - constraint violation raised when cash_weight mismatch"
+  },
+
+  "g1_3_lineage_architecture": {
+    "status": "PASS",
+    "lineage_columns": ["lineage_hash", "hash_prev", "hash_self"],
+    "all_not_null": true,
+    "hash_chain": {
+      "chain_id": "HC-IOS-004-2026",
+      "chain_type": "IOS_MODULE",
+      "chain_scope": "IoS-004",
+      "integrity_verified": true
+    }
+  },
+
+  "g1_4_task_binding": {
+    "status": "PASS",
+    "task_name": "REGIME_ALLOCATION_ENGINE_V1",
+    "task_type": "ALLOCATION_ENGINE",
+    "task_scope": "IOS_004_INTERNAL",
+    "owned_by_agent": "LARS",
+    "executed_by_agent": "CODE",
+    "reads_from_schemas": ["fhq_research", "fhq_perception"],
+    "writes_to_schemas": ["fhq_positions"]
+  },
+
+  "g1_5_table_empty": {
+    "status": "PASS",
+    "row_count": 0
+  },
+
+  "hash_chain_id": "HC-IOS-004-2026"
+}

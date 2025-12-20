@@ -1,0 +1,169 @@
+{
+  "module_id": "IoS-004",
+  "gate": "G0_SUBMISSION",
+  "title": "Regime-Driven Allocation Engine",
+  "version": "2026.PROD.0",
+  "submission_timestamp": "2025-11-29T20:53:33.814Z",
+  "executed_by": "STIG (EC-003)",
+  "authorized_by": "LARS (G0 SUBMISSION DIRECTIVE)",
+
+  "ios_registry_snapshot": {
+    "ios_id": "IoS-004",
+    "title": "Regime-Driven Allocation Engine",
+    "description": "Transforms canonical regime states from IoS-003 HMM v2.0 Meta-Perception Engine into deterministic, auditable portfolio weights. First capital-allocation module of FjordHQ.",
+    "version": "2026.PROD.0",
+    "status": "DRAFT",
+    "owner_role": "LARS",
+    "governing_adrs": [
+      "ADR-001",
+      "ADR-002",
+      "ADR-003",
+      "ADR-004",
+      "ADR-006",
+      "ADR-007",
+      "ADR-011",
+      "ADR-012",
+      "ADR-013",
+      "ADR-014",
+      "ADR-016",
+      "IoS-003_Appendix_A_HMM_REGIME"
+    ],
+    "dependencies": ["IoS-003"],
+    "content_hash": "c45dde3c0dd50b8f240e985ab8c850ec03cbfcaf74a30edbea50884059609764",
+    "created_at": "2025-11-29T20:53:33.814Z"
+  },
+
+  "table_schema_snapshot": {
+    "schema": "fhq_positions",
+    "table": "target_exposure_daily",
+    "columns": [
+      {"column_name": "asset_id", "data_type": "text", "is_nullable": "NO"},
+      {"column_name": "timestamp", "data_type": "date", "is_nullable": "NO"},
+      {"column_name": "exposure_raw", "data_type": "numeric", "is_nullable": "NO"},
+      {"column_name": "exposure_constrained", "data_type": "numeric", "is_nullable": "NO"},
+      {"column_name": "cash_weight", "data_type": "numeric", "is_nullable": "NO"},
+      {"column_name": "model_id", "data_type": "uuid", "is_nullable": "NO"},
+      {"column_name": "regime_label", "data_type": "text", "is_nullable": "NO"},
+      {"column_name": "confidence", "data_type": "numeric", "is_nullable": "NO"},
+      {"column_name": "lineage_hash", "data_type": "text", "is_nullable": "NO"},
+      {"column_name": "hash_prev", "data_type": "text", "is_nullable": "NO"},
+      {"column_name": "hash_self", "data_type": "text", "is_nullable": "NO"},
+      {"column_name": "created_at", "data_type": "timestamp with time zone", "is_nullable": "NO", "default": "now()"}
+    ],
+    "constraints": [
+      {"name": "target_exposure_daily_pkey", "definition": "PRIMARY KEY (asset_id, timestamp)"},
+      {"name": "chk_exposure_raw_range", "definition": "CHECK ((exposure_raw >= 0) AND (exposure_raw <= 1))"},
+      {"name": "chk_exposure_constrained_range", "definition": "CHECK ((exposure_constrained >= 0) AND (exposure_constrained <= 1))"},
+      {"name": "chk_cash_weight_range", "definition": "CHECK ((cash_weight >= 0) AND (cash_weight <= 1))"},
+      {"name": "chk_confidence_range", "definition": "CHECK ((confidence >= 0) AND (confidence <= 1))"},
+      {"name": "chk_regime_label_valid", "definition": "CHECK (regime_label IN ('STRONG_BULL','BULL','RANGE_UP','NEUTRAL','RANGE_DOWN','BEAR','STRONG_BEAR','PARABOLIC','BROKEN'))"}
+    ],
+    "triggers": [
+      {"name": "trg_validate_portfolio_invariant", "function": "fhq_positions.validate_portfolio_invariant()", "timing": "AFTER INSERT OR UPDATE", "enforcement": "SUM(exposure_constrained) + cash_weight = 1.0 per date"}
+    ],
+    "indexes": [
+      "idx_target_exposure_daily_timestamp",
+      "idx_target_exposure_daily_model_id",
+      "idx_target_exposure_daily_regime",
+      "idx_target_exposure_daily_hash_self"
+    ]
+  },
+
+  "task_registry_snapshot": {
+    "task_id": "22908562-a6fb-462a-8c42-18976de55057",
+    "task_name": "REGIME_ALLOCATION_ENGINE_V1",
+    "task_type": "ALLOCATION_ENGINE",
+    "task_scope": "IOS_004_INTERNAL",
+    "owned_by_agent": "LARS",
+    "executed_by_agent": "CODE",
+    "reads_from_schemas": ["fhq_research", "fhq_perception"],
+    "writes_to_schemas": ["fhq_positions"],
+    "gate_level": "G1",
+    "gate_approved": false,
+    "vega_reviewed": false,
+    "task_status": "REGISTERED",
+    "description": "Deterministic regime-driven allocation engine bound to IoS-003 HMM regimes. Transforms regime_predictions_v2 into target_exposure_daily. Portfolio invariant enforced.",
+    "created_at": "2025-11-29T20:53:33.814Z"
+  },
+
+  "hash_chain_snapshot": {
+    "chain_id": "HC-IOS-004-2026",
+    "chain_type": "IOS_MODULE",
+    "chain_scope": "IoS-004",
+    "genesis_hash": "b83c46d584d06d0c7636d5691d5cf708e13951f57ec1dbb362d0012ef7ed4bbd",
+    "current_hash": "b83c46d584d06d0c7636d5691d5cf708e13951f57ec1dbb362d0012ef7ed4bbd",
+    "chain_length": 1,
+    "integrity_verified": true,
+    "last_verification_at": "2025-11-29T20:53:33.814Z",
+    "created_by": "STIG"
+  },
+
+  "g0_exit_criteria_verification": {
+    "ios_registry_valid": {
+      "status": "PASS",
+      "checks": {
+        "status_is_draft": true,
+        "version_is_2026_prod_0": true,
+        "owner_role_is_lars": true,
+        "dependencies_includes_ios003": true,
+        "governing_adrs_includes_hmm_appendix": true
+      }
+    },
+    "positions_table_verified": {
+      "status": "PASS",
+      "checks": {
+        "schema_exists": true,
+        "table_exists": true,
+        "all_required_columns_present": true,
+        "all_constraints_applied": true,
+        "portfolio_invariant_trigger_active": true
+      }
+    },
+    "table_empty_verified": {
+      "status": "PASS",
+      "row_count": 0
+    },
+    "task_registry_verified": {
+      "status": "PASS",
+      "checks": {
+        "task_status_is_registered": true,
+        "gate_approved_is_false": true,
+        "vega_reviewed_is_false": true
+      }
+    },
+    "hash_chain_verified": {
+      "status": "PASS",
+      "checks": {
+        "chain_exists": true,
+        "integrity_verified_is_true": true,
+        "chain_type_is_ios_module": true,
+        "chain_scope_is_ios004": true
+      }
+    }
+  },
+
+  "safety_constraints_compliance": {
+    "no_allocation_logic_executed": true,
+    "no_rows_inserted_to_target_exposure_daily": true,
+    "no_modifications_to_ios003": true,
+    "no_modifications_to_hmm_appendix": true,
+    "no_defcon_changes": true,
+    "no_governance_flag_changes": true
+  },
+
+  "artifacts_created": [
+    "fhq_positions schema",
+    "fhq_positions.target_exposure_daily table",
+    "fhq_positions.validate_portfolio_invariant() function",
+    "trg_validate_portfolio_invariant trigger",
+    "4 performance indexes",
+    "fhq_meta.ios_registry entry for IoS-004",
+    "fhq_governance.task_registry entry for REGIME_ALLOCATION_ENGINE_V1",
+    "vision_verification.hash_chains entry HC-IOS-004-2026",
+    "fhq_meta.adr_audit_log entry for G0 submission"
+  ],
+
+  "migration_file": "04_DATABASE/MIGRATIONS/027_ios004_regime_allocation_engine.sql",
+
+  "hash_self": "4a68dad9cd290b0585e8d96e8488b0ea50a61638ecc42ef2e244f16b01d51c4a"
+}

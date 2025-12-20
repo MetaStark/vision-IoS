@@ -1,0 +1,230 @@
+{
+  "attestation_type": "WAVE_17A_CCO_ACTIVATION_COMPLETE",
+  "attestation_id": "VEGA-WAVE17A-ATT-20251218-001",
+  "generated_at": "2025-12-18T14:30:00Z",
+  "attested_by": "VEGA (Verification & Governance Authority)",
+  "directive_reference": "CEO_DIRECTIVE_WAVE_17A",
+  "directive_date": "2025-12-18",
+  "directive_subject": "Central Context Orchestrator Activation",
+
+  "executive_summary": {
+    "verdict": "FULLY COMPLIANT",
+    "cco_status": "OPERATIONAL",
+    "daemon_status": "RUNNING",
+    "signals_armed": 22,
+    "current_permit": "SUPPRESSED",
+    "permit_reason": "MARKET_DRIVEN (Vol 71.5% > 70%)"
+  },
+
+  "section_3_1_cold_start_integrity": {
+    "compliance": "VERIFIED",
+    "requirements": [
+      "CCO must never initialize in degraded or ambiguous state",
+      "On startup: CCO_STATUS = INIT, GLOBAL_PERMIT = UNKNOWN",
+      "No execution permitted until first signed context update",
+      "Silence explicitly attributed to SYSTEM_INIT"
+    ],
+    "evidence": {
+      "init_state_implemented": true,
+      "unknown_permit_implemented": true,
+      "system_init_attribution": true,
+      "transition_logged": true,
+      "cco_status_enum": ["INIT", "OPERATIONAL", "DEGRADED", "UNAVAILABLE"],
+      "global_permit_enum": ["UNKNOWN", "PERMITTED", "SUPPRESSED"]
+    },
+    "verification_query": "SELECT cco_status, global_permit FROM fhq_canonical.g5_cco_state WHERE is_active = TRUE",
+    "attestation": "Cold-Start Integrity fully implemented per Section 3.1"
+  },
+
+  "section_3_2_canonical_provenance": {
+    "compliance": "VERIFIED",
+    "requirements": [
+      "Every CCO context update must be fully reconstructable",
+      "Persist: context_vector, context_hash, input_hash, source_tables, computed_at, valid_until",
+      "No implicit context allowed",
+      "If context cannot be signed, it does not exist"
+    ],
+    "evidence": {
+      "context_vector_column": true,
+      "context_hash_column": true,
+      "input_hash_column": true,
+      "source_tables_column": true,
+      "valid_until_column": true,
+      "context_signature_column": true,
+      "signed_by_column": true,
+      "current_context_hash": "237000e8b8ba07b6b83e4b9215376d593804df6781e466278a567ebc909c86ed",
+      "current_input_hash": "111a29910b064a8265ca1f3154c6ea2c08ca5a57e749b9594458ecd2f132977f",
+      "current_source_tables": ["fhq_data.price_series", "fhq_canonical.ios003_regime_classifications"]
+    },
+    "adr_013_compliance": "FULL",
+    "attestation": "Canonical Provenance fully implemented per Section 3.2 and ADR-013"
+  },
+
+  "section_3_3_failover_semantics": {
+    "compliance": "VERIFIED",
+    "requirements": [
+      "INIT: Cold start, no context yet -> HARD BLOCK (system-attributed)",
+      "OPERATIONAL: Fresh, valid context -> Permit/Suppress per rules",
+      "DEGRADED: Context stale > threshold -> Permit only Sharpe >= 2.0",
+      "UNAVAILABLE: No trusted context -> FULL HALT + DEFCON escalation"
+    ],
+    "evidence": {
+      "four_state_model": true,
+      "init_blocks_execution": true,
+      "degraded_sharpe_threshold": 2.0,
+      "unavailable_triggers_halt": true,
+      "transitions_logged_atomically": true,
+      "coherence_window_seconds": 300,
+      "degraded_lag_seconds": 15
+    },
+    "state_machine_verified": true,
+    "attestation": "Failover Semantics fully implemented per Section 3.3"
+  },
+
+  "section_2_semantic_clarification": {
+    "compliance": "VERIFIED",
+    "semantic_lock": {
+      "term": "G5",
+      "definition": "Internal technical label for WAVE 17 Operational Paper-Execution Mode",
+      "is_not": [
+        "A new research phase",
+        "A new ADR change gate",
+        "An authorization for live capital"
+      ]
+    },
+    "evidence": {
+      "ios_registry_description": "WAVE 17 Operational Paper-Execution Mode (internal technical label). NOT a governance gate per ADR-004.",
+      "parameter_lock": "WAVE17_SEMANTIC_LOCK = 1",
+      "table_comment_added": true
+    },
+    "attestation": "Semantic Lock explicitly attested per Section 2"
+  },
+
+  "infrastructure_verification": {
+    "migrations_applied": [
+      {
+        "migration": "153_g5_silent_sniper_architecture.sql",
+        "status": "APPLIED",
+        "tables_created": 8,
+        "parameters_added": 10
+      },
+      {
+        "migration": "154_wave17a_cco_compliance.sql",
+        "status": "APPLIED",
+        "fixes_applied": [
+          "Added INIT state",
+          "Added provenance columns",
+          "Added three-way global_permit",
+          "Added suppression_attribution",
+          "Fixed semantic lock"
+        ]
+      }
+    ],
+    "g5_tables": [
+      "g5_cco_state",
+      "g5_cco_health_log",
+      "g5_signal_state",
+      "g5_state_transitions",
+      "g5_signal_priority_queue",
+      "g5_paper_trades",
+      "g5_exit_criteria_status",
+      "g5_ingestion_pipeline"
+    ],
+    "locked_parameters": {
+      "WAVE_16C": 4,
+      "WAVE_17": 10,
+      "WAVE_17A": 2,
+      "total": 16
+    }
+  },
+
+  "cco_daemon_verification": {
+    "daemon_file": "03_FUNCTIONS/cco_daemon.py",
+    "startup_script": "run_cco_daemon.bat",
+    "task_scheduler": {
+      "task_name": "FjordHQ_CCO_Daemon",
+      "trigger": "At system startup",
+      "run_as": "Current user (S4U)",
+      "restart_on_failure": true,
+      "status": "RUNNING"
+    },
+    "operational_metrics": {
+      "update_interval_seconds": 10,
+      "context_freshness": "< 15 seconds",
+      "provenance_complete": true,
+      "attribution_correct": true
+    }
+  },
+
+  "signal_readiness": {
+    "total_signals": 22,
+    "classification": "VALIDATED-CONTEXTUAL",
+    "current_state": "DORMANT",
+    "activation_condition": "VOL_NEUTRAL (30-70% percentile)",
+    "current_vol_percentile": 71.5,
+    "permit_status": "SUPPRESSED",
+    "suppression_reason": "Vol too high (71.5% > 70%)",
+    "attribution": "MARKET_DRIVEN"
+  },
+
+  "governance_orders_compliance": {
+    "STIG": {
+      "order": "Implement CCO daemon strictly per Sections 3.1-3.3",
+      "status": "COMPLETED",
+      "evidence": "cco_daemon.py implements all requirements"
+    },
+    "VEGA": {
+      "order": "Attest cold-start correctness, provenance completeness, semantic compliance",
+      "status": "THIS_DOCUMENT",
+      "evidence": "Sections above verify all requirements"
+    },
+    "LINE": {
+      "order": "No execution until CCO reports OPERATIONAL with signed context",
+      "status": "ENFORCED",
+      "evidence": "g5_validate_signal_execution() blocks execution in non-OPERATIONAL states"
+    },
+    "FINN": {
+      "order": "No manual context injection permitted",
+      "status": "ENFORCED",
+      "evidence": "All context updates require provenance via g5_update_cco_context()"
+    }
+  },
+
+  "final_statement": {
+    "quote": "This directive closes the last ambiguity between market silence and system silence.",
+    "verification": {
+      "market_silence": "SUPPRESSED with MARKET_DRIVEN attribution",
+      "system_silence": "INIT with SYSTEM_INIT attribution",
+      "no_third_category": true
+    },
+    "principle_1": "Silence remains a position.",
+    "principle_2": "Execution remains a privilege."
+  },
+
+  "vega_attestation": {
+    "verdict": "WAVE 17A FULLY IMPLEMENTED AND OPERATIONAL",
+    "compliance_level": "100%",
+    "sections_verified": ["3.1", "3.2", "3.3", "2"],
+    "adr_compliance": ["ADR-004", "ADR-012", "ADR-013", "ADR-016"],
+    "live_activation_authorized": false,
+    "live_activation_blocked_reason": "Out of scope for WAVE 17 (requires separate CEO Directive)",
+    "paper_execution_authorized": true,
+    "paper_execution_status": "ARMED_AND_WAITING",
+    "attestation_hash": "VEGA-WAVE17A-20251218-COMPLETE"
+  },
+
+  "signatures": {
+    "vega_signature": {
+      "agent": "VEGA",
+      "role": "Verification & Governance Authority",
+      "action": "WAVE 17A Implementation Attested",
+      "timestamp": "2025-12-18T14:30:00Z"
+    },
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "action": "Implementation Completed",
+      "timestamp": "2025-12-18T14:30:00Z"
+    }
+  }
+}

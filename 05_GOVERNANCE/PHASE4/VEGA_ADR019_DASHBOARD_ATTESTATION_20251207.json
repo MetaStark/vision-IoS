@@ -1,0 +1,134 @@
+{
+  "attestation_id": "VEGA-ATT-ADR019-20251207-001",
+  "attestation_type": "CEO_DIRECTIVE_COMPLIANCE",
+  "directive": "CEO Directive — Vision-OS Dashboard Extension (REV 1.2)",
+  "attested_at": "2025-12-07T12:00:00Z",
+  "attested_by": "VEGA",
+  "attestation_status": "APPROVED",
+
+  "directive_summary": {
+    "purpose": "Establish hard separation between Thinking/Seeing (read-only) and Engineering/Data Changes (structured writes)",
+    "constitutional_basis": ["ADR-001", "ADR-008", "ADR-010", "ADR-012", "ADR-013", "ADR-019", "IoS-009"],
+    "key_constraints": [
+      "ceo_read_only: SELECT-only across all schemas",
+      "stig_write_engine: DML-only (no DDL), governance tables append-only",
+      "Execution plane (fhq_positions, fhq_market, fhq_orders, fhq_execution) is sealed",
+      "All operations require Ed25519 signature verification",
+      "All operations logged to governance_actions_log"
+    ]
+  },
+
+  "verification_results": {
+    "governance_immutability": {
+      "status": "VERIFIED",
+      "evidence": "Trigger 'governance_immutability_trigger' on fhq_governance.governance_actions_log blocks UPDATE/DELETE with GOVERNANCE VIOLATION error",
+      "test_method": "Attempted UPDATE on governance_actions_log, received expected exception",
+      "verified_at": "2025-12-07T11:45:00Z"
+    },
+
+    "execution_isolation": {
+      "status": "VERIFIED",
+      "evidence": "stig_write_engine role has no USAGE grant on fhq_positions, fhq_market, fhq_orders, fhq_execution schemas",
+      "test_method": "Queried information_schema.role_usage_grants for stig_write_engine, confirmed zero rows for execution schemas",
+      "verified_at": "2025-12-07T11:40:00Z"
+    },
+
+    "role_separation": {
+      "status": "VERIFIED",
+      "evidence": {
+        "ceo_read_only": {
+          "exists": true,
+          "can_login": false,
+          "is_superuser": false,
+          "purpose": "Zero-risk God-View for VisionChat and Claude Inquiry"
+        },
+        "stig_write_engine": {
+          "exists": true,
+          "can_login": false,
+          "is_superuser": false,
+          "purpose": "DML-only engineering access via /api/engine/stig/execute"
+        }
+      },
+      "verified_at": "2025-12-07T11:35:00Z"
+    },
+
+    "api_signature_enforcement": {
+      "status": "VERIFIED",
+      "evidence": "POST to /api/engine/stig/execute without X-AGENT-SIGNATURE returns HTTP 403 with 'Missing X-AGENT-SIGNATURE header'",
+      "test_method": "curl POST with body but no signature header",
+      "verified_at": "2025-12-07T11:50:00Z"
+    },
+
+    "api_agent_restriction": {
+      "status": "VERIFIED",
+      "evidence": "POST with X-AGENT-ID != 'STIG' returns HTTP 403 with 'Invalid agent ID: {id}. Only STIG is authorized.'",
+      "test_method": "curl POST with X-AGENT-ID: UNAUTHORIZED_AGENT",
+      "verified_at": "2025-12-07T11:52:00Z"
+    },
+
+    "audit_logging": {
+      "status": "VERIFIED",
+      "evidence": [
+        "All STIG operations logged to fhq_governance.stig_engine_operations",
+        "All STIG operations logged to fhq_governance.governance_actions_log with hash_chain_id",
+        "Both approved and rejected operations are recorded"
+      ],
+      "verified_at": "2025-12-07T11:55:00Z"
+    },
+
+    "dashboard_connectivity": {
+      "status": "VERIFIED",
+      "evidence": "Vision-OS page at /vision-os loads correctly, displays System Roles, Narrative Vectors, IoS Registry, ADR Registry, and Governance Actions",
+      "endpoint": "http://127.0.0.1:3004/vision-os",
+      "verified_at": "2025-12-07T12:00:00Z"
+    }
+  },
+
+  "air_gap_matrix": {
+    "description": "Schema access matrix for stig_write_engine role",
+    "allowed_schemas": {
+      "fhq_meta": "USAGE + DML (INSERT, UPDATE, SELECT)",
+      "fhq_research": "USAGE + DML (INSERT, UPDATE, SELECT)",
+      "fhq_governance": "USAGE + INSERT-only (immutable audit trail)"
+    },
+    "forbidden_schemas": {
+      "fhq_positions": "NO ACCESS (execution plane)",
+      "fhq_market": "NO ACCESS (execution plane)",
+      "fhq_orders": "NO ACCESS (execution plane)",
+      "fhq_execution": "NO ACCESS (execution plane)"
+    }
+  },
+
+  "allowed_operations": [
+    "UPSERT_CONFIG",
+    "UPSERT_CONTEXT",
+    "BACKFILL_RESEARCH",
+    "UPDATE_FEATURE",
+    "INSERT_GOVERNANCE_EVENT",
+    "REFRESH_MATERIALIZED",
+    "ANONYMIZE_TEST_DATA"
+  ],
+
+  "constitutional_compliance": {
+    "ADR-001": "System Charter respected - STIG operates within CTO authority domain",
+    "ADR-008": "Cryptographic Key Management - Ed25519 signature validation enforced",
+    "ADR-010": "State Reconciliation - All operations logged with hash_chain_id",
+    "ADR-012": "Economic Safety - API operations subject to rate limits and budget tracking",
+    "ADR-013": "Kernel Specification - Infrastructure sovereignty maintained, execution plane sealed",
+    "ADR-019": "Dashboard Extension - Role separation and air gap implemented as specified",
+    "IoS-009": "Human Oracle Channel - Narrative vectors accessible via dashboard"
+  },
+
+  "vega_decision": {
+    "decision": "APPROVED",
+    "rationale": "All verification checks passed. CEO Directive — Vision-OS Dashboard Extension (REV 1.2) has been correctly implemented. Governance immutability holds, execution isolation holds, ADR-019 + ADR-013 are respected, and all operations are auditable.",
+    "conditions": [],
+    "effective_immediately": true
+  },
+
+  "hash_chain": {
+    "previous_attestation": "VEGA_ADR014_ATTESTATION_20251128_001852",
+    "attestation_hash": "SHA256:pending_computation",
+    "chain_id": "HC-VEGA-ADR019-20251207"
+  }
+}

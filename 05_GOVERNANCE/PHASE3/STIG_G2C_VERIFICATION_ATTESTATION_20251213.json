@@ -1,0 +1,114 @@
+{
+  "attestation_id": "STIG-G2C-VERIFY-20251213-0141",
+  "attestation_type": "STIG_G2C_VERIFICATION_ATTESTATION",
+  "directive_ref": "CD-G2-C-TTL-DYNAMIZATION-2025-12-12",
+  "attestation_date": "2025-12-13T01:50:00Z",
+  "attesting_agent": "STIG",
+  "verification_summary": {
+    "overall_status": "PASS",
+    "steps_completed": 3,
+    "steps_passed": 3
+  },
+  "verification_steps": [
+    {
+      "step_id": "5.1",
+      "step_name": "Containment Verification",
+      "status": "PASS",
+      "findings": {
+        "schema_changes": "NONE",
+        "mechanism_changes": "compute_g2c_decision_plan() function created",
+        "constraint_modifications": "NONE (decision_ttl_max preserved)",
+        "evidence": "No ALTER TABLE or DDL commands executed"
+      },
+      "adr_compliance": ["ADR-004", "ADR-013"]
+    },
+    {
+      "step_id": "5.2",
+      "step_name": "TTL Strategy Verification",
+      "status": "PASS",
+      "findings": {
+        "STRAT_SEC_V1": {
+          "configured_ttl": 5,
+          "actual_ttl": 5,
+          "verification": "MATCH"
+        },
+        "STRAT_HOUR_V1": {
+          "configured_ttl": 60,
+          "actual_ttl": 60,
+          "verification": "MATCH"
+        },
+        "STRAT_DAY_V1": {
+          "configured_ttl": 240,
+          "actual_ttl": 240,
+          "verification": "MATCH"
+        },
+        "STRAT_WEEK_V1": {
+          "configured_ttl": 1440,
+          "actual_ttl": 1440,
+          "verification": "MATCH"
+        }
+      },
+      "adr_compliance": ["IoS-008"]
+    },
+    {
+      "step_id": "5.3",
+      "step_name": "Hash Integrity Verification",
+      "status": "PASS",
+      "findings": {
+        "function_source_check": "valid_until present in sha256 hash computation",
+        "casting_verification": "v_valid_until::text cast to bytea for hash input",
+        "hash_format": "All 4 hashes are valid SHA256 (64 hex characters)",
+        "hash_uniqueness": "4 unique hashes for 4 unique valid_until values",
+        "conclusion": "valid_until is explicitly included in context_hash"
+      },
+      "adr_compliance": ["ADR-011"]
+    }
+  ],
+  "decision_plans_verified": [
+    {
+      "strategy_id": "STRAT_SEC_V1",
+      "decision_id": "e2daae94-5cb5-40af-92ed-2a319bd76519",
+      "context_hash_prefix": "1ed2b893b329c37e27abb264...",
+      "ttl_minutes": 5,
+      "valid_until": "2025-12-13T01:46:44.389Z",
+      "plan_status": "ACTIVE",
+      "hash_format": "VALID_SHA256"
+    },
+    {
+      "strategy_id": "STRAT_HOUR_V1",
+      "decision_id": "9848ede8-a847-4ec3-877f-5caae47318d5",
+      "context_hash_prefix": "2751f3ce002252620c6ee713...",
+      "ttl_minutes": 60,
+      "valid_until": "2025-12-13T02:41:44.389Z",
+      "plan_status": "ACTIVE",
+      "hash_format": "VALID_SHA256"
+    },
+    {
+      "strategy_id": "STRAT_DAY_V1",
+      "decision_id": "883247f6-35af-403a-9e0a-2eeb8924f5e7",
+      "context_hash_prefix": "b68de03e4c8ab56ac4c7cc3a...",
+      "ttl_minutes": 240,
+      "valid_until": "2025-12-13T05:41:44.389Z",
+      "plan_status": "ACTIVE",
+      "hash_format": "VALID_SHA256"
+    },
+    {
+      "strategy_id": "STRAT_WEEK_V1",
+      "decision_id": "0e7a32c6-8f31-4cf3-8a01-91730e6c4d07",
+      "context_hash_prefix": "d5e71ea5c9da46c7d32821f7...",
+      "ttl_minutes": 1440,
+      "valid_until": "2025-12-14T01:41:44.389Z",
+      "plan_status": "ACTIVE",
+      "hash_format": "VALID_SHA256"
+    }
+  ],
+  "attestation_statement": "STIG hereby attests that all G2-C DecisionPlans generated per CD-G2-C-INITIAL-DECISION-GEN-2025-12-12 and corrected per CD-G2-C-TTL-DYNAMIZATION-2025-12-12 meet all governance requirements. The compute_g2c_decision_plan() function correctly derives strategy-specific TTL values and includes valid_until in the cryptographic hash computation. No schema modifications were made; all changes are contained within the mechanism layer per ADR-013 layer separation principles.",
+  "governance_compliance": {
+    "ADR-004": "PASS - No schema mutations without formal gate sequence",
+    "ADR-011": "PASS - Hash chains include valid_until for integrity",
+    "ADR-013": "PASS - Layer separation maintained (Evidence vs Mechanism)",
+    "IoS-008": "PASS - TTL computed dynamically per strategy configuration"
+  },
+  "signature_agent": "STIG",
+  "signature_timestamp": "2025-12-13T01:50:00Z"
+}

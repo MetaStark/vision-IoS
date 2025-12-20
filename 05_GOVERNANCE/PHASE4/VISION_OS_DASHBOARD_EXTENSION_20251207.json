@@ -1,0 +1,171 @@
+{
+  "evidence_type": "VISION_OS_DASHBOARD_EXTENSION",
+  "directive_version": "REV 1.2",
+  "deployment_timestamp": "2025-12-07T02:00:00Z",
+  "authority": "CEO Directive",
+  "oversight": "VEGA",
+  "technical_owner": "STIG",
+  "constitutional_basis": ["ADR-001", "ADR-008", "ADR-010", "ADR-012", "ADR-013", "ADR-019", "IoS-009"],
+
+  "executive_summary": "Vision-OS Dashboard Extension deployed. Hard separation established between Thinking & Seeing (read-only), Engineering & Data Changes (STIG DML-only), and Execution (IoS-012 sealed).",
+
+  "interaction_channels": {
+    "ceo_inquiry_channel": {
+      "role": "ceo_read_only",
+      "permissions": ["SELECT on all fhq_* and vision_* schemas"],
+      "prohibited": ["INSERT", "UPDATE", "DELETE", "TRUNCATE", "ALTER", "CREATE", "DROP"],
+      "purpose": "Zero-risk God-View for CEO + LLM analysis",
+      "status": "VERIFIED"
+    },
+    "ceo_directive_channel": {
+      "description": "Dashboard structured actions with CEO signature",
+      "flow": "Draft → CEO Confirmation → Cryptographic Signature → Execution",
+      "status": "EXISTING_PIPELINE"
+    },
+    "stig_engineering_channel": {
+      "role": "stig_write_engine",
+      "endpoint": "/api/engine/stig/execute",
+      "permissions": {
+        "fhq_meta": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+        "fhq_research": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+        "fhq_governance": ["SELECT", "INSERT"]
+      },
+      "prohibited": ["TRUNCATE", "DDL", "Execution plane access"],
+      "status": "DEPLOYED"
+    }
+  },
+
+  "database_role_stig_write_engine": {
+    "grants": {
+      "fhq_meta": "Full DML (SELECT, INSERT, UPDATE, DELETE) on 83 tables",
+      "fhq_research": "Full DML on 43 tables",
+      "fhq_governance": "SELECT + INSERT only on 69 tables (IMMUTABILITY)"
+    },
+    "restrictions": {
+      "no_truncate": "REVOKED on all schemas",
+      "no_ddl": "No CREATE, ALTER, DROP capabilities",
+      "air_gap": "ZERO access to fhq_positions, fhq_market, fhq_orders, fhq_execution"
+    },
+    "status": "DEPLOYED"
+  },
+
+  "api_endpoint": {
+    "path": "/api/engine/stig/execute",
+    "method": "POST",
+    "security": {
+      "required_headers": ["X-AGENT-ID: STIG", "X-AGENT-SIGNATURE: Ed25519 signature"],
+      "signature_validation": "Ed25519 over request payload (ADR-008)",
+      "rejection_on_failure": "HTTP 403 + governance log event"
+    },
+    "allowed_operations": [
+      "UPSERT_CONFIG",
+      "UPSERT_CONTEXT",
+      "BACKFILL_RESEARCH",
+      "UPDATE_FEATURE",
+      "INSERT_GOVERNANCE_EVENT",
+      "REFRESH_MATERIALIZED",
+      "ANONYMIZE_TEST_DATA"
+    ],
+    "forbidden_schemas": ["fhq_positions", "fhq_market", "fhq_orders", "fhq_execution"],
+    "logging": {
+      "governance": "fhq_governance.stig_engine_operations",
+      "actions": "fhq_governance.governance_actions_log"
+    },
+    "status": "DEPLOYED"
+  },
+
+  "governance_immutability": {
+    "mechanism": "BEFORE UPDATE OR DELETE triggers on all fhq_governance.* tables",
+    "function": "fhq_governance.enforce_immutability()",
+    "behavior": "RAISE EXCEPTION on UPDATE/DELETE attempts",
+    "tables_protected": 69,
+    "verification_test": {
+      "operation": "UPDATE fhq_governance.governance_actions_log SET decision = 'TEST'",
+      "result": "ERROR: GOVERNANCE VIOLATION (ADR-013): UPDATE on fhq_governance.governance_actions_log is prohibited",
+      "status": "VERIFIED"
+    }
+  },
+
+  "verification_results": {
+    "ceo_read_only_permissions": {
+      "fhq_meta": "SELECT only",
+      "fhq_governance": "SELECT only",
+      "status": "VERIFIED"
+    },
+    "stig_write_engine_permissions": {
+      "fhq_meta": "SELECT, INSERT, UPDATE, DELETE (83 tables)",
+      "fhq_research": "SELECT, INSERT, UPDATE, DELETE (43 tables)",
+      "fhq_governance": "SELECT, INSERT only (69 tables)",
+      "execution_plane": "ZERO access (air gap verified)",
+      "status": "VERIFIED"
+    },
+    "immutability_trigger": {
+      "test": "UPDATE on governance_actions_log",
+      "result": "Blocked with GOVERNANCE VIOLATION exception",
+      "status": "VERIFIED"
+    },
+    "oracle_injector": {
+      "test": "submit_narrative_vector() call",
+      "vector_created": "e975289d-3ab4-4e85-9c70-f342c3e3115b",
+      "oracle_event_logged": true,
+      "status": "VERIFIED"
+    }
+  },
+
+  "invariants_enforced": {
+    "vision_chat_read_only": {
+      "description": "No write-path from CEO chat to DB",
+      "enforcement": "ceo_read_only role + pre-check",
+      "status": "ENFORCED"
+    },
+    "oracle_injector_controlled": {
+      "description": "Uses stored procedure, no arbitrary SQL",
+      "enforcement": "fhq_meta.submit_narrative_vector()",
+      "status": "ENFORCED"
+    },
+    "governance_immutable": {
+      "description": "No UPDATE/DELETE on fhq_governance.*",
+      "enforcement": "Triggers + role permissions",
+      "status": "ENFORCED"
+    },
+    "execution_plane_sealed": {
+      "description": "No stig_write_engine access to trading tables",
+      "enforcement": "REVOKE ALL + schema-level denial",
+      "status": "ENFORCED"
+    },
+    "schema_changes_sacred": {
+      "description": "No DDL via LLM API",
+      "enforcement": "Role has no CREATE/ALTER/DROP",
+      "status": "ENFORCED"
+    }
+  },
+
+  "migration": {
+    "file": "081_vision_os_stig_engine.sql",
+    "executed_at": "2025-12-07T02:00:00Z",
+    "status": "SUCCESS"
+  },
+
+  "api_implementation": {
+    "file": "dashboard-2026/app/api/engine/stig/execute/route.ts",
+    "created_at": "2025-12-07T02:00:00Z",
+    "status": "DEPLOYED"
+  },
+
+  "signatures": {
+    "stig": {
+      "role": "Technical Implementation",
+      "attestation": "Vision-OS Dashboard Extension deployed per CEO Directive REV 1.2. stig_write_engine role created with exact grants/restrictions. Governance immutability enforced via triggers. API endpoint deployed with Ed25519 signature validation. Air gap verified. All invariants hold.",
+      "timestamp": "2025-12-07T02:00:00Z"
+    },
+    "vega_attestation_slot": {
+      "status": "PENDING",
+      "required_verifications": [
+        "Governance immutability holds",
+        "Execution isolation holds",
+        "ADR-019 + ADR-013 respected",
+        "All operations auditable"
+      ]
+    }
+  }
+}

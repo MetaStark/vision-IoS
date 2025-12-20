@@ -1,0 +1,240 @@
+{
+  "document_type": "VEGA_EVIDENCE_BUNDLE",
+  "bundle_id": "VEGA-EC020-SITC-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "target": "EC-020",
+  "target_name": "SitC (Search-in-the-Chain) Planner",
+  "gate_level": "G1",
+  "authority": "CEO FjordHQ Directive: SITC PLANNER ACTIVATION (WAVE 6)",
+  "date_generated": "2025-12-17",
+  "generated_by": "STIG (CTO)",
+
+  "attestation_type": "G1_TECHNICAL_VALIDATION",
+  "status": "READY_FOR_VEGA_REVIEW",
+
+  "implementation_evidence": {
+    "primary_file": {
+      "path": "03_FUNCTIONS/ios020_sitc_planner.py",
+      "created": "2025-12-17",
+      "line_count": 838,
+      "status": "COMPLETE"
+    },
+    "integration_file": {
+      "path": "03_FUNCTIONS/finn_cognitive_brain.py",
+      "modified": "2025-12-17",
+      "integration_points": [
+        "Import at line 82-91",
+        "Instance variable at line 311-313",
+        "Lazy property at line 491-515",
+        "Cognitive cycle integration at line 663-697",
+        "Cleanup at line 358-363"
+      ]
+    }
+  },
+
+  "mandatory_interfaces_implemented": {
+    "create_research_plan": {
+      "signature": "create_research_plan(self, hypothesis: str) -> ResearchPlan",
+      "location": "ios020_sitc_planner.py:399-473",
+      "compliance": [
+        "ASRP state binding via get_asrp_state()",
+        "DEFCON check before plan creation",
+        "Logs rationale to fhq_meta.cognitive_engine_evidence"
+      ]
+    },
+    "verify_node": {
+      "signature": "verify_node(self, node: ChainNode) -> VerificationResult",
+      "location": "ios020_sitc_planner.py:527-592",
+      "compliance": [
+        "RuntimeEconomicGuardian.check_or_fail() before verification",
+        "DEFCON blocking under ORANGE+",
+        "Logs to cognitive_engine_evidence"
+      ]
+    },
+    "revise_plan": {
+      "signature": "revise_plan(self, node: ChainNode, new_evidence: Any) -> List[ChainNode]",
+      "location": "ios020_sitc_planner.py:598-651",
+      "compliance": [
+        "ASRP state refresh",
+        "Creates PLAN_REVISION nodes",
+        "Logs revision rationale"
+      ]
+    },
+    "log_chain": {
+      "signature": "log_chain(self, nodes: List[ChainNode])",
+      "location": "ios020_sitc_planner.py:657-718",
+      "compliance": [
+        "enforce_schema_boundary() called first",
+        "Writes ONLY to fhq_meta.chain_of_query",
+        "MITQuadViolation on schema boundary breach"
+      ]
+    }
+  },
+
+  "ceo_directive_mandate_compliance": {
+    "mandate_i_asrp_state_binding": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "get_asrp_state() function at line 192-223",
+        "All ChainNode instances include state_snapshot_hash and state_timestamp",
+        "ResearchPlan embeds state_snapshot_hash at creation",
+        "Fallback generates hash if aci_state_snapshot_log unavailable"
+      ],
+      "code_locations": [
+        "ios020_sitc_planner.py:192-223 (get_asrp_state)",
+        "ios020_sitc_planner.py:265-267 (ChainNode ASRP fields)",
+        "ios020_sitc_planner.py:308-310 (ResearchPlan ASRP fields)"
+      ]
+    },
+    "mandate_ii_defcon_supremacy": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "check_defcon_state() function at line 154-185",
+        "DEFCONViolation exception at line 149-151",
+        "RED/BLACK: Raises DEFCONViolation (cannot instantiate)",
+        "ORANGE: can_execute=False (plans created but not executed)",
+        "Fail-safe: Unknown DEFCON = block operations"
+      ],
+      "code_locations": [
+        "ios020_sitc_planner.py:154-185 (check_defcon_state)",
+        "ios020_sitc_planner.py:370-373 (connect() DEFCON check)",
+        "ios020_sitc_planner.py:421-423 (create_research_plan DEFCON check)"
+      ]
+    },
+    "mandate_iii_economic_safety": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "RuntimeEconomicGuardian class at line 101-142",
+        "RuntimeEconomicViolation exception at line 96-98",
+        "check_or_fail() enforced before VERIFICATION nodes",
+        "initialize() blocks SitC if cost controller unavailable"
+      ],
+      "code_locations": [
+        "ios020_sitc_planner.py:101-142 (RuntimeEconomicGuardian)",
+        "ios020_sitc_planner.py:379-384 (connect() guardian init)",
+        "ios020_sitc_planner.py:554-568 (verify_node guardian check)"
+      ]
+    },
+    "mandate_iv_role_isolation": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "ALLOWED_WRITE_SCHEMAS = ['fhq_meta'] at line 67",
+        "MITQuadViolation exception at line 70-72",
+        "enforce_schema_boundary() at line 75-81",
+        "All INSERT statements target fhq_meta.* only"
+      ],
+      "code_locations": [
+        "ios020_sitc_planner.py:67 (allowed schemas)",
+        "ios020_sitc_planner.py:75-81 (enforcement function)",
+        "ios020_sitc_planner.py:669 (log_chain enforcement)",
+        "ios020_sitc_planner.py:739 (evidence log enforcement)"
+      ],
+      "prohibited_schemas_blocked": [
+        "fhq_data (Canonical Market Data)",
+        "fhq_market (Canonical Truth)",
+        "fhq_alpha (via G0 process only)",
+        "fhq_execution (LINE domain only)"
+      ]
+    }
+  },
+
+  "explicit_prohibitions_enforced": {
+    "writing_to_canonical_schemas": {
+      "enforced_by": "enforce_schema_boundary() + MITQuadViolation",
+      "test_scenario": "Attempting INSERT INTO fhq_data.* raises MITQuadViolation"
+    },
+    "triggering_execution": {
+      "enforced_by": "SitC has no execution interfaces",
+      "evidence": "No methods write to fhq_execution.*, no broker calls"
+    },
+    "triggering_learning_updates": {
+      "enforced_by": "SitC has no learning_proposals access",
+      "evidence": "No methods write to fhq_governance.learning_proposals"
+    },
+    "mutating_ikea_inforage_behavior": {
+      "enforced_by": "SitC has read-only access to IKEA/InForage",
+      "evidence": "No setter methods, no config mutations"
+    }
+  },
+
+  "wiring_verification": {
+    "finn_cognitive_cycle": {
+      "status": "INTEGRATED",
+      "mode": "RESEARCH_PLANNING_ONLY",
+      "location": "finn_cognitive_brain.py:663-697",
+      "behavior": [
+        "Creates research plan for current patch",
+        "Logs chain to fhq_meta.chain_of_query",
+        "Catches DEFCONViolation, SitCEconomicViolation, MITQuadViolation",
+        "Does NOT trigger execution"
+      ]
+    },
+    "ec018_hypothesis_validation": {
+      "status": "NOT_WIRED",
+      "reason": "Deferred per CEO Directive Section 8 (phased rollout)"
+    }
+  },
+
+  "node_types_implemented": {
+    "PLAN_INIT": "Initial plan creation",
+    "REASONING": "Internal reasoning step",
+    "SEARCH": "External retrieval required",
+    "VERIFICATION": "Verify claim against evidence",
+    "PLAN_REVISION": "Dynamic plan adjustment",
+    "SYNTHESIS": "Combine evidence into conclusion",
+    "ABORT": "Chain terminated (budget, DEFCON, etc.)"
+  },
+
+  "database_tables_used": {
+    "read_access": [
+      "fhq_governance.defcon_state (DEFCON check)",
+      "fhq_meta.aci_state_snapshot_log (ASRP binding)"
+    ],
+    "write_access": [
+      "fhq_meta.chain_of_query (plan nodes)",
+      "fhq_meta.cognitive_engine_evidence (audit trail)"
+    ],
+    "no_access": [
+      "fhq_data.* (blocked)",
+      "fhq_market.* (blocked)",
+      "fhq_alpha.* (blocked except via G0)",
+      "fhq_execution.* (blocked)"
+    ]
+  },
+
+  "validation_criteria": [
+    {
+      "criterion": "All outputs include ASRP state binding",
+      "status": "PASS",
+      "evidence": "ChainNode and ResearchPlan both embed state_snapshot_hash"
+    },
+    {
+      "criterion": "DEFCON supremacy enforced",
+      "status": "PASS",
+      "evidence": "DEFCONViolation raised on RED/BLACK, can_execute=False on ORANGE"
+    },
+    {
+      "criterion": "RuntimeEconomicGuardian is unbypassable",
+      "status": "PASS",
+      "evidence": "check_or_fail() raises on unavailable controller"
+    },
+    {
+      "criterion": "Role isolation via schema boundaries",
+      "status": "PASS",
+      "evidence": "MITQuadViolation raised on non-fhq_meta writes"
+    },
+    {
+      "criterion": "Wired as planner-only (no execution)",
+      "status": "PASS",
+      "evidence": "No execution interfaces, logs to fhq_meta only"
+    }
+  ],
+
+  "attestation_request": {
+    "requested_attestation": "G1_TECHNICAL_VALIDATION",
+    "attestation_target": "EC-020 SitC Planner",
+    "attestation_criteria_met": true,
+    "ready_for_g2_oversight": true,
+    "vega_action_required": "Review and attest G1 technical compliance"
+  }
+}

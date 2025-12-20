@@ -1,0 +1,73 @@
+2025-12-17 00:23:03,246 | INFO | ======================================================================
+2025-12-17 00:23:03,246 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2025-12-17 00:23:03,246 | INFO | ======================================================================
+2025-12-17 00:23:03,246 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2025-12-17 00:23:03,246 | INFO | Executor: STIG (EC-003)
+2025-12-17 00:23:03,246 | INFO | Time: 2025-12-16T23:23:03.246406+00:00
+2025-12-17 00:23:03,246 | INFO | Asset Class Filter: CRYPTO
+2025-12-17 00:23:03,250 | INFO | Dry Run: False
+2025-12-17 00:23:03,250 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2025-12-17 00:23:03,250 | INFO | ======================================================================
+2025-12-17 00:23:03,345 | INFO | Found 48 canonical assets
+2025-12-17 00:23:03,964 | INFO | ============================================================
+2025-12-17 00:23:03,964 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2025-12-17 00:23:03,964 | INFO | Assets: 48, Rate limit: 200/min
+2025-12-17 00:23:03,964 | INFO | ============================================================
+2025-12-17 00:23:35,740 | INFO | Alpaca: Updated 0 assets, 48 remaining
+2025-12-17 00:23:36,070 | INFO | ============================================================
+2025-12-17 00:23:36,070 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2025-12-17 00:23:36,070 | INFO | Assets: 48, Using BATCH DOWNLOAD (efficient)
+2025-12-17 00:23:36,070 | INFO | ============================================================
+2025-12-17 00:23:36,070 | INFO |   Checking Yahoo Finance rate limit status...
+2025-12-17 00:23:39,867 | ERROR | 
+1 Failed download:
+2025-12-17 00:23:39,867 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2025-12-17 00:23:39,878 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2025-12-17 00:23:39,878 | WARNING |   Skipping Yahoo and marking all assets as failed
+2025-12-17 00:23:39,878 | INFO | Yahoo: Updated 0 assets, 48 remaining
+2025-12-17 00:23:39,878 | INFO | 
+============================================================
+2025-12-17 00:23:39,878 | INFO | VERIFICATION: Checking Data Freshness
+2025-12-17 00:23:39,878 | INFO | ============================================================
+2025-12-17 00:23:40,260 | WARNING | VERIFICATION FAILED: 417 assets are stale
+2025-12-17 00:23:40,260 | WARNING |   - COMP-USD: 1585 days stale (last: 2021-08-15)
+2025-12-17 00:23:40,260 | WARNING |   - PGS.OL: 513 days stale (last: 2024-07-22)
+2025-12-17 00:23:40,260 | WARNING |   - FTM-USD: 338 days stale (last: 2025-01-13)
+2025-12-17 00:23:40,260 | WARNING |   - MATIC-USD: 268 days stale (last: 2025-03-24)
+2025-12-17 00:23:40,260 | WARNING |   - APT-USD: 176 days stale (last: 2025-06-24)
+2025-12-17 00:23:40,260 | WARNING |   - ADBE: 6 days stale (last: 2025-12-11)
+2025-12-17 00:23:40,260 | WARNING |   - ADI: 6 days stale (last: 2025-12-11)
+2025-12-17 00:23:40,260 | WARNING |   - ADS.DE: 6 days stale (last: 2025-12-11)
+2025-12-17 00:23:40,260 | WARNING |   - ADSK: 6 days stale (last: 2025-12-11)
+2025-12-17 00:23:40,260 | WARNING |   - AEP: 6 days stale (last: 2025-12-11)
+2025-12-17 00:23:40,260 | WARNING |   ... and 407 more
+2025-12-17 00:23:40,783 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 417 assets still stale after ingest! Updated: 0, Rows: 0
+2025-12-17 00:23:40,786 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2025-12-17 00:23:40,787 | CRITICAL | ALERT [CRITICAL]: ALL INGEST METHODS FAILED - No assets were updated! Manual intervention required.
+2025-12-17 00:23:40,788 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2025-12-17 00:23:40,789 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2025-12-17 00:23:40,791 | INFO | 
+======================================================================
+2025-12-17 00:23:40,791 | INFO | BULLETPROOF INGEST COMPLETE
+2025-12-17 00:23:40,791 | INFO | ======================================================================
+2025-12-17 00:23:40,792 | INFO | Status: FAILED
+2025-12-17 00:23:40,792 | INFO | Assets Updated: 0
+2025-12-17 00:23:40,792 | INFO | Rows Inserted: 0
+2025-12-17 00:23:40,792 | INFO | Providers Used: ALPACA, YAHOO
+2025-12-17 00:23:40,792 | INFO | Verification: FAILED (417 stale)
+2025-12-17 00:23:40,792 | INFO | Elapsed: 37.5s
+2025-12-17 00:23:40,793 | INFO | 
+Freshness by Asset Class:
+2025-12-17 00:23:40,793 | INFO |   CRYPTO: 46/50 fresh (92.0%)
+2025-12-17 00:23:40,793 | INFO |   EQUITY: 27/422 fresh (6.4%)
+2025-12-17 00:23:40,794 | INFO |   FX: 7/25 fresh (28.0%)
+2025-12-17 00:23:40,794 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_12a12fa5_20251217_002340.json
+2025-12-17 00:23:40,794 | INFO | ======================================================================

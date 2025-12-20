@@ -1,0 +1,125 @@
+{
+  "evidence_bundle_id": "EB-ACI-CONSOLE-G0-20251212",
+  "title": "CEO Directive G0 - ACI Engineering Console Implementation Evidence",
+  "classification": "CONSTITUTIONAL",
+  "date": "2025-12-12T00:45:00.000Z",
+  "status": "COMPLETE",
+
+  "directive_reference": {
+    "title": "CEO DIRECTIVE — G0: Activation of the ACI Engineering Console",
+    "purpose": "Eliminere gapet mellom 'Chatbot' og 'Digital Organisme'",
+    "sections_implemented": ["§1", "§2", "§3", "§4A", "§4B", "§4C", "§4D", "§5", "§6", "§7", "§8"]
+  },
+
+  "constitutional_basis": [
+    {"adr_id": "ADR-018", "title": "Agent State Reliability Protocol (ASRP)", "role": "State Injection"},
+    {"adr_id": "ADR-019", "title": "Human Interaction & Application Layer Charter", "role": "Interface Constraints"},
+    {"adr_id": "ADR-020", "title": "Autonomous Cognitive Intelligence (ACI) Protocol", "role": "ACI Authorization"},
+    {"adr_id": "ADR-021", "title": "Cognitive Engine Architecture", "role": "SitC/IKEA/InForage"}
+  ],
+
+  "vega_attestations": {
+    "ADR-020": {"status": "ATTESTED", "timestamp": "2025-12-12T00:24:49.365Z"},
+    "ADR-021": {"status": "ATTESTED", "timestamp": "2025-12-12T00:24:49.365Z"},
+    "EC-020": {"status": "ATTESTED", "engine": "SitC", "timestamp": "2025-12-12T00:24:49.365Z"},
+    "EC-021": {"status": "ATTESTED", "engine": "InForage", "timestamp": "2025-12-12T00:24:49.365Z"},
+    "EC-022": {"status": "ATTESTED", "engine": "IKEA", "timestamp": "2025-12-12T00:24:49.365Z"}
+  },
+
+  "compliance_gaps_closed": {
+    "State_Gap": {
+      "adr_breach": "ADR-018",
+      "problem": "LLM thinking without binding to system state snapshot",
+      "solution": "Mandatory state vector injection (The Pulse) before every LLM call",
+      "status": "CLOSED",
+      "evidence": "injectStateVector() function in /api/aci-console/route.ts"
+    },
+    "Cognitive_Gap": {
+      "adr_breach": "ADR-021",
+      "problem": "SitC, IKEA, InForage protocols missing",
+      "solution": "Implemented classifyKnowledgeBoundary(), evaluateForagingDecision(), buildChainOfQuery()",
+      "status": "CLOSED",
+      "evidence": "EC-020, EC-021, EC-022 implementations in /api/aci-console/route.ts"
+    },
+    "Truth_Gap": {
+      "adr_breach": "ADR-013",
+      "problem": "Vector search without canonical validation",
+      "solution": "executeConsultCanonicalDocuments() with hash verification against fhq_meta.adr_registry",
+      "status": "CLOSED",
+      "evidence": "tool_usage_log with canonical_sha256 field"
+    },
+    "Interface_Gap": {
+      "adr_breach": "ADR-019/020",
+      "problem": "Generic UI giving LLM direct system access",
+      "solution": "Console is Read-Heavy, Write-Protected, SHADOW_PAPER mode only",
+      "status": "CLOSED",
+      "evidence": "execution_mode constraint in agent_interaction_log"
+    }
+  },
+
+  "database_tables_created": {
+    "migration_id": "129_aci_engineering_console_infrastructure.sql",
+    "tables": [
+      {"name": "fhq_meta.aci_state_snapshot_log", "purpose": "ADR-018 state injection logging"},
+      {"name": "fhq_meta.chain_of_query", "purpose": "EC-020 SitC planning steps"},
+      {"name": "fhq_meta.knowledge_boundary_log", "purpose": "EC-022 IKEA classifications"},
+      {"name": "fhq_meta.search_foraging_log", "purpose": "EC-021 InForage cost-aware retrieval"},
+      {"name": "fhq_meta.tool_usage_log", "purpose": "Allowed tools logging"},
+      {"name": "fhq_meta.cognitive_engine_evidence", "purpose": "Engine evidence bundles"},
+      {"name": "fhq_meta.agent_interaction_log", "purpose": "LLM interaction with state binding"},
+      {"name": "fhq_meta.hallucination_rejection_events", "purpose": "Hallucination firewall events"},
+      {"name": "fhq_meta.adr_drift_events", "purpose": "Document drift detection"}
+    ]
+  },
+
+  "api_endpoint": {
+    "path": "/api/aci-console",
+    "method": "POST",
+    "version": "2026.PROD.1",
+    "classification": "Tier-3 Application",
+    "execution_mode": "SHADOW_PAPER"
+  },
+
+  "mandatory_execution_path": {
+    "description": "Non-bypassable pipeline per CEO Directive §3.1",
+    "steps": [
+      {"step": 1, "component": "User Input", "status": "IMPLEMENTED"},
+      {"step": 2, "component": "ADR-018 State Injection", "function": "injectStateVector()", "status": "IMPLEMENTED"},
+      {"step": 3, "component": "DEFCON Gate Check", "function": "checkDefconPermissions()", "status": "IMPLEMENTED"},
+      {"step": 4, "component": "EC-022 IKEA", "function": "classifyKnowledgeBoundary()", "status": "IMPLEMENTED"},
+      {"step": 5, "component": "EC-021 InForage", "function": "evaluateForagingDecision()", "status": "IMPLEMENTED"},
+      {"step": 6, "component": "EC-020 SitC", "function": "buildChainOfQuery()", "status": "IMPLEMENTED"},
+      {"step": 7, "component": "LLM Invocation", "model": "claude-sonnet-4-20250514", "status": "IMPLEMENTED"},
+      {"step": 8, "component": "Governance Logging", "function": "logInteraction()", "status": "IMPLEMENTED"},
+      {"step": 9, "component": "Console UI Response", "format": "Read-Only JSON", "status": "IMPLEMENTED"}
+    ]
+  },
+
+  "allowed_tools": {
+    "g0_authorized": [
+      {"tool": "consult_canonical_documents", "permission": "read-only", "hash_verified": true},
+      {"tool": "inspect_database", "permission": "read-only", "whitelisted_views": true}
+    ],
+    "constraints": [
+      "Logged to fhq_meta.tool_usage_log",
+      "Priced per ADR-012",
+      "Bound to SitC/InForage",
+      "Validated against ADR-013/018"
+    ]
+  },
+
+  "activation_prerequisites_met": {
+    "vega_g0_attestation": {"status": "COMPLETE", "date": "2025-12-12"},
+    "asrp_validation": {"status": "ENFORCED", "mechanism": "state_snapshot_hash binding"},
+    "orchestrator_approval": {"status": "Tier-3 Agent Channel", "mode": "SHADOW_PAPER"}
+  },
+
+  "signatures": {
+    "executor": {"agent": "STIG", "role": "CTO", "authority": "EC-003"},
+    "attestor": {"agent": "VEGA", "role": "Governance Authority", "authority": "EC-001"},
+    "approver": {"agent": "CEO", "authority": "Constitutional"}
+  },
+
+  "hash_chain_id": "HC-ACI-CONSOLE-G4-20251212",
+  "evidence_hash": "aci-console-g0-implementation-20251212"
+}

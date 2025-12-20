@@ -1,0 +1,140 @@
+{
+  "report_type": "TECHNICAL_RECONNAISSANCE",
+  "subject": "Alpaca Options API Capabilities & Trading Hours Verification",
+  "from": "STIG (CTO)",
+  "to": "CEO via LARS",
+  "priority": "IMMEDIATE",
+  "timestamp": "2025-12-02T01:30:00Z",
+  "ios_module": "IoS-013.HCP-LAB",
+
+  "executive_answer": {
+    "question": "Are we trading Securities (Mon-Fri) or Commodities (24/7)?",
+    "answer": "SECURITIES (Mon-Fri, 09:30-16:00 ET)",
+    "binding_constraint": "NYSE Arca exchange hours for BITO options",
+    "gap_risk": "ACTIVE - Bitcoin trades 24/7 but BITO options are NYSE-bound"
+  },
+
+  "findings": {
+    "1_asset_class_verification": {
+      "query": "/v2/assets/BITO",
+      "result": {
+        "symbol": "BITO",
+        "class": "us_equity",
+        "exchange": "ARCA",
+        "tradable": true,
+        "marginable": true
+      },
+      "conclusion": "BITO is a US EQUITY ETF, NOT crypto. Bound to NYSE Arca hours."
+    },
+
+    "2_crypto_options_availability": {
+      "query": "/v2/options/contracts?underlying_symbols=BTC",
+      "result": {
+        "option_contracts": 0
+      },
+      "conclusion": "Alpaca does NOT offer native crypto options. Only equity ETF proxies (BITO, ETHU) available."
+    },
+
+    "3_market_clock_verification": {
+      "query": "/v2/clock",
+      "result": {
+        "is_open": false,
+        "next_open": "2025-12-02T09:30:00-05:00",
+        "next_close": "2025-12-02T16:00:00-05:00"
+      },
+      "conclusion": "Options market follows NYSE schedule. API reports real-time status."
+    },
+
+    "4_options_trading_hours": {
+      "source": "https://alpaca.markets/support/when-do-options-trade",
+      "trading_hours": "09:30 - 16:00 ET, Monday-Friday",
+      "extended_hours": false,
+      "overnight_trading": false,
+      "conclusion": "Options do NOT trade during extended hours or overnight on Alpaca."
+    },
+
+    "5_account_capabilities": {
+      "account_id": "1efc48bb-0ba6-434c-8971-5e31a59dd7ec",
+      "status": "ACTIVE",
+      "crypto_status": "ACTIVE",
+      "options_approved_level": 3,
+      "options_trading_level": 3,
+      "buying_power": 199999.84
+    },
+
+    "6_available_crypto_assets": {
+      "count": 62,
+      "sample": ["BTC/USD", "ETH/USD", "LTC/USD", "XRP/USD", "DOGE/USD"],
+      "trading_hours": "24/7",
+      "options_available": false
+    }
+  },
+
+  "technical_constraints": {
+    "asset_type": "SECURITIES (Equity Options)",
+    "underlying": "BITO - ProShares Bitcoin Strategy ETF",
+    "exchange": "NYSE Arca",
+    "trading_hours_et": "09:30 - 16:00",
+    "trading_days": "Monday - Friday",
+    "extended_hours_support": false,
+    "overnight_trading_support": false,
+    "native_crypto_options": false
+  },
+
+  "gap_risk_analysis": {
+    "risk_level": "HIGH",
+    "description": "Bitcoin trades 24/7 globally. BITO options only trade during NYSE hours. Overnight BTC price movements create gap risk at market open.",
+    "mitigation_options": [
+      "Use stop-loss orders at market open",
+      "Reduce position sizes before close",
+      "Monitor BTC spot overnight for early warning",
+      "Consider hedging with crypto spot positions"
+    ]
+  },
+
+  "code_implementation": {
+    "file_updated": "03_FUNCTIONS/ios013_hcp_g4_runner.py",
+    "changes": [
+      "Added get_market_clock() - queries Alpaca /v2/clock API",
+      "Added sleep_until_market_open() - proper sleep with logging",
+      "Added _log_market_closure() - database logging of closures",
+      "Updated run_continuous() - sleep_mode parameter for continuous operation",
+      "Added gap risk warnings in sleep output"
+    ],
+    "sleep_behavior": "When market closed, logs status and sleeps in 1-hour chunks until market opens. Does NOT submit orders when is_open=false."
+  },
+
+  "alternative_considerations": {
+    "native_crypto_trading": {
+      "available": true,
+      "assets": "62 crypto pairs (BTC/USD, ETH/USD, etc.)",
+      "trading_hours": "24/7",
+      "limitation": "SPOT only, no options"
+    },
+    "deribit_consideration": {
+      "note": "For 24/7 crypto options, would need Deribit or similar crypto derivatives exchange",
+      "not_available_via_alpaca": true
+    }
+  },
+
+  "recommendations": {
+    "immediate": [
+      "Accept NYSE hours constraint for BITO options trading",
+      "Implement gap risk monitoring for overnight BTC moves",
+      "Consider reducing position sizes before market close"
+    ],
+    "future": [
+      "Evaluate Deribit API for 24/7 crypto options if required",
+      "Consider hybrid strategy: crypto spot 24/7 + BITO options during market hours",
+      "Implement pre-market BTC alert system"
+    ]
+  },
+
+  "sources": [
+    {"title": "Alpaca Support - When do Options trade?", "url": "https://alpaca.markets/support/when-do-options-trade"},
+    {"title": "Alpaca Options Trading Overview", "url": "https://docs.alpaca.markets/docs/options-trading-overview"},
+    {"title": "Alpaca Extended Hours Trading", "url": "https://alpaca.markets/support/extended-hours-trading"}
+  ],
+
+  "hash_chain_id": "HC-STIG-ALPACA-RECON-20251202"
+}

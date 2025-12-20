@@ -1,0 +1,222 @@
+{
+  "report_type": "G2_GOVERNANCE_VALIDATION",
+  "report_id": "IOS007-G2-REPORT-20251130",
+  "ios_id": "IoS-007",
+  "title": "Alpha Graph Engine — G2 Governance Validation Complete",
+  "version": "2026.PROD.G2",
+  "submission_date": "2025-11-30",
+  "submission_timestamp": "2025-11-30T19:45:00.000Z",
+
+  "prerequisite_validation": {
+    "g1_report_id": "IOS007-G1-REPORT-20251130",
+    "g1_status": "PASS",
+    "g1_tests_passed": 7,
+    "g1_tests_failed": 0,
+    "g1_hash_chain": "ae93f7116c71c9b64cbc63a82dd9f033013c455fc3008a569f228f6e5dc815a9"
+  },
+
+  "g2_validation_results": {
+    "G2-1_ONTOLOGY_VALIDATION": {
+      "requirement": "Validate 10 Canonical Nodes and 12 Canonical Edges with semantic alignment",
+      "status": "PASS",
+      "nodes": {
+        "total_count": 10,
+        "by_type": {
+          "MACRO": 2,
+          "REGIME": 3,
+          "ASSET": 3,
+          "FUTURE": 2
+        },
+        "canonical_nodes": [
+          {"node_id": "NODE_LIQUIDITY", "type": "MACRO", "label": "Global M2 Liquidity", "source": "IoS-006"},
+          {"node_id": "NODE_GRAVITY", "type": "MACRO", "label": "US 10Y Real Rate", "source": "IoS-006"},
+          {"node_id": "STATE_BTC", "type": "REGIME", "label": "Bitcoin Regime State", "source": "IoS-003"},
+          {"node_id": "STATE_ETH", "type": "REGIME", "label": "Ethereum Regime State", "source": "IoS-003"},
+          {"node_id": "STATE_SOL", "type": "REGIME", "label": "Solana Regime State", "source": "IoS-003"},
+          {"node_id": "ASSET_BTC", "type": "ASSET", "label": "Bitcoin Price & Volatility", "source": "IoS-001"},
+          {"node_id": "ASSET_ETH", "type": "ASSET", "label": "Ethereum Price & Volatility", "source": "IoS-001"},
+          {"node_id": "ASSET_SOL", "type": "ASSET", "label": "Solana Price & Volatility", "source": "IoS-001"},
+          {"node_id": "NODE_RISK", "type": "FUTURE", "label": "Systemic Stress Level", "source": "IoS-009 (reserved)"},
+          {"node_id": "NODE_SENTIMENT", "type": "FUTURE", "label": "Narrative Intensity", "source": "IoS-009 (reserved)"}
+        ],
+        "semantic_alignment": "VERIFIED"
+      },
+      "edges": {
+        "total_count": 12,
+        "by_relationship_type": {
+          "LEADS": 3,
+          "INHIBITS": 2,
+          "AMPLIFIES": 3,
+          "COUPLES": 3,
+          "LEAD_LAG": 1
+        },
+        "canonical_edges": [
+          {"edge_id": "edge_liq_btc_leads", "from": "NODE_LIQUIDITY", "to": "STATE_BTC", "type": "LEADS", "lag_days": 21, "strength": 0.50, "completeness": "COMPLETE"},
+          {"edge_id": "edge_liq_eth_leads", "from": "NODE_LIQUIDITY", "to": "STATE_ETH", "type": "LEADS", "lag_days": 21, "strength": 0.50, "completeness": "COMPLETE"},
+          {"edge_id": "edge_liq_sol_leads", "from": "NODE_LIQUIDITY", "to": "STATE_SOL", "type": "LEADS", "lag_days": 14, "strength": 0.60, "completeness": "COMPLETE"},
+          {"edge_id": "edge_liq_btc_lead_lag", "from": "NODE_LIQUIDITY", "to": "ASSET_BTC", "type": "LEAD_LAG", "lag_days": 28, "strength": 0.50, "completeness": "COMPLETE"},
+          {"edge_id": "edge_grav_btc_inhibits", "from": "NODE_GRAVITY", "to": "STATE_BTC", "type": "INHIBITS", "lag_days": 7, "strength": -0.40, "completeness": "COMPLETE"},
+          {"edge_id": "edge_grav_eth_inhibits", "from": "NODE_GRAVITY", "to": "STATE_ETH", "type": "INHIBITS", "lag_days": 7, "strength": -0.40, "completeness": "COMPLETE"},
+          {"edge_id": "edge_btc_regime_amplifies", "from": "STATE_BTC", "to": "ASSET_BTC", "type": "AMPLIFIES", "lag_days": 0, "strength": 0.80, "completeness": "COMPLETE"},
+          {"edge_id": "edge_eth_regime_amplifies", "from": "STATE_ETH", "to": "ASSET_ETH", "type": "AMPLIFIES", "lag_days": 0, "strength": 0.80, "completeness": "COMPLETE"},
+          {"edge_id": "edge_sol_regime_amplifies", "from": "STATE_SOL", "to": "ASSET_SOL", "type": "AMPLIFIES", "lag_days": 0, "strength": 0.80, "completeness": "COMPLETE"},
+          {"edge_id": "edge_btc_eth_couples", "from": "ASSET_BTC", "to": "ASSET_ETH", "type": "COUPLES", "lag_days": 0, "strength": 0.85, "completeness": "COMPLETE"},
+          {"edge_id": "edge_btc_sol_couples", "from": "ASSET_BTC", "to": "ASSET_SOL", "type": "COUPLES", "lag_days": 0, "strength": 0.80, "completeness": "COMPLETE"},
+          {"edge_id": "edge_eth_sol_couples", "from": "ASSET_ETH", "to": "ASSET_SOL", "type": "COUPLES", "lag_days": 0, "strength": 0.75, "completeness": "COMPLETE"}
+        ],
+        "all_edges_complete": true,
+        "ontology_class_distribution": {
+          "CANONICAL": 11,
+          "ALPHA_GRAPH": 1
+        }
+      },
+      "evidence": "All 10 nodes semantically aligned with IoS sources. All 12 edges complete with lag_days and strength."
+    },
+
+    "G2-2_STATISTICAL_BINDING": {
+      "requirement": "IoS-005 integration readiness for p-value and calibration workflow",
+      "status": "PASS",
+      "inference_log_ios005_fields": {
+        "ios005_validated": {"type": "boolean", "default": false, "purpose": "Flag for IoS-005 validation status"},
+        "ios005_audit_id": {"type": "uuid", "nullable": true, "purpose": "Reference to IoS-005 audit record"},
+        "ios005_evidence_hash": {"type": "text", "nullable": true, "purpose": "SHA-256 hash of calibration evidence"}
+      },
+      "statistical_fields_present": {
+        "pathway_probability": true,
+        "expected_impact": true,
+        "confidence_interval_lower": true,
+        "confidence_interval_upper": true,
+        "risk_level": true
+      },
+      "hash_chain_fields": {
+        "data_hash": true,
+        "lineage_hash": true,
+        "hash_prev": true,
+        "hash_self": true
+      },
+      "evidence": "inference_log fully prepared for IoS-005 Statistical Validation workflow"
+    },
+
+    "G2-3_COMPLIANCE_CERTIFICATION": {
+      "requirement": "ADR-002, ADR-003, ADR-013 conformance",
+      "status": "PASS",
+      "adr_002_audit_charter": {
+        "status": "COMPLIANT",
+        "findings": [
+          "All tables have created_at timestamp (10 nodes, 12 edges, 546 snapshots)",
+          "All mutable tables have updated_at timestamp",
+          "inference_log has code_version_sha for traceability",
+          "Hash chain columns present for immutable audit trail"
+        ]
+      },
+      "adr_003_institutional_standards": {
+        "status": "COMPLIANT",
+        "findings": [
+          "Schema naming: fhq_graph follows fhq_* convention",
+          "Table naming: snake_case (nodes, edges, snapshots, inference_log)",
+          "Enum types properly defined (node_type, relationship_type, edge_direction)",
+          "No black-box logic - all computations traceable"
+        ]
+      },
+      "adr_013_kernel_specification": {
+        "status": "COMPLIANT",
+        "findings": [
+          "Schema lock triggers active: trg_validate_node_type, trg_validate_edge_type",
+          "Graph vitality enforcement: trg_enforce_graph_vitality",
+          "Code version auditability: trg_enforce_code_version",
+          "Infrastructure sovereignty maintained - only STIG/VEGA may modify DDL"
+        ],
+        "active_triggers": [
+          "trg_validate_node_type",
+          "trg_validate_edge_type",
+          "trg_enforce_graph_vitality",
+          "trg_enforce_code_version"
+        ]
+      },
+      "evidence": "Full ADR compliance verified across audit, naming, and schema lock requirements"
+    }
+  },
+
+  "overall_assessment": {
+    "status": "PASS",
+    "tests_passed": 3,
+    "tests_failed": 0,
+    "g2_requirements_met": [
+      "G2-1: Ontology Validation - 10 nodes, 12 edges, semantic alignment verified",
+      "G2-2: Statistical Binding - IoS-005 integration fields present and ready",
+      "G2-3: Compliance Certification - ADR-002, ADR-003, ADR-013 all COMPLIANT"
+    ],
+    "recommendation": "ISSUE CERTIFICATE OF SEMANTIC INTEGRITY — PROCEED TO G3 AUDIT"
+  },
+
+  "semantic_integrity_certificate": {
+    "certificate_id": "CERT-IOS007-G2-SEM-20251130",
+    "issued_date": "2025-11-30",
+    "certifications": [
+      {
+        "item": "NODE_UNIVERSE_FROZEN",
+        "description": "10 canonical nodes locked. New nodes require G4 approval.",
+        "enforcement": "trg_validate_node_type trigger"
+      },
+      {
+        "item": "EDGE_ONTOLOGY_FROZEN",
+        "description": "12 canonical edges locked. New edge types require G4 approval.",
+        "enforcement": "trg_validate_edge_type trigger"
+      },
+      {
+        "item": "STATISTICAL_CONTRACT_READY",
+        "description": "inference_log prepared for IoS-005 p-value workflow.",
+        "enforcement": "ios005_validated, ios005_audit_id, ios005_evidence_hash columns"
+      },
+      {
+        "item": "AUDIT_TRAIL_COMPLETE",
+        "description": "All operations traceable via hash chain and code_version_sha.",
+        "enforcement": "trg_enforce_code_version trigger"
+      }
+    ],
+    "validity": "Until G4 schema modification or IoS-007 deprecation"
+  },
+
+  "hash_chain_integrity": {
+    "chain_id": "HC-IOS-007-2026",
+    "g1_combined_hash": "ae93f7116c71c9b64cbc63a82dd9f033013c455fc3008a569f228f6e5dc815a9",
+    "g2_validation_hash": "G2-SEMANTIC-VALIDATED",
+    "status": "CHAIN_INTACT"
+  },
+
+  "governance_action": {
+    "action_type": "IOS_MODULE_G2_GOVERNANCE_VALIDATION",
+    "decision": "APPROVED",
+    "initiated_by": "VEGA",
+    "initiated_at": "2025-11-30T19:45:00.000Z"
+  },
+
+  "next_phase": {
+    "gate": "G3",
+    "title": "Golden Sample Audit",
+    "authority": "VEGA (Tier-1 Compliance)",
+    "objectives": [
+      "Execute edge-by-edge statistical validation",
+      "Verify p-values meet IoS-005 thresholds",
+      "Produce Golden Sample with cryptographic attestation",
+      "Lock edge strengths pending G4 constitutional activation"
+    ]
+  },
+
+  "signatures": {
+    "vega_signature": {
+      "agent": "VEGA",
+      "role": "Verification & Governance Authority",
+      "classification": "Tier-1 Compliance",
+      "signed_at": "2025-11-30T19:45:00.000Z",
+      "certification": "G2 Governance Validation PASSED. Ontology frozen. Statistical binding verified. Full ADR compliance confirmed. Certificate of Semantic Integrity issued."
+    },
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "signed_at": "2025-11-30T19:45:00.000Z",
+      "acknowledgment": "G2 technical artifacts reviewed and validated. Schema lock triggers confirmed active. System ready for G3 Golden Sample Audit."
+    }
+  }
+}

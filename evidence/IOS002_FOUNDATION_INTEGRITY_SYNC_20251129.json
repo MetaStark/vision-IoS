@@ -1,0 +1,163 @@
+{
+  "directive": "Foundation Integrity Sync for IoS-002 Activation",
+  "execution_timestamp": "2025-11-29T00:15:00.000Z",
+  "executor": "CODE",
+  "authority_chain": "ADR-001 → ADR-003 → ADR-004 → ADR-007 → IoS-001 → IoS-002",
+
+  "adr_core_integrity": {
+    "status": "PARTIAL",
+    "total_adrs": 16,
+    "adrs_with_hash": 10,
+    "adrs_missing_hash": 6,
+    "adrs_vega_attested": 16,
+    "adrs_approved": 2,
+    "adrs_draft": 14,
+    "details": {
+      "ADR-001": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-002": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-003": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-004": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-005": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-006": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-007": {"hash": "HAS_HASH", "status": "APPROVED", "vega_attested": true},
+      "ADR-008": {"hash": "HAS_HASH", "status": "APPROVED", "vega_attested": true},
+      "ADR-009": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-010": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-011": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-012": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-013": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-014": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-015": {"hash": "HAS_HASH", "status": "DRAFT", "vega_attested": true},
+      "ADR-016": {"hash": "MISSING_HASH", "status": "DRAFT", "vega_attested": true}
+    },
+    "blocking": false,
+    "note": "All ADRs present and VEGA-attested. 6 ADRs missing sha256_hash in registry."
+  },
+
+  "ios_001_status": {
+    "status": "ACTIVE",
+    "version": "2026.PROD.2",
+    "owner_role": "CDMO",
+    "vega_signature_id": "f0000003-0001-0001-0001-000000000001",
+    "content_hash": "PRESENT",
+    "tables": {
+      "exchanges": {"exists": true, "has_vega_sig_col": true, "rows": 0},
+      "assets": {"exists": true, "has_vega_sig_col": true, "rows": 0},
+      "model_context_registry": {"exists": true, "has_vega_sig_col": true, "rows": 0}
+    },
+    "blocking": false,
+    "note": "IoS-001 ACTIVE. Tables empty per IOS-001_CORRECTION_20251128 directive."
+  },
+
+  "ios_002_status": {
+    "status": "DRAFT",
+    "version": "2026.PROD.1",
+    "owner_role": "FINN",
+    "vega_signature_id": "f0000005-0002-0002-0002-000000000001",
+    "gate": "G0_SUBMITTED",
+    "tables": {
+      "indicator_momentum": {"exists": true, "hash_cols": 3},
+      "indicator_trend": {"exists": true, "hash_cols": 3},
+      "indicator_volatility": {"exists": true, "hash_cols": 3},
+      "indicator_ichimoku": {"exists": true, "hash_cols": 3}
+    },
+    "classification": "NON_CANONICAL_UNTIL_G4",
+    "blocking": false
+  },
+
+  "agent_key_integrity": {
+    "status": "PARTIAL",
+    "total_agents": 11,
+    "agents_with_active_key": 11,
+    "agents_with_deprecated_key": 0,
+    "key_type": "ED25519_SIGNING",
+    "details": {
+      "VEGA": {"active": 1, "deprecated": 0},
+      "LARS": {"active": 1, "deprecated": 0},
+      "STIG": {"active": 1, "deprecated": 0},
+      "FINN": {"active": 1, "deprecated": 0},
+      "LINE": {"active": 1, "deprecated": 0},
+      "CSEO": {"active": 1, "deprecated": 0},
+      "CDMO": {"active": 1, "deprecated": 0},
+      "CRIO": {"active": 1, "deprecated": 0},
+      "CEIO": {"active": 1, "deprecated": 0},
+      "CFAO": {"active": 1, "deprecated": 0},
+      "CODE": {"active": 1, "deprecated": 0}
+    },
+    "blocking": false,
+    "note": "All agents have ACTIVE Ed25519 keys. No DEPRECATED keys present (no rotation performed yet)."
+  },
+
+  "tier2_compliance": {
+    "status": "PASS",
+    "agents_checked": ["cseo", "cdmo", "crio", "ceio", "cfao"],
+    "all_can_write_canonical_false": true,
+    "all_authority_level_2": true
+  },
+
+  "org_agents_status": {
+    "status": "WARNING",
+    "total_agents": 16,
+    "duplicate_agents_detected": true,
+    "note": "Duplicate agent entries (lowercase/UPPERCASE) detected in fhq_org.org_agents. Recommend consolidation.",
+    "all_have_public_key": true,
+    "all_active": true
+  },
+
+  "governance_loop": {
+    "status": "PASS",
+    "llm_rate_limits": "EXISTS",
+    "llm_cost_limits": "EXISTS",
+    "llm_usage_log": "EXISTS",
+    "llm_violation_events": "EXISTS",
+    "test_runs": "EXISTS",
+    "latest_test_run": {
+      "run_type": "FULL",
+      "run_status": "COMPLETED",
+      "vega_attested": true,
+      "layers": ["UNIT", "SERVICES", "WORKER_API", "INTEGRATION", "TIER3", "TIER3_5"]
+    }
+  },
+
+  "pipeline_validity": {
+    "status": "PASS",
+    "stages": {
+      "FETCH_PRICES": {"owner": "LINE", "status": "REGISTERED"},
+      "CALC_INDICATORS": {"owner": "FINN", "status": "REGISTERED"},
+      "META_PERCEPTION": {"owner": "FINN", "status": "REGISTERED"},
+      "BACKTEST": {"owner": "LARS", "status": "REGISTERED"},
+      "CALIBRATE": {"owner": "LARS", "status": "REGISTERED"}
+    },
+    "expected_owner_chain": "LINE → FINN → FINN → LARS → LARS",
+    "actual_owner_chain": "LINE → FINN → FINN → LARS → LARS",
+    "owner_match": true
+  },
+
+  "defcon_status": {
+    "status": "PASS",
+    "current_defcon": "GREEN",
+    "discrepancy_score": 0.0,
+    "is_active": true,
+    "total_rows": 1,
+    "single_row_constraint": true
+  },
+
+  "ready_for_G1": true,
+
+  "blocking_items": [],
+
+  "warnings": [
+    "6 ADRs missing sha256_hash: ADR-005, ADR-009, ADR-012, ADR-013, ADR-014, ADR-016",
+    "No DEPRECATED keys in agent_keys (no key rotation performed)",
+    "Duplicate agent entries in fhq_org.org_agents (case sensitivity issue)",
+    "IoS-001 tables are empty (correct per correction directive)"
+  ],
+
+  "recommendations": [
+    "Compute and store sha256_hash for ADR-005, ADR-009, ADR-012, ADR-013, ADR-014, ADR-016",
+    "Consolidate duplicate agent entries in fhq_org.org_agents",
+    "Proceed with G1 Technical Validation for IoS-002"
+  ],
+
+  "next_gate": "G1_TECHNICAL_VALIDATION"
+}

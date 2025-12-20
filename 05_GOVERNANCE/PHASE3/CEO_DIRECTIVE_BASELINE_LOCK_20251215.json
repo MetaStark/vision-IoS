@@ -1,0 +1,229 @@
+{
+  "directive_id": "CEO-DIRECTIVE-BASELINE-LOCK-20251215",
+  "directive_type": "BASELINE_LOCK",
+  "status": "ACTIVE",
+  "effective_date": "2025-12-15T15:55:06Z",
+  "issued_by": "CEO",
+  "implemented_by": "STIG",
+  "baseline_state": {
+    "cycle_id": "CYCLE_20251215_143748",
+    "hash_chain": "HC-LARS-ORCHESTRATOR-CYCLE_20251215_143748",
+    "execution_state_id": 8,
+    "tasks_executed": 23,
+    "successes": 18,
+    "failures": 5,
+    "success_rate": 0.78
+  },
+  "task_manifest": {
+    "total_enabled": 23,
+    "execution_order": [
+      {
+        "seq": 1,
+        "task": "ios007_g1_global_execution",
+        "agent": "LARS",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 2,
+        "task": "ios003_daily_regime_update_v4",
+        "agent": "FINN",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 3,
+        "task": "ios012_g1_integration",
+        "agent": "LINE",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 4,
+        "task": "ios005_g3_significance_engine",
+        "agent": "FINN",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 5,
+        "task": "ceio_shadow_cycle_runner",
+        "agent": "CEIO",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 6,
+        "task": "ios004_crio_allocation_engine",
+        "agent": "FINN",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 7,
+        "task": "ios012_g3_system_loop",
+        "agent": "LINE",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 8,
+        "task": "ios_canonical_freshness_sentinel",
+        "agent": "STIG",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 9,
+        "task": "daily_ingest_worker",
+        "agent": "LINE",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 10,
+        "task": "ios008_g1_validation",
+        "agent": "VEGA",
+        "baseline_status": "EXPECTED_FAILURE"
+      },
+      {
+        "seq": 11,
+        "task": "ec018_alpha_daemon",
+        "agent": "FINN",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 12,
+        "task": "ios013_hcp_execution_engine",
+        "agent": "STIG",
+        "baseline_status": "EXPECTED_FAILURE"
+      },
+      {
+        "seq": 13,
+        "task": "ios_db_integrity_sentinel",
+        "agent": "STIG",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 14,
+        "task": "ios003_regime_freshness_sentinel",
+        "agent": "STIG",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 15,
+        "task": "ios001_daily_ingest",
+        "agent": "LINE",
+        "baseline_status": "EXPECTED_FAILURE"
+      },
+      {
+        "seq": 16,
+        "task": "g2c_continuous_forecast_engine",
+        "agent": "FINN",
+        "baseline_status": "EXPECTED_FAILURE"
+      },
+      {
+        "seq": 17,
+        "task": "ios006_g2_macro_ingest",
+        "agent": "LINE",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 18,
+        "task": "ios006_lineage_verify",
+        "agent": "STIG",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 19,
+        "task": "ios014_g2_vega_validation",
+        "agent": "VEGA",
+        "baseline_status": "EXPECTED_FAILURE"
+      },
+      {
+        "seq": 20,
+        "task": "ios_canonical_drift_guard",
+        "agent": "STIG",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 21,
+        "task": "ios005_g3_synthesis",
+        "agent": "FINN",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 22,
+        "task": "ceio_entropy_engine",
+        "agent": "CEIO",
+        "baseline_status": "SUCCESS"
+      },
+      {
+        "seq": 23,
+        "task": "ios012_mit_quad_validator",
+        "agent": "VEGA",
+        "baseline_status": "SUCCESS"
+      }
+    ]
+  },
+  "expected_failures": {
+    "classification": "NON_BLOCKING_IN_BASELINE_MODE",
+    "tasks": [
+      {
+        "task": "ios008_g1_validation",
+        "reason": "Validator working correctly - upstream not 100% complete",
+        "category": "VALIDATOR"
+      },
+      {
+        "task": "ios014_g2_vega_validation",
+        "reason": "Validator working correctly - upstream not 100% complete",
+        "category": "VALIDATOR"
+      },
+      {
+        "task": "ios001_daily_ingest",
+        "reason": "466 assets exceeds 300s timeout - volume/capacity issue",
+        "category": "TIMEOUT_VOLUME"
+      },
+      {
+        "task": "g2c_continuous_forecast_engine",
+        "reason": "Compute-heavy task exceeds 300s timeout",
+        "category": "TIMEOUT_COMPUTE"
+      },
+      {
+        "task": "ios013_hcp_execution_engine",
+        "reason": "Broker data staleness safety guard - correct behavior",
+        "category": "SAFETY_GUARD"
+      }
+    ]
+  },
+  "operational_modes": {
+    "MODE_A": {
+      "name": "BASELINE / OPERATIONAL MODE",
+      "description": "Stable continuous operation with safety guards active",
+      "is_default": true,
+      "timeout_seconds": 300,
+      "allows_expected_failures": true
+    },
+    "MODE_B": {
+      "name": "RESEARCH / HEAVY COMPUTE MODE",
+      "description": "Heavy analysis, forecasting, full ingest",
+      "is_default": false,
+      "timeout_seconds": null,
+      "allows_expected_failures": true,
+      "requires_explicit_declaration": true
+    }
+  },
+  "frozen_configuration": {
+    "schemas": "ALL_EXISTING_SCHEMAS_FROZEN",
+    "task_order": "FROZEN",
+    "timeout_values": "FROZEN",
+    "validator_thresholds": "FROZEN",
+    "prohibited_actions": [
+      "ADD_NEW_TABLES",
+      "ALTER_SCHEMA_STRUCTURE",
+      "ADD_NEW_CORE_TASKS",
+      "COSMETIC_OPTIMIZATION"
+    ]
+  },
+  "governance": {
+    "stability_over_coverage": true,
+    "reproducibility_over_performance": true,
+    "mode_separation_over_100_percent_green": true
+  },
+  "attestation": {
+    "implemented_by": "STIG",
+    "implemented_at": "2025-12-15T15:55:06Z",
+    "integrity_hash": "8f1932ed5e926fa4a5d9c4def1e304864ee8a0b83d4b5198d8ce8e042a154b49"
+  }
+}

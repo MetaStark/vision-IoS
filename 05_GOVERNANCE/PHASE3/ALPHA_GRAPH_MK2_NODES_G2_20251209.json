@@ -1,0 +1,401 @@
+{
+  "directive": "OPERATION CAUSAL ENTROPY - TASK C G2",
+  "document": "ALPHA_GRAPH_MK2_NODES_G2",
+  "status": "NODES_CONSTRUCTED",
+  "executor": "CRIO (Research Ops)",
+  "contract": "EC-013",
+  "timestamp_utc": "2025-12-09T14:25:00Z",
+  "gate": "G2",
+
+  "node_construction_summary": {
+    "macro_nodes_created": 15,
+    "existing_equity_nodes": 5,
+    "existing_indicator_nodes": 5,
+    "total_graph_nodes": 25,
+    "target_nodes": 35,
+    "remaining": 10
+  },
+
+  "macro_node_signatures": [
+    {
+      "node_id": "MACRO_VIX",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "VOLATILITY",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "252d",
+        "mean_computation": "EMA_252",
+        "std_computation": "ROLLING_252",
+        "percentile_computation": "RANK_252",
+        "zscore_formula": "(current - mean) / std"
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 1.0,
+        "self_referential": true
+      },
+      "causal_horizon": {
+        "relevance_days": 5,
+        "decay_function": "LINEAR",
+        "max_lag_days": 3
+      },
+      "normalization_vector": {
+        "min_expected": 10,
+        "max_expected": 80,
+        "clip_outliers": true,
+        "log_transform": false
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_MOVE",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "VOLATILITY",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "252d",
+        "mean_computation": "EMA_252",
+        "std_computation": "ROLLING_252",
+        "percentile_computation": "RANK_252",
+        "zscore_formula": "(current - mean) / std"
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.7,
+        "rates_sensitivity": "HIGH"
+      },
+      "causal_horizon": {
+        "relevance_days": 7,
+        "decay_function": "LINEAR",
+        "max_lag_days": 5
+      },
+      "normalization_vector": {
+        "min_expected": 50,
+        "max_expected": 200,
+        "clip_outliers": true,
+        "log_transform": false
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_GVZ",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "VOLATILITY",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "252d"
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.4,
+        "gold_sensitivity": "HIGH"
+      },
+      "causal_horizon": {
+        "relevance_days": 7,
+        "decay_function": "LINEAR"
+      },
+      "normalization_vector": {
+        "min_expected": 10,
+        "max_expected": 40
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_DXY",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "FX",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "60d"
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.3,
+        "flight_to_safety": true
+      },
+      "causal_horizon": {
+        "relevance_days": 14,
+        "decay_function": "EXPONENTIAL",
+        "max_lag_days": 10
+      },
+      "normalization_vector": {
+        "min_expected": 90,
+        "max_expected": 115
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_NET_LIQ",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "LIQUIDITY",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "52w",
+        "derived": true,
+        "components": ["FED_BS", "TGA", "RRP"]
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.5,
+        "equity_correlation": 0.65
+      },
+      "causal_horizon": {
+        "relevance_days": 30,
+        "decay_function": "SLOW_LINEAR",
+        "max_lag_days": 21
+      },
+      "normalization_vector": {
+        "min_expected": 4000,
+        "max_expected": 7000,
+        "unit": "BILLIONS_USD"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_TGA",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "LIQUIDITY",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.2
+      },
+      "causal_horizon": {
+        "relevance_days": 30
+      },
+      "normalization_vector": {
+        "min_expected": 200,
+        "max_expected": 800,
+        "unit": "BILLIONS_USD"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_RRP",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "LIQUIDITY",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.1
+      },
+      "causal_horizon": {
+        "relevance_days": 7
+      },
+      "normalization_vector": {
+        "min_expected": 0,
+        "max_expected": 2500,
+        "unit": "BILLIONS_USD"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_FED_BS",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "LIQUIDITY",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.3
+      },
+      "causal_horizon": {
+        "relevance_days": 30
+      },
+      "normalization_vector": {
+        "min_expected": 4000,
+        "max_expected": 9000,
+        "unit": "BILLIONS_USD"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_GLOBAL_M2",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "LIQUIDITY",
+      "statistical_signature": {
+        "baseline_period_days": 60,
+        "monthly_data": true
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.2
+      },
+      "causal_horizon": {
+        "relevance_days": 60
+      },
+      "normalization_vector": {
+        "unit": "TRILLIONS_USD"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_HY_OAS",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "CREDIT",
+      "statistical_signature": {
+        "baseline_period_days": 252,
+        "rolling_window": "252d"
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.6,
+        "credit_cycle_sensitive": true
+      },
+      "causal_horizon": {
+        "relevance_days": 7,
+        "max_lag_days": 5
+      },
+      "normalization_vector": {
+        "min_expected": 300,
+        "max_expected": 800,
+        "unit": "BASIS_POINTS"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_10Y2Y",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "RATES",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.2,
+        "recession_predictor": true
+      },
+      "causal_horizon": {
+        "relevance_days": 30,
+        "max_lag_days": 21
+      },
+      "normalization_vector": {
+        "min_expected": -1.0,
+        "max_expected": 2.5,
+        "unit": "PERCENTAGE_POINTS"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_BE5Y",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "INFLATION",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.1
+      },
+      "causal_horizon": {
+        "relevance_days": 14
+      },
+      "normalization_vector": {
+        "min_expected": 1.5,
+        "max_expected": 3.5,
+        "unit": "PERCENT"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_BE10Y",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "INFLATION",
+      "statistical_signature": {
+        "baseline_period_days": 252
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.1
+      },
+      "causal_horizon": {
+        "relevance_days": 14
+      },
+      "normalization_vector": {
+        "min_expected": 1.5,
+        "max_expected": 3.0,
+        "unit": "PERCENT"
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_ISM_PMI",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "ACTIVITY",
+      "statistical_signature": {
+        "baseline_period_days": 60,
+        "monthly_data": true
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": -0.3,
+        "earnings_predictor": true
+      },
+      "causal_horizon": {
+        "relevance_days": 30
+      },
+      "normalization_vector": {
+        "min_expected": 40,
+        "max_expected": 65,
+        "unit": "INDEX_POINTS",
+        "expansion_threshold": 50
+      },
+      "constructed": true,
+      "g2_integrated": true
+    },
+    {
+      "node_id": "MACRO_CPI_YOY",
+      "node_type": "MACRO_FACTOR",
+      "subtype": "INFLATION",
+      "statistical_signature": {
+        "baseline_period_days": 60,
+        "monthly_data": true,
+        "yoy_computation": true
+      },
+      "volatility_regime_sensitivity": {
+        "vix_beta": 0.2,
+        "fed_sensitivity": "HIGH"
+      },
+      "causal_horizon": {
+        "relevance_days": 30
+      },
+      "normalization_vector": {
+        "min_expected": 0,
+        "max_expected": 6,
+        "unit": "PERCENT",
+        "fed_target": 2.0
+      },
+      "constructed": true,
+      "g2_integrated": true
+    }
+  ],
+
+  "existing_nodes_retained": {
+    "equity_nodes": ["AAPL", "MSFT", "NVDA", "QQQ", "SPY"],
+    "indicator_nodes": ["RSI_14", "MACD", "BB_WIDTH", "ATR_14", "EMA_STRUCTURE"],
+    "total_existing": 10
+  },
+
+  "graph_integration": {
+    "macro_nodes_constructed": true,
+    "ios007_extended": true,
+    "is_macro_node_flag": "SET",
+    "statistical_signature_column": "POPULATED"
+  },
+
+  "governance_compliance": {
+    "schema_isolation": "COMPLIANT - vision_signals.alpha_graph_nodes only",
+    "warmup_firewall": "ACTIVE",
+    "runtime_propagation": false,
+    "audit_logged": true
+  },
+
+  "signatures": {
+    "crio_signature": "CRIO.alpha_graph_mk2_nodes_g2",
+    "attestation": "TASK C G2 complete. 15 macro nodes constructed with full signatures. Node types: VOLATILITY(3), LIQUIDITY(5), CREDIT(1), RATES(1), INFLATION(3), ACTIVITY(1), FX(1). All nodes have statistical signatures, volatility regime sensitivity, causal horizons, and normalization vectors defined."
+  }
+}

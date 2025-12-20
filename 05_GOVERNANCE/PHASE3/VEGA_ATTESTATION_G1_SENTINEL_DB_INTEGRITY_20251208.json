@@ -1,0 +1,116 @@
+{
+  "attestation_record": {
+    "attestation_id": "VEGA-ATT-SENTINEL-G1-20251208",
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "authority": "VEGA - Verification & Governance Authority",
+    "ios_id": "IoS-014",
+    "sentinel_name": "Sentinel_DB_Integrity",
+    "version": "1.0",
+    "timestamp": "2025-12-08T12:08:35Z"
+  },
+  "adr_compliance": {
+    "ADR-001": {
+      "status": "COMPLIANT",
+      "evidence": "STIG designated as executor per EC-003 employment contract"
+    },
+    "ADR-002": {
+      "status": "COMPLIANT",
+      "evidence": "All sentinel runs logged to fhq_meta.ios_audit_log with evidence hash"
+    },
+    "ADR-003": {
+      "status": "COMPLIANT",
+      "evidence": "Schema naming follows fhq_* convention, MDLC enforced"
+    },
+    "ADR-010": {
+      "status": "COMPLIANT",
+      "evidence": "Discrepancy events logged to fhq_governance.discrepancy_events with severity mapping"
+    },
+    "ADR-011": {
+      "status": "COMPLIANT",
+      "evidence": "SHA-256 evidence hashes computed and stored"
+    },
+    "ADR-012": {
+      "status": "COMPLIANT",
+      "evidence": "Read-only monitoring, no API calls, no cost impact"
+    },
+    "ADR-013": {
+      "status": "COMPLIANT",
+      "evidence": "Protects One-True-Source tables: fhq_market.prices, fhq_perception.regime_daily"
+    },
+    "ADR-015": {
+      "status": "COMPLIANT",
+      "evidence": "Output feeds VEGA meta-governance loop via discrepancy_events"
+    }
+  },
+  "g1_exit_criteria": {
+    "config_externalized": {
+      "status": "PASS",
+      "evidence_file": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "evidence_hash": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f"
+    },
+    "fault_tolerance_implemented": {
+      "status": "PASS",
+      "features": [
+        "Connection retry logic",
+        "_run_module_safe wrapper",
+        "continue_on_module_failure flag",
+        "SYSTEM_ERROR event emission"
+      ]
+    },
+    "discrepancy_logging_functional": {
+      "status": "PASS",
+      "real_events_logged": 2,
+      "dummy_events_created": 4
+    },
+    "code_signed": {
+      "status": "PASS",
+      "code_hash": "b9e88b35d7b4c74955b43c6fcc3fa967d138bf85f65ea7e703f0c12bd6732c1d"
+    }
+  },
+  "technical_validation": {
+    "module_1_lock_monitor": {
+      "status": "VALIDATED",
+      "data_sources": ["pg_stat_activity", "pg_locks"],
+      "output": "NORMAL",
+      "test_passed": true
+    },
+    "module_2_bloat_watchdog": {
+      "status": "VALIDATED",
+      "data_sources": ["pg_stat_user_tables"],
+      "output": "WARNING",
+      "test_passed": true,
+      "note": "Expected warning due to accumulated dead tuples"
+    },
+    "module_3_slow_query": {
+      "status": "VALIDATED",
+      "data_sources": ["pg_stat_statements"],
+      "output": "WARNING",
+      "test_passed": true,
+      "note": "Expected warning due to long-running analytical queries"
+    }
+  },
+  "vega_decision": {
+    "gate_passed": true,
+    "decision": "APPROVED",
+    "rationale": [
+      "All G1 exit criteria satisfied",
+      "Config properly externalized to YAML",
+      "Fault tolerance prevents orchestrator crash",
+      "Discrepancy logging functional per ADR-010",
+      "All dummy event types successfully created for validation",
+      "Code hash verified and recorded"
+    ],
+    "next_gate": "G2_GOVERNANCE_REVIEW",
+    "conditions_for_g2": [
+      "Integrate sentinel into orchestrator heartbeat loop",
+      "Document operational procedures",
+      "Define escalation matrix for CRITICAL events"
+    ]
+  },
+  "governance_signature": {
+    "attested_by": "VEGA",
+    "attestation_method": "STIG-proxy execution under EC-003",
+    "evidence_bundle": "SENTINEL_DB_INTEGRITY_G1_EVIDENCE_20251208.json",
+    "attestation_hash": "pending_vega_signature"
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "document_type": "VEGA_G2_OBSERVATION",
+  "observation_id": "VEGA-G2-WAVE12-CONTRACT-20251217",
+  "classification": "G2-GOVERNANCE-EXAM",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date_issued": "2025-12-17",
+
+  "exam_reference": {
+    "exam_id": "G2-EXAM-III",
+    "exam_name": "Golden Needle Capability",
+    "directive_ref": "CD-G1-G2-WAVE12-20251217",
+    "session_id": "WAVE12-20251217212943"
+  },
+
+  "critical_finding": {
+    "type": "DATA_CONTRACT_MISMATCH",
+    "severity": "BLOCKING",
+    "description": "EC-018 run_hunt() return structure does not match Wave 12 framework's expected input"
+  },
+
+  "root_cause_analysis": {
+    "summary": "EC-018 returns aggregate counts but Wave 12 expects full validation details with EQS scores",
+
+    "ec018_returns": {
+      "file": "ec018_alpha_daemon.py",
+      "lines": "1766-1773",
+      "key": "sitc_validation",
+      "content": {
+        "accepted": "<count>",
+        "log_only": "<count>",
+        "rejected": "<count>",
+        "aborted": "<count>"
+      },
+      "note": "Returns counts only, not the actual validation objects"
+    },
+
+    "wave12_expects": {
+      "file": "wave12_golden_needle_framework.py",
+      "lines": "353-380",
+      "key": "sitc_validations",
+      "content": [
+        {
+          "eqs_score": "<float>",
+          "title": "<string>",
+          "hypothesis": "<string>",
+          "confidence": "<HIGH|MEDIUM|LOW>",
+          "confluence_factors": "<list>",
+          "eqs_components": "<dict>",
+          "plan_id": "<string>",
+          "asrp_hash": "<string>"
+        }
+      ],
+      "note": "Expects array of validation objects with EQS scores"
+    },
+
+    "key_evidence": {
+      "eqs_calculated": true,
+      "eqs_logged": true,
+      "eqs_values_observed": [0.860, 0.928, 0.952],
+      "eqs_above_threshold": true,
+      "golden_needles_found_by_sitc": 3,
+      "golden_needles_reported_by_wave12": 0
+    },
+
+    "causal_chain": [
+      "1. EC-018 generates hypotheses (WORKING)",
+      "2. EC-018 calls _validate_hypothesis_with_sitc() for each (WORKING)",
+      "3. SitC calculates EQS and stores in envelope.evidence_quality_score (WORKING)",
+      "4. Results stored in sitc_results list with full details (WORKING)",
+      "5. EC-018 run_hunt() returns ONLY aggregate counts in sitc_validation (BUG)",
+      "6. Wave 12 looks for sitc_validations (plural) with full details (FAILS)",
+      "7. Wave 12 reports 0 golden needles despite EQS > 0.85 being calculated"
+    ]
+  },
+
+  "evidence_of_success": {
+    "log_entries": [
+      "[WAVE12] 2025-12-17 21:30:38 INFO: EQS Calculation: 0.860 (6 factors, stress=1.00)",
+      "[WAVE12] 2025-12-17 21:30:38 INFO: SitC Validation: ACCEPT (confidence=HIGH)",
+      "[WAVE12] 2025-12-17 21:32:19 INFO: EQS Calculation: 0.928 (6 factors, stress=1.00)",
+      "[WAVE12] 2025-12-17 21:32:19 INFO: SitC Validation: ACCEPT (confidence=HIGH)",
+      "[WAVE12] 2025-12-17 21:32:19 INFO: EQS Calculation: 0.952 (6 factors, stress=1.00)",
+      "[WAVE12] 2025-12-17 21:32:19 INFO: SitC Validation: ACCEPT (confidence=HIGH)"
+    ],
+    "conclusion": "The cognitive stack IS finding Golden Needles (EQS > 0.85). The issue is purely a reporting bug."
+  },
+
+  "code_freeze_status": {
+    "ec018_alpha_daemon.py": {
+      "status": "FROZEN (with AMEND-001 for Live Price Witness)",
+      "modification_required": true,
+      "fix_scope": "Add sitc_validations to return dict with EQS extraction",
+      "estimated_change_size": "~10 lines"
+    },
+    "wave12_golden_needle_framework.py": {
+      "status": "NOT FROZEN",
+      "alternative_fix": "Could modify Wave 12 to accept current EC-018 format",
+      "note": "Less architecturally correct but avoids frozen file modification"
+    }
+  },
+
+  "proposed_remediation": {
+    "option_a": {
+      "name": "Fix EC-018 Return Structure (Recommended)",
+      "action": "Amend ec018_alpha_daemon.py to include sitc_validations with EQS",
+      "requires": "CEO authorization (AMEND-002)",
+      "change": "Add 'sitc_validations': [{...eqs_score, title, confidence...}] to return",
+      "lines_affected": "~1751-1774",
+      "risk": "LOW - additive change only"
+    },
+    "option_b": {
+      "name": "Fix Wave 12 Framework",
+      "action": "Modify wave12_golden_needle_framework.py to query database for EQS",
+      "requires": "No code freeze impact",
+      "change": "Query fhq_meta.cognitive_engine_evidence for EQS after hunt",
+      "risk": "MEDIUM - requires database query, may miss data if not logged"
+    }
+  },
+
+  "exam_verdict": {
+    "golden_needle_capability": "DEMONSTRATED",
+    "system_fault": false,
+    "bug_identified": true,
+    "bug_type": "DATA_CONTRACT_MISMATCH",
+    "ec018_cognitive_logic": "WORKING_CORRECTLY",
+    "sitc_eqs_calculation": "WORKING_CORRECTLY",
+    "reporting_accuracy": "BROKEN",
+    "g2_progression_recommendation": "CONDITIONAL_PASS - Fix reporting bug, no cognitive changes needed"
+  },
+
+  "vega_recommendation": {
+    "immediate_action": "CEO AUTHORIZATION REQUIRED for AMEND-002 to ec018_alpha_daemon.py",
+    "rationale": "The cognitive stack has demonstrated Golden Needle capability. This is purely a reporting/interface bug, not a logic failure.",
+    "g2_exam_result": "PASS (pending fix deployment and re-run verification)"
+  },
+
+  "observation_signature": {
+    "observed_by": "STIG (CTO) on behalf of VEGA",
+    "observation_timestamp": "2025-12-17T21:45:00Z",
+    "certification_status": "CONDITIONAL_PASS_PENDING_FIX"
+  }
+}

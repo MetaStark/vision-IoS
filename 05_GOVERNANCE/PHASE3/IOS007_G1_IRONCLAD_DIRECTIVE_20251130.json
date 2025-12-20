@@ -1,0 +1,183 @@
+{
+  "evidence_type": "G1_IRONCLAD_TECHNICAL_VALIDATION",
+  "ios_id": "IoS-007",
+  "title": "Alpha Graph Engine — Causal Reasoning Core",
+  "version": "2026.PROD.G1",
+  "submission_timestamp": "2025-11-30T19:04:00.368Z",
+  "submission_date": "2025-11-30",
+
+  "directive": {
+    "type": "BOARD_IRONCLAD_DIRECTIVE",
+    "authority": "BOARD (User & Vice-CEO)",
+    "recipient": "STIG (Technical Authority)",
+    "copy_to": ["FINN (Domain Owner)", "VEGA (Compliance Oversight)"],
+    "strategic_premise": "IoS-007 er hjernen i FjordHQ. Latency lik risiko. Teknisk gjeld i et Reasoning Core er irreversibel."
+  },
+
+  "g1_requirements_implemented": {
+    "G1-A": {
+      "name": "Canonical Input Verification",
+      "description": "All graph inputs must come from IoS-001, IoS-002, IoS-003, IoS-006",
+      "implementation": {
+        "constraint": "chk_canonical_source on fhq_graph.nodes",
+        "function": "fhq_graph.verify_canonical_input()",
+        "allowed_sources": ["IoS-001", "IoS-002", "IoS-003", "IoS-006", "IoS-009 (reserved)"]
+      },
+      "status": "PASS",
+      "evidence": "All 10 canonical nodes use valid IoS sources"
+    },
+
+    "G1-B": {
+      "name": "Deterministic Replay",
+      "description": "Two independent 10-year replays must produce bit-identical hashes",
+      "implementation": {
+        "table": "fhq_graph.replay_verification_log",
+        "function": "fhq_graph.compute_snapshot_hash()",
+        "hash_targets": ["snapshots", "deltas", "node_count", "edge_count", "lineage"]
+      },
+      "status": "READY",
+      "evidence": "Infrastructure created. Awaiting 10-year historical build execution."
+    },
+
+    "G1-C": {
+      "name": "Auditability",
+      "description": "All inference_log entries must have code version SHA",
+      "implementation": {
+        "columns_added": ["code_version_sha", "alpha_graph_version", "ios007_version"],
+        "trigger": "trg_enforce_code_version",
+        "function": "fhq_graph.enforce_code_version_auditability()",
+        "sha_format": "SHA-1 (40 chars) or SHA-256 (64 chars)"
+      },
+      "status": "READY",
+      "evidence": "Trigger active. Will reject any inference without valid code_version_sha."
+    },
+
+    "G1-E": {
+      "name": "Operational Viability",
+      "description": "p95 traversal < 50ms, 10-year storage < 10GB",
+      "implementation": {
+        "table": "fhq_graph.performance_metrics",
+        "function": "fhq_graph.check_g1e_compliance()",
+        "indexes_created": [
+          "idx_edges_traversal (composite for fast lookup)",
+          "idx_edges_reverse_traversal",
+          "idx_snapshots_lookup"
+        ],
+        "thresholds": {
+          "traversal_p95_ms": 50,
+          "storage_10yr_bytes": 10737418240
+        }
+      },
+      "status": "READY",
+      "evidence": "Infrastructure created. Requires benchmark execution to validate p95 < 50ms."
+    },
+
+    "G1-F": {
+      "name": "Graph Vitality",
+      "description": "edge_density > 0 for all snapshots",
+      "implementation": {
+        "trigger": "trg_enforce_graph_vitality",
+        "function": "fhq_graph.enforce_graph_vitality()",
+        "density_formula": "edges / (nodes * (nodes - 1))"
+      },
+      "status": "READY",
+      "evidence": "Trigger active. Will reject any snapshot with edge_density = 0."
+    },
+
+    "G1-G": {
+      "name": "Technical Schema Lock",
+      "description": "Hard exception on unknown node_type or edge_type",
+      "implementation": {
+        "triggers": ["trg_validate_node_type", "trg_validate_edge_type"],
+        "functions": ["fhq_graph.validate_node_type()", "fhq_graph.validate_edge_type()"],
+        "locked_node_types": [
+          "MACRO", "ONCHAIN", "DERIV", "TECH", "REGIME", "SENTIMENT",
+          "STRATEGY", "PORTFOLIO", "ASSET", "FUTURE", "OTHER"
+        ],
+        "locked_edge_types": [
+          "CORRELATION", "CAUSALITY", "LEAD_LAG", "REGIME_CONDITIONAL",
+          "LEADS", "INHIBITS", "AMPLIFIES", "COUPLES", "BREAKS"
+        ]
+      },
+      "status": "ACTIVE",
+      "evidence": "Triggers active. New types require G2 governance approval."
+    }
+  },
+
+  "schema_artifacts": {
+    "tables": [
+      "fhq_graph.nodes",
+      "fhq_graph.edges",
+      "fhq_graph.snapshots",
+      "fhq_graph.snapshot_nodes",
+      "fhq_graph.snapshot_edges",
+      "fhq_graph.deltas",
+      "fhq_graph.inference_log",
+      "fhq_graph.replay_verification_log",
+      "fhq_graph.performance_metrics"
+    ],
+    "functions": [
+      "fhq_graph.validate_node_type()",
+      "fhq_graph.validate_edge_type()",
+      "fhq_graph.verify_canonical_input()",
+      "fhq_graph.enforce_code_version_auditability()",
+      "fhq_graph.compute_snapshot_hash()",
+      "fhq_graph.check_g1e_compliance()",
+      "fhq_graph.compute_edge_density()",
+      "fhq_graph.enforce_graph_vitality()",
+      "fhq_graph.validate_g1_requirements()"
+    ],
+    "triggers": [
+      "trg_validate_node_type",
+      "trg_validate_edge_type",
+      "trg_enforce_code_version",
+      "trg_enforce_graph_vitality"
+    ]
+  },
+
+  "governance_action": {
+    "action_id": "6688266e-47d0-45b0-b23f-d1cd11a81e29",
+    "action_type": "IOS_MODULE_G1_IRONCLAD_IMPLEMENTATION",
+    "decision": "APPROVED",
+    "signature_id": "bb1fd9ad-8d13-4225-987d-157e1794691b",
+    "initiated_by": "STIG",
+    "initiated_at": "2025-11-30T19:04:00.368Z"
+  },
+
+  "next_steps": {
+    "phase": "G1 Execution",
+    "objectives": [
+      "1. Execute 10-year historical build from IoS-006 and IoS-003 data",
+      "2. Run deterministic replay verification (G1-B)",
+      "3. Benchmark traversal latency and validate p95 < 50ms (G1-E)",
+      "4. Compute storage projection and validate < 10GB 10yr (G1-E)",
+      "5. Validate edge production and graph vitality (G1-F)"
+    ],
+    "failure_consequences": [
+      "p95 > 50ms = G1 FAILURE",
+      "Storage projection > 10GB without partitioning strategy = G1 FAILURE",
+      "edge_density = 0 for any snapshot = G1 FAILURE",
+      "Replay hash mismatch = G1 FAILURE"
+    ]
+  },
+
+  "board_commitment": {
+    "short_term": "G1 blir tyngre. STIG vil bruke lengre tid. Første G1-kjøring kan feile.",
+    "long_term": [
+      "Unngår terminal teknisk gjeld i reasoning-motoren",
+      "IoS-007 blir skalerbar nok til å bære IoS-008/009/010",
+      "Etablerer standard for alle Tier-1-moduler"
+    ]
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "key_id": "STIG-EC003-IOS007-G1",
+      "signed_at": "2025-11-30T19:04:00.368Z",
+      "acknowledgment": "G1 Ironclad Directive received and implemented. Infrastructure ready for historical build."
+    }
+  }
+}

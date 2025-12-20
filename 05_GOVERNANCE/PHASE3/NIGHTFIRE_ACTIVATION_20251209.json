@@ -1,0 +1,111 @@
+{
+  "directive": "CEO DIRECTIVE: ARO-20251209/NIGHTFIRE (EXECUTION BINDING)",
+  "title": "Sniper Logic Activation Report",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T02:45:00Z",
+  "status": "COMPLETE",
+
+  "executive_summary": "THE GUN IS LOADED. Sniper Logic successfully bound to shadow trade function. Trades are now created when edges meet criteria: confidence >= 0.90 AND impact_horizon IN (LEADS, AMPLIFIES, CORRELATES, INVERSE, INHIBITS). Every trade linked to reasoning trace via hypothesis_id.",
+
+  "sniper_criteria": {
+    "confidence_threshold": 0.90,
+    "immediate_types": ["LEADS", "AMPLIFIES", "CORRELATES"],
+    "inverse_types": ["INVERSE", "INHIBITS"],
+    "tradeable_assets": ["BTC-USD", "ETH-USD", "SOL-USD", "SPY", "QQQ", "AAPL", "MSFT", "NVDA"],
+    "direction_logic": {
+      "LEADS": "LONG on target",
+      "AMPLIFIES": "LONG on target",
+      "CORRELATES": "LONG on target",
+      "INVERSE": "SHORT on target",
+      "INHIBITS": "SHORT on target"
+    }
+  },
+
+  "constraint_fixes": [
+    {
+      "table": "fhq_execution.shadow_trades",
+      "constraint": "valid_shadow_agent",
+      "change": "Added CRIO, CRIO_NIGHT_WATCH"
+    },
+    {
+      "table": "fhq_governance.system_events",
+      "constraint": "valid_event_agent",
+      "change": "Added CRIO, CRIO_NIGHT_WATCH"
+    },
+    {
+      "function": "fhq_governance.publish_event",
+      "issue": "DEFCON level TEXT vs INTEGER mismatch",
+      "fix": "Added CASE conversion GREEN->5, YELLOW->4, ORANGE->3, RED->2, BLACK->1"
+    }
+  ],
+
+  "test_trades_created": [
+    {
+      "ref": "ST-20251209-024338-0af1ae1c",
+      "asset": "BTC-USD",
+      "direction": "LONG",
+      "price": 89490.00,
+      "confidence": 0.98,
+      "trace_linked": true
+    },
+    {
+      "ref": "ST-20251209-024338-4229ef3b",
+      "asset": "QQQ",
+      "direction": "LONG",
+      "price": 625.05,
+      "confidence": 0.98,
+      "trace_linked": true
+    },
+    {
+      "ref": "ST-20251209-024339-99844bcf",
+      "asset": "SPY",
+      "direction": "LONG",
+      "price": 684.08,
+      "confidence": 0.98,
+      "trace_linked": true
+    }
+  ],
+
+  "files_modified": [
+    {
+      "file": "scripts/crio_night_watch.py",
+      "changes": [
+        "Added sniper_check_and_fire() function",
+        "Added create_shadow_trade() function",
+        "Added get_current_price() function",
+        "Modified process_deep_dive_result() to call sniper",
+        "Modified process_broad_sweep() to call sniper",
+        "Added trace_id tracking via set_last_trace_id()"
+      ]
+    },
+    {
+      "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+      "changes": [
+        "Added sniper_filter() function",
+        "Added create_shadow_trade() function",
+        "Added process_edge_for_trading() function"
+      ]
+    }
+  ],
+
+  "high_confidence_edges_found": 20,
+  "edges_qualifying_for_trade": {
+    "BTC-USD": ["FED_BALANCE_SHEET -> BTC-USD (LEADS, 0.96)", "GLOBAL_CENTRAL_BANK_POLICY -> BTC-USD (LEADS, 0.98)"],
+    "QQQ": ["NASDAQ_COMPOSITE -> QQQ (CORRELATES, 0.99)", "/NQ_FUTURES -> QQQ (LEADS, 0.97)", "FED_LIQUIDITY -> QQQ (LEADS, 0.96)"],
+    "SPY": ["MARKET_LIQUIDITY -> SPY (AMPLIFIES, 0.98)", "FED_BALANCE_SHEET -> SPY (AMPLIFIES, 0.96)"],
+    "AAPL": ["QQQ -> AAPL (CORRELATES, 0.96)", "NASDAQ_100 -> AAPL (CORRELATES, 0.96)"],
+    "NVDA": ["FED_LIQUIDITY -> NVDA (LEADS, 0.96)", "FED_MONETARY_POLICY -> NVDA (LEADS, 0.95)"]
+  },
+
+  "integration_verified": {
+    "shadow_trade_creation": "PASS",
+    "reasoning_trace_linkage": "PASS",
+    "event_publishing": "PASS",
+    "constraint_compliance": "PASS"
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "NIGHTFIRE complete. The gun is loaded. Shadow trades fire on high-confidence edges with full reasoning lineage."
+  }
+}

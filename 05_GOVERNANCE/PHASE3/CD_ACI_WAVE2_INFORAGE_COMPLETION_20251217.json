@@ -1,0 +1,76 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE2-INFORAGE-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "ACTIVE",
+
+  "title": "ACI Wave 2: InForage Full Integration as Unbypassable Runtime Law",
+  "summary": "RuntimeEconomicGuardian enforcement of InForageCostController at Worker level",
+
+  "mandate_compliance": {
+    "mandate_ii": {
+      "requirement": "Economic Safety as Runtime Law (ADR-012)",
+      "implementation": "RuntimeEconomicGuardian class enforces InForage at runtime level",
+      "evidence": [
+        "finn_cognitive_brain.py:RuntimeEconomicGuardian class",
+        "ec018_alpha_daemon.py:RuntimeEconomicGuardian integration"
+      ]
+    }
+  },
+
+  "implementation_artifacts": {
+    "primary_class": "RuntimeEconomicGuardian",
+    "integration_points": [
+      "03_FUNCTIONS/finn_cognitive_brain.py",
+      "03_FUNCTIONS/ec018_alpha_daemon.py"
+    ],
+    "database_tables": [
+      "fhq_optimization.inforage_cost_log"
+    ]
+  },
+
+  "key_methods": {
+    "RuntimeEconomicGuardian.initialize": {
+      "purpose": "Initialize cost controller, trigger circuit breaker on failure",
+      "returns": "bool - True if successful"
+    },
+    "RuntimeEconomicGuardian.check_or_fail": {
+      "purpose": "Check cost or HARD FAIL - no exceptions, no bypasses",
+      "raises": "RuntimeEconomicViolation if controller unavailable"
+    },
+    "RuntimeEconomicGuardian.is_operational": {
+      "purpose": "Property indicating if guardian is operational"
+    }
+  },
+
+  "hard_fail_behavior": {
+    "on_load_failure": "Trigger circuit breaker, block all operations",
+    "on_check_failure": "Raise RuntimeEconomicViolation",
+    "no_try_except_bypass": true,
+    "circuit_breaker_integration": true
+  },
+
+  "cost_check_points": [
+    "Before cognitive cycle start (finn_cognitive_brain.py)",
+    "Before alpha hunt (ec018_alpha_daemon.py)",
+    "Before API calls (StepType.API_CALL)",
+    "Before LLM inference (StepType.LLM_INFERENCE)"
+  ],
+
+  "vega_attestation": {
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "target": "EC-021",
+    "gate_level": "G1",
+    "status": "PENDING",
+    "validation_criteria": [
+      "RuntimeEconomicGuardian unbypassable",
+      "Hard fail on controller unavailable",
+      "Circuit breaker integration verified"
+    ]
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}

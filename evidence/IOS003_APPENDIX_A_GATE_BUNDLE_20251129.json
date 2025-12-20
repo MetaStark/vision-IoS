@@ -1,0 +1,165 @@
+{
+  "report_type": "GATE_BUNDLE_G0_G3B",
+  "report_id": "IOS003-APPENDIX-A-GATE-BUNDLE-20251129",
+  "timestamp": "2025-11-29T17:45:00.000Z",
+  "generated_by": "STIG",
+  "target": "IoS-003_Appendix_A_HMM_REGIME",
+
+  "gate_summary": {
+    "g0_submission": "PASS",
+    "g1_technical": "PASS",
+    "g2_governance": "PASS",
+    "g3_audit": "PASS",
+    "g3b_triple_verification": "PASS",
+    "flag_ready_for_g4": true
+  },
+
+  "g0_submission": {
+    "status": "PASS",
+    "tables_created": [
+      "fhq_research.regime_model_registry (16 cols)",
+      "fhq_research.regime_predictions_v2 (12 cols)",
+      "fhq_perception.hmm_features_daily (17 cols)",
+      "fhq_meta.ios_appendix_registry (11 cols)"
+    ],
+    "all_tables_empty": true,
+    "appendix_registered": {
+      "appendix_id": "75c14972-67d9-4dce-8c54-a8e5ae9e740c",
+      "code": "Appendix_A_HMM_REGIME",
+      "version": "2026.PROD.1",
+      "status": "REGISTERED"
+    },
+    "task_registered": {
+      "task_name": "META_PERCEPTION_HMM_PIPELINE",
+      "gate_approved": false,
+      "vega_reviewed": false
+    }
+  },
+
+  "g1_technical_validation": {
+    "status": "PASS",
+    "checks": {
+      "schema_integrity": "PASS - All 4 tables exist with correct column counts",
+      "constraints": "PASS - PK, UNIQUE, FK, CHECK constraints verified",
+      "indexes": "PASS - 17 indexes across all tables",
+      "lineage_architecture": "PASS - All 3 data tables have lineage_hash, hash_prev, hash_self",
+      "deterministic_logic": "PASS - regime_label CHECK constraint enforces 10-state enum",
+      "pipeline_binding": "PASS - META_PERCEPTION_HMM_PIPELINE registered with correct schemas",
+      "adr011_fortress": "PASS - Hash chain HC-IOS-003-APPENDIX-A-20251129 verified"
+    },
+    "schema_hashes": {
+      "regime_model_registry": "120da162d1114fe51a8d5bd5cde441d2",
+      "regime_predictions_v2": "5cf5ea81cf0dda3ba22d52068c1b2777",
+      "hmm_features_daily": "fcb3ddc859079930d6326a6970687ec5"
+    }
+  },
+
+  "g2_governance_validation": {
+    "status": "PASS",
+    "checks": {
+      "permission_matrix": "PASS - LARS owns, CODE executes",
+      "one_true_source": "PASS - No duplicate appendix entries",
+      "defcon_behavior": "PASS - 8 circuit breakers enabled",
+      "discrepancy_events": "PASS - Table exists with 22 columns",
+      "governance_action_logged": "PASS - IOS_APPENDIX_G0_SUBMISSION logged"
+    },
+    "circuit_breakers_enabled": [
+      "API_BUDGET_SCARCITY",
+      "HIGH_LATENCY",
+      "VIX_VOLATILITY",
+      "DISCREPANCY_DRIFT",
+      "FLASH_CRASH",
+      "SYSTEM_ERROR_RATE",
+      "API_KEY_FAILURE",
+      "GOVERNANCE_BREACH"
+    ]
+  },
+
+  "g3_audit_validation": {
+    "status": "PASS",
+    "checks": {
+      "hash_chain_integrity": "PASS - genesis_hash = current_hash, chain_length = 1",
+      "content_hash": "acf4c7a5b560fb796ac49fdcf7ad47abaaecaafc8c9953f1f36d4336d4a76c0d",
+      "determinism_constraints": "PASS - regime_label and confidence_score CHECK constraints",
+      "formula_identity": "PASS - 7 canonical features match specification",
+      "source_data_ready": "PASS - 44,588 indicator rows available"
+    },
+    "canonical_features_verified": [
+      "return_z - Log returns z-score",
+      "volatility_z - 20-day rolling std dev z-score",
+      "drawdown_z - Drawdown from peak z-score",
+      "macd_diff_z - MACD histogram z-score",
+      "bb_width_z - Bollinger Band width z-score",
+      "rsi_14_z - RSI-14 z-score",
+      "roc_20_z - 20-day Rate of Change z-score"
+    ]
+  },
+
+  "g3b_triple_verification": {
+    "status": "PASS",
+    "pass_1_hash_verification": {
+      "status": "PASS",
+      "canonical_rowset_hash": "812d8203e890fc397db9a77060306fff",
+      "hash_chain_intact": true,
+      "lineage_columns_per_table": 3
+    },
+    "pass_2_schema_integrity_scan": {
+      "status": "PASS",
+      "column_counts_match": true,
+      "constraints_verified": {
+        "regime_model_registry": {"pk": 1, "unique": 0, "fk": 0, "check": 14},
+        "regime_predictions_v2": {"pk": 1, "unique": 1, "fk": 1, "check": 12},
+        "hmm_features_daily": {"pk": 1, "unique": 1, "fk": 0, "check": 16},
+        "ios_appendix_registry": {"pk": 1, "unique": 1, "fk": 0, "check": 10}
+      },
+      "indexes_verified": {
+        "regime_model_registry": 4,
+        "regime_predictions_v2": 6,
+        "hmm_features_daily": 4,
+        "ios_appendix_registry": 3
+      },
+      "not_null_invariants": "VERIFIED"
+    },
+    "pass_3_semantic_replay_review": {
+      "status": "PASS",
+      "source_data_last_30_days": {
+        "indicator_momentum": 112,
+        "indicator_trend": 112,
+        "indicator_volatility": 112
+      },
+      "required_indicators_present": {
+        "rsi_14": true,
+        "bb_width": true,
+        "macd_histogram": true,
+        "atr_14": true
+      },
+      "bitwise_match": "N/A - Tables empty at G0 (infrastructure only)"
+    }
+  },
+
+  "ios003_status": {
+    "ios_id": "IoS-003",
+    "title": "Meta-Perception Engine (Market Brain)",
+    "status": "ACTIVE",
+    "version": "2026.PROD.1",
+    "appendix_linked": true
+  },
+
+  "ready_for_g4": {
+    "flag_ready_for_g4": true,
+    "ceo_approval_required": true,
+    "awaiting": "EXPLICIT CEO APPROVAL"
+  },
+
+  "stig_attestation": {
+    "g0_passed": true,
+    "g1_passed": true,
+    "g2_passed": true,
+    "g3_passed": true,
+    "g3b_triple_verification_passed": true,
+    "all_checks_100_percent": true,
+    "ready_for_ceo_review": true
+  },
+
+  "hash_self": "GATE-BUNDLE-IOS003-APPENDIX-A-20251129-STIG"
+}

@@ -1,0 +1,192 @@
+{
+  "evidence_type": "IOS_GATEWAY_ACTIVATION",
+  "ios_id": "IoS-013",
+  "appendix_code": "GATEWAY",
+  "appendix_title": "Truth Gateway Interface Specification",
+  "version": "2026.DRAFT.2",
+  "activation_timestamp": "2025-12-05T15:50:00Z",
+
+  "authority_chain": {
+    "mandate": "CEO Activation Order",
+    "technical_implementation": "STIG",
+    "data_governance_registration": "CDMO",
+    "compliance_enforcement": "VEGA"
+  },
+
+  "architecture": {
+    "layer_1": {
+      "component": "IoS-013 (ASPE + CDS)",
+      "role": "Engine + Schema"
+    },
+    "layer_2": {
+      "component": "Truth Gateway",
+      "role": "Official Interface (THIS ACTIVATION)"
+    },
+    "layer_3": {
+      "component": "CHL (Context Hydration Layer)",
+      "role": "Dashboard Middleware"
+    },
+    "layer_4": {
+      "component": "LLM Advisor",
+      "role": "Consumer"
+    }
+  },
+
+  "gateway_mission": "The only authorized interface through which LLM agents obtain the context_package before reasoning",
+
+  "gateway_guarantees": [
+    "Unified state",
+    "Deterministic context",
+    "Zero divergence",
+    "Full ADR-017/ADR-018 compliance",
+    "Fail-closed under RISL"
+  ],
+
+  "atomic_response_object": {
+    "context_package": "Full context (state_vector, adr_index, ios_index, authority_map, operational_constraints)",
+    "context_hash": "SHA256 hash of entire context package",
+    "issued_at": "Timestamp of retrieval",
+    "integrity_signature": "STIG-GW-{SHA256} cryptographic signature"
+  },
+
+  "validations_performed": [
+    {
+      "check": "ADR-018 (ASRP) State Integrity",
+      "validates": "state_snapshot_hash exists and matches valid snapshot",
+      "fail_action": "REJECT"
+    },
+    {
+      "check": "ADR-018 Freshness",
+      "validates": "Context age < 300 seconds TTL",
+      "fail_action": "STALE_CONTEXT"
+    },
+    {
+      "check": "ADR-017 (MIT Quad) Operational Constraints",
+      "validates": "quad_hash present for execution contexts",
+      "fail_action": "REJECT"
+    },
+    {
+      "check": "EC Role Boundaries",
+      "validates": "Requesting agent authorized for tier level",
+      "fail_action": "UNAUTHORIZED"
+    },
+    {
+      "check": "RISL Safety Rules",
+      "validates": "RISL pillar not HALTED",
+      "fail_action": "RISL_BLOCKED"
+    },
+    {
+      "check": "DEFCON Gating",
+      "validates": "DEFCON not BLACK (or RED for execution)",
+      "fail_action": "DEFCON_BLOCKED"
+    }
+  ],
+
+  "fail_closed_behavior": {
+    "description": "If ANY validation fails, Gateway MUST refuse to deliver context",
+    "actions": [
+      "Block agent reasoning",
+      "Log rejection in gateway_request_log",
+      "Raise VEGA governance event for RISL/DEFCON blocks"
+    ],
+    "no_fallback": "No fallback to cached or inferred context permitted"
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      {
+        "name": "fhq_governance.gateway_request_log",
+        "purpose": "Audit trail for Gateway requests with validation results"
+      },
+      {
+        "name": "fhq_governance.gateway_integrity_signatures",
+        "purpose": "Cryptographic signatures for forensic reconstruction"
+      }
+    ],
+    "functions": [
+      {
+        "name": "fhq_governance.truth_gateway_retrieve(agent, tier, source)",
+        "returns": "{context_package, context_hash, issued_at, integrity_signature, gateway_status, validations_passed}",
+        "purpose": "Official truth surface for all LLM agents"
+      }
+    ],
+    "preflight_checks": [
+      "GATEWAY_ROUTE_REQUIRED",
+      "GATEWAY_SIGNATURE_VALID",
+      "GATEWAY_ALL_VALIDATIONS_PASSED"
+    ],
+    "validation_rules": [
+      "GATEWAY_ROUTE_REQUIRED",
+      "GATEWAY_INTEGRITY_SIGNATURE_VALID"
+    ]
+  },
+
+  "test_results": {
+    "gateway_retrieval_test": {
+      "timestamp": "2025-12-05T15:50:00Z",
+      "requesting_agent": "STIG",
+      "agent_tier": "TIER-1",
+      "request_source": "DASHBOARD",
+      "gateway_status": "SUCCESS",
+      "all_validations_passed": true,
+      "latency_ms": 9,
+      "context_hash": "9ca16b4c01e80aa702be...",
+      "integrity_signature": "STIG-GW-1ceb8a069b643bbf0b3f..."
+    }
+  },
+
+  "ios013_components": {
+    "ASPE": {
+      "name": "Agent State Protocol Engine",
+      "role": "Produces atomic state_vector, enforces ASRP requirements"
+    },
+    "CDS": {
+      "name": "Context Definition Specification",
+      "role": "Defines canonical context_package structure"
+    },
+    "GATEWAY": {
+      "name": "Truth Gateway Interface",
+      "role": "Delivers context_package with validation, integrity, and constitutional compliance"
+    }
+  },
+
+  "success_criteria": [
+    "All LLMs operate with unified factual context",
+    "No agent produces outputs without state_hash + quad_hash",
+    "Context can be reconstructed from retrieval logs",
+    "Dashboard advisors produce identical system understanding",
+    "All reasoning is deterministic and reproducible"
+  ],
+
+  "constitutional_chain": "ADR-018 → IoS-013 → CHL → LLM",
+
+  "migration": {
+    "file": "078_ios013_truth_gateway.sql",
+    "patch_file": "078_patch_gateway_function.sql",
+    "executed_at": "2025-12-05T15:50:00Z",
+    "status": "SUCCESS"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS-013-ASPE-2026",
+    "chain_type": "IOS_ACTIVATION"
+  },
+
+  "signatures": {
+    "stig": {
+      "role": "Technical Implementation",
+      "attestation": "Truth Gateway Interface implemented. Atomic delivery of context_package operational. All validations (ADR-017, ADR-018, EC, RISL, DEFCON) enforced. Cryptographic lineage (context_hash, integrity_signature) operational. Fail-closed behavior verified.",
+      "timestamp": "2025-12-05T15:50:00Z"
+    },
+    "cdmo": {
+      "role": "Canonical Registration",
+      "attestation": "IoS-013 Gateway appendix registered. Documentation updated.",
+      "timestamp": "2025-12-05T15:50:00Z"
+    },
+    "vega": {
+      "role": "Governance Enforcement",
+      "attestation": "Gateway compliance added to pre-flight checklist. Non-Gateway requests will be rejected. context_hash + quad_hash alignment validation active.",
+      "timestamp": "2025-12-05T15:50:00Z"
+    }
+  }
+}

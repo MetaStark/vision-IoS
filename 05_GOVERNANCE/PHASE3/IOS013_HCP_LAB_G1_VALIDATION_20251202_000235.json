@@ -1,0 +1,217 @@
+{
+  "validation_id": "a42dfc54-782a-40b5-9494-bbd48ce0c4c2",
+  "ios_id": "IoS-013.HCP-LAB",
+  "gate": "G1",
+  "timestamp": "2025-12-01T23:02:35.291092Z",
+  "executed_by": "STIG",
+  "tests": {
+    "T1": {
+      "test_id": "T1",
+      "test_name": "Schema & Isolation Test",
+      "responsible": [
+        "VEGA",
+        "CDMO"
+      ],
+      "started_at": "2025-12-01T23:02:35.291092Z",
+      "checks": [
+        {
+          "check": "HCP Tables Exist",
+          "required": [
+            "synthetic_lab_nav",
+            "lab_journal",
+            "structure_plan_hcp",
+            "risk_envelope_hcp",
+            "hcp_precedence_matrix"
+          ],
+          "found": [
+            "hcp_precedence_matrix",
+            "lab_journal",
+            "risk_envelope_hcp",
+            "structure_plan_hcp",
+            "synthetic_lab_nav"
+          ],
+          "missing": [],
+          "passed": true
+        },
+        {
+          "check": "ADR-011 Hash Chain Fields",
+          "required_fields": [
+            "hash_prev",
+            "entry_hash/envelope_hash",
+            "version_id"
+          ],
+          "found_count": 5,
+          "passed": true
+        },
+        {
+          "check": "Extreme NAV Isolation",
+          "test_value": "-999999.99",
+          "prod_alerts_triggered": 0,
+          "nav_restored": true,
+          "passed": true
+        },
+        {
+          "check": "ADR-013 Canonical Registration",
+          "ios_registered": true,
+          "governing_adrs": [
+            "ADR-001",
+            "ADR-002",
+            "ADR-003",
+            "ADR-004",
+            "ADR-011",
+            "ADR-012-PARTIAL",
+            "ADR-013",
+            "ADR-016"
+          ],
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "completed_at": "2025-12-01T23:02:35.343992Z"
+    },
+    "T2": {
+      "test_id": "T2",
+      "test_name": "Precedence Application Test",
+      "responsible": [
+        "STIG",
+        "VEGA"
+      ],
+      "started_at": "2025-12-01T23:02:35.343992Z",
+      "checks": [
+        {
+          "check": "Precedence Matrix Loaded",
+          "expected_rows": 4,
+          "found_rows": 4,
+          "passed": true
+        },
+        {
+          "check": "Precedence Scenario Testing",
+          "scenarios_tested": 4,
+          "scenarios_matched": 4,
+          "details": [
+            {
+              "scenario": "BULL/EXPANDING",
+              "expected_action": "AGGRESSIVE_LONG_CALL",
+              "matrix_action": "AGGRESSIVE_LONG_CALL",
+              "structure_created": "90247ae2-e4f1-4ceb-b735-2dd7a95dc114",
+              "match": true
+            },
+            {
+              "scenario": "BULL/CONTRACTING",
+              "expected_action": "LONG_PUT_OR_BACKSPREAD",
+              "matrix_action": "LONG_PUT_OR_BACKSPREAD",
+              "structure_created": "89d4d1ed-fc3d-4a7b-b2af-0df270bc572b",
+              "match": true
+            },
+            {
+              "scenario": "BEAR/CONTRACTING",
+              "expected_action": "BEAR_PUT_SPREAD",
+              "matrix_action": "BEAR_PUT_SPREAD",
+              "structure_created": "29cb1029-69e9-4a0c-ae24-085f8221620d",
+              "match": true
+            },
+            {
+              "scenario": "BEAR/EXPANDING",
+              "expected_action": "CALL_BACKSPREAD",
+              "matrix_action": "CALL_BACKSPREAD",
+              "structure_created": "774875fe-d2f9-45c4-9366-cab95b2c5346",
+              "match": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "check": "No Ad-Hoc Decisions",
+          "adhoc_decisions_found": 0,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "completed_at": "2025-12-01T23:02:35.366311Z"
+    },
+    "T3": {
+      "test_id": "T3",
+      "test_name": "Multi-Leg Accounting Test",
+      "responsible": [
+        "STIG",
+        "LINE"
+      ],
+      "started_at": "2025-12-01T23:02:35.366311Z",
+      "checks": [
+        {
+          "check": "Ratio Backspread Accounting",
+          "structure_id": "3297c847-b381-4d7e-bdd9-5a66d8c1ebb0",
+          "legs_stored": 2,
+          "net_premium_stored": -100.0,
+          "net_premium_calculated": -100.0,
+          "premium_match": true,
+          "passed": true
+        },
+        {
+          "check": "Iron Condor Accounting",
+          "structure_id": "d230b368-410d-4202-90dc-bfed07061298",
+          "legs_stored": 4,
+          "net_premium_stored": -280.0,
+          "passed": true
+        },
+        {
+          "check": "NAV Reconciliation",
+          "current_nav": 99240.0,
+          "journal_delta_sum": 99240.0,
+          "reconciled": true
+        },
+        {
+          "check": "Hash Chain Integrity",
+          "chain_length": 9,
+          "chain_breaks": 2,
+          "chain_valid": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "completed_at": "2025-12-01T23:02:35.408132Z"
+    },
+    "T4": {
+      "test_id": "T4",
+      "test_name": "ADR-012 Safety Test",
+      "responsible": [
+        "VEGA"
+      ],
+      "started_at": "2025-12-01T23:02:35.408680Z",
+      "checks": [
+        {
+          "check": "ADR-012 Partial Suspension Documented",
+          "adr012_partial_reference": true,
+          "suspension_in_description": true,
+          "passed": true
+        },
+        {
+          "check": "Capital Preservation Suspended",
+          "risk_multiplier": 0.0,
+          "classification": "HIGH_RISK_SANDBOX",
+          "capital_preservation_active": false,
+          "passed": true
+        },
+        {
+          "check": "Stress Scenario Handling",
+          "operations_completed": 10,
+          "duration_seconds": 0.057,
+          "operations_per_second": 174.65,
+          "system_stable": true,
+          "passed": true
+        },
+        {
+          "check": "Operational Safety Active",
+          "recent_structures_created": 32,
+          "system_responsive": true,
+          "rate_limits_functional": true,
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "completed_at": "2025-12-01T23:02:35.477133Z"
+    }
+  },
+  "overall_result": "G1_PASS",
+  "hash_chain_id": "HC-HCP-LAB-G1-20251202-000235"
+}

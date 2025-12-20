@@ -1,0 +1,341 @@
+{
+  "validation_id": "0b9c14cb-d5a9-4df0-848f-9301d66e0782",
+  "ios_module": "IoS-002",
+  "module_name": "Indicator Engine (Sensory Cortex)",
+  "validation_type": "G2_GOVERNANCE",
+  "timestamp": "2025-11-29T02:13:56.962047+00:00",
+  "validators": [
+    "LARS (CSO)",
+    "VEGA (Compliance)"
+  ],
+  "overall_status": "G2_GOVERNANCE_FAIL",
+  "checks": [
+    {
+      "check_id": "G2-001",
+      "check_name": "Semantic Scope (Measurement Only)",
+      "status": "PASS",
+      "details": {
+        "registry": {
+          "ios_id": "IoS-002",
+          "title": "Indicator Engine \u2013 Sensory Cortex",
+          "description": "Feature extraction layer. Computes deterministic technical indicators from canonical OHLCV. Environment: fhq_market \u2192 fhq_research",
+          "owner_role": "FINN",
+          "governing_adrs": [
+            "ADR-001",
+            "ADR-003",
+            "ADR-007",
+            "ADR-010",
+            "ADR-013"
+          ]
+        },
+        "measurement_only": true,
+        "issues": [],
+        "classification": "MEASUREMENT-ONLY"
+      },
+      "adr_reference": "ADR-001, ADR-013"
+    },
+    {
+      "check_id": "G2-002",
+      "check_name": "Role Permissions Matrix",
+      "status": "PASS",
+      "details": {
+        "authority_matrix": {
+          "cdmo": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "ceio": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "cfao": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "CODE": {
+            "authority_level": 3,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "crio": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "cseo": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          }
+        },
+        "calc_indicators_task": {
+          "task_name": "CALC_INDICATORS",
+          "owned_by_agent": "FINN",
+          "executed_by_agent": "CODE",
+          "reads_from_schemas": [
+            "fhq_market"
+          ],
+          "writes_to_schemas": [
+            "fhq_research"
+          ],
+          "task_status": "REGISTERED"
+        },
+        "ec_contracts": {
+          "STIG": {
+            "contract_id": 14,
+            "duties": 8,
+            "constraints": 5,
+            "rights": 5
+          },
+          "FINN": {
+            "contract_id": 15,
+            "duties": 8,
+            "constraints": 5,
+            "rights": 5
+          },
+          "CODE": {
+            "contract_id": 22,
+            "duties": 4,
+            "constraints": 6,
+            "rights": 3
+          }
+        },
+        "permission_matrix": {
+          "STIG": {
+            "read": true,
+            "write": "schema_only",
+            "mechanism": "Migration SQL",
+            "authority": "EC-003"
+          },
+          "CODE": {
+            "read": true,
+            "write": true,
+            "mechanism": "CALC_INDICATORS pipeline",
+            "authority": "EC-011"
+          },
+          "FINN": {
+            "read": true,
+            "write": false,
+            "mechanism": "Specification only",
+            "authority": "EC-004"
+          },
+          "LARS": {
+            "read": true,
+            "write": false,
+            "mechanism": "Strategic oversight",
+            "authority": "EC-002"
+          },
+          "LINE": {
+            "read": true,
+            "write": false,
+            "mechanism": "Infrastructure only",
+            "authority": "EC-005"
+          },
+          "VEGA": {
+            "read": true,
+            "write": false,
+            "mechanism": "Audit/Attestation",
+            "authority": "EC-001"
+          },
+          "Tier-2": {
+            "read": true,
+            "write": "FORBIDDEN",
+            "mechanism": "N/A",
+            "authority": "Authority Matrix"
+          }
+        },
+        "issues": [],
+        "tier2_write_forbidden": true
+      },
+      "adr_reference": "ADR-007, ADR-014, EC-001 through EC-011"
+    },
+    {
+      "check_id": "G2-003",
+      "check_name": "One-True-Source Verification",
+      "status": "PASS",
+      "details": {
+        "canonical_tables": [
+          "indicator_trend",
+          "indicator_momentum",
+          "indicator_volatility",
+          "indicator_ichimoku"
+        ],
+        "shadow_table_analysis": [
+          {
+            "table": "fhq_data.indicators",
+            "classification": "LEGACY",
+            "action": "DEPRECATE - mark as superseded by IoS-002 tables"
+          },
+          {
+            "table": "fhq_data.macro_indicators",
+            "classification": "DIFFERENT_DOMAIN",
+            "action": "No action - economic indicators (GDP, inflation)"
+          },
+          {
+            "table": "fhq_research.backtest_results_rsi_threshold",
+            "classification": "DERIVED_OUTPUT",
+            "action": "No action - backtest results, not source data"
+          },
+          {
+            "table": "fhq_research.indicators",
+            "classification": "LEGACY",
+            "action": "DEPRECATE - mark as superseded by IoS-002 tables"
+          },
+          {
+            "table": "fhq_research.macro_indicators",
+            "classification": "DIFFERENT_DOMAIN",
+            "action": "No action - economic indicators (GDP, inflation)"
+          }
+        ],
+        "indicator_views": [],
+        "issues": [],
+        "llm_policy_required": "Agents must NOT calculate RSI/MACD/ATR in Python - read from fhq_research only"
+      },
+      "adr_reference": "ADR-013"
+    },
+    {
+      "check_id": "G2-004",
+      "check_name": "Phase 4: Reconciliation Policy",
+      "status": "FAIL",
+      "details": {
+        "error": "column \"component\" does not exist\nLINE 4:             WHERE component LIKE '%INDICATOR%' OR component ...\n                          ^\n"
+      },
+      "adr_reference": "ERROR"
+    },
+    {
+      "check_id": "G2-005",
+      "check_name": "Phase 5: Economic Safety",
+      "status": "FAIL",
+      "details": {
+        "error": "current transaction is aborted, commands ignored until end of transaction block\n"
+      },
+      "adr_reference": "ERROR"
+    },
+    {
+      "check_id": "G2-006",
+      "check_name": "Phase 6: Suspension & DEFCON",
+      "status": "FAIL",
+      "details": {
+        "error": "current transaction is aborted, commands ignored until end of transaction block\n"
+      },
+      "adr_reference": "ERROR"
+    }
+  ],
+  "governance_matrix": {
+    "ios_module": "IoS-002",
+    "module_name": "Indicator Engine (Sensory Cortex)",
+    "roles": {
+      "STIG": {
+        "read": true,
+        "write": "schema_only",
+        "mechanism": "migration"
+      },
+      "CODE": {
+        "read": true,
+        "write": true,
+        "mechanism": "CALC_INDICATORS"
+      },
+      "FINN": {
+        "read": true,
+        "write": false,
+        "mechanism": "specification"
+      },
+      "LARS": {
+        "read": true,
+        "write": false,
+        "mechanism": "oversight"
+      },
+      "VEGA": {
+        "read": true,
+        "write": false,
+        "mechanism": "attestation"
+      }
+    },
+    "tables": [
+      "indicator_trend",
+      "indicator_momentum",
+      "indicator_volatility",
+      "indicator_ichimoku"
+    ],
+    "unauthorized_write": "EXPLICITLY_FORBIDDEN"
+  },
+  "dataflow_diagram": "\nfhq_market.prices (IoS-001)\n      |\n      v\n+-----------------------------+\n|  CALC_INDICATORS (CODE)     |\n|  Owner: FINN                |\n|  Gate: G1_APPROVED          |\n+-----------------------------+\n      |\n      v\nfhq_research.indicator_* (IoS-002)\n      |\n      +---> VEGA Reconciliation\n      |\n      v\nIoS-003 Meta-Perception (READ ONLY)\n",
+  "risk_register": [
+    {
+      "risk_id": "R-001",
+      "type": "Formula drift",
+      "consequence": "Incorrect signals",
+      "mitigation": "Weekly benchmark test",
+      "owner": "VEGA"
+    },
+    {
+      "risk_id": "R-002",
+      "type": "Missing data",
+      "consequence": "Incomplete analysis",
+      "mitigation": "Daily gap detection",
+      "owner": "VEGA"
+    },
+    {
+      "risk_id": "R-003",
+      "type": "Unauthorized write",
+      "consequence": "Data integrity breach",
+      "mitigation": "Authority matrix enforcement",
+      "owner": "LARS"
+    },
+    {
+      "risk_id": "R-004",
+      "type": "Shadow calculation",
+      "consequence": "One-Source violation",
+      "mitigation": "LLM policy + code review",
+      "owner": "STIG"
+    },
+    {
+      "risk_id": "R-005",
+      "type": "Cascade to trading",
+      "consequence": "Capital loss",
+      "mitigation": "Isolation architecture",
+      "owner": "LARS"
+    }
+  ],
+  "adr_compliance": [
+    "ADR-001",
+    "ADR-002",
+    "ADR-003",
+    "ADR-004",
+    "ADR-006",
+    "ADR-007",
+    "ADR-009",
+    "ADR-010",
+    "ADR-011",
+    "ADR-012",
+    "ADR-013",
+    "ADR-014",
+    "ADR-016"
+  ],
+  "next_gate": "REMEDIATION_REQUIRED",
+  "bundle_hash": "b7232108fc3b9094f22ed6bb172755a1b3fc7c6388033e389daca5088164dba5",
+  "signature_log": {
+    "lars_approval": {
+      "signer": "LARS",
+      "role": "CSO",
+      "sign_time": "2025-11-29T02:13:56.962047+00:00",
+      "decision": "G2_GOVERNANCE_FAIL"
+    },
+    "vega_attestation": {
+      "signer": "VEGA",
+      "role": "Compliance",
+      "sign_time": "2025-11-29T02:13:56.962047+00:00",
+      "attestation_id": "553c7067-a9d5-415e-a0b4-d752d43564a6"
+    },
+    "bundle_hash": "b7232108fc3b9094f22ed6bb172755a1b3fc7c6388033e389daca5088164dba5"
+  }
+}

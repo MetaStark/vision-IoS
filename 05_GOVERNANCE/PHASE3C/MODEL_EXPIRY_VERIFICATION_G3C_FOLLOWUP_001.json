@@ -1,0 +1,255 @@
+{
+  "verification_id": "G3C-FOLLOWUP-001",
+  "verification_title": "Model Expiry Fallback Verification - Deep Audit",
+  "authority": ["ADR-020", "ADR-021", "ADR-012", "ADR-018"],
+  "executor": "STIG",
+  "mode": "READ-ONLY",
+  "timestamp": "2025-12-10T15:00:00Z",
+  "expiry_target": "2025-12-15T15:59:00+00:00",
+  "days_until_expiry": 5,
+
+  "executive_summary": {
+    "verdict": "NOT SAFE",
+    "verdict_reason": "orchestrator_daemon.py has NO expiry check and makes direct HTTP calls to Speciale URL without fallback. System will break post-expiry.",
+    "critical_finding": "DEEPSEEK_API_URL is read from env var or defaults to https://api.deepseek.com/v1 - NO expiry validation occurs before API call",
+    "recommended_action": "PATCH orchestrator_daemon.py before Dec 15 16:00 UTC or disable daemon",
+    "safe_components": ["orchestrator_v1.py", "speciale_parser_wrapper.py"],
+    "unsafe_components": ["orchestrator_daemon.py"],
+    "indirect_safe": ["finn_deepseek_researcher.py", "ceio_shadow_cycle_runner.py"]
+  },
+
+  "per_file_verification": {
+    "orchestrator_daemon.py": {
+      "location": "05_ORCHESTRATOR/orchestrator_daemon.py",
+      "call_site_id": "CS-009",
+      "fallback_present": false,
+      "fallback_logic_correct": false,
+      "fallback_trigger_condition": "NONE",
+      "fallback_target_model": "NONE",
+      "impact_if_missing": 10,
+      "evidence": {
+        "line_68": "DEEPSEEK_API_URL = os.getenv('FHQ_LLM_URL', 'https://api.deepseek.com/v1')",
+        "line_69": "DEEPSEEK_MODEL = 'deepseek-reasoner'  # CEO MANDATE: Speciale only, no fallback",
+        "analysis": "URL read from env or hardcoded to standard endpoint. Model set to deepseek-reasoner. NO expiry check anywhere in file.",
+        "expiry_check_present": false,
+        "direct_http_call": true,
+        "http_call_location": "lines 702-718: requests.post(f'{DEEPSEEK_API_URL}/chat/completions', ...)",
+        "bypass_risk": "CRITICAL - Direct HTTP without router or expiry check"
+      },
+      "dry_run_simulation": {
+        "pre_expiry_behavior": "Works normally, calls https://api.deepseek.com/v1/chat/completions with model=deepseek-reasoner",
+        "post_expiry_behavior": "CONTINUES CALLING SAME URL - no expiry check exists. If DeepSeek deprecates endpoint → HTTP 404/400/500",
+        "exception_handling": "lines 759-761: catch Exception → logger.error → return None",
+        "failure_mode": "SILENT FAIL - returns None, caller receives no edge, alpha graph gets no updates",
+        "cascading_impact": "Alpha graph stagnates, no DEFCON trigger, no governance alert"
+      }
+    },
+
+    "finn_deepseek_researcher.py": {
+      "location": "06_AGENTS/FINN/finn_deepseek_researcher.py",
+      "call_site_id": "CS-001",
+      "fallback_present": false,
+      "fallback_logic_correct": "N/A - uses standard endpoint, not Speciale",
+      "fallback_trigger_condition": "N/A",
+      "fallback_target_model": "deepseek-chat (standard model, not Speciale)",
+      "impact_if_missing": 3,
+      "evidence": {
+        "line_76": "DEEPSEEK_BASE_URL: str = 'https://api.deepseek.com'",
+        "line_77": "DEEPSEEK_MODEL: str = 'deepseek-chat'",
+        "analysis": "Uses STANDARD DeepSeek endpoint (not v3.2_speciale). Model is deepseek-chat (not deepseek-reasoner/Speciale).",
+        "expiry_check_present": false,
+        "needs_expiry_check": false,
+        "reason": "NOT using Speciale model - uses standard deepseek-chat at standard endpoint"
+      },
+      "dry_run_simulation": {
+        "pre_expiry_behavior": "Works - calls https://api.deepseek.com/chat/completions with deepseek-chat",
+        "post_expiry_behavior": "UNAFFECTED - does not use Speciale URL or model",
+        "exception_handling": "Returns error dict with fragility_score=0.5, dominant_driver=UNKNOWN",
+        "failure_mode": "GRACEFUL DEGRADATION",
+        "cascading_impact": "CRIO returns unknown regime, shadow positions default to NEUTRAL"
+      }
+    },
+
+    "ceio_shadow_cycle_runner.py": {
+      "location": "03_FUNCTIONS/ceio_shadow_cycle_runner.py",
+      "call_site_id": "CS-010",
+      "fallback_present": true,
+      "fallback_logic_correct": true,
+      "fallback_trigger_condition": "Import failure or CRIO exception",
+      "fallback_target_model": "Mock random analysis (lines 296-302)",
+      "impact_if_missing": 4,
+      "evidence": {
+        "line_56": "from finn_deepseek_researcher import execute_finn_crio_research",
+        "line_57": "CRIO_AVAILABLE = True",
+        "lines_58_59": "except ImportError: CRIO_AVAILABLE = False",
+        "analysis": "Imports FINN CRIO (which uses standard deepseek-chat, NOT Speciale). Has fallback to mock analysis if CRIO unavailable."
+      },
+      "dry_run_simulation": {
+        "pre_expiry_behavior": "Works - calls FINN CRIO which uses standard endpoint",
+        "post_expiry_behavior": "UNAFFECTED - FINN CRIO does not use Speciale",
+        "exception_handling": "lines 281-283: catch Exception → crio_result=None → falls through to mock analysis",
+        "failure_mode": "GRACEFUL DEGRADATION with mock analysis",
+        "cascading_impact": "Shadow positions use random regime if CRIO fails"
+      }
+    },
+
+    "speciale_parser_wrapper.py": {
+      "location": "03_FUNCTIONS/speciale_parser_wrapper.py",
+      "call_site_id": "CS-003",
+      "fallback_present": true,
+      "fallback_logic_correct": true,
+      "fallback_trigger_condition": "datetime.now(timezone.utc) > SPECIALE_EXPIRY (2025-12-15 15:59:00 UTC)",
+      "fallback_target_model": "Standard deepseek-reasoner at https://api.deepseek.com",
+      "impact_if_missing": 5,
+      "evidence": {
+        "line_44": "SPECIALE_BASE_URL = 'https://api.deepseek.com/v3.2_speciale_expires_on_20251215'",
+        "line_45": "STANDARD_BASE_URL = 'https://api.deepseek.com'",
+        "line_46": "SPECIALE_EXPIRY = datetime(2025, 12, 15, 15, 59, 0, tzinfo=timezone.utc)",
+        "lines_66_92": "def check_speciale_expiry() - raises CriticalGovernanceError if expired",
+        "lines_95_101": "def get_base_url() - catches CriticalGovernanceError and returns STANDARD_BASE_URL"
+      },
+      "dry_run_simulation": {
+        "pre_expiry_behavior": "Works - uses SPECIALE_BASE_URL",
+        "post_expiry_behavior": "AUTO-SWITCH to STANDARD_BASE_URL via get_base_url() fallback",
+        "exception_handling": "check_speciale_expiry() raises → caught by get_base_url() → returns STANDARD_BASE_URL",
+        "failure_mode": "CONTROLLED TRANSITION",
+        "cascading_impact": "Seamless switch to standard endpoint, model name unchanged"
+      }
+    },
+
+    "orchestrator_v1.py": {
+      "location": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "call_site_id": "N/A (orchestration only)",
+      "fallback_present": true,
+      "fallback_logic_correct": true,
+      "fallback_trigger_condition": "current_date > SPECIALE_EXPIRY_DATE ('2025-12-15') AND 'speciale' in base_url",
+      "fallback_target_model": "Standard endpoint at https://api.deepseek.com",
+      "impact_if_missing": 2,
+      "evidence": {
+        "line_56": "SPECIALE_BASE_URL = 'https://api.deepseek.com/v3.2_speciale_expires_on_20251215'",
+        "line_57": "STANDARD_BASE_URL = 'https://api.deepseek.com'",
+        "line_58": "SPECIALE_EXPIRY_DATE = '2025-12-15'",
+        "lines_61_78": "def check_speciale_expiry() - raises CriticalGovernanceError if expired",
+        "lines_81_88": "def get_deepseek_base_url() - calls check_speciale_expiry, returns STANDARD_BASE_URL if past expiry"
+      },
+      "dry_run_simulation": {
+        "pre_expiry_behavior": "Returns SPECIALE_BASE_URL",
+        "post_expiry_behavior": "Returns STANDARD_BASE_URL",
+        "exception_handling": "CriticalGovernanceError raised if env var contains 'speciale' post-expiry",
+        "failure_mode": "CONTROLLED HALT or AUTO-SWITCH",
+        "cascading_impact": "Orchestrator stops if env misconfigured, otherwise switches cleanly"
+      }
+    }
+  },
+
+  "indirect_imports_analysis": {
+    "ios014_orchestrator.py": {
+      "imports": ["vendor_guard.py", "defcon_router.py"],
+      "deepseek_reference": false,
+      "speciale_reference": false,
+      "impact": "NONE - no LLM calls, only orchestration"
+    },
+    "ceio_alpha_graph_integration.py": {
+      "imports": ["No direct LLM imports"],
+      "deepseek_reference": false,
+      "speciale_reference": false,
+      "impact": "NONE - receives signals, does not call LLM"
+    }
+  },
+
+  "utc_time_handling_validation": {
+    "speciale_parser_wrapper.py": {
+      "line_76": "current_time = datetime.now(timezone.utc)",
+      "comparison_to": "SPECIALE_EXPIRY = datetime(2025, 12, 15, 15, 59, 0, tzinfo=timezone.utc)",
+      "utc_compliant": true,
+      "risk": "NONE - both sides use timezone.utc explicitly"
+    },
+    "orchestrator_v1.py": {
+      "line_68": "current_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')",
+      "comparison_to": "SPECIALE_EXPIRY_DATE = '2025-12-15' (string comparison)",
+      "utc_compliant": true,
+      "risk": "LOW - string date comparison is timezone-safe (date only, no time component)",
+      "edge_case": "String comparison means expiry triggers at 00:00:00 UTC on Dec 16, not 15:59 UTC on Dec 15"
+    },
+    "orchestrator_daemon.py": {
+      "expiry_check_present": false,
+      "utc_compliant": "N/A - no expiry check exists",
+      "risk": "CRITICAL - no check at all"
+    }
+  },
+
+  "dry_run_simulation_summary": {
+    "scenario": "Simulate system state at 2025-12-15 16:30:00 UTC (31 minutes post-expiry)",
+    "components_that_throw": [],
+    "components_that_silently_fail": ["orchestrator_daemon.py (if Speciale URL returns error)"],
+    "components_that_load_wrong_model": ["orchestrator_daemon.py (continues using deepseek-reasoner at potentially dead URL)"],
+    "components_with_auto_switch": ["speciale_parser_wrapper.py", "orchestrator_v1.py"],
+    "url_normalization_status": "orchestrator_daemon uses env var FHQ_LLM_URL or hardcoded /v1 - no normalization to standard",
+    "overall_simulation_result": "PARTIAL SYSTEM FAILURE - daemon continues calling, gets errors, returns None, alpha graph freezes"
+  },
+
+  "can_orchestrator_run_past_dec_15_without_patching": {
+    "orchestrator_v1.py": "YES - has expiry check and fallback",
+    "orchestrator_daemon.py": "NO - will fail silently, return None from LLM calls, alpha graph receives no edges",
+    "combined_verdict": "NOT SAFE - orchestrator_daemon is the active production component and lacks protection"
+  },
+
+  "corrective_actions_required": [
+    {
+      "priority": "CRITICAL",
+      "target": "orchestrator_daemon.py",
+      "action": "Add check_speciale_expiry() function and call before call_deepseek_speciale()",
+      "lines_to_modify": "Add import and check before line 702",
+      "alternative": "Set FHQ_LLM_URL env var to https://api.deepseek.com (not Speciale URL) before Dec 15",
+      "deadline": "2025-12-15T15:00:00Z"
+    },
+    {
+      "priority": "HIGH",
+      "target": "orchestrator_daemon.py line 69",
+      "action": "Remove 'CEO MANDATE: Speciale only, no fallback' comment and implement fallback logic",
+      "rationale": "Comment was appropriate during burn-in, but burn-in ends before expiry"
+    },
+    {
+      "priority": "MEDIUM",
+      "target": "orchestrator_v1.py",
+      "action": "Align expiry check to use datetime (15:59 UTC) not date string for precision",
+      "rationale": "Current string comparison triggers at midnight, not actual expiry time"
+    },
+    {
+      "priority": "LOW",
+      "target": "proof_of_life_*.py scripts",
+      "action": "These throw exceptions on expiry - acceptable for validation scripts",
+      "rationale": "Scripts are not production components"
+    }
+  ],
+
+  "vega_attestation": {
+    "attestation_type": "MODEL_EXPIRY_RISK_ASSESSMENT",
+    "assessor": "STIG (CTO)",
+    "reviewer": "VEGA (CGO)",
+    "adr_compliance": {
+      "ADR-012_economic_safety": "VIOLATED - unmetered LLM calls possible via daemon bypass",
+      "ADR-018_state_reliability": "AT RISK - daemon failure causes state drift",
+      "ADR-020_aci_protocol": "VIOLATED - unobserved LLM calls",
+      "ADR-021_cognitive_integrity": "AT RISK - alpha graph receives no updates on failure"
+    },
+    "signature": {
+      "stig_hash": "SHA256:MODEL_EXPIRY_VERIFICATION_G3C_FOLLOWUP_001_2025-12-10",
+      "timestamp": "2025-12-10T15:00:00Z"
+    }
+  },
+
+  "final_verdict": {
+    "status": "NOT SAFE",
+    "confidence": "HIGH",
+    "reasoning": [
+      "orchestrator_daemon.py (CS-009) is the primary production LLM caller",
+      "It has NO expiry check, NO fallback logic, NO URL normalization",
+      "Post-expiry: daemon continues calling, gets HTTP errors, returns None",
+      "Alpha graph receives no edges, system appears 'frozen' without alerting",
+      "Other components (orchestrator_v1.py, speciale_parser_wrapper.py) are safe",
+      "But daemon is the critical path - its failure breaks the system"
+    ],
+    "ceo_recommendation": "DO NOT ALLOW orchestrator_daemon to run past Dec 15 16:00 UTC without patching. Either (1) patch daemon with expiry check, or (2) set FHQ_LLM_URL to standard endpoint, or (3) disable daemon and use orchestrator_v1 only."
+  }
+}

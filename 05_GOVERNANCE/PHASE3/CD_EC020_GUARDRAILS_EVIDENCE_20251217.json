@@ -1,0 +1,214 @@
+{
+  "document_type": "CEO_DIRECTIVE_EVIDENCE",
+  "evidence_id": "CD-EC020-GUARDRAILS-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "IMPLEMENTED",
+
+  "title": "EC-020 SitC Pre-EC018-Wiring Guardrails Implementation",
+  "summary": "Implementation of 3 CEO-mandated guardrails before EC-018 hypothesis validation wiring",
+
+  "directive_reference": {
+    "original_directive": "CEO DIRECTIVE: Pre-EC018-Wiring Guardrails (Norwegian: 2025-12-17)",
+    "requirements": [
+      "Guardrail 1: Separate PLAN VALIDATION from HYPOTHESIS GENERATION",
+      "Guardrail 2: Implement Plan Confidence Envelope (HIGH/MEDIUM/LOW)",
+      "Guardrail 3: No-Search Controlled Abort Test"
+    ]
+  },
+
+  "guardrail_1_role_separation": {
+    "name": "PLAN VALIDATION vs HYPOTHESIS GENERATION",
+    "status": "IMPLEMENTED",
+    "principle": "SitC is a FILTER, not a CO-THINKER",
+    "implementation": {
+      "class": "SitCRole",
+      "location": "ios020_sitc_planner.py:256-310",
+      "allowed_operations": [
+        "VALIDATE_STRUCTURE",
+        "IDENTIFY_MISSING_EVIDENCE",
+        "FLAG_UNCERTAINTY",
+        "DECOMPOSE_INTO_CLAIMS",
+        "VERIFY_CLAIMS",
+        "SYNTHESIZE_EVIDENCE",
+        "ABORT_PLAN"
+      ],
+      "prohibited_operations": [
+        "PROPOSE_HYPOTHESIS",
+        "MODIFY_HYPOTHESIS",
+        "REWRITE_SEMANTICS",
+        "ADJUST_THRESHOLDS",
+        "ADJUST_PARAMETERS",
+        "GENERATE_SIGNAL",
+        "TRIGGER_EXECUTION",
+        "TRIGGER_LEARNING"
+      ],
+      "enforcement": "SitCRoleViolation exception on prohibited operation"
+    },
+    "audit_test": {
+      "class": "SteeringLeakageAuditor",
+      "location": "ios020_sitc_planner.py:1288-1423",
+      "cli_command": "--steering-audit",
+      "test_result": {
+        "test_id": "STEERING_AUDIT_20251217162642",
+        "passed": true,
+        "plans_generated": 3,
+        "outputs_consistent": true,
+        "deviation_detected": false
+      }
+    }
+  },
+
+  "guardrail_2_confidence_envelope": {
+    "name": "Plan Confidence Envelope",
+    "status": "IMPLEMENTED",
+    "principle": "Machine-readable filter response for EC-018",
+    "implementation": {
+      "classes": [
+        {
+          "name": "PlanConfidence",
+          "type": "Enum",
+          "location": "ios020_sitc_planner.py:318-330",
+          "values": ["HIGH", "MEDIUM", "LOW"]
+        },
+        {
+          "name": "AbortReason",
+          "type": "Enum",
+          "location": "ios020_sitc_planner.py:332-342",
+          "values": [
+            "NONE",
+            "DEFCON_BLOCKED",
+            "ECONOMIC_LIMIT",
+            "NO_SEARCH_AVAILABLE",
+            "IKEA_EXTERNAL_REQUIRED",
+            "EVIDENCE_UNAVAILABLE",
+            "TIMEOUT",
+            "MANUAL_ABORT"
+          ]
+        },
+        {
+          "name": "PlanConfidenceEnvelope",
+          "type": "dataclass",
+          "location": "ios020_sitc_planner.py:344-388",
+          "fields": [
+            "plan_id",
+            "plan_confidence",
+            "failure_reason",
+            "blocked_by_defcon",
+            "abort_reason",
+            "evidence_completeness",
+            "missing_evidence_types",
+            "uncertainty_flags",
+            "state_snapshot_hash",
+            "nodes_completed",
+            "nodes_total"
+          ]
+        }
+      ],
+      "ec018_behavior": {
+        "HIGH": "Allow normal flow",
+        "MEDIUM": "Log only, do not escalate",
+        "LOW": "Reject hypothesis"
+      },
+      "methods": [
+        "should_reject() -> bool",
+        "should_log_only() -> bool",
+        "can_proceed() -> bool"
+      ]
+    }
+  },
+
+  "guardrail_3_no_search_abort": {
+    "name": "No-Search Controlled Abort",
+    "status": "IMPLEMENTED",
+    "principle": "System prefers silence over error",
+    "implementation": {
+      "class": "SitCPlannerWithGuardrails",
+      "location": "ios020_sitc_planner.py:960-1267",
+      "key_methods": [
+        {
+          "name": "set_search_blocked()",
+          "purpose": "Block SEARCH node execution for testing"
+        },
+        {
+          "name": "set_ikea_force_external()",
+          "purpose": "Force IKEA EXTERNAL_REQUIRED for testing"
+        },
+        {
+          "name": "evaluate_plan_confidence()",
+          "purpose": "Return PlanConfidenceEnvelope for plan"
+        },
+        {
+          "name": "execute_with_abort_on_no_search()",
+          "purpose": "Execute with controlled abort if search unavailable"
+        },
+        {
+          "name": "run_no_search_test()",
+          "purpose": "CEO Directive Guardrail 3 test harness"
+        }
+      ],
+      "cli_command": "--no-search-test"
+    },
+    "test_result": {
+      "test_id": "NO_SEARCH_TEST_20251217162332",
+      "passed": true,
+      "termination_reason": "NO_SEARCH_AVAILABLE",
+      "nodes_before_abort": 5,
+      "abort_node_created": true,
+      "fallback_attempted": false,
+      "heuristic_used": false,
+      "confidence": "LOW",
+      "evidence_completeness": 0.50
+    },
+    "expected_behavior": {
+      "search_blocked": true,
+      "ikea_external_required": true,
+      "result": "SitC terminates plan in controlled manner",
+      "ec018_receives": "PLAN_ABORTED_NO_EVIDENCE",
+      "fallback": "NONE",
+      "heuristics": "NONE"
+    }
+  },
+
+  "database_integration": {
+    "node_status_enum_updated": true,
+    "status_values": ["PENDING", "VERIFIED", "FAILED", "SKIPPED", "ABORTED"],
+    "constraint_compliance": {
+      "chain_of_query_verification_status_check": "COMPLIANT",
+      "chain_of_query_node_type_check": "COMPLIANT"
+    }
+  },
+
+  "cli_extensions": {
+    "new_arguments": [
+      "--no-search-test: Run Guardrail 3 test",
+      "--steering-audit: Run Guardrail 1 audit",
+      "--test-hypothesis: Hypothesis for tests",
+      "--variations: Number of plan variations for steering audit"
+    ]
+  },
+
+  "validation_summary": {
+    "guardrail_1_role_separation": "PASS",
+    "guardrail_1_steering_audit": "PASS",
+    "guardrail_2_confidence_envelope": "PASS",
+    "guardrail_3_no_search_abort": "PASS",
+    "database_constraints": "PASS",
+    "overall": "ALL GUARDRAILS IMPLEMENTED AND TESTED"
+  },
+
+  "authorization_for_ec018_wiring": {
+    "status": "APPROVED",
+    "conditions": [
+      "All guardrail tests PASS",
+      "No steering leakage detected",
+      "Controlled abort works correctly",
+      "Confidence envelope provides machine-readable filter"
+    ],
+    "next_step": "EC-018 hypothesis validation wiring may proceed"
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T16:26:00Z"
+}

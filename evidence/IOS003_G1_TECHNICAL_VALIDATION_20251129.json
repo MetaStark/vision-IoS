@@ -1,0 +1,157 @@
+{
+  "evidence_type": "G1_TECHNICAL_VALIDATION",
+  "evidence_id": "IOS003-G1-TECH-20251129-150000",
+  "timestamp": "2025-11-29T15:00:00.000Z",
+  "executed_by": "STIG",
+  "authority_chain": "CEO -> ADR-004 (G1 Gate)",
+  "contract_reference": "EC-003_2026_PRODUCTION",
+
+  "ios_module": {
+    "ios_id": "IoS-003",
+    "title": "Meta-Perception Engine (Market Brain)",
+    "version": "2026.DRAFT.1",
+    "status": "DRAFT",
+    "owner_role": "LARS",
+    "content_hash": "ac388194264875768dd19bba19d05ec606ac188c49b791ce7bf7b7224e21435c"
+  },
+
+  "g1_technical_checks": {
+    "schema_structure": {
+      "status": "PASS",
+      "tables_validated": 3,
+      "details": {
+        "regime_daily": {"column_count": 19, "validated": true},
+        "state_vectors": {"column_count": 23, "validated": true},
+        "anomaly_log": {"column_count": 23, "validated": true}
+      }
+    },
+
+    "check_constraints": {
+      "status": "PASS",
+      "total_constraints": 11,
+      "details": {
+        "regime_daily": {
+          "regime_classification_check": "VALID - 9 classifications",
+          "regime_confidence_check": "VALID - [0.0, 1.0]",
+          "anomaly_severity_check": "VALID - INFO/WARN/CRITICAL"
+        },
+        "state_vectors": {
+          "trend_score_check": "VALID - [-1.0, 1.0]",
+          "momentum_score_check": "VALID - [-1.0, 1.0]",
+          "volatility_score_check": "VALID - [0.0, 1.0]",
+          "confidence_score_check": "VALID - [0.0, 1.0]"
+        },
+        "anomaly_log": {
+          "anomaly_type_check": "VALID - 9 types",
+          "severity_check": "VALID - INFO/WARN/CRITICAL",
+          "perception_impact_check": "VALID - NONE/DEGRADED/SUSPENDED",
+          "resolution_status_check": "VALID - 4 statuses"
+        }
+      }
+    },
+
+    "foreign_keys": {
+      "status": "PASS",
+      "constraints_validated": 1,
+      "details": {
+        "state_vectors_regime_daily_id_fkey": "VALID - references regime_daily(id)"
+      }
+    },
+
+    "indexes": {
+      "status": "PASS",
+      "total_indexes": 15,
+      "performance_indexes": [
+        "idx_regime_daily_asset_ts",
+        "idx_regime_daily_regime",
+        "idx_regime_daily_anomaly",
+        "idx_state_vectors_asset_ts",
+        "idx_state_vectors_regime",
+        "idx_state_vectors_confidence",
+        "idx_anomaly_log_asset_date",
+        "idx_anomaly_log_type",
+        "idx_anomaly_log_severity",
+        "idx_anomaly_log_open"
+      ],
+      "unique_constraints": [
+        "regime_daily_pkey",
+        "regime_daily_asset_id_timestamp_key",
+        "state_vectors_pkey",
+        "state_vectors_asset_id_timestamp_key",
+        "anomaly_log_pkey"
+      ]
+    },
+
+    "dependency_validation": {
+      "status": "PASS",
+      "IoS-001": {
+        "status": "ACTIVE",
+        "version": "2026.PROD.2",
+        "canonical_assets": 4,
+        "price_rows": 11187
+      },
+      "IoS-002": {
+        "status": "ACTIVE",
+        "version": "2026.PROD.1",
+        "indicator_momentum": 11135,
+        "indicator_trend": 11187,
+        "indicator_volatility": 11111,
+        "indicator_ichimoku": 11155,
+        "total_indicator_rows": 44588
+      }
+    },
+
+    "defcon_status": {
+      "status": "PASS",
+      "current_defcon": "GREEN",
+      "is_active": true,
+      "api_budget_pct": "100.00",
+      "discrepancy_score": "0.0000",
+      "error_rate_pct": "0.00",
+      "active_circuit_breakers": 0
+    },
+
+    "hash_chain_integrity": {
+      "status": "PASS",
+      "total_chains": 131,
+      "verified_chains": 131,
+      "broken_chains": 0,
+      "chain_types": {
+        "GENESIS_RECONCILED": {"count": 126, "verified": 126},
+        "IOS_MODULE": {"count": 2, "verified": 2},
+        "IOS_MODULE_CORRECTION": {"count": 1, "verified": 1},
+        "OMEGA_CHECK": {"count": 1, "verified": 1},
+        "BOARDROOM_DIRECTIVE": {"count": 1, "verified": 1}
+      }
+    },
+
+    "lineage_columns": {
+      "status": "PASS",
+      "required_columns_present": {
+        "engine_version": true,
+        "perception_model_version": true,
+        "formula_hash": true,
+        "lineage_hash": true,
+        "hash_prev": true,
+        "hash_self": true
+      }
+    }
+  },
+
+  "g1_verdict": {
+    "schema_structure": "PASS",
+    "check_constraints": "PASS",
+    "foreign_keys": "PASS",
+    "indexes": "PASS",
+    "dependencies": "PASS",
+    "defcon_status": "PASS",
+    "hash_chains": "PASS",
+    "lineage_columns": "PASS"
+  },
+
+  "g1_result": "PASS",
+  "g1_passed_at": "2025-11-29T15:00:00.000Z",
+  "next_gate": "G2_GOVERNANCE_REVIEW",
+
+  "hash_chain_id": "IOS003-G1-TECH-20251129-150000-STIG"
+}

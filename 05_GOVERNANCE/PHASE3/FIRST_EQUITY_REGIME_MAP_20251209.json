@@ -1,0 +1,151 @@
+{
+  "directive": "CEO DIRECTIVE: FIRST EQUITY REGIME MAP",
+  "document": "FIRST_EQUITY_REGIME_MAP",
+  "status": "ACTIVE",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:00:00Z",
+
+  "ios003_integration": {
+    "description": "Full integration of equities into market perception",
+    "tables_populated": [
+      "fhq_research.regime_predictions",
+      "fhq_perception.regime_daily"
+    ],
+    "model_id": "ios003_equity_regime_v1",
+    "engine_version": "ios003_v1.0"
+  },
+
+  "equity_regime_state_map": {
+    "evaluation_date": "2025-12-09",
+    "AAPL": {
+      "technical_regime": "BULL",
+      "sovereign_regime": "BULL",
+      "regime_confidence": 0.95,
+      "volatility_regime": "MEDIUM",
+      "quad_hash": "9881ae0901cdc512",
+      "scores": {"bull": 4, "bear": 0},
+      "key_indicators": {
+        "rsi_14": 66.57,
+        "macd": 4.15,
+        "macd_histogram": -0.42,
+        "bb_width": 0.082,
+        "trend_structure": "EMA9>EMA50>EMA200"
+      },
+      "interpretation": "Strong uptrend with healthy momentum. Minor MACD divergence (histogram turning negative) suggests watching for potential consolidation."
+    },
+    "MSFT": {
+      "technical_regime": "BEAR",
+      "sovereign_regime": "BEAR",
+      "regime_confidence": 0.95,
+      "volatility_regime": "MEDIUM",
+      "quad_hash": "4555722162d38780",
+      "scores": {"bull": 0, "bear": 2},
+      "key_indicators": {
+        "rsi_14": 47.19,
+        "macd": -6.22,
+        "macd_histogram": 1.28,
+        "bb_width": 0.101,
+        "trend_structure": "MIXED"
+      },
+      "interpretation": "Bearish momentum with negative MACD. Histogram turning positive indicates potential bottoming. Below key EMAs."
+    },
+    "NVDA": {
+      "technical_regime": "NEUTRAL",
+      "sovereign_regime": "NEUTRAL",
+      "regime_confidence": 0.60,
+      "volatility_regime": "MEDIUM",
+      "quad_hash": "9aaa0dc82f339ddd",
+      "scores": {"bull": 1, "bear": 2},
+      "key_indicators": {
+        "rsi_14": 57.53,
+        "macd": -1.28,
+        "macd_histogram": 0.62,
+        "bb_width": 0.106,
+        "trend_structure": "MIXED"
+      },
+      "interpretation": "Mixed signals. RSI neutral-bullish, MACD negative but histogram turning positive (potential reversal). Medium volatility suggests indecision."
+    },
+    "QQQ": {
+      "technical_regime": "BULL",
+      "sovereign_regime": "BULL",
+      "regime_confidence": 0.95,
+      "volatility_regime": "LOW",
+      "quad_hash": "70de78a23db9a733",
+      "scores": {"bull": 6, "bear": 0},
+      "key_indicators": {
+        "rsi_14": 72.16,
+        "macd": 3.84,
+        "macd_histogram": 1.89,
+        "bb_width": 0.080,
+        "trend_structure": "EMA9>EMA50>EMA200"
+      },
+      "interpretation": "Strong bullish regime. RSI overbought, positive MACD with expanding histogram. Low volatility supports trend continuation."
+    },
+    "SPY": {
+      "technical_regime": "BULL",
+      "sovereign_regime": "BULL",
+      "regime_confidence": 0.95,
+      "volatility_regime": "LOW",
+      "quad_hash": "2ffa313bb85d6880",
+      "scores": {"bull": 6, "bear": 0},
+      "key_indicators": {
+        "rsi_14": 71.99,
+        "macd": 3.58,
+        "macd_histogram": 1.27,
+        "bb_width": 0.061,
+        "trend_structure": "EMA9>EMA50>EMA200"
+      },
+      "interpretation": "Strong bullish regime. RSI overbought, positive MACD. Lowest volatility in universe - orderly uptrend."
+    }
+  },
+
+  "regime_summary": {
+    "bull_count": 3,
+    "bear_count": 1,
+    "neutral_count": 1,
+    "dominant_regime": "BULL",
+    "average_confidence": 0.88,
+    "bull_assets": ["AAPL", "QQQ", "SPY"],
+    "bear_assets": ["MSFT"],
+    "neutral_assets": ["NVDA"]
+  },
+
+  "cross_asset_consistency": {
+    "global_regime_state": {
+      "current_regime": "BULL",
+      "confidence": 0.75,
+      "source": "LINE.live_snapshot"
+    },
+    "equity_alignment": {
+      "aligned_with_global": true,
+      "equity_bull_ratio": 0.60,
+      "note": "3/5 equities in BULL regime, consistent with global BULL state"
+    },
+    "crypto_comparison": {
+      "crypto_regime_data_available": false,
+      "note": "No crypto regime predictions in current period - equity baseline established independently"
+    }
+  },
+
+  "regime_classification_methodology": {
+    "indicators_used": ["RSI_14", "MACD", "MACD_Histogram", "BB_Width", "EMA_Structure"],
+    "scoring_logic": {
+      "rsi_thresholds": {"overbought": 70, "bullish": 55, "bearish": 45, "oversold": 30},
+      "macd_scoring": "Positive MACD + positive histogram = 2 bull points",
+      "ema_structure": "EMA9>EMA50>EMA200 = 2 bull points",
+      "volatility_bands": {"high": ">0.15", "medium": "0.08-0.15", "low": "<0.08"}
+    },
+    "confidence_calculation": "min(0.95, score / total + 0.3)"
+  },
+
+  "downstream_impact": {
+    "ios004_exposure": "Regime-based exposure targets generated",
+    "ios005_skill": "Skill baselines initialized for tracking",
+    "ios007_alpha": "231 causal edges active for equities"
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "First Equity Regime Map complete. 5 equities classified: 3 BULL, 1 BEAR, 1 NEUTRAL. Average confidence 88%. Aligned with global BULL regime. IoS-003 perception infrastructure operational."
+  }
+}

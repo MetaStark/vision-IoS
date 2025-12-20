@@ -1,0 +1,373 @@
+{
+  "spec_id": "TCS-v1",
+  "spec_name": "FjordHQ Telemetry Contract Specification",
+  "version": "1.0.0",
+  "status": "DESIGN_ONLY",
+  "authority": "CEO Directive - PHASE 2",
+  "compliance": ["ADR-001", "ADR-003", "ADR-011", "ADR-012", "ADR-013", "ADR-018", "ADR-019", "ADR-020", "ADR-021"],
+  "created_by": "STIG",
+  "created_at": "2025-12-10T14:15:00Z",
+
+  "preamble": {
+    "purpose": "Define the canonical envelope that every LLM call must emit for governance, economic, and cognitive tracking",
+    "analogy": "The LLM-equivalent of FIX protocol for FjordHQ",
+    "principle": "No LLM call shall execute without emitting a conformant telemetry envelope"
+  },
+
+  "telemetry_envelope": {
+    "schema_version": "1.0.0",
+    "envelope_id_format": "UUID v4",
+
+    "mandatory_fields": {
+      "envelope_id": {
+        "type": "UUID",
+        "nullable": false,
+        "description": "Unique identifier for this telemetry envelope"
+      },
+      "agent_id": {
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "description": "Agent making the LLM call (FINN, CRIO, LARS, etc.)",
+        "fk": "fhq_governance.agent_contracts.agent_id"
+      },
+      "task_name": {
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "description": "Human-readable task identifier"
+      },
+      "task_type": {
+        "type": "ENUM",
+        "values": ["RESEARCH", "SYNTHESIS", "ANALYSIS", "ORCHESTRATION", "VERIFICATION", "CLASSIFICATION"],
+        "nullable": false,
+        "description": "Category of task being performed"
+      },
+      "provider": {
+        "type": "VARCHAR(50)",
+        "nullable": false,
+        "description": "LLM provider (DEEPSEEK, ANTHROPIC, OPENAI, GEMINI)",
+        "constraint": "MUST match fhq_governance.api_budget_log.provider_name"
+      },
+      "model": {
+        "type": "VARCHAR(100)",
+        "nullable": false,
+        "description": "Specific model used (deepseek-reasoner, deepseek-chat, claude-3-opus, etc.)"
+      },
+      "tokens_in": {
+        "type": "INTEGER",
+        "nullable": false,
+        "default": 0,
+        "description": "Input/prompt tokens consumed"
+      },
+      "tokens_out": {
+        "type": "INTEGER",
+        "nullable": false,
+        "default": 0,
+        "description": "Output/completion tokens generated"
+      },
+      "latency_ms": {
+        "type": "INTEGER",
+        "nullable": false,
+        "description": "Wall-clock time from request to final response in milliseconds"
+      },
+      "cost_usd": {
+        "type": "DECIMAL(10,6)",
+        "nullable": false,
+        "description": "Calculated cost in USD based on provider pricing",
+        "calculation": "(tokens_in * input_rate) + (tokens_out * output_rate)"
+      },
+      "timestamp_utc": {
+        "type": "TIMESTAMPTZ",
+        "nullable": false,
+        "description": "UTC timestamp when LLM call initiated"
+      },
+      "correlation_id": {
+        "type": "UUID",
+        "nullable": true,
+        "description": "Links related LLM calls (e.g., multi-hop research chain)"
+      },
+      "governance_context_hash": {
+        "type": "CHAR(64)",
+        "nullable": false,
+        "description": "SHA-256 hash of governance context per IoS-013 Truth Gateway",
+        "source": "IoS-013 Truth Gateway hydration"
+      },
+      "retry_count": {
+        "type": "INTEGER",
+        "nullable": false,
+        "default": 0,
+        "description": "Number of retry attempts for this call"
+      },
+      "fallback_used": {
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": false,
+        "description": "Whether fallback provider/model was used"
+      },
+      "error_type": {
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "Error classification if call failed"
+      },
+      "error_payload": {
+        "type": "JSONB",
+        "nullable": true,
+        "description": "Structured error details"
+      }
+    },
+
+    "cognitive_link_fields": {
+      "_section_authority": "ADR-021 Cognitive Engine Architecture",
+      "cognitive_parent_id": {
+        "type": "UUID",
+        "nullable": true,
+        "description": "Parent cognitive node in reasoning chain",
+        "fk": "fhq_cognition.cognitive_nodes.cognitive_node_id"
+      },
+      "protocol_ref": {
+        "type": "UUID",
+        "nullable": true,
+        "description": "Research protocol this call belongs to",
+        "fk": "fhq_cognition.research_protocols.protocol_id"
+      },
+      "cognitive_modality": {
+        "type": "ENUM",
+        "values": ["search", "synthesis", "causal", "verification", "perception", "intent"],
+        "nullable": true,
+        "description": "Cognitive modality classification per ADR-021",
+        "enum_source": "fhq_cognition.cognitive_modality"
+      }
+    },
+
+    "streaming_mode_fields": {
+      "_section_authority": "DeepSeek Reasoner streaming requirement",
+      "stream_mode": {
+        "type": "BOOLEAN",
+        "nullable": false,
+        "default": false,
+        "description": "Whether response was streamed token-by-token"
+      },
+      "stream_chunks": {
+        "type": "INTEGER",
+        "nullable": true,
+        "description": "Number of chunks received in streaming mode"
+      },
+      "stream_token_accumulator": {
+        "type": "INTEGER",
+        "nullable": true,
+        "description": "Running total of tokens accumulated during stream"
+      },
+      "stream_first_token_ms": {
+        "type": "INTEGER",
+        "nullable": true,
+        "description": "Time to first token in milliseconds (TTFT)"
+      }
+    },
+
+    "audit_fields": {
+      "hash_chain_id": {
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "ADR-013 hash chain identifier for lineage"
+      },
+      "signature_id": {
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "Ed25519 signature reference for critical operations"
+      },
+      "created_at": {
+        "type": "TIMESTAMPTZ",
+        "nullable": false,
+        "default": "NOW()",
+        "description": "Envelope creation timestamp"
+      }
+    }
+  },
+
+  "error_envelope_spec": {
+    "_section_purpose": "Standardized, schema-valid error structures",
+
+    "timeout_error": {
+      "error_type": "TIMEOUT_ERROR",
+      "schema": {
+        "timeout_ms": "INTEGER - configured timeout",
+        "elapsed_ms": "INTEGER - actual elapsed time",
+        "provider": "VARCHAR - provider that timed out",
+        "model": "VARCHAR - model that timed out",
+        "partial_response": "TEXT - any partial response received",
+        "retry_eligible": "BOOLEAN - whether retry is permitted"
+      }
+    },
+
+    "provider_error": {
+      "error_type": "PROVIDER_ERROR",
+      "schema": {
+        "http_status": "INTEGER - HTTP status code",
+        "error_code": "VARCHAR - provider-specific error code",
+        "error_message": "TEXT - provider error message",
+        "rate_limited": "BOOLEAN - whether rate limit hit",
+        "retry_after_seconds": "INTEGER - suggested retry delay",
+        "quota_remaining": "INTEGER - remaining quota if known"
+      }
+    },
+
+    "hallucination_block_event": {
+      "error_type": "HALLUCINATION_BLOCK",
+      "authority": "ADR-020, EC-022 (IKEA)",
+      "schema": {
+        "block_reason": "VARCHAR - why blocked",
+        "confidence_score": "DECIMAL - IKEA confidence that answer was hallucinated",
+        "knowledge_boundary_id": "UUID - FK to fhq_cognition.knowledge_boundaries",
+        "boundary_type": "ENUM - PARAMETRIC, EXTERNAL_REQUIRED, HYBRID",
+        "recommended_action": "VARCHAR - search, verify, or abort",
+        "blocked_response_hash": "CHAR(64) - hash of blocked response for audit"
+      }
+    },
+
+    "ikea_boundary_violation": {
+      "error_type": "IKEA_BOUNDARY_VIOLATION",
+      "authority": "EC-022 (IKEA - Chief Knowledge Boundary Officer)",
+      "schema": {
+        "violation_type": "ENUM - GUESSED_WHEN_SHOULD_SEARCH, SEARCHED_WHEN_ALREADY_KNEW",
+        "boundary_id": "UUID - boundary definition",
+        "parametric_confidence": "DECIMAL - confidence in parametric knowledge",
+        "external_required": "BOOLEAN - whether external lookup mandated",
+        "cost_of_violation": "DECIMAL - estimated cost of incorrect action",
+        "ikea_recommendation": "TEXT - what IKEA suggests"
+      }
+    },
+
+    "diminishing_returns_termination": {
+      "error_type": "DIMINISHING_RETURNS_TERMINATION",
+      "authority": "EC-021 (InForage - Chief Information Economist)",
+      "schema": {
+        "termination_reason": "ENUM - from fhq_cognition.forage_termination",
+        "scent_score": "DECIMAL - information scent at termination",
+        "cost_so_far": "DECIMAL - tokens/cost consumed",
+        "expected_value_remaining": "DECIMAL - InForage's estimate of remaining value",
+        "paths_explored": "INTEGER - number of search paths attempted",
+        "paths_abandoned": "INTEGER - paths terminated early",
+        "foraging_efficiency": "DECIMAL - value gained / cost spent"
+      }
+    },
+
+    "budget_exceeded_error": {
+      "error_type": "BUDGET_EXCEEDED",
+      "authority": "ADR-012 Economic Safety",
+      "schema": {
+        "budget_type": "ENUM - DAILY, HOURLY, PER_TASK, PER_AGENT",
+        "budget_limit": "DECIMAL - configured limit",
+        "current_usage": "DECIMAL - usage before this call",
+        "requested_estimate": "DECIMAL - estimated cost of blocked call",
+        "provider": "VARCHAR - provider hitting budget",
+        "reset_time": "TIMESTAMPTZ - when budget resets"
+      }
+    },
+
+    "governance_block_error": {
+      "error_type": "GOVERNANCE_BLOCK",
+      "authority": "ADR-018 ASRP, ADR-019 Application Layer",
+      "schema": {
+        "block_source": "ENUM - ASRP, VEGA, DEFCON, TRUTH_GATEWAY",
+        "block_reason": "TEXT - why blocked",
+        "asrp_state": "VARCHAR - current ASRP state",
+        "defcon_level": "INTEGER - current DEFCON if relevant",
+        "truth_vector_drift": "DECIMAL - drift if truth gateway issue",
+        "remediation_required": "BOOLEAN - whether manual intervention needed"
+      }
+    }
+  },
+
+  "pricing_table": {
+    "_section_purpose": "Canonical pricing for cost calculation",
+    "providers": {
+      "DEEPSEEK": {
+        "deepseek-chat": {
+          "input_per_1k": 0.00014,
+          "output_per_1k": 0.00028,
+          "currency": "USD"
+        },
+        "deepseek-reasoner": {
+          "input_per_1k": 0.00055,
+          "output_per_1k": 0.00219,
+          "currency": "USD",
+          "note": "Includes reasoning tokens"
+        }
+      },
+      "ANTHROPIC": {
+        "claude-3-opus": {
+          "input_per_1k": 0.015,
+          "output_per_1k": 0.075,
+          "currency": "USD"
+        },
+        "claude-3-sonnet": {
+          "input_per_1k": 0.003,
+          "output_per_1k": 0.015,
+          "currency": "USD"
+        },
+        "claude-3-haiku": {
+          "input_per_1k": 0.00025,
+          "output_per_1k": 0.00125,
+          "currency": "USD"
+        }
+      },
+      "OPENAI": {
+        "gpt-4-turbo": {
+          "input_per_1k": 0.01,
+          "output_per_1k": 0.03,
+          "currency": "USD"
+        },
+        "gpt-4o": {
+          "input_per_1k": 0.005,
+          "output_per_1k": 0.015,
+          "currency": "USD"
+        }
+      },
+      "GEMINI": {
+        "gemini-1.5-pro": {
+          "input_per_1k": 0.00125,
+          "output_per_1k": 0.005,
+          "currency": "USD"
+        }
+      }
+    }
+  },
+
+  "validation_rules": {
+    "envelope_completeness": {
+      "rule": "All mandatory fields must be non-null",
+      "enforcement": "STRICT - reject incomplete envelopes"
+    },
+    "cost_calculation": {
+      "rule": "cost_usd must equal (tokens_in/1000 * input_rate) + (tokens_out/1000 * output_rate)",
+      "enforcement": "STRICT - recalculate and flag discrepancies"
+    },
+    "governance_hash": {
+      "rule": "governance_context_hash must match IoS-013 Truth Gateway computation",
+      "enforcement": "STRICT - block on mismatch"
+    },
+    "temporal_ordering": {
+      "rule": "timestamp_utc must be within 60 seconds of server time",
+      "enforcement": "WARN - log anomalies, allow with flag"
+    },
+    "token_sanity": {
+      "rule": "tokens_out must be > 0 for successful non-streaming calls",
+      "enforcement": "WARN - flag potential streaming aggregation failures"
+    }
+  },
+
+  "write_targets": {
+    "primary": "fhq_governance.llm_routing_log",
+    "cost_ledger": "fhq_governance.telemetry_cost_ledger",
+    "budget_increment": "fhq_governance.api_budget_log",
+    "task_enrichment": "fhq_governance.agent_task_log",
+    "cognitive_link": "fhq_cognition.lineage_log",
+    "error_log": "fhq_governance.telemetry_errors"
+  },
+
+  "design_status": {
+    "implementation": "NOT_PERMITTED",
+    "phase": "PHASE_2_DESIGN_ONLY",
+    "next_phase": "PHASE_3_IMPLEMENTATION",
+    "ceo_authorization_required": true
+  }
+}

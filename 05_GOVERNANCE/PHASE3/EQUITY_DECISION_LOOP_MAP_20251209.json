@@ -1,0 +1,122 @@
+{
+  "directive": "CEO DIRECTIVE: EQUITY DECISION LOOP MAP",
+  "document": "EQUITY_DECISION_LOOP_MAP",
+  "status": "ACTIVE",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:18:22Z",
+
+  "ios008_integration": {
+    "description": "Decision loop pathway enabled for equity domain",
+    "table": "fhq_governance.decision_log",
+    "decision_type": "EQUITY_ALLOCATION",
+    "engine_version": "ios008_v1.0"
+  },
+
+  "decision_entry": {
+    "decision_id": "6d995c05-65bd-4530-819e-01eb1b0a9ef8",
+    "sequence_number": 426,
+    "global_regime": "BULL",
+    "defcon_level": 5,
+    "system_skill_score": 0.50,
+    "execution_state": "PENDING"
+  },
+
+  "asset_directives": {
+    "AAPL": {
+      "directive": "BUY",
+      "probability": 0.8204,
+      "exposure_target": 0.0475,
+      "readiness_mode": true,
+      "unbounded_exposure_blocked": true
+    },
+    "MSFT": {
+      "directive": "REDUCE",
+      "probability": 0.2485,
+      "exposure_target": 0.0,
+      "readiness_mode": true,
+      "unbounded_exposure_blocked": true
+    },
+    "NVDA": {
+      "directive": "HOLD",
+      "probability": 0.4744,
+      "exposure_target": 0.0125,
+      "readiness_mode": true,
+      "unbounded_exposure_blocked": true
+    },
+    "QQQ": {
+      "directive": "BUY",
+      "probability": 0.8483,
+      "exposure_target": 0.0475,
+      "readiness_mode": true,
+      "unbounded_exposure_blocked": true
+    },
+    "SPY": {
+      "directive": "BUY",
+      "probability": 0.8475,
+      "exposure_target": 0.0475,
+      "readiness_mode": true,
+      "unbounded_exposure_blocked": true
+    }
+  },
+
+  "allocation_calculation": {
+    "base_allocation": 0.1550,
+    "regime_scalar": 1.0,
+    "causal_vector": 1.0,
+    "skill_damper": 1.0,
+    "warmup_multiplier": 0.25,
+    "final_allocation": 0.0388,
+    "cash_weight": 0.9612
+  },
+
+  "readiness_mode_configuration": {
+    "status": "ACTIVE",
+    "warmup_period": {
+      "start": "2025-12-09T12:00:00Z",
+      "end": "2025-12-11T12:00:00Z",
+      "duration_hours": 48
+    },
+    "constraints": {
+      "unbounded_exposure_blocked": true,
+      "execution_mode": "OBSERVATION_ONLY",
+      "max_position_size": "25% of normal",
+      "signal_executable": false
+    },
+    "escalation_criteria": {
+      "minimum_forecasts": 10,
+      "skill_score_threshold": 0.55,
+      "no_critical_alerts": true
+    }
+  },
+
+  "directive_logic": {
+    "BUY": "probability > 0.55",
+    "HOLD": "0.45 <= probability <= 0.55",
+    "REDUCE": "probability < 0.45"
+  },
+
+  "alpha_signals_generated": {
+    "total_signals": 5,
+    "executable": false,
+    "blocked_reason": "READINESS_MODE_48H",
+    "signal_strengths": {
+      "AAPL": 0.641,
+      "MSFT": -0.503,
+      "NVDA": -0.051,
+      "QQQ": 0.697,
+      "SPY": 0.695
+    }
+  },
+
+  "governance_compliance": {
+    "decision_ttl": "15 minutes",
+    "hash_chain_id": "GENESIS_EQUITY_P3",
+    "signature_agent": "STIG",
+    "adr_compliance": ["ADR-007", "ADR-008", "ADR-012", "ADR-016"]
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "Equity decision loop pathway enabled. Decision entry created (seq #426) with 5 asset directives (3 BUY, 1 HOLD, 1 REDUCE). Readiness mode active for 48h warmup. All exposure bounded at 25% of normal. Alpha signals generated but not executable. IoS-008 integration complete."
+  }
+}

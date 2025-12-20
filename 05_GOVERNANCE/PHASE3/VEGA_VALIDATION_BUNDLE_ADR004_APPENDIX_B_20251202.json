@@ -1,0 +1,148 @@
+{
+  "bundle_type": "VEGA_VALIDATION_REQUEST",
+  "bundle_id": "VVB-ADR004-APPB-20251202",
+  "created_at": "2025-12-02T15:45:00.000Z",
+  "created_by": "STIG",
+  "authority_chain": "CEO -> VEGA",
+
+  "directive": {
+    "type": "CEO_DIRECTIVE",
+    "issued_at": "2025-12-02T15:40:00.000Z",
+    "subject": "Mandatory Attestation of Governance State Taxonomy",
+    "deadline": "24h",
+    "defcon_exception": "ORANGE or higher suspends deadline"
+  },
+
+  "target_document": {
+    "document_id": "ADR-004_Appendix_B",
+    "title": "Governance State Taxonomy",
+    "version": "2026.PROD.2",
+    "file_path": "01_ADR/ADR-004_Appendix_B_Governance_State_Taxonomy.md",
+    "sha256_hash": "e71b65fa47a026794274d05386362a511955c3a1009048776c3fb17001f51b4e",
+    "parent_adr": "ADR-004",
+    "author": "STIG"
+  },
+
+  "validation_requirements": {
+    "V1_semantic_attestation": {
+      "description": "Validate semantic correctness of all 12 governance_state values",
+      "states_to_validate": [
+        "G0_SUBMITTED",
+        "G1_VALIDATED",
+        "G2_COMPLETE",
+        "G3_AUDITED",
+        "G4_ACTIVE",
+        "G4_CONSTITUTIONAL",
+        "G4_CANONICAL",
+        "G4_CONDITIONAL",
+        "G4_LEGACY_ACTIVE",
+        "CONSTITUTIONAL_ACTIVE",
+        "SUSPENDED",
+        "DEPRECATED"
+      ],
+      "check": "Each state has clear, non-overlapping semantics"
+    },
+
+    "V2_transition_rules": {
+      "description": "Validate transition rules against ADR-004 Change Gates",
+      "adr_reference": "ADR-004 Section 3 (G0-G4)",
+      "checks": [
+        "Forward progression G0->G1->G2->G3->G4 enforced",
+        "No gate skipping possible",
+        "G4 overwrite rule (ADR-004 Section 240) correctly stated"
+      ]
+    },
+
+    "V3_ecf2_compliance": {
+      "description": "Verify ECF-2 Tier-2 transition restrictions",
+      "adr_reference": "ADR-014 ECF-2",
+      "checks": [
+        "Tier-2 Sub-Executives cannot trigger G2 transitions",
+        "Tier-2 Sub-Executives cannot trigger G3 transitions",
+        "Tier-2 Sub-Executives cannot trigger G4 transitions",
+        "Actor constraints matrix (Section 3.2) is complete and correct"
+      ]
+    },
+
+    "V4_legacy_state_exception": {
+      "description": "Audit Legacy State Exception against ADR-004 Section 348",
+      "adr_reference": "ADR-004 Section 348",
+      "checks": [
+        "Exception is properly justified",
+        "G4_LEGACY_ACTIVE is terminal (no forward transitions)",
+        "Cannot be assigned to new modules",
+        "Requires full G1-G4 re-certification to modify",
+        "CEO acknowledgment requirement documented"
+      ]
+    },
+
+    "V5_actor_constraints": {
+      "description": "Verify actor constraints in Section 3.2",
+      "checks": [
+        "All transitions have defined allowed actors",
+        "All transitions have defined forbidden actors",
+        "No ambiguity in actor permissions"
+      ]
+    },
+
+    "V6_event_type_mapping": {
+      "description": "Verify event type mappings in Section 6",
+      "adr_reference": "ADR-004",
+      "checks": [
+        "Each governance_state maps to ADR-004 event type",
+        "Audit table references are correct",
+        "No unmapped states"
+      ]
+    },
+
+    "V7_lineage_integrity": {
+      "description": "Verify hash chain and lineage integrity",
+      "checks": [
+        "Document has valid SHA256 hash",
+        "Can be anchored in governance_documents",
+        "Lineage from Migration 065 is traceable"
+      ]
+    }
+  },
+
+  "related_governance_actions": [
+    {
+      "action_type": "REGISTRY_INTEGRITY_RECONCILIATION",
+      "hash_chain_id": "HC-RECONCILIATION-065-20251202",
+      "status": "COMPLETED"
+    },
+    {
+      "action_type": "ADR_SUPPLEMENT_CREATION",
+      "hash_chain_id": "HC-ADR004-APPB-20251202",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "action_type": "CEO_DIRECTIVE_VEGA_VALIDATION",
+      "hash_chain_id": "HC-CEO-DIRECTIVE-VEGA-20251202",
+      "status": "IN_PROGRESS"
+    }
+  ],
+
+  "required_outputs": {
+    "O1": "Update governance_actions_log -> APPROVED",
+    "O2": "Create VEGA_ATTESTATION_BUNDLE with hash_self, hash_prev, lineage_id",
+    "O3": "Sign Appendix B v2026.PROD.2 with VEGA key (ADR-008)",
+    "O4": "Register attestation reference in governance_documents"
+  },
+
+  "enforcement": {
+    "blocking": [
+      "No new governance_state values",
+      "No IoS activations",
+      "No G-gate transitions"
+    ],
+    "until": "This attestation is 100% complete and hash-anchored"
+  },
+
+  "stig_attestation": {
+    "statement": "I, STIG (CTO), confirm that Appendix B v2026.PROD.2 is technically complete and ready for VEGA governance validation. All sections have been authored in good faith alignment with ADR-004 and ADR-014.",
+    "agent": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2025-12-02T15:45:00.000Z"
+  }
+}

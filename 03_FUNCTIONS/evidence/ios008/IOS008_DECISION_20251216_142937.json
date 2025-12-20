@@ -1,0 +1,100 @@
+{
+  "metadata": {
+    "type": "IOS008_DECISION_EVIDENCE",
+    "timestamp": "2025-12-16T14:29:37.493465+00:00",
+    "worker_version": "v2026.PROD.G1"
+  },
+  "decision_plan": {
+    "decision_id": "76f741d4-2a85-49cb-998f-58c2e4f5280f",
+    "timestamp": "2025-12-16T14:29:37.461472+00:00",
+    "valid_until": "2025-12-16T14:44:37.461472+00:00",
+    "ttl_minutes": 15,
+    "global_state": {
+      "regime": "NEUTRAL",
+      "defcon_level": "GREEN",
+      "execution_mode": "LIVE"
+    },
+    "batch_metrics": {
+      "signals_processed": 1,
+      "cohesion_score": 0.625,
+      "dominant_direction": "NEUTRAL",
+      "confidence_modifier": 0.85
+    },
+    "asset_directives": [
+      {
+        "signal_id": "c47d19c5-c611-4123-9a5d-7a064e4485a6",
+        "hypothesis_id": "ALPHA-20241215-001",
+        "category": "REGIME_EDGE",
+        "action": "CLOSE",
+        "target_allocation_bps": 3709,
+        "confidence_score": 0.74188,
+        "regime_match_status": "MATCH",
+        "transition_bet": false,
+        "entry_conditions": [
+          "Current regime = NEUTRAL",
+          "DEFCON = 5",
+          "Bollinger Band width (20,2) < 0.02 for 3 consecutive periods",
+          "Price closes outside Bollinger Bands (upper or lower)",
+          "Volume > 1.5x 20-day average volume"
+        ],
+        "exit_conditions": {
+          "stop_loss": "Re-entry inside Bollinger Bands with volume < 0.8x average",
+          "time_exit": "5 days without regime transition",
+          "take_profit": "5% move from entry or regime change to TRENDING confirmed"
+        }
+      }
+    ],
+    "quad_hash": {
+      "lids": "99b0e9aacf169d9078279873a417d8df9fe96afaadc8affa1b954b7e39438a6c",
+      "acl": "e7191bc7bea646697d3395bfaa5101bf45f420b8675b1e097ce257a7c02d75ce",
+      "dsl": "cccf618785f30649649ff9dc6273a84c55f8c43f4766db1ff12da4d9b6462059",
+      "risl": "0658d866b876ddc327bab8fc3e70ad107409b9ce0447d902e20bde06267826c7",
+      "context_hash": "3b0e410f895785daa983615332cb2956464a8f5918bd34c5b9d89aa78adb72ab"
+    },
+    "metadata": {
+      "worker_version": "v2026.PROD.G1",
+      "generated_by": "IoS-008",
+      "authority": "ADR-017"
+    }
+  },
+  "input_signals": [
+    {
+      "signal_id": "c47d19c5-c611-4123-9a5d-7a064e4485a6",
+      "source_proposal_id": "b0fa5c28-3219-4299-8ebd-3caaf9564aee",
+      "hypothesis_id": "ALPHA-20241215-001",
+      "title": "Neutral-to-Trend Regime Transition via Volatility Compression Breakout",
+      "category": "REGIME_EDGE",
+      "entry_conditions": [
+        "Current regime = NEUTRAL",
+        "DEFCON = 5",
+        "Bollinger Band width (20,2) < 0.02 for 3 consecutive periods",
+        "Price closes outside Bollinger Bands (upper or lower)",
+        "Volume > 1.5x 20-day average volume"
+      ],
+      "exit_conditions": {
+        "stop_loss": "Re-entry inside Bollinger Bands with volume < 0.8x average",
+        "time_exit": "5 days without regime transition",
+        "take_profit": "5% move from entry or regime change to TRENDING confirmed"
+      },
+      "regime_filter": [
+        "NEUTRAL"
+      ],
+      "backtest_summary": {
+        "p_value": 0.020955853447463185,
+        "win_rate": 0.59,
+        "sharpe_ratio": 3.7433343923339066,
+        "profit_factor": 1.6890031100491305,
+        "total_signals": 100,
+        "avg_return_bps": 93.5408670915294,
+        "max_drawdown_pct": 17.85658547801428,
+        "avg_holding_period_hours": 84.48
+      },
+      "confidence_score": 0.8728,
+      "state_hash_at_validation": "809159111a0ddd3409822bd7452dcae7e4559ea480f1a86fe53ea0b4eac8b4c1",
+      "defcon_at_validation": 5,
+      "status": "QUEUED_FOR_IOS008",
+      "validated_at": "2025-12-16T15:29:36.737148+01:00",
+      "created_at": "2025-12-16T15:29:36.737148+01:00"
+    }
+  ]
+}

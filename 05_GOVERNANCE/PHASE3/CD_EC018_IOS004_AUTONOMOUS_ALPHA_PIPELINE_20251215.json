@@ -1,0 +1,250 @@
+{
+  "directive_id": "CD-EC018-IOS004-ALPHA-PIPELINE-001",
+  "title": "Autonomous Alpha Discovery and Validation Pipeline",
+  "classification": "CEO DIRECTIVE - OPERATIONAL",
+  "issued_by": "CEO",
+  "issued_date": "2025-12-15T01:30:00Z",
+  "effective_immediately": true,
+
+  "executive_summary": "Activates EC-018 as autonomous alpha hunter with automatic IoS-004 backtest validation. All discovered hypotheses flow immediately to validation without human intervention.",
+
+  "governing_principles": [
+    "Alpha decay is real - hypotheses lose value over time",
+    "Automation reduces latency between discovery and validation",
+    "Budget discipline prevents runaway costs",
+    "Failed hypotheses are learning, not waste"
+  ],
+
+  "section_1_ec018_autonomous_operation": {
+    "title": "EC-018 Autonomous Alpha Hunt",
+    "mode": "DAEMON",
+    "trigger": "SCHEDULED + EVENT_DRIVEN",
+
+    "schedule": {
+      "primary_hunt": "Every hour (XX:00 UTC)",
+      "regime_change_hunt": "Immediate on regime transition",
+      "opportunity_hunt": "On DEFCON change",
+      "cron_expression": "0 * * * *"
+    },
+
+    "budget_constraints": {
+      "daily_budget_usd": 2.00,
+      "per_hunt_max_usd": 0.50,
+      "cost_tracking_table": "fhq_governance.llm_routing_log",
+      "budget_reset": "00:00 UTC daily",
+      "overspend_action": "HALT_UNTIL_RESET"
+    },
+
+    "hunt_parameters": {
+      "hypotheses_per_hunt": [2, 4],
+      "focus_rotation": [
+        "regime_transitions",
+        "mean_reversion",
+        "momentum",
+        "cross_asset",
+        "volatility_structure",
+        "timing_edges"
+      ],
+      "state_binding": "MANDATORY (ADR-018)",
+      "minimum_confidence": 0.55
+    },
+
+    "external_data_access": {
+      "serper_api": {
+        "enabled": true,
+        "purpose": "Real-time news, sentiment, event detection",
+        "use_cases": [
+          "Detect market-moving events",
+          "Sentiment analysis for timing",
+          "Verify macro narrative alignment",
+          "Find catalyst triggers"
+        ],
+        "rate_limit": "100 queries/day",
+        "cost_included_in_budget": true
+      },
+      "env_key": "SERPER_API_KEY"
+    }
+  },
+
+  "section_2_ios004_automatic_validation": {
+    "title": "IoS-004 Automatic Backtest Trigger",
+    "mode": "EVENT_DRIVEN",
+    "trigger": "ON_G0_PROPOSAL_INSERT",
+
+    "trigger_mechanism": {
+      "watch_table": "fhq_alpha.g0_draft_proposals",
+      "trigger_condition": "NEW INSERT with status='PENDING_VALIDATION'",
+      "action": "INVOKE ios004_backtest_engine",
+      "latency_target": "< 60 seconds from proposal creation"
+    },
+
+    "backtest_parameters": {
+      "lookback_days": 180,
+      "minimum_samples": 30,
+      "validation_metrics": [
+        "win_rate",
+        "sharpe_ratio",
+        "profit_factor",
+        "max_drawdown",
+        "statistical_significance"
+      ],
+      "promotion_threshold": {
+        "win_rate_min": 0.52,
+        "sharpe_min": 0.3,
+        "p_value_max": 0.05,
+        "min_samples": 30
+      }
+    },
+
+    "outcome_routing": {
+      "VALIDATED": "Promote to G1, queue for IoS-008 review",
+      "REJECTED": "Archive with failure reason, update FINN learning",
+      "INSUFFICIENT_DATA": "Mark for manual review, extend lookback"
+    },
+
+    "ios004_output_spec": {
+      "destination_table": "fhq_alpha.g1_validated_signals",
+      "output_fields": {
+        "signal_id": "UUID - unique identifier",
+        "source_hypothesis_id": "FK to g0_draft_proposals",
+        "validation_timestamp": "When backtest completed",
+        "state_hash_validated": "State at validation time",
+
+        "backtest_results": {
+          "total_signals": "Number of historical occurrences",
+          "win_rate": "Percentage of profitable trades",
+          "avg_return_bps": "Average return in basis points",
+          "sharpe_ratio": "Risk-adjusted return",
+          "profit_factor": "Gross profit / gross loss",
+          "max_drawdown_pct": "Worst peak-to-trough",
+          "avg_holding_period": "Mean time in position",
+          "p_value": "Statistical significance"
+        },
+
+        "signal_parameters": {
+          "entry_conditions": "JSON - exact trigger logic",
+          "exit_conditions": "JSON - take profit / stop loss",
+          "position_sizing_hint": "Suggested allocation %",
+          "regime_filter": "Which regimes signal is valid"
+        },
+
+        "meta": {
+          "confidence_score": "0.0-1.0 composite score",
+          "decay_estimate_hours": "Expected alpha half-life",
+          "correlation_to_existing": "Overlap with active signals"
+        }
+      },
+
+      "auto_forward_to_ios008": {
+        "enabled": true,
+        "condition": "confidence_score >= 0.60 AND regime_filter INCLUDES current_regime",
+        "notify_channel": "ios008_signal_queue",
+        "priority": "Based on confidence and decay estimate"
+      }
+    }
+  },
+
+  "section_3_integration_contract": {
+    "title": "EC-018 ↔ IoS-004 Integration",
+
+    "data_flow": {
+      "ec018_output": "fhq_alpha.g0_draft_proposals",
+      "ios004_input": "fhq_alpha.g0_draft_proposals WHERE status='PENDING_VALIDATION'",
+      "ios004_output": "fhq_alpha.backtest_results",
+      "promotion_target": "fhq_alpha.g1_validated_signals"
+    },
+
+    "state_continuity": {
+      "requirement": "IoS-004 MUST validate against same state_hash that EC-018 captured",
+      "verification": "state_hash in proposal MUST match backtest context",
+      "violation_action": "REJECT with STATE_DRIFT error"
+    },
+
+    "telemetry": {
+      "hunt_metrics": "fhq_alpha.hunt_telemetry",
+      "backtest_metrics": "fhq_alpha.backtest_telemetry",
+      "pipeline_latency": "fhq_monitoring.system_event_log"
+    }
+  },
+
+  "section_4_implementation_requirements": {
+    "title": "Technical Implementation",
+
+    "daemon_service": {
+      "name": "FHQ-EC018-Alpha-Hunter",
+      "script": "03_FUNCTIONS/ec018_alpha_daemon.py",
+      "service_manager": "NSSM or Windows Task Scheduler",
+      "restart_policy": "ON_FAILURE",
+      "health_check": "Every 5 minutes"
+    },
+
+    "database_trigger": {
+      "name": "trg_g0_proposal_to_ios004",
+      "on_table": "fhq_alpha.g0_draft_proposals",
+      "on_event": "AFTER INSERT",
+      "action": "NOTIFY ios004_backtest_queue"
+    },
+
+    "backtest_worker": {
+      "name": "FHQ-IoS004-Backtest-Worker",
+      "script": "03_FUNCTIONS/ios004_backtest_worker.py",
+      "listen_channel": "ios004_backtest_queue",
+      "concurrency": 1,
+      "timeout_per_backtest": 300
+    }
+  },
+
+  "section_5_governance_controls": {
+    "title": "Governance and Safety",
+
+    "execution_authority": {
+      "ec018": "ZERO - Hypothesis generation only",
+      "ios004": "ZERO - Validation only",
+      "combined": "ZERO - No execution until IoS-012 G4 approval"
+    },
+
+    "circuit_breakers": {
+      "budget_exceeded": "Halt EC-018 until next day",
+      "backtest_queue_depth": "If > 20 pending, pause new hunts",
+      "consecutive_failures": "If > 10 rejections in row, alert CEO",
+      "defcon_override": "DEFCON-1/2 halts all alpha hunting"
+    },
+
+    "audit_requirements": {
+      "all_hunts_logged": true,
+      "all_backtests_logged": true,
+      "cost_tracking": "Per-call granularity",
+      "weekly_report": "Automated summary to CEO"
+    }
+  },
+
+  "section_6_success_metrics": {
+    "title": "KPIs and Success Criteria",
+
+    "efficiency_metrics": {
+      "cost_per_validated_alpha": "Target < $0.50",
+      "hunt_to_backtest_latency": "Target < 60s",
+      "daily_hypothesis_throughput": "Target 8-16 per day"
+    },
+
+    "quality_metrics": {
+      "validation_rate": "Target > 15% of hypotheses pass backtest",
+      "false_positive_rate": "Track post-IoS-008 rejection rate",
+      "alpha_decay_measurement": "Compare fresh vs stale hypothesis performance"
+    }
+  },
+
+  "activation": {
+    "status": "READY_FOR_IMPLEMENTATION",
+    "implementation_owner": "STIG",
+    "governance_witness": "VEGA",
+    "target_activation": "2025-12-15",
+    "phase": "G0 - Awaiting technical implementation"
+  },
+
+  "signatures": {
+    "ceo_approval": "PENDING",
+    "stig_technical_review": "PENDING",
+    "vega_governance_review": "PENDING"
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "evidence_type": "FULL_STACK_ACTIVATION",
+  "activation_timestamp": "2025-12-05T16:00:00Z",
+  "authority": "CEO Execution Order — Full Stack Activation",
+
+  "truth_stack_hierarchy": {
+    "THE_LAW": {
+      "component": "ADR-018",
+      "description": "All agents MUST synchronize state",
+      "status": "CONSTITUTIONAL"
+    },
+    "THE_MACHINE": {
+      "component": "IoS-013 ASPE + CDS",
+      "description": "State engine and context definition",
+      "status": "ACTIVE"
+    },
+    "THE_INTERFACE": {
+      "component": "IoS-013 Truth Gateway",
+      "description": "Official API for truth retrieval",
+      "status": "ACTIVE"
+    },
+    "THE_DELIVERY": {
+      "component": "CHL (Context Hydration Layer)",
+      "description": "Delivers context_package into LLM",
+      "status": "ACTIVE"
+    },
+    "THE_RUNTIME": {
+      "component": "Bootstrap",
+      "description": "Validates package and begins reasoning",
+      "status": "READY"
+    }
+  },
+
+  "ios013_components": {
+    "ASPE": {
+      "appendix_code": "ASPE",
+      "title": "Agent State Protocol Engine",
+      "version": "2026.PROD.1",
+      "status": "ACTIVE"
+    },
+    "CDS": {
+      "appendix_code": "CDS",
+      "title": "Context Definition Specification",
+      "version": "2026.DRAFT.1",
+      "status": "ACTIVE"
+    },
+    "GATEWAY": {
+      "appendix_code": "GATEWAY",
+      "title": "Truth Gateway Interface",
+      "version": "2026.DRAFT.2",
+      "status": "ACTIVE"
+    }
+  },
+
+  "mandates_executed": {
+    "STIG": {
+      "mandate": "Deploy IoS-013 as exclusive truth provider",
+      "deliverables": [
+        "context_package",
+        "state_snapshot_hash",
+        "context_hash",
+        "integrity_signatures"
+      ],
+      "status": "COMPLETE",
+      "verification": "IoS-013 version 2026.PROD.FULLSTACK deployed"
+    },
+    "DASHBOARD_TEAM": {
+      "mandate": "Implement CHL middleware per Workflow Specification",
+      "requirements": [
+        "All LLM API calls pass through CHL",
+        "Direct LLM calls prohibited",
+        "System context injected before user prompt"
+      ],
+      "infrastructure_ready": true,
+      "status": "INFRASTRUCTURE COMPLETE - IMPLEMENTATION PENDING"
+    },
+    "VEGA": {
+      "mandate": "Activate continuous governance monitoring",
+      "monitoring_rules": [
+        "CHL_ROUTE_MANDATORY",
+        "LLM_OUTPUT_CONTEXT_BOUND"
+      ],
+      "bypass_detection": "ACTIVE",
+      "auto_escalation": "CRITICAL/HIGH severity",
+      "status": "COMPLETE"
+    },
+    "CDMO": {
+      "mandate": "Register CHL Workflow Specification",
+      "document_code": "CHL-WORKFLOW-SPEC",
+      "registered_in": ["fhq_meta.system_documents", "fhq_governance.governance_actions_log"],
+      "status": "COMPLETE"
+    }
+  },
+
+  "chl_workflow_specification": {
+    "document_code": "CHL-WORKFLOW-SPEC",
+    "version": "2026.DRAFT.1",
+    "owner": "DASHBOARD_TEAM",
+    "status": "ACTIVE",
+    "mission": "Ensures every LLM request from dashboard is fully saturated with canonical system truth before any user input is considered",
+    "guarantees": [
+      "System truth is always applied first",
+      "User prompt is always applied second",
+      "LLM can never override or ignore context_package",
+      "All calls are consistent, auditable and role-aligned"
+    ],
+    "exact_sequence": [
+      "1. Receive user_intent from UI",
+      "2. Call IoS-013 Truth Gateway for truth_payload",
+      "3. Validate truth_payload is present and valid",
+      "4. Construct LLM SYSTEM_CONTEXT from context_package",
+      "5. Attach user prompt as separate lower-priority content",
+      "6. Send full request to LLM API",
+      "7. Bind output to state_snapshot_hash + context_hash"
+    ],
+    "fail_closed_behavior": {
+      "on_missing_truth_payload": "ABORT",
+      "on_failed_validation": "ABORT",
+      "on_inconsistent_role": "ABORT",
+      "on_internal_error": "ABORT",
+      "fallback_permitted": false,
+      "error_response": "System context unavailable – reasoning blocked"
+    }
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      {
+        "name": "fhq_governance.chl_llm_requests",
+        "purpose": "Registry of all CHL-routed LLM calls"
+      },
+      {
+        "name": "fhq_governance.chl_bypass_detections",
+        "purpose": "Tracks detected CHL bypass attempts"
+      },
+      {
+        "name": "fhq_meta.system_documents",
+        "purpose": "Canonical system documentation registry"
+      }
+    ],
+    "functions": [
+      {
+        "name": "fhq_governance.chl_validate_request()",
+        "purpose": "Validates CHL request before LLM call"
+      },
+      {
+        "name": "fhq_governance.chl_log_request()",
+        "purpose": "Logs CHL request with full governance binding"
+      },
+      {
+        "name": "fhq_governance.chl_detect_bypass()",
+        "purpose": "Detects and logs CHL bypass attempts"
+      }
+    ],
+    "preflight_checks": [
+      "CHL_ROUTE_MANDATORY",
+      "CHL_TRUTH_PAYLOAD_VALID",
+      "CHL_SYSTEM_CONTEXT_FIRST",
+      "CHL_OUTPUT_BINDING"
+    ],
+    "validation_rules": [
+      "CHL_ROUTE_MANDATORY",
+      "LLM_OUTPUT_CONTEXT_BOUND"
+    ]
+  },
+
+  "validity_requirements": {
+    "description": "No Dashboard-based LLM interaction is considered valid unless:",
+    "requirements": [
+      "Hydrated via CHL",
+      "Sourced from IoS-013",
+      "Bound to state_snapshot_hash + context_hash"
+    ]
+  },
+
+  "enforcement_status": {
+    "chl_route_mandatory": true,
+    "bypass_detection_active": true,
+    "output_binding_required": true,
+    "governance_monitoring": "CONTINUOUS",
+    "vega_auto_escalation": "CRITICAL/HIGH"
+  },
+
+  "bypass_detection_types": [
+    "DIRECT_LLM_CALL",
+    "MISSING_CONTEXT_HASH",
+    "MISSING_STATE_HASH",
+    "STALE_CONTEXT",
+    "INVALID_SIGNATURE",
+    "UNREGISTERED_ADVISOR",
+    "ROLE_AUTHORITY_MISMATCH"
+  ],
+
+  "migration": {
+    "file": "079_full_stack_activation.sql",
+    "executed_at": "2025-12-05T16:00:00Z",
+    "status": "SUCCESS"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS-013-ASPE-2026",
+    "chain_type": "FULL_STACK_ACTIVATION"
+  },
+
+  "governance_records": {
+    "STIG": {
+      "action_type": "FULL_STACK_DEPLOYMENT",
+      "decision": "APPROVED",
+      "timestamp": "2025-12-05T16:00:00Z"
+    },
+    "CDMO": {
+      "action_type": "CHL_SPECIFICATION_REGISTRATION",
+      "decision": "APPROVED",
+      "timestamp": "2025-12-05T16:00:00Z"
+    },
+    "VEGA": {
+      "action_type": "CHL_GOVERNANCE_MONITORING_ACTIVATED",
+      "decision": "APPROVED",
+      "timestamp": "2025-12-05T16:00:00Z"
+    }
+  },
+
+  "signatures": {
+    "ceo": {
+      "role": "Authority",
+      "attestation": "Full Stack Activation Order issued and executed",
+      "status": "RATIFIED"
+    },
+    "stig": {
+      "role": "Technical Implementation",
+      "attestation": "IoS-013 deployed as exclusive truth provider. All components (ASPE, CDS, Gateway) operational. CHL infrastructure ready for Dashboard Team implementation.",
+      "timestamp": "2025-12-05T16:00:00Z"
+    },
+    "cdmo": {
+      "role": "Canonical Registration",
+      "attestation": "CHL Workflow Specification registered in fhq_meta.system_documents. Document is canonical FjordHQ architecture.",
+      "timestamp": "2025-12-05T16:00:00Z"
+    },
+    "vega": {
+      "role": "Governance Oversight",
+      "attestation": "Continuous monitoring ACTIVATED. Missing context_hash or state_snapshot_hash is Critical Governance Violation under ADR-018. Bypass detection active with auto-escalation.",
+      "timestamp": "2025-12-05T16:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "directive": "CEO DIRECTIVE: ARO-20251209/CURIOSITY_V2",
+  "title": "Curiosity Engine with Google Search Activation Report",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T02:30:00Z",
+  "status": "COMPLETE",
+
+  "executive_summary": "THE BRAIN CAN NOW GOOGLE. Implemented the Pseudo-Tool Protocol enabling DeepSeek-Speciale to request web searches via 'SEARCH: <query>' syntax. Serper Bridge executes Google searches and feeds results back for synthesis. Curiosity Engine triggers autonomous research when system is idle for 300+ seconds.",
+
+  "order_1_load_the_keys": {
+    "status": "COMPLETE",
+    "key_source": "C:\\fhq-market-system\\vision-ios\\.env",
+    "variable": "SERPER_API_KEY",
+    "value_preview": "6117d77185...",
+    "loaded_by": "dotenv with override=True"
+  },
+
+  "order_2_background_reasoning": {
+    "status": "COMPLETE",
+    "trigger_name": "CURIOSITY_TRIGGER",
+    "condition": "event_queue empty for > 300 seconds",
+    "event_generated": "GAP_ANALYSIS_REQUEST",
+    "implementation": {
+      "check_idle_trigger()": "Checks if system idle > IDLE_THRESHOLD_SECONDS",
+      "reset_idle_timer()": "Resets timer when events processed",
+      "generate_gap_analysis_request()": "Creates internal GAP event"
+    }
+  },
+
+  "order_3_pseudo_tool_protocol": {
+    "status": "COMPLETE",
+    "steps": {
+      "step_a_query": {
+        "description": "Ask Speciale to identify causal gaps and request search",
+        "prompt_includes": "If you need external data, output SEARCH: <query>",
+        "function": "curiosity_hunt()"
+      },
+      "step_b_hook": {
+        "description": "Extract SEARCH: queries and call Serper API",
+        "pattern": "SEARCH:\\s*(.+?)(?:\\n|$)",
+        "function": "extract_search_queries(), serper_search()"
+      },
+      "step_c_synthesis": {
+        "description": "Feed Google results back to Speciale for synthesis",
+        "context_format": "GOOGLE SEARCH RESULTS with title, snippet, source",
+        "output": "Causal edges with source citations"
+      }
+    }
+  },
+
+  "test_results": {
+    "serper_search": {
+      "status": "PASS",
+      "query": "Federal Reserve balance sheet impact on gold prices 2025",
+      "results_returned": 3,
+      "sample_result": "How Federal Reserve Policies Impact Gold Prices in 2025"
+    },
+    "extract_search_queries": {
+      "status": "PASS",
+      "test_input": "SEARCH: gold price correlation with real interest rates 2025",
+      "extracted": ["gold price correlation with real interest rates 2025"]
+    },
+    "curiosity_hunt": {
+      "status": "PASS",
+      "gap_identified": "Under-connected nodes in knowledge graph",
+      "search_requested": "Q4 2025 enterprise AI capital expenditure forecasts vs actuals cloud hyperscaler spending",
+      "traces_saved": 2,
+      "reasoning_tokens": 2179,
+      "edges_harvested": 0,
+      "note": "No high-confidence edges on this run, but full workflow executed"
+    }
+  },
+
+  "integration_with_daemon": {
+    "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+    "daemon_loop_changes": [
+      "Added curiosity_edges counter",
+      "Added idle detection via check_idle_trigger()",
+      "Triggers curiosity_hunt() when idle > 300s",
+      "Resets idle timer after events or curiosity",
+      "Heartbeat shows (curiosity: X) edge count"
+    ],
+    "startup_log": [
+      "CEO Directive: ARO-20251209/LINK_THE_BRAIN + CURIOSITY_V2",
+      "Serper Search: ENABLED",
+      "Curiosity Trigger: 300s idle"
+    ]
+  },
+
+  "new_functions_added": [
+    {
+      "name": "serper_search(query, num_results=3)",
+      "purpose": "Call Serper API to search Google",
+      "returns": "List of {title, snippet, link}"
+    },
+    {
+      "name": "format_search_results(results)",
+      "purpose": "Format search results as LLM context",
+      "returns": "Formatted string with numbered results"
+    },
+    {
+      "name": "extract_search_queries(text)",
+      "purpose": "Extract SEARCH: queries from LLM output",
+      "returns": "List of query strings"
+    },
+    {
+      "name": "check_idle_trigger()",
+      "purpose": "Check if system idle enough for curiosity",
+      "returns": "Boolean"
+    },
+    {
+      "name": "reset_idle_timer()",
+      "purpose": "Reset idle timer when events processed"
+    },
+    {
+      "name": "get_graph_gaps()",
+      "purpose": "Find under-connected nodes for research",
+      "returns": "List of gap nodes"
+    },
+    {
+      "name": "curiosity_hunt(session_id)",
+      "purpose": "Full idle-mind research with search",
+      "returns": "Number of edges harvested"
+    }
+  ],
+
+  "config_added": {
+    "SERPER_API_KEY": "Loaded from .env",
+    "SERPER_API_URL": "https://google.serper.dev/search",
+    "IDLE_THRESHOLD_SECONDS": 300,
+    "SEARCH_PATTERN": "r'SEARCH:\\s*(.+?)(?:\\n|$)'"
+  },
+
+  "workflow_diagram": {
+    "1": "Daemon loop detects idle > 300s",
+    "2": "curiosity_hunt() triggered",
+    "3": "get_graph_gaps() finds under-connected nodes",
+    "4": "Speciale asked to identify causal gap",
+    "5": "If Speciale outputs 'SEARCH: <query>'...",
+    "6": "serper_search() calls Google via Serper API",
+    "7": "format_search_results() creates context",
+    "8": "Speciale synthesizes search into edges",
+    "9": "parse_and_store_edges() updates Alpha Graph",
+    "10": "store_reasoning_trace() saves the thoughts"
+  },
+
+  "ceo_goal_achievement": {
+    "goal": "Transform 'Quiet Time' into 'Global Research Time'",
+    "status": "ACHIEVED",
+    "capability": "System can now answer 'Why?' by looking it up on Google"
+  },
+
+  "night_watch_integration": {
+    "status": "ACTIVE",
+    "traces_stored": "Multiple (Night Watch + Curiosity)",
+    "process_id": "91ecb3",
+    "note": "Night Watch continues running with search capability available"
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "CURIOSITY_V2 implemented. The brain can now Google. Quiet time = Research time."
+  }
+}

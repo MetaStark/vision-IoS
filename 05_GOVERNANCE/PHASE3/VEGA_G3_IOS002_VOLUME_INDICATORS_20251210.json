@@ -1,0 +1,146 @@
+{
+  "attestation_id": "VEGA-G3-IOS002-VOL-20251210-234500",
+  "attestation_type": "G3_AUDIT_ATTESTATION",
+  "ios_reference": "IoS-002",
+  "section_reference": "§2.2 Trend, §2.4 Volume",
+  "adr_compliance": ["ADR-003", "ADR-013", "ADR-004"],
+  "timestamp": "2025-12-10T23:45:00Z",
+
+  "implementation_summary": {
+    "title": "IoS-002 Volume Indicator Completion",
+    "description": "Implementation of missing indicators PSAR, OBV, ROC as specified in IoS-002 §2.2 and §2.4",
+    "implementer": "STIG",
+    "implementer_contract": "EC-003",
+    "owner": "FINN",
+    "owner_contract": "EC-004",
+    "executor": "CODE",
+    "executor_contract": "EC-006"
+  },
+
+  "artifacts_created": {
+    "migration": {
+      "file": "04_DATABASE/MIGRATIONS/109_ios002_volume_indicators.sql",
+      "purpose": "Create fhq_research.indicator_volume table",
+      "status": "EXECUTED"
+    },
+    "functions": {
+      "calc_psar": {
+        "location": "03_FUNCTIONS/calc_indicators_v1.py:190-248",
+        "algorithm": "Parabolic SAR (Wilder 1978)",
+        "parameters": "af_start=0.02, af_step=0.02, af_max=0.20"
+      },
+      "calc_obv": {
+        "location": "03_FUNCTIONS/calc_indicators_v1.py:251-270",
+        "algorithm": "On-Balance Volume (Granville 1963)",
+        "parameters": "close, volume"
+      },
+      "calc_roc": {
+        "location": "03_FUNCTIONS/calc_indicators_v1.py:273-288",
+        "algorithm": "Rate of Change",
+        "parameters": "period=20"
+      },
+      "persist_volume_indicators": {
+        "location": "03_FUNCTIONS/calc_indicators_v1.py:611-659",
+        "purpose": "Persist OBV, ROC, PSAR to indicator_volume table"
+      }
+    }
+  },
+
+  "data_verification": {
+    "table": "fhq_research.indicator_volume",
+    "total_rows": 696,
+    "assets_covered": ["BTC-USD", "ETH-USD", "SOL-USD"],
+    "date_range": {
+      "from": "2025-04-19",
+      "to": "2025-12-06"
+    },
+    "indicators_per_row": ["obv", "psar", "roc_20"],
+    "rows_per_asset": 232
+  },
+
+  "golden_sample_verification": {
+    "asset": "BTC-USD",
+    "date": "2025-12-06",
+    "sample_values": {
+      "obv": -423957704502.995,
+      "psar": 84663.3453780544,
+      "roc_20": -2.8274138752441464
+    },
+    "lineage_hash": "7b725a9179dfd081b59a55b01016c83be708f9d17fbfbcaae6414825e4cda1c8",
+    "engine_version": "1.0.0",
+    "formula_hash_prefix": "71e7f25bbf6ab6d7"
+  },
+
+  "lineage_compliance": {
+    "adr_003_bcbs_239": true,
+    "formula_hash_present": true,
+    "lineage_hash_present": true,
+    "engine_version_tracked": true,
+    "deterministic_calculation": true
+  },
+
+  "industry_standard_compliance": {
+    "PSAR": {
+      "source": "J. Welles Wilder Jr. (1978)",
+      "publication": "New Concepts in Technical Trading Systems",
+      "compliant": true
+    },
+    "OBV": {
+      "source": "Joseph Granville (1963)",
+      "publication": "Granville's New Key to Stock Market Profits",
+      "compliant": true
+    },
+    "ROC": {
+      "source": "Standard momentum indicator",
+      "formula": "((Close - Close_n) / Close_n) * 100",
+      "compliant": true
+    }
+  },
+
+  "ios002_gap_closure": {
+    "before": {
+      "indicators_specified": 26,
+      "indicators_implemented": 23,
+      "coverage_percentage": 88.46
+    },
+    "after": {
+      "indicators_specified": 26,
+      "indicators_implemented": 26,
+      "coverage_percentage": 100.00
+    },
+    "gap_closed": true
+  },
+
+  "governance_log_entry": {
+    "action_type": "SCHEMA_MIGRATION",
+    "action_target": "fhq_research.indicator_volume",
+    "initiated_by": "STIG",
+    "decision": "APPROVED",
+    "hash_chain_id": "MIG-109-IOS002-VOLUME-20251210"
+  },
+
+  "vega_audit_findings": {
+    "code_review": "PASS",
+    "schema_compliance": "PASS",
+    "lineage_integrity": "PASS",
+    "determinism_verified": "PASS",
+    "golden_sample_match": "PASS",
+    "industry_standard_adherence": "PASS"
+  },
+
+  "attestation_decision": "APPROVED",
+  "attestation_rationale": "IoS-002 Volume Indicator implementation meets all G3 audit criteria. PSAR, OBV, and ROC functions implement industry-standard algorithms with full lineage tracking per ADR-003/BCBS-239. indicator_volume table schema matches existing indicator_* tables. 696 records generated across 3 canonical crypto assets. Golden sample verification confirms deterministic calculation. IoS-002 is now at 100% implementation coverage.",
+
+  "vega_signature": {
+    "attester": "VEGA",
+    "contract": "EC-001",
+    "authority": "G3_AUDIT",
+    "timestamp": "2025-12-10T23:45:00Z",
+    "signature_placeholder": "VEGA-SIG-G3-IOS002-VOL-20251210"
+  },
+
+  "next_steps": {
+    "g4_activation": "Pending CEO approval for constitutional activation",
+    "equity_backfill": "Volume indicators will auto-populate when equity price data reaches 200+ rows"
+  }
+}

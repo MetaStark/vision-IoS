@@ -1,0 +1,104 @@
+{
+  "report_type": "G1_UI_GOVERNANCE_PATCH",
+  "protocol": "VISION_CHAT_2026",
+  "generated_at": "2025-12-07T15:50:00.000Z",
+  "generated_by": "STIG",
+  "authority": "G1 UI Governance Patch Directive",
+  "constitutional_basis": ["ADR-019", "IoS-009"],
+
+  "implementation_status": {
+    "overall": "COMPLETE",
+    "components_created": 8,
+    "api_endpoints_created": 3,
+    "database_objects_created": 1
+  },
+
+  "components": {
+    "AgentBadge": {
+      "path": "components/chat/AgentBadge.tsx",
+      "status": "COMPLETE",
+      "features": ["Agent color coding", "6 agent types", "Size variants"]
+    },
+    "Nexus": {
+      "path": "components/chat/Nexus.tsx",
+      "status": "COMPLETE",
+      "features": ["Mode switching via /ask, /inject, /query", "DEFCON-reactive borders", "Tab cycling"]
+    },
+    "MessageStream": {
+      "path": "components/chat/MessageStream.tsx",
+      "status": "COMPLETE",
+      "features": ["Block-based layout", "Agent badges", "Evidence drawer integration", "Markdown rendering"]
+    },
+    "EvidenceDrawer": {
+      "path": "components/chat/EvidenceDrawer.tsx",
+      "status": "COMPLETE",
+      "features": ["SQL syntax highlighting", "Lineage headers", "Copy to clipboard"]
+    },
+    "ResourceHUD": {
+      "path": "components/chat/ResourceHUD.tsx",
+      "status": "COMPLETE",
+      "features": ["Token usage tracking", "Cost tracking", "Rate limit display", "DEFCON indicator"]
+    },
+    "G0SubmissionCard": {
+      "path": "components/chat/G0SubmissionCard.tsx",
+      "status": "COMPLETE",
+      "features": ["Domain selector", "Probability/confidence sliders", "Half-life selector", "VEGA routing"]
+    },
+    "ChatPage": {
+      "path": "app/chat/page.tsx",
+      "status": "COMPLETE",
+      "features": ["Full page layout", "State management", "API integration", "G0 sidebar"]
+    },
+    "Navigation": {
+      "path": "components/Navigation.tsx",
+      "status": "UPDATED",
+      "changes": ["Added Vision-Chat link", "G1 badge"]
+    }
+  },
+
+  "api_endpoints": {
+    "/api/vision-chat": {
+      "method": "POST",
+      "status": "EXISTING",
+      "purpose": "Claude-powered inquiry channel"
+    },
+    "/api/engine/defcon": {
+      "method": "GET",
+      "status": "CREATED",
+      "purpose": "Fetch current DEFCON level from shared_state_snapshots"
+    },
+    "/api/engine/query": {
+      "method": "POST",
+      "status": "CREATED",
+      "purpose": "Direct read-only SQL execution"
+    },
+    "/api/oracle/staging": {
+      "methods": ["GET", "POST"],
+      "status": "CREATED",
+      "purpose": "G0 submission to oracle_staging for VEGA review"
+    }
+  },
+
+  "database_migration": {
+    "file": "04_DATABASE/MIGRATIONS/087_oracle_staging_g0_submissions.sql",
+    "status": "APPLIED",
+    "objects_created": [
+      "fhq_governance.oracle_staging",
+      "fhq_governance.v_pending_oracle_submissions",
+      "fhq_governance.promote_oracle_submission()"
+    ]
+  },
+
+  "design_compliance": {
+    "glass_cockpit": true,
+    "deep_nordic_dark_mode": true,
+    "defcon_reactive_ui": true,
+    "agent_badge_system": true,
+    "evidence_lineage": true,
+    "economic_safety_hud": true
+  },
+
+  "access_url": "http://localhost:3001/chat",
+
+  "evidence_hash": "g1-ui-patch-20251207-stig"
+}

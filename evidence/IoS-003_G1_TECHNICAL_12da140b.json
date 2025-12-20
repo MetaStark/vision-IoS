@@ -1,0 +1,353 @@
+{
+  "validation_id": "12da140b-a7ea-4f62-91bc-109a701cc9a2",
+  "ios_module": "IoS-003",
+  "module_name": "Meta-Perception Engine (Market Brain)",
+  "validation_type": "G1_TECHNICAL",
+  "version": "2026.DRAFT.1",
+  "timestamp": "2025-11-29T11:35:15.162484+00:00",
+  "validator": "STIG",
+  "validation_results": [
+    {
+      "check": 1,
+      "name": "SCHEMA_INTEGRITY",
+      "result": "PASS",
+      "details": [
+        {
+          "table": "regime_daily",
+          "column_count": 19,
+          "required_present": true,
+          "missing": []
+        },
+        {
+          "table": "state_vectors",
+          "column_count": 23,
+          "required_present": true,
+          "missing": []
+        },
+        {
+          "table": "anomaly_log",
+          "column_count": 23,
+          "required_present": true,
+          "missing": []
+        },
+        {
+          "check_constraints": 11,
+          "expected_present": true,
+          "found": [
+            "regime_daily_regime_classification_check",
+            "regime_daily_regime_confidence_check",
+            "regime_daily_anomaly_severity_check",
+            "state_vectors_trend_score_check",
+            "state_vectors_momentum_score_check",
+            "state_vectors_volatility_score_check",
+            "state_vectors_confidence_score_check",
+            "anomaly_log_anomaly_type_check",
+            "anomaly_log_severity_check",
+            "anomaly_log_perception_impact_check",
+            "anomaly_log_resolution_status_check"
+          ]
+        },
+        {
+          "foreign_keys": 1,
+          "state_vectors_regime_link": true
+        }
+      ]
+    },
+    {
+      "check": 2,
+      "name": "LINEAGE_ARCHITECTURE",
+      "result": "PASS",
+      "details": [
+        {
+          "table": "regime_daily",
+          "fields_found": 7,
+          "fields_required": 7,
+          "missing": [],
+          "nullable_violations": [],
+          "result": "PASS"
+        },
+        {
+          "table": "state_vectors",
+          "fields_found": 7,
+          "fields_required": 7,
+          "missing": [],
+          "nullable_violations": [],
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "check": 3,
+      "name": "DETERMINISTIC_LOGIC",
+      "result": "PASS",
+      "details": [
+        {
+          "check": "TABLES_EMPTY",
+          "regime_daily": 0,
+          "state_vectors": 0,
+          "anomaly_log": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "PIPELINE_INACTIVE",
+          "task_status": "REGISTERED",
+          "gate_approved": false,
+          "result": "PASS"
+        },
+        {
+          "check": "NO_AUTO_TRIGGERS",
+          "trigger_count": 0,
+          "triggers": [],
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "check": 4,
+      "name": "NO_LEAKAGE_ADR013",
+      "result": "PASS",
+      "details": [
+        {
+          "check": "VALID_DEPENDENCIES",
+          "declared": [
+            "IoS-001",
+            "IoS-002"
+          ],
+          "expected": [
+            "IoS-001",
+            "IoS-002"
+          ],
+          "result": "PASS"
+        },
+        {
+          "check": "SCHEMA_ISOLATION",
+          "reads_from": [
+            "fhq_research"
+          ],
+          "writes_to": [
+            "fhq_perception"
+          ],
+          "source_valid": true,
+          "target_valid": true,
+          "result": "PASS"
+        },
+        {
+          "check": "NO_INVALID_FOREIGN_KEYS",
+          "invalid_count": 0,
+          "invalid_refs": [],
+          "result": "PASS"
+        },
+        {
+          "check": "OWNER_LOCKED",
+          "owner": "LARS",
+          "expected": "LARS",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "check": 5,
+      "name": "PIPELINE_BINDING",
+      "result": "PASS",
+      "details": [
+        {
+          "check": "TASK_REGISTERED",
+          "task_id": "38fc6689-c51e-4df5-9dc1-1a252b7923b1",
+          "task_name": "META_PERCEPTION",
+          "result": "PASS"
+        },
+        {
+          "check": "SOURCE_SCHEMA",
+          "value": [
+            "fhq_research"
+          ],
+          "expected": "fhq_research",
+          "result": "PASS"
+        },
+        {
+          "check": "TARGET_SCHEMA",
+          "value": [
+            "fhq_perception"
+          ],
+          "expected": "fhq_perception",
+          "result": "PASS"
+        },
+        {
+          "check": "GATE_NOT_APPROVED",
+          "value": false,
+          "result": "PASS"
+        },
+        {
+          "check": "STATUS_REGISTERED",
+          "value": "REGISTERED",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "check": 6,
+      "name": "FORTRESS_COMPLIANCE_ADR011",
+      "result": "PASS",
+      "details": [
+        {
+          "check": "NO_SIDE_EFFECTS",
+          "description": "No INSERT/UPDATE triggers that could cause side effects",
+          "trigger_count": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "NO_SERIAL_COLUMNS",
+          "description": "No SERIAL/BIGSERIAL columns (use UUID for determinism)",
+          "serial_count": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "NO_TIME_DEPENDENT_CONSTRAINTS",
+          "description": "No NOW() or CURRENT_TIMESTAMP in CHECK constraints",
+          "count": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "DETERMINISTIC_DEFAULTS",
+          "description": "All column defaults are deterministic",
+          "non_deterministic_count": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "HASH_FIELDS_PRESENT",
+          "description": "formula_hash, lineage_hash, hash_self present for reproducibility",
+          "count": 6,
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "check": 7,
+      "name": "ADDITIONAL_TECHNICAL",
+      "result": "PASS",
+      "details": [
+        {
+          "check": "SCORE_BOUNDS_CONSTRAINTS",
+          "count": 4,
+          "constraints": [
+            "state_vectors_confidence_score_check",
+            "state_vectors_momentum_score_check",
+            "state_vectors_trend_score_check",
+            "state_vectors_volatility_score_check"
+          ],
+          "result": "PASS"
+        },
+        {
+          "check": "REGIME_ENUM_COMPLETE",
+          "expected_regimes": [
+            "STRONG_BULL",
+            "BULL",
+            "NEUTRAL",
+            "BEAR",
+            "STRONG_BEAR",
+            "VOLATILE_NON_DIRECTIONAL",
+            "COMPRESSION",
+            "BROKEN",
+            "UNTRUSTED"
+          ],
+          "result": "PASS"
+        },
+        {
+          "check": "ANOMALY_ENUM_COMPLETE",
+          "expected_types": [
+            "VOLATILITY_SPIKE",
+            "STRUCTURAL_BREAK",
+            "DATA_GAP",
+            "SIGNAL_CONTRADICTION",
+            "REGIME_INSTABILITY"
+          ],
+          "result": "PASS"
+        },
+        {
+          "check": "UNIQUE_ASSET_TIMESTAMP",
+          "count": 2,
+          "tables": [
+            "regime_daily",
+            "state_vectors"
+          ],
+          "result": "PASS"
+        }
+      ]
+    }
+  ],
+  "hashes": {
+    "schema_hash": "43616e31b42ee5d0fbb7e579f8d2279a2a71ecac90e5423eb7caec5f4c9cbdb7",
+    "constraint_hash": "747d5a4fe247c67937cb0900992ce6ef5d3a25f6257dcfdb8bd6e50d35c7a635",
+    "pipeline_binding_hash": "3814e3a63b826d580fcf0f605a647a2c320c14806747988363447c30aed02d9c"
+  },
+  "snapshots": {
+    "schema_column_count": 65,
+    "constraint_count": 54,
+    "pipeline_binding": {
+      "task_id": "38fc6689-c51e-4df5-9dc1-1a252b7923b1",
+      "task_name": "META_PERCEPTION",
+      "reads_from_schemas": [
+        "fhq_research"
+      ],
+      "writes_to_schemas": [
+        "fhq_perception"
+      ],
+      "task_status": "REGISTERED"
+    }
+  },
+  "access_matrix": {
+    "owner": "LARS",
+    "executor": "CODE",
+    "source_read": "fhq_research",
+    "target_write": "fhq_perception",
+    "forbidden_sources": [
+      "fhq_execution",
+      "fhq_alpha",
+      "external"
+    ],
+    "forbidden_targets": [
+      "fhq_market",
+      "fhq_research",
+      "fhq_governance"
+    ]
+  },
+  "lineage_field_snapshot": {
+    "required_fields": [
+      "engine_version",
+      "perception_model_version",
+      "formula_hash",
+      "lineage_hash",
+      "hash_prev",
+      "hash_self",
+      "created_at"
+    ],
+    "tables_validated": [
+      "regime_daily",
+      "state_vectors"
+    ]
+  },
+  "fortress_compliance": {
+    "no_side_effects": true,
+    "no_hidden_mutable_state": true,
+    "no_time_dependent_logic": true,
+    "deterministic_defaults": true,
+    "hash_anchored": true
+  },
+  "adr_compliance": {
+    "ADR-002": "Lineage fields validated",
+    "ADR-011": "FORTRESS compliance verified",
+    "ADR-013": "One-True-Source verified"
+  },
+  "result": "G1_TECHNICAL_PASS",
+  "checks_passed": 7,
+  "checks_total": 7,
+  "bundle_hash": "6beb3ff3bf58bd3bf055cf2a4bc6090903245b4f94efdb3e6bb7d326a6983b1a",
+  "stig_signature": {
+    "signer": "STIG",
+    "role": "Technical Authority",
+    "sign_time": "2025-11-29T11:35:15.162484+00:00",
+    "validation_id": "12da140b-a7ea-4f62-91bc-109a701cc9a2",
+    "bundle_hash": "6beb3ff3bf58bd3bf055cf2a4bc6090903245b4f94efdb3e6bb7d326a6983b1a",
+    "verdict": "G1_TECHNICAL_PASS"
+  }
+}

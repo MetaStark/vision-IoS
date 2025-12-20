@@ -1,0 +1,127 @@
+{
+  "evidence_type": "POST_G3_SYNCHRONIZATION",
+  "classification": "SYNCHRONIZATION_NO_ACTIVATION",
+  "timestamp": "2025-12-11T15:15:00.000Z",
+  "authority": "CEO via STIG (CTO) per EC-003",
+  "adr_references": ["ADR-016", "ADR-018", "ADR-020"],
+  "migration_id": "MIG-125-POST-G3-SYNC",
+
+  "adr_018_shared_state_regeneration": {
+    "status": "COMPLETED",
+    "state_vector": {
+      "defcon": "YELLOW",
+      "regime": "PASSIVE_OBSERVATION",
+      "strategy": "FROZEN",
+      "quad_hash": "QUAD-G3-20251211-150948-bce77606d52b12700fde418416ba8fa0"
+    },
+    "old_quad_hash": null,
+    "new_quad_hash": "QUAD-G3-20251211-150948-bce77606d52b12700fde418416ba8fa0",
+    "state_snapshot_hash_v2": "STATE-V2-7a24556e195ef009c04a8ae4274e5d33",
+    "published_to": ["LARS", "FINN", "ACI"]
+  },
+
+  "ios_003_regime_cause_binding_refresh": {
+    "status": "COMPLETED",
+    "regime_inference_pack_version": 2,
+    "nine_state_multipliers": {
+      "STRONG_BULL": {"allocation": 1.0, "causal_weight": 0.92},
+      "BULL": {"allocation": 0.75, "causal_weight": 0.89},
+      "RANGE_UP": {"allocation": 0.50, "causal_weight": 0.87},
+      "NEUTRAL": {"allocation": 0.00, "causal_weight": 0.85},
+      "RANGE_DOWN": {"allocation": -0.25, "causal_weight": 0.87},
+      "BEAR": {"allocation": -0.50, "causal_weight": 0.89},
+      "STRONG_BEAR": {"allocation": -0.75, "causal_weight": 0.92},
+      "PARABOLIC": {"allocation": 0.25, "causal_weight": 0.90},
+      "VOLATILE_NON_DIRECTIONAL": {"allocation": 0.00, "causal_weight": 0.85},
+      "BROKEN": {"allocation": 0.00, "causal_weight": 0.00}
+    },
+    "causal_binding_stats": {
+      "macro_dominance_ratio": 0.21,
+      "market_specific_ratio": 0.78,
+      "bull_influence_ratio": 0.01
+    }
+  },
+
+  "adr_016_drift_safety_validation": {
+    "status": "COMPLETED",
+    "discrepancy_audit": {
+      "discrepancy_score": 0.0318,
+      "threshold": 0.0500,
+      "result": "SAFE_TO_LIFT",
+      "variance_class": "LOW_VARIANCE"
+    },
+    "drift_vector": {
+      "conf_stddev": 0.0318,
+      "weight_stddev": 0.0315,
+      "pre_promotion_edges": 0,
+      "post_promotion_edges": 1902,
+      "delta": 1902
+    },
+    "defcon_recommendation": "ELIGIBLE_FOR_GREEN_PENDING_G4",
+    "current_defcon": "YELLOW"
+  },
+
+  "adr_020_aci_rehydration": {
+    "status": "COMPLETED",
+    "resets_performed": {
+      "ikea_boundary_tables": true,
+      "sitc_reasoning_tree_cache": true,
+      "inforage_budget_model": true
+    },
+    "inforage_config": {
+      "session_budget_max": 0.50,
+      "daily_budget_max": 50.00,
+      "min_roi_threshold": 1.20,
+      "gain_decay_per_step": 0.15
+    },
+    "aci_status": "ACI_READY_PENDING_GREEN"
+  },
+
+  "discrepancy_changes": {
+    "pre_g3_state": {
+      "causal_edges": 0,
+      "avg_confidence": null,
+      "state_hash": null
+    },
+    "post_g3_state": {
+      "causal_edges": 1902,
+      "avg_confidence": 0.8973,
+      "state_hash": "STATE-V2-7a24556e195ef009c04a8ae4274e5d33"
+    },
+    "structural_delta": {
+      "edges_added": 1902,
+      "tables_created": 4,
+      "impact_classification": "STRUCTURAL_ENHANCEMENT"
+    }
+  },
+
+  "entropy_window_summary": {
+    "observation_start": "2025-12-09T01:12:04.682Z",
+    "observation_end": "2025-12-11T15:15:00.000Z",
+    "duration_hours": 62,
+    "requirement_met": true,
+    "causal_entropy_stabilized": true
+  },
+
+  "constraints_enforced": {
+    "ceio_activation": false,
+    "defcon_change_to_green": false,
+    "aci_autonomy_lift": false,
+    "shadow_ledger_closure": false,
+    "awaiting": "G4_ORDER"
+  },
+
+  "tables_created": [
+    "vision_signals.state_snapshots",
+    "vision_signals.regime_inference_packs",
+    "vision_signals.safety_validations",
+    "vision_signals.aci_rehydration_status"
+  ],
+
+  "attestation": {
+    "stig_signature": "STIG-POST-G3-SYNC-20251211-151500",
+    "classification": "SYNCHRONIZATION_NO_ACTIVATION",
+    "g4_required_for_activation": true,
+    "ready_for_g4_review": true
+  }
+}

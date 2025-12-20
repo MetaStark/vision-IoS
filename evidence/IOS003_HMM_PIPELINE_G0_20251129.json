@@ -1,0 +1,304 @@
+{
+  "report_type": "G0_SUBMISSION_EVIDENCE",
+  "report_id": "IOS003-APPENDIX-A-G0-20251129-172753",
+  "timestamp": "2025-11-29T17:27:53.997Z",
+  "generated_by": "STIG",
+  "authority_chain": "LARS (Owner IoS-003) -> CODE (EC-011)",
+  "gate": "G0_SUBMISSION",
+  "scope": "INFRASTRUCTURE_ONLY",
+
+  "executive_summary": {
+    "submission_target": "IoS-003_Appendix_A_HMM_REGIME",
+    "submission_status": "SUCCESS",
+    "tables_created": 4,
+    "data_populated": false,
+    "computation_executed": false,
+    "ios003_status_unchanged": true,
+    "all_exit_criteria_passed": true
+  },
+
+  "appendix_registration": {
+    "appendix_id": "75c14972-67d9-4dce-8c54-a8e5ae9e740c",
+    "ios_id": "IoS-003",
+    "appendix_code": "Appendix_A_HMM_REGIME",
+    "appendix_title": "Canonical Regime Model Specification (HMM v2.0)",
+    "version": "2026.PROD.1",
+    "status": "REGISTERED",
+    "owner_role": "LARS",
+    "content_hash": "acf4c7a5b560fb796ac49fdcf7ad47abaaecaafc8c9953f1f36d4336d4a76c0d"
+  },
+
+  "tables_created": {
+    "fhq_research.regime_model_registry": {
+      "row_count": 0,
+      "column_count": 16,
+      "columns": [
+        "model_id (uuid, NOT NULL, PK)",
+        "perception_model_version (text, NOT NULL)",
+        "engine_version (text, NOT NULL)",
+        "model_hash (text, NOT NULL)",
+        "training_window_start (date, NOT NULL)",
+        "training_window_end (date, NOT NULL)",
+        "num_states (integer, NOT NULL, DEFAULT 9)",
+        "transition_matrix (jsonb, NOT NULL)",
+        "emission_parameters (jsonb, NOT NULL)",
+        "retrain_hash (text, nullable)",
+        "is_active (boolean, NOT NULL)",
+        "created_at (timestamptz, NOT NULL)",
+        "updated_at (timestamptz, NOT NULL)",
+        "lineage_hash (text, NOT NULL)",
+        "hash_prev (text, nullable)",
+        "hash_self (text, NOT NULL)"
+      ],
+      "lineage_columns_present": true,
+      "status": "CREATED_EMPTY"
+    },
+    "fhq_perception.hmm_features_daily": {
+      "row_count": 0,
+      "column_count": 17,
+      "columns": [
+        "id (uuid, NOT NULL, PK)",
+        "asset_id (text, NOT NULL)",
+        "timestamp (date, NOT NULL)",
+        "return_z (numeric, NOT NULL)",
+        "volatility_z (numeric, NOT NULL)",
+        "drawdown_z (numeric, NOT NULL)",
+        "macd_diff_z (numeric, NOT NULL)",
+        "bb_width_z (numeric, NOT NULL)",
+        "rsi_14_z (numeric, NOT NULL)",
+        "roc_20_z (numeric, NOT NULL)",
+        "engine_version (text, NOT NULL)",
+        "perception_model_version (text, NOT NULL)",
+        "formula_hash (text, NOT NULL)",
+        "lineage_hash (text, NOT NULL)",
+        "hash_prev (text, nullable)",
+        "hash_self (text, NOT NULL)",
+        "created_at (timestamptz, NOT NULL)"
+      ],
+      "canonical_features": [
+        "return_z - Log returns z-score",
+        "volatility_z - 20-day rolling std dev z-score",
+        "drawdown_z - Drawdown from peak z-score",
+        "macd_diff_z - MACD histogram z-score",
+        "bb_width_z - Bollinger Band width z-score",
+        "rsi_14_z - RSI-14 z-score",
+        "roc_20_z - 20-day Rate of Change z-score"
+      ],
+      "constraints": {
+        "primary_key": "hmm_features_daily_pkey",
+        "unique_constraint": "hmm_features_daily_asset_timestamp_key (asset_id, timestamp)"
+      },
+      "lineage_columns_present": true,
+      "status": "CREATED_EMPTY"
+    },
+    "fhq_research.regime_predictions_v2": {
+      "row_count": 0,
+      "column_count": 12,
+      "columns": [
+        "prediction_id (uuid, NOT NULL, PK)",
+        "asset_id (text, NOT NULL)",
+        "timestamp (date, NOT NULL)",
+        "model_id (uuid, FK -> regime_model_registry)",
+        "perception_model_version (text, NOT NULL)",
+        "regime_raw (integer, NOT NULL)",
+        "regime_label (text, NOT NULL, CHECK)",
+        "confidence_score (numeric, NOT NULL, CHECK 0-1)",
+        "created_at (timestamptz, NOT NULL)",
+        "lineage_hash (text, NOT NULL)",
+        "hash_prev (text, nullable)",
+        "hash_self (text, NOT NULL)"
+      ],
+      "constraints": {
+        "primary_key": "regime_predictions_v2_pkey",
+        "unique_constraint": "regime_predictions_v2_asset_timestamp_key (asset_id, timestamp)",
+        "foreign_key": "regime_predictions_v2_model_id_fkey -> regime_model_registry",
+        "check_constraints": [
+          "regime_predictions_v2_confidence_check (0 <= confidence_score <= 1)",
+          "regime_predictions_v2_regime_label_check (STRONG_BULL, BULL, RANGE_UP, NEUTRAL, RANGE_DOWN, BEAR, STRONG_BEAR, PARABOLIC, BROKEN, UNTRUSTED)"
+        ]
+      },
+      "lineage_columns_present": true,
+      "status": "CREATED_EMPTY"
+    },
+    "fhq_meta.ios_appendix_registry": {
+      "row_count": 1,
+      "column_count": 11,
+      "columns": [
+        "appendix_id (uuid, NOT NULL, PK)",
+        "ios_id (text, NOT NULL)",
+        "appendix_code (text, NOT NULL)",
+        "appendix_title (text, NOT NULL)",
+        "version (text, NOT NULL)",
+        "status (text, NOT NULL, CHECK)",
+        "content_hash (text, NOT NULL)",
+        "owner_role (text, nullable)",
+        "governing_adrs (text[], nullable)",
+        "created_at (timestamptz, NOT NULL)",
+        "updated_at (timestamptz, NOT NULL)"
+      ],
+      "constraints": {
+        "primary_key": "ios_appendix_registry_pkey",
+        "unique_constraint": "ios_appendix_unique (ios_id, appendix_code)",
+        "check_constraint": "ios_appendix_status_check (DRAFT, REGISTERED, ACTIVE, DEPRECATED, ARCHIVED)"
+      },
+      "status": "CREATED_WITH_APPENDIX_ENTRY"
+    }
+  },
+
+  "task_registry_entry": {
+    "task_name": "META_PERCEPTION_HMM_PIPELINE",
+    "task_type": "PERCEPTION_FEATURE_PIPELINE",
+    "task_scope": "IOS_003_INTERNAL",
+    "owned_by_agent": "LARS",
+    "executed_by_agent": "CODE",
+    "reads_from_schemas": ["fhq_market", "fhq_research"],
+    "writes_to_schemas": ["fhq_perception", "fhq_research"],
+    "gate_level": "G1",
+    "gate_approved": false,
+    "vega_reviewed": false,
+    "task_status": "REGISTERED",
+    "description": "HMM v2.0 Regime Detection Pipeline per IoS-003 Appendix A. Computes 7 canonical z-score features and deterministic argmax regime classification."
+  },
+
+  "ios_registry_update": {
+    "ios_id": "IoS-003",
+    "title": "Meta-Perception Engine (Market Brain)",
+    "status": "ACTIVE",
+    "version": "2026.PROD.1",
+    "owner_role": "LARS",
+    "appendix_added_to_governing_adrs": "IoS-003_Appendix_A_HMM_REGIME",
+    "governing_adrs_count": 14
+  },
+
+  "governance_action": {
+    "action_id": "61c54f6e-51c6-4607-b01f-8d6ee79ff34d",
+    "action_type": "IOS_APPENDIX_G0_SUBMISSION",
+    "action_target": "IoS-003_Appendix_A_HMM_REGIME",
+    "action_target_type": "IOS_APPENDIX",
+    "initiated_by": "LARS",
+    "decision": "APPROVED",
+    "decision_rationale": "G0 submission APPROVED for HMM v2.0 regime pipeline infrastructure. Tables created: regime_model_registry, hmm_features_daily, regime_predictions_v2. Task registered: META_PERCEPTION_HMM_PIPELINE. No computation executed. No data populated.",
+    "vega_reviewed": false,
+    "hash_chain_id": "IOS003-APPENDIX-A-G0-20251129-172753"
+  },
+
+  "hash_chain_entry": {
+    "chain_id": "HC-IOS-003-APPENDIX-A-20251129",
+    "chain_type": "IOS_APPENDIX",
+    "chain_scope": "HMM_REGIME_PIPELINE",
+    "chain_length": 1,
+    "integrity_verified": true,
+    "created_by": "STIG"
+  },
+
+  "g0_exit_criteria_checklist": {
+    "criterion_1": {
+      "description": "fhq_research.regime_model_registry exists, empty, full lineage",
+      "status": "PASS",
+      "verification": "Schema validated, COUNT = 0, lineage_hash/hash_prev/hash_self present"
+    },
+    "criterion_2": {
+      "description": "fhq_research.regime_predictions_v2 exists, empty, full lineage",
+      "status": "PASS",
+      "verification": "Schema validated, COUNT = 0, CHECK constraints verified, FK to model_registry"
+    },
+    "criterion_3": {
+      "description": "fhq_perception.hmm_features_daily exists, empty, UNIQUE constraint",
+      "status": "PASS",
+      "verification": "Schema validated, COUNT = 0, UNIQUE(asset_id, timestamp) verified, 7 canonical features present"
+    },
+    "criterion_4": {
+      "description": "META_PERCEPTION_HMM_PIPELINE in task_registry",
+      "status": "PASS",
+      "verification": "gate_approved=FALSE, vega_reviewed=FALSE, task_status=REGISTERED"
+    },
+    "criterion_5": {
+      "description": "IoS-003 linked to Appendix A",
+      "status": "PASS",
+      "verification": "governing_adrs contains 'IoS-003_Appendix_A_HMM_REGIME'"
+    },
+    "criterion_6": {
+      "description": "fhq_meta.ios_appendix_registry contains entry",
+      "status": "PASS",
+      "verification": "Entry found: IoS-003 / Appendix_A_HMM_REGIME / REGISTERED / 2026.PROD.1"
+    },
+    "criterion_7": {
+      "description": "Evidence file exists",
+      "status": "PASS",
+      "verification": "This file: evidence/IOS003_HMM_PIPELINE_G0_20251129.json"
+    },
+    "criterion_8": {
+      "description": "No data in any new tables",
+      "status": "PASS",
+      "verification": "regime_model_registry=0, regime_predictions_v2=0, hmm_features_daily=0"
+    },
+    "criterion_9": {
+      "description": "IoS-003 status unchanged",
+      "status": "PASS",
+      "verification": "status=ACTIVE, version=2026.PROD.1 (unchanged from pre-G0)"
+    }
+  },
+
+  "g0_safety_constraints_verified": {
+    "no_hmm_training": true,
+    "no_hmm_inference": true,
+    "no_data_population": true,
+    "no_ios003_status_change": true,
+    "no_existing_table_modification": true
+  },
+
+  "files_created": [
+    {
+      "path": "04_DATABASE/MIGRATIONS/026_ios003_appendix_a_hmm_regime.sql",
+      "purpose": "DDL migration script",
+      "executed": true
+    },
+    {
+      "path": "02_IOS/IoS-003_Appendix_A_HMM_REGIME.md",
+      "purpose": "Appendix specification document",
+      "status": "CREATED"
+    },
+    {
+      "path": "evidence/IOS003_HMM_PIPELINE_G0_20251129.json",
+      "purpose": "G0 evidence bundle",
+      "status": "THIS_FILE"
+    }
+  ],
+
+  "stig_attestation": {
+    "g0_submission_successful": true,
+    "all_tables_created": true,
+    "all_tables_empty": true,
+    "lineage_columns_present": true,
+    "task_registered_not_approved": true,
+    "ios003_status_preserved": true,
+    "no_computation_executed": true,
+    "governance_action_logged": true,
+    "hash_chain_created": true
+  },
+
+  "next_gates": {
+    "G1": {
+      "owner": "STIG",
+      "scope": "Technical validation: HMM math, schema, determinism",
+      "status": "PENDING"
+    },
+    "G2": {
+      "owner": "VEGA",
+      "scope": "Governance: role isolation, ADR compliance",
+      "status": "PENDING"
+    },
+    "G3": {
+      "owner": "VEGA",
+      "scope": "Golden sample audit, hash chain verification",
+      "status": "PENDING"
+    },
+    "G4": {
+      "owner": "CEO",
+      "scope": "Activation approval",
+      "status": "PENDING"
+    }
+  },
+
+  "hash_self": "G0-IOS003-APPENDIX-A-HMM-REGIME-20251129-STIG"
+}

@@ -1,0 +1,146 @@
+{
+  "metadata": {
+    "validation_type": "IOS012_G2_PAPER_TRADING",
+    "module": "IoS-012",
+    "gate": "G2",
+    "mode": "PAPER_API",
+    "started_at": "2025-12-01T11:49:39.322759+00:00",
+    "validator": "STIG/LINE",
+    "authority": "BOARD",
+    "completed_at": "2025-12-01T11:49:41.971307+00:00"
+  },
+  "tests": {
+    "G2-A": {
+      "test_id": "G2-A",
+      "test_name": "PAPER_CONNECTIVITY",
+      "status": "PASS",
+      "account": {
+        "id": "1efc48bb-0ba6-434c-8971-5e31a59dd7ec",
+        "status": "ACTIVE",
+        "account_number": "PA3QR0OH6ODW",
+        "buying_power": 200000.0,
+        "cash": 100000.0,
+        "portfolio_value": 100000.0,
+        "currency": "USD",
+        "crypto_status": "ACTIVE"
+      },
+      "latency_ms": 2067,
+      "checks": {
+        "http_200": true,
+        "account_active": true,
+        "paper_environment": true,
+        "buying_power_available": true
+      }
+    },
+    "G2-B": {
+      "test_id": "G2-B",
+      "test_name": "DIFF_ENGINE_STRESS",
+      "scenarios": {
+        "S1_ZERO_STATE": {
+          "current": 0.0,
+          "target": 0.5,
+          "expected_side": "BUY",
+          "expected_qty": 0.5,
+          "actual_side": "BUY",
+          "actual_qty": 0.5,
+          "status": "PASS"
+        },
+        "S2_PARTIAL_STATE": {
+          "current": 0.5,
+          "target": 0.8,
+          "expected_side": "BUY",
+          "expected_qty": 0.3,
+          "actual_side": "BUY",
+          "actual_qty": 0.30000000000000004,
+          "status": "PASS"
+        },
+        "S3_EXCESS_STATE": {
+          "current": 0.8,
+          "target": 0.0,
+          "expected_side": "SELL",
+          "expected_qty": 0.8,
+          "actual_side": "SELL",
+          "actual_qty": 0.8,
+          "status": "PASS"
+        },
+        "S4_ALIGNED": {
+          "current": 0.5,
+          "target": 0.5,
+          "expected_side": "HOLD",
+          "expected_qty": 0.0,
+          "actual_side": "HOLD",
+          "actual_qty": 0.0,
+          "status": "PASS"
+        }
+      },
+      "status": "PASS"
+    },
+    "G2-C": {
+      "test_id": "G2-C",
+      "test_name": "PAPER_ORDER_LIFECYCLE",
+      "status": "FAIL",
+      "error": "cost basis must be >= minimal amount of order 10"
+    },
+    "G2-D": {
+      "test_id": "G2-D",
+      "test_name": "LATENCY_BENCHMARK",
+      "threshold_ms": 500,
+      "status": "SKIP",
+      "reason": "G2-C did not complete successfully"
+    },
+    "G2-E": {
+      "test_id": "G2-E",
+      "test_name": "STATE_RECONSTRUCTION",
+      "status": "FAIL",
+      "error": "Object of type Decimal is not JSON serializable"
+    },
+    "G2-NEG": {
+      "test_id": "G2-NEG",
+      "test_name": "SECURITY_REJECTION",
+      "subtests": {
+        "A_EXPIRED_TTL": {
+          "verified": false,
+          "reason": "TTL_EXPIRED",
+          "order_blocked": true,
+          "status": "PASS"
+        },
+        "B_INVALID_SIG": {
+          "verified": false,
+          "reason": "INVALID_SIGNATURE",
+          "order_blocked": true,
+          "status": "PASS"
+        },
+        "C_HASH_MISMATCH": {
+          "verified": false,
+          "reason": "HASH_MISMATCH",
+          "order_blocked": true,
+          "status": "PASS"
+        }
+      },
+      "status": "PASS"
+    }
+  },
+  "latency_benchmarks": [],
+  "security_events": [
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "A_EXPIRED_TTL",
+      "reason": "TTL_EXPIRED",
+      "timestamp": "2025-12-01T11:49:41.858682+00:00"
+    },
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "B_INVALID_SIG",
+      "reason": "INVALID_SIGNATURE",
+      "timestamp": "2025-12-01T11:49:41.858682+00:00"
+    },
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "C_HASH_MISMATCH",
+      "reason": "HASH_MISMATCH",
+      "timestamp": "2025-12-01T11:49:41.858682+00:00"
+    }
+  ],
+  "overall_status": "FAIL",
+  "integrity_hash": "61b1cddd3d1a754f9f88cc597687e3aec1b2c7164def3758a860afb0c8050eb5"
+}

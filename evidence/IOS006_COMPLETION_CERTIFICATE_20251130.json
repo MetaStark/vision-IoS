@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "document_type": "IOS006_COMPLETION_CERTIFICATE",
+    "module": "IoS-006",
+    "module_name": "Global Macro & Factor Integration Engine",
+    "status": "GOVERNANCE-ACTIVE",
+    "generated_at": "2025-11-30T14:10:52.156027+00:00",
+    "generated_by": "STIG",
+    "attested_by": "VEGA",
+    "authority": "LARS (Strategic)",
+    "adr_compliance": [
+      "ADR-011",
+      "ADR-012",
+      "ADR-013",
+      "ADR-014"
+    ],
+    "hash_chain_id": "HC-IOS-006-2026"
+  },
+  "g3_audit_summary": {
+    "execution_date": "2025-11-30",
+    "clusters_audited": 3,
+    "total_features_tested": 15,
+    "golden_features": 2,
+    "rejection_rate": 86.7,
+    "statistical_rigor": {
+      "permutation_tests": 1000,
+      "bootstrap_tests": 1000,
+      "lag_grid": [
+        0,
+        1,
+        3,
+        7,
+        14
+      ],
+      "significance_threshold": 0.05
+    }
+  },
+  "ratified_alpha_nodes": [
+    {
+      "role": "Liquidity Node",
+      "feature_id": "GLOBAL_M2_USD",
+      "cluster": "LIQUIDITY",
+      "optimal_lag": 1,
+      "p_value": 0.018,
+      "correlation": 0.229,
+      "mechanism": "Global liquidity expansion leads BTC returns by 1 month"
+    },
+    {
+      "role": "Gravity Node",
+      "feature_id": "US_10Y_REAL_RATE",
+      "cluster": "FACTOR",
+      "optimal_lag": 0,
+      "p_value": 0.004,
+      "correlation": 0.056,
+      "mechanism": "Real rate movements reflect risk appetite regime shifts"
+    }
+  ],
+  "redundancy_resolution": {
+    "demoted_feature": "US_M2_YOY",
+    "demoted_to": "REDUNDANT_BACKUP",
+    "reason": "Perfect correlation (r=1.0) with GLOBAL_M2_USD",
+    "lock_period": "12 months",
+    "canonical_selection": "GLOBAL_M2_USD",
+    "selection_rationale": "Bitcoin responds to aggregate global liquidity (USD+EUR+CNY+JPY)"
+  },
+  "rejected_hypotheses": [
+    "Credit stress (HY/IG spreads) does not predict BTC at tested lags",
+    "Yield curve shape is not predictive for BTC",
+    "TED spread shows no significant relationship with BTC",
+    "Fed funds rate changes do not predict BTC returns"
+  ],
+  "evidence_chain": {
+    "G3_1_LIQUIDITY": "28b92f060eaba97d185949cbf16ad3799233d211ddf74c9f627b80e02392a0a9",
+    "G3_2_CREDIT": "1028158e917e20640d77bc66da66a730daf7ccb7f7a2c154900021ac6e61973e",
+    "G3_3_FACTOR": "1076562d1be6dc470959ae5538b9d29caa6202edd9f999e8c83c106d49f44267",
+    "G3_4_SYNTHESIS": "e71d3e305580b2ba3cef769e3b2c20455d266ef4bcd6fe5e3835390334d6b2ce"
+  },
+  "ios007_authorization": {
+    "authorized": true,
+    "phase": "Phase 1 - Architectural Blueprint",
+    "permitted_inputs": [
+      "GLOBAL_M2_USD",
+      "US_10Y_REAL_RATE"
+    ],
+    "constraint": "Zero external features without VEGA approval"
+  },
+  "governance_trail": {
+    "g2_closeout": "0913dcb5-7e81-41b1-b86a-e8c36b098054",
+    "g3_liquidity": "1eccb4b3-b514-4097-a26c-49c32ecaa6cb",
+    "g3_credit": "aea956a7-a56a-40ed-af34-9aabc3cc9882",
+    "g3_factor": "716c1b4d-4aa6-4b19-a646-859bf468d5ef",
+    "g3_synthesis": "3e635ade-99c9-4706-8d84-59b45d2459c5",
+    "module_activation": "06b54058-4005-4c17-9043-5b16473f9cb9"
+  },
+  "integrity_hash": "d17aa458049450c5af324660d23919cd73f0f90467b15bed85fca6fbaa711ef5"
+}

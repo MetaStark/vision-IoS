@@ -1,0 +1,434 @@
+{
+  "report_id": "STIG-BASELINE-REALITY-20251210-001",
+  "report_type": "PHASE_1_BASELINE_EXTRACTION",
+  "authority": "CEO Directive - PHASE 1",
+  "compliance": ["ADR-001", "ADR-003", "ADR-011", "ADR-013", "ADR-018"],
+  "executor": "STIG",
+  "execution_mode": "READ_ONLY",
+  "timestamp_utc": "2025-12-10T14:01:00Z",
+
+  "section_2_1_llm_execution_reality": {
+    "summary": "LLM calls are occurring but NOT routed through governance telemetry tables",
+
+    "call_locations": [
+      {
+        "file": "06_AGENTS/FINN/finn_deepseek_researcher.py",
+        "function": "DeepSeekClient.analyze(context: Dict) -> Dict",
+        "line": 227,
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "scripts/research_daemon.py",
+        "function": "synthesize_with_deepseek(query, results) -> str",
+        "line": 245,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "scripts/research_daemon.py",
+        "function": "analyze_for_trade_impact(position, research) -> Dict",
+        "line": 504,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "scripts/crio_night_watch.py",
+        "function": "synthesize_research(query, results)",
+        "line": 451,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "scripts/crio_night_watch.py",
+        "function": "deep_analysis(context)",
+        "line": 587,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "scripts/force_batch_reasoning.py",
+        "function": "generate_reasoning(context)",
+        "line": 142,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "05_ORCHESTRATOR/orchestrator_daemon.py",
+        "function": "llm_synthesis(data)",
+        "line": 703,
+        "provider": "deepseek",
+        "model": "deepseek-reasoner",
+        "bypass_pattern": "DIRECT_REQUESTS_POST"
+      },
+      {
+        "file": "03_FUNCTIONS/ios013_hcp_g4_runner.py",
+        "function": "DeepSeekClient.analyze_risk(structure, market_context)",
+        "line": 192,
+        "provider": "deepseek",
+        "model": "SIMULATED_MODE",
+        "bypass_pattern": "RETURNS_SIMULATION_NOT_ACTUAL_CALL"
+      }
+    ],
+
+    "call_frequency": {
+      "source": "fhq_optimization.reward_traces",
+      "period": "2025-12-08 to 2025-12-09",
+      "by_model": [
+        {
+          "model": "deepseek-reasoner",
+          "call_count": 494,
+          "total_reasoning_tokens": 441241,
+          "total_tokens": 1020189,
+          "first_call": "2025-12-08T21:33:42.409Z",
+          "last_call": "2025-12-09T11:04:28.294Z"
+        },
+        {
+          "model": "serper+deepseek",
+          "call_count": 61,
+          "total_reasoning_tokens": 94366,
+          "total_tokens": 94366,
+          "first_call": "2025-12-09T10:13:03.843Z",
+          "last_call": "2025-12-09T23:17:53.158Z"
+        }
+      ],
+      "total_calls_7d": 555,
+      "total_tokens_7d": 1114555
+    },
+
+    "runtime_cost_estimate": {
+      "note": "Cost not tracked in telemetry - estimated from token counts",
+      "deepseek_reasoner_input_rate": 0.00014,
+      "deepseek_reasoner_output_rate": 0.00028,
+      "estimated_total_cost_usd": "~$0.40-0.80 (rough estimate)"
+    },
+
+    "provider_routing_behaviour": {
+      "observed": "ALL_DIRECT_BYPASS",
+      "middleware_intercept": false,
+      "telemetry_capture": false,
+      "governance_audit": false
+    }
+  },
+
+  "section_2_2_telemetry_infrastructure_reality": {
+    "tables": [
+      {
+        "table": "fhq_governance.telemetry_cost_ledger",
+        "exists": true,
+        "row_count": 0,
+        "status": "EMPTY"
+      },
+      {
+        "table": "fhq_governance.llm_routing_log",
+        "exists": true,
+        "row_count": 0,
+        "status": "EMPTY"
+      },
+      {
+        "table": "fhq_governance.api_usage_events",
+        "exists": true,
+        "row_count": 0,
+        "status": "EMPTY"
+      },
+      {
+        "table": "telemetry_config",
+        "exists": false,
+        "row_count": null,
+        "status": "TABLE_DOES_NOT_EXIST"
+      },
+      {
+        "table": "telemetry_errors",
+        "exists": false,
+        "row_count": null,
+        "status": "TABLE_DOES_NOT_EXIST"
+      },
+      {
+        "table": "fhq_cognition.cognitive_metrics",
+        "exists": true,
+        "row_count": 0,
+        "status": "EMPTY"
+      }
+    ],
+
+    "agent_task_log_enrichment": {
+      "table": "fhq_governance.agent_task_log",
+      "total_rows": 45,
+      "has_provider": 0,
+      "missing_provider": 45,
+      "has_cost": 0,
+      "missing_cost": 45,
+      "has_latency": 0,
+      "missing_latency": 45,
+      "enrichment_rate": "0%"
+    },
+
+    "api_budget_log_status": {
+      "table": "fhq_governance.api_budget_log",
+      "total_entries": 13,
+      "entries_7d": 13,
+      "deepseek_tracked": false,
+      "last_update": "2025-12-04",
+      "note": "Budget log exists but DEEPSEEK shows 0 requests despite 555 actual calls"
+    }
+  },
+
+  "section_2_3_cognitive_domain_reality": {
+    "schema": "fhq_cognition",
+    "tables": [
+      {"table": "cognitive_metrics", "row_count": 0, "status": "DORMANT"},
+      {"table": "cognitive_nodes", "row_count": 0, "status": "DORMANT"},
+      {"table": "information_foraging_paths", "row_count": 0, "status": "DORMANT"},
+      {"table": "knowledge_boundaries", "row_count": 0, "status": "DORMANT"},
+      {"table": "research_protocols", "row_count": 0, "status": "DORMANT"},
+      {"table": "search_in_chain_events", "row_count": 0, "status": "DORMANT"},
+      {"table": "lineage_log", "row_count": 1, "status": "GENESIS_ONLY"}
+    ],
+
+    "lineage_log_content": {
+      "lineage_id": "00000000-0000-0000-0000-000000000001",
+      "target_table": "GENESIS",
+      "operation_type": "GENESIS",
+      "operation_agent": "STIG",
+      "verification_agent": "VEGA",
+      "source_document": "ADR-021",
+      "governance_class": "CONSTITUTIONAL-GENESIS",
+      "created_at": "2025-12-09T19:51:10.402Z"
+    },
+
+    "engine_activation_status": {
+      "SitC": "NOT_ACTIVATED",
+      "InForage": "NOT_ACTIVATED",
+      "IKEA": "NOT_ACTIVATED",
+      "note": "Schema infrastructure deployed, no runtime data"
+    },
+
+    "cognitive_views_status": [
+      {"view": "csi_metrics_v", "row_count": 12, "note": "Returns 12 agents with NULL/default values"},
+      {"view": "dds_metrics_v", "row_count": 12, "note": "Returns 12 agents with NULL/default values"},
+      {"view": "eis_metrics_v", "row_count": 12, "note": "Returns 12 agents with NULL/default values"},
+      {"view": "confidence_metrics_v", "row_count": 12, "note": "Returns 12 agents with NULL/default values"}
+    ]
+  },
+
+  "section_2_4_agent_activity_reality": {
+    "agents": [
+      {
+        "agent_id": "CDMO",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-09T14:24:49.263Z",
+        "last_activity_source": "ENTROPY",
+        "tasks_7d": 0,
+        "gii_state": "YELLOW",
+        "gii_score": 95,
+        "blocked_operations": 1
+      },
+      {
+        "agent_id": "CEIO",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-08T22:56:41.780Z",
+        "last_activity_source": "HEARTBEAT",
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "CEO",
+        "contract_status": "ACTIVE",
+        "last_activity": null,
+        "last_activity_source": null,
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "CFAO",
+        "contract_status": "ACTIVE",
+        "last_activity": null,
+        "last_activity_source": null,
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "CODE",
+        "contract_status": "ACTIVE",
+        "last_activity": null,
+        "last_activity_source": null,
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "CRIO",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-09T16:06:39.273Z",
+        "last_activity_source": "ENTROPY",
+        "tasks_7d": 0,
+        "gii_state": "YELLOW",
+        "gii_score": 80,
+        "blocked_operations": 4
+      },
+      {
+        "agent_id": "CSEO",
+        "contract_status": "ACTIVE",
+        "last_activity": null,
+        "last_activity_source": null,
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "FINN",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-10T12:52:39.970Z",
+        "last_activity_source": "RESEARCH",
+        "tasks_7d": 45,
+        "task_type": "RESEARCH",
+        "task_status": "SUCCESS",
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "LARS",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-08T22:56:26.868Z",
+        "last_activity_source": "HEARTBEAT",
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "LINE",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-08T22:56:23.196Z",
+        "last_activity_source": "HEARTBEAT",
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "STIG",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-08T22:56:18.627Z",
+        "last_activity_source": "HEARTBEAT",
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      },
+      {
+        "agent_id": "VEGA",
+        "contract_status": "ACTIVE",
+        "last_activity": "2025-12-08T22:56:35.874Z",
+        "last_activity_source": "HEARTBEAT",
+        "tasks_7d": 0,
+        "gii_state": "GREEN",
+        "gii_score": 100,
+        "blocked_operations": 0
+      }
+    ],
+
+    "tasks_missing_metadata": {
+      "total_tasks": 45,
+      "missing_provider": 45,
+      "missing_cost": 45,
+      "missing_latency": 45,
+      "percentage": "100%"
+    },
+
+    "system_events_7d": [
+      {"source_agent": "LINE", "event_type": "STOCK_TRADE_REST", "count": 12121},
+      {"source_agent": "LINE", "event_type": "STREAMER_HEARTBEAT", "count": 2424},
+      {"source_agent": "CRIO", "event_type": "SERPER_SEARCH", "count": 122},
+      {"source_agent": "CRIO", "event_type": "RESEARCH_CYCLE_COMPLETE", "count": 53},
+      {"source_agent": "CRIO", "event_type": "CEIO_SHADOW_POSITION", "count": 5},
+      {"source_agent": "STIG", "event_type": "ORDER_REJECTED", "count": 2},
+      {"source_agent": "STIG", "event_type": "ORDER_SIMULATED", "count": 2},
+      {"source_agent": "STIG", "event_type": "MANUAL_SYSTEM_PROBE", "count": 2}
+    ]
+  },
+
+  "section_2_5_governance_reality": {
+    "gii_deviations": [
+      {
+        "agent_id": "CDMO",
+        "gii_state": "YELLOW",
+        "gii_score": 95,
+        "asrp_violations": 0,
+        "blocked_operations": 1,
+        "truth_vector_drift": 0
+      },
+      {
+        "agent_id": "CRIO",
+        "gii_state": "YELLOW",
+        "gii_score": 80,
+        "asrp_violations": 0,
+        "blocked_operations": 4,
+        "truth_vector_drift": 0
+      }
+    ],
+
+    "asrp_state": {
+      "asrp_state_log_rows": 0,
+      "asrp_violations_rows": 0,
+      "status": "NO_VIOLATIONS_RECORDED"
+    },
+
+    "signature_infrastructure": {
+      "gateway_integrity_signatures": 1,
+      "gateway_request_log_total": 2,
+      "gateway_request_log_7d": 2,
+      "operation_signatures_total": 94,
+      "operation_signatures_7d": 0,
+      "note": "Signature infrastructure exists but minimal recent activity"
+    },
+
+    "truth_gateway": {
+      "source_of_truth_table": "EXISTS",
+      "gateway_request_log": "2 requests in 7 days",
+      "drift_detected": false
+    }
+  },
+
+  "section_2_6_actual_llm_usage_discovered": {
+    "source": "fhq_optimization.reward_traces",
+    "discovery": "LLM usage IS being tracked in reward_traces table, bypassing telemetry_cost_ledger",
+    "total_traces": 555,
+    "total_tokens": 1114555,
+    "models_used": ["deepseek-reasoner", "serper+deepseek"],
+    "agent": "CRIO_RESEARCHER",
+    "sample_queries": [
+      "GAP:INSTITUTIONAL_NET_FUTURES_POSITIONING_(EXTREME)",
+      "GAP:TSMC_FORWARD_GUIDANCE",
+      "GAP:US_DOLLAR_(DXY)_STRENGTH",
+      "GAP:U.S._10-YEAR_TREASURY_YIELD_DECLINE",
+      "GAP:GLOBAL_RISK_SENTIMENT_(DETERIORATION)"
+    ],
+    "note": "reward_traces captures reasoning_trace, total_tokens - but NOT routed through governance telemetry"
+  },
+
+  "extraction_metadata": {
+    "queries_executed": 28,
+    "tables_inspected": 42,
+    "files_analyzed": 24,
+    "write_operations": 0,
+    "schema_modifications": 0,
+    "code_changes": 0,
+    "compliance_verified": true
+  }
+}

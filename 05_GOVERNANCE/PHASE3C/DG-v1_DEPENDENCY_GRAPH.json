@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "document_type": "DEPENDENCY_GRAPH",
+    "version": "DG-v1",
+    "authority": "CEO Directive 2026-FHQ-PHASE-3C",
+    "generated_at": "2025-12-10T16:15:00.000000+00:00",
+    "generated_by": "STIG",
+    "format": "directed_graph_json"
+  },
+  "smoke_test_context_lock": {
+    "validated_in_isolation": true,
+    "validated_under_load": false,
+    "validated_multi_agent_concurrency": false,
+    "validated_recursive_research_cycles": false
+  },
+  "nodes": {
+    "agents": [
+      {"id": "LARS", "type": "agent", "tier": 1, "role": "Orchestrator"},
+      {"id": "FINN", "type": "agent", "tier": 2, "role": "Research"},
+      {"id": "CEIO", "type": "agent", "tier": 2, "role": "Intelligence"},
+      {"id": "CRIO", "type": "agent", "tier": 2, "role": "Research Intelligence"},
+      {"id": "LINE", "type": "agent", "tier": 2, "role": "Execution"},
+      {"id": "STIG", "type": "agent", "tier": 2, "role": "Technical"},
+      {"id": "VEGA", "type": "agent", "tier": 1, "role": "Governance"}
+    ],
+    "call_sites": [
+      {"id": "CS-001", "type": "call_site", "file": "finn_deepseek_researcher.py", "agent": "FINN"},
+      {"id": "CS-002", "type": "call_site", "file": "finn_night_research_executor.py", "agent": "FINN"},
+      {"id": "CS-003", "type": "call_site", "file": "speciale_parser_wrapper.py", "agent": "CEIO/FINN"},
+      {"id": "CS-006", "type": "call_site", "file": "ios013_hcp_g4_runner.py", "agent": "LINE"},
+      {"id": "CS-009", "type": "call_site", "file": "orchestrator_daemon.py", "agent": "LARS"},
+      {"id": "CS-010", "type": "call_site", "file": "ceio_shadow_cycle_runner.py", "agent": "CEIO"}
+    ],
+    "cognitive_nodes": [
+      {"id": "CN-FRAGILITY", "type": "cognitive", "name": "fragility_score", "output": "0.0-1.0"},
+      {"id": "CN-REGIME", "type": "cognitive", "name": "regime_assessment", "output": "BULL/BEAR/NEUTRAL"},
+      {"id": "CN-CAUSAL-EDGE", "type": "cognitive", "name": "causal_edge", "output": "source→target"},
+      {"id": "CN-PREMORTEM", "type": "cognitive", "name": "pre_mortem_analysis", "output": "risk_factors"},
+      {"id": "CN-SHADOW-SIGNAL", "type": "cognitive", "name": "shadow_trade_signal", "output": "BUY/SELL/HOLD"},
+      {"id": "CN-CONTEXT", "type": "cognitive", "name": "system_context", "output": "market_state+memory"}
+    ],
+    "data_stores": [
+      {"id": "DS-ALPHA-GRAPH", "type": "data", "schema": "fhq_cognition.alpha_graph_edges"},
+      {"id": "DS-REWARD-TRACES", "type": "data", "schema": "fhq_governance.reward_traces"},
+      {"id": "DS-SHADOW-POS", "type": "data", "schema": "fhq_positions.shadow_positions"},
+      {"id": "DS-HCP-SIGNALS", "type": "data", "schema": "fhq_positions.hcp_signals"},
+      {"id": "DS-REGIME-STATE", "type": "data", "schema": "fhq_governance.regime_state"},
+      {"id": "DS-PRICES", "type": "data", "schema": "fhq_market.prices"}
+    ]
+  },
+  "edges": {
+    "call_site_to_agent": [
+      {"from": "CS-001", "to": "FINN", "relation": "executed_by"},
+      {"from": "CS-002", "to": "FINN", "relation": "executed_by"},
+      {"from": "CS-003", "to": "CEIO", "relation": "executed_by"},
+      {"from": "CS-003", "to": "FINN", "relation": "executed_by"},
+      {"from": "CS-006", "to": "LINE", "relation": "executed_by"},
+      {"from": "CS-009", "to": "LARS", "relation": "executed_by"},
+      {"from": "CS-010", "to": "CEIO", "relation": "executed_by"}
+    ],
+    "call_site_to_cognitive": [
+      {"from": "CS-001", "to": "CN-FRAGILITY", "relation": "produces"},
+      {"from": "CS-001", "to": "CN-REGIME", "relation": "produces"},
+      {"from": "CS-002", "to": "CN-FRAGILITY", "relation": "produces"},
+      {"from": "CS-003", "to": "CN-CAUSAL-EDGE", "relation": "produces"},
+      {"from": "CS-006", "to": "CN-PREMORTEM", "relation": "produces"},
+      {"from": "CS-009", "to": "CN-CAUSAL-EDGE", "relation": "produces"},
+      {"from": "CS-010", "to": "CN-SHADOW-SIGNAL", "relation": "produces"}
+    ],
+    "cognitive_to_data": [
+      {"from": "CN-FRAGILITY", "to": "DS-REGIME-STATE", "relation": "updates"},
+      {"from": "CN-REGIME", "to": "DS-REGIME-STATE", "relation": "updates"},
+      {"from": "CN-CAUSAL-EDGE", "to": "DS-ALPHA-GRAPH", "relation": "inserts"},
+      {"from": "CN-PREMORTEM", "to": "DS-HCP-SIGNALS", "relation": "validates"},
+      {"from": "CN-SHADOW-SIGNAL", "to": "DS-SHADOW-POS", "relation": "creates"},
+      {"from": "CN-SHADOW-SIGNAL", "to": "DS-REWARD-TRACES", "relation": "generates"}
+    ],
+    "agent_coordination": [
+      {"from": "LARS", "to": "FINN", "relation": "directs_research"},
+      {"from": "LARS", "to": "CEIO", "relation": "directs_intelligence"},
+      {"from": "FINN", "to": "CRIO", "relation": "delegates_research"},
+      {"from": "CEIO", "to": "CS-001", "relation": "invokes"},
+      {"from": "LINE", "to": "DS-HCP-SIGNALS", "relation": "executes"},
+      {"from": "VEGA", "to": "ALL", "relation": "governs"}
+    ],
+    "call_site_dependencies": [
+      {"from": "CS-010", "to": "CS-001", "relation": "imports", "coupling": "TIGHT"},
+      {"from": "CS-002", "to": "CS-001", "relation": "imports", "coupling": "TIGHT"},
+      {"from": "CS-009", "to": "CS-003", "relation": "may_invoke", "coupling": "LOOSE"},
+      {"from": "CS-003", "to": "CN-CONTEXT", "relation": "requires", "coupling": "TIGHT"},
+      {"from": "CS-009", "to": "CN-CONTEXT", "relation": "may_use", "coupling": "LOOSE"}
+    ]
+  },
+  "cognitive_chains": {
+    "crio_research_cycle": {
+      "description": "FINN CRIO research producing fragility scores",
+      "chain": [
+        {"step": 1, "node": "DS-PRICES", "action": "read market data"},
+        {"step": 2, "node": "CS-001", "action": "CRIO LLM call"},
+        {"step": 3, "node": "CN-FRAGILITY", "action": "produce fragility_score"},
+        {"step": 4, "node": "DS-REGIME-STATE", "action": "update regime"},
+        {"step": 5, "node": "DS-REWARD-TRACES", "action": "log for learning"}
+      ],
+      "instrumentation_impact": "MEDIUM - timing change may affect reward trace correlation"
+    },
+    "ceio_fact_finding": {
+      "description": "CEIO shadow cycle for learning",
+      "chain": [
+        {"step": 1, "node": "CS-010", "action": "initiate shadow cycle"},
+        {"step": 2, "node": "CS-001", "action": "invoke FINN CRIO (import)"},
+        {"step": 3, "node": "CN-SHADOW-SIGNAL", "action": "produce trade signal"},
+        {"step": 4, "node": "DS-SHADOW-POS", "action": "create shadow position"},
+        {"step": 5, "node": "DS-PRICES", "action": "track price"},
+        {"step": 6, "node": "DS-REWARD-TRACES", "action": "compute reward"}
+      ],
+      "instrumentation_impact": "HIGH - tight coupling to CS-001, any latency affects shadow P&L timing"
+    },
+    "finn_alpha_production": {
+      "description": "Night research alpha generation",
+      "chain": [
+        {"step": 1, "node": "CS-002", "action": "night research trigger"},
+        {"step": 2, "node": "CS-001", "action": "invoke CRIO engine"},
+        {"step": 3, "node": "CN-FRAGILITY", "action": "fragility analysis"},
+        {"step": 4, "node": "CN-REGIME", "action": "regime drift check"},
+        {"step": 5, "node": "DS-ALPHA-GRAPH", "action": "update alpha signals"}
+      ],
+      "instrumentation_impact": "LOW - batch job, timing not critical"
+    },
+    "orchestrator_cognitive_synthesis": {
+      "description": "Brain Bridge market event → alpha graph",
+      "chain": [
+        {"step": 1, "node": "DS-PRICES", "action": "detect significant change"},
+        {"step": 2, "node": "CS-009", "action": "call Speciale"},
+        {"step": 3, "node": "CN-CAUSAL-EDGE", "action": "extract causal edge"},
+        {"step": 4, "node": "DS-ALPHA-GRAPH", "action": "insert edge"},
+        {"step": 5, "node": "VEGA", "action": "governance attestation"}
+      ],
+      "instrumentation_impact": "CRITICAL - highest volume, latency affects edge freshness"
+    },
+    "sitc_inforage_ikea_interplay": {
+      "description": "ADR-021 cognitive constraints",
+      "chain": [
+        {"step": 1, "node": "CN-CONTEXT", "action": "context injection (IKEA boundary)"},
+        {"step": 2, "node": "CS-003", "action": "Speciale call with context"},
+        {"step": 3, "node": "CN-CAUSAL-EDGE", "action": "reasoning bounded by context"},
+        {"step": 4, "node": "VEGA", "action": "InForage value check"},
+        {"step": 5, "node": "DS-ALPHA-GRAPH", "action": "insert if value > 0"}
+      ],
+      "instrumentation_impact": "CRITICAL - telemetry must capture IKEA/InForage gate outcomes"
+    }
+  },
+  "graphviz_dot": "digraph FHQ_LLM_Dependencies {\n  rankdir=LR;\n  node [shape=box];\n  \n  // Agents\n  subgraph cluster_agents {\n    label=\"Agents\";\n    LARS [style=filled,fillcolor=gold];\n    FINN [style=filled,fillcolor=lightblue];\n    CEIO [style=filled,fillcolor=lightgreen];\n    LINE [style=filled,fillcolor=lightyellow];\n    VEGA [style=filled,fillcolor=red,fontcolor=white];\n  }\n  \n  // Call Sites\n  subgraph cluster_callsites {\n    label=\"LLM Call Sites\";\n    CS001 [label=\"CS-001\\nfinn_deepseek\",shape=ellipse];\n    CS002 [label=\"CS-002\\nnight_research\",shape=ellipse];\n    CS003 [label=\"CS-003\\nspeciale_wrapper\",shape=ellipse];\n    CS006 [label=\"CS-006\\nhcp_g4_runner\",shape=ellipse];\n    CS009 [label=\"CS-009\\norchestrator_daemon\",shape=ellipse];\n    CS010 [label=\"CS-010\\nceio_shadow\",shape=ellipse];\n  }\n  \n  // Data Stores\n  subgraph cluster_data {\n    label=\"Data Stores\";\n    alpha_graph [shape=cylinder];\n    reward_traces [shape=cylinder];\n    shadow_pos [shape=cylinder];\n    regime_state [shape=cylinder];\n  }\n  \n  // Edges\n  LARS -> CS009;\n  FINN -> CS001;\n  FINN -> CS002;\n  CEIO -> CS010;\n  LINE -> CS006;\n  \n  CS001 -> regime_state;\n  CS001 -> reward_traces;\n  CS009 -> alpha_graph;\n  CS010 -> shadow_pos;\n  CS010 -> reward_traces;\n  CS010 -> CS001 [style=dashed,label=\"imports\"];\n  CS002 -> CS001 [style=dashed,label=\"imports\"];\n  \n  VEGA -> alpha_graph [label=\"governs\",style=dotted];\n  VEGA -> reward_traces [label=\"governs\",style=dotted];\n}"
+}

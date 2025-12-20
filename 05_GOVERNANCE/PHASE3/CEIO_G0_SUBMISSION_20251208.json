@@ -1,0 +1,231 @@
+{
+  "evidence_type": "CEIO_G0_SUBMISSION",
+  "evidence_id": "CEIO-G0-20251208-001",
+  "issued_at": "2025-12-08T20:00:00Z",
+  "authority": "VISION-IOS (CSO)",
+  "executor": "STIG (CTO)",
+  "directive_reference": "VISION-IOS CSO Memorandum 2025-12-08",
+
+  "submission_summary": {
+    "title": "CEIO (Causal-Entropy Information Optimization) Architecture",
+    "version": "2026.PROD.1",
+    "classification": "STRATEGIC IMPLEMENTATION",
+    "parent_adr": "ADR-020 (ACI Protocol)",
+    "integration_target": "IoS-007 Alpha Graph"
+  },
+
+  "academic_foundation": {
+    "ikea_protocol": {
+      "source": "Huang et al., ICLR 2026 (arXiv:2505.07596)",
+      "contribution": "Knowledge Boundary Awareness - rewards internal knowledge use",
+      "key_formula": "r_kb = r_kb+ · (1 - RT/RT_max) · 𝟙[r_signal > 0]"
+    },
+    "inforage_logic": {
+      "source": "Qian & Liu, NeurIPS 2025",
+      "contribution": "Information Scent Optimization - information foraging theory",
+      "key_formula": "C_FHQ = |{n ∈ N_focus : freshness(n) < 24h}| / |N_focus|"
+    },
+    "structural_causal_entropy": {
+      "source": "FHQ Definition (inspired by Mahadevan 2021)",
+      "contribution": "Graph Stability Regulator - measures causal topology entropy",
+      "key_formula": "H_sc(G) = -Σ P(e) · log₂(P(e)) · w_causal(e)",
+      "semantic_pivot": "Renamed from 'Causal Entropy' to avoid confusion with Permuter/Kramer time-series definition"
+    }
+  },
+
+  "master_equation": {
+    "formula": "R_CEIO = β^max(0,T-2) · (r_signal + α·C_FHQ + γ·r_kb)",
+    "components": {
+      "efficiency_factor": "β^max(0,T-2) - exponential decay for long reasoning chains",
+      "r_signal": "Outcome reward (profit/loss)",
+      "r_scent": "α·C_FHQ - graph coverage reward",
+      "r_internal": "γ·r_kb - internal knowledge efficiency reward"
+    }
+  },
+
+  "hyperparameters_calibration": {
+    "alpha": {
+      "value": 0.30,
+      "paper_value": 0.20,
+      "rationale": "Higher penalty for missing macro-correlations in financial markets"
+    },
+    "beta": {
+      "value": 0.90,
+      "paper_value": 0.95,
+      "rationale": "Aggressive decay - markets move fast, 6-8 steps max before signal becomes noise"
+    },
+    "gamma": {
+      "value": 1.00,
+      "rationale": "Full weight to internal knowledge reward"
+    },
+    "r_kb_positive": {
+      "value": 0.50,
+      "paper_value": 0.60,
+      "rationale": "Baseline reward for parametric knowledge use"
+    },
+    "api_max": {
+      "value": 5,
+      "rationale": "Hard limit on external API calls per reasoning chain"
+    },
+    "h_sc_threshold": {
+      "value": 0.80,
+      "rationale": "Entropy ceiling - above this triggers CHAOS regime and ABORT"
+    }
+  },
+
+  "behavior_hierarchy": {
+    "description": "IKEA Behavior Classification (1 > 3 > 4 > 2)",
+    "behaviors": [
+      {
+        "class": 1,
+        "name": "PERFECT_EFFICIENCY",
+        "condition": "Correct signal + Zero API calls",
+        "reward": "Maximum (1.0 + 0.30·C + 0.50)"
+      },
+      {
+        "class": 3,
+        "name": "NECESSARY_SEARCH",
+        "condition": "Correct signal + 1-3 API calls",
+        "reward": "Good (1.0 + 0.30·C + partial r_kb)"
+      },
+      {
+        "class": 4,
+        "name": "EXCESSIVE_SEARCH",
+        "condition": "Correct signal + >3 API calls",
+        "reward": "Low (1.0 + 0.30·C + 0)"
+      },
+      {
+        "class": 2,
+        "name": "FAILURE",
+        "condition": "Incorrect signal",
+        "reward": "Zero or Negative"
+      }
+    ]
+  },
+
+  "risk_mitigations": [
+    {
+      "risk": "Frozen Agent (High Entropy)",
+      "description": "Agent loops searching for causality in chaos",
+      "mitigation": "If H_sc > 0.80, hard-switch to CASH/NEUTRAL",
+      "implemented": true
+    },
+    {
+      "risk": "Lazy Analyst (Reward Hacking)",
+      "description": "Agent guesses Neutral to minimize API calls",
+      "mitigation": "r_kb only awarded if r_signal > 0",
+      "implemented": true
+    },
+    {
+      "risk": "Coverage Gaming",
+      "description": "Agent refreshes irrelevant nodes to inflate C_FHQ",
+      "mitigation": "C_FHQ denominator is N_focus (2-hop subgraph), not full graph",
+      "implemented": true
+    }
+  ],
+
+  "validation_results": {
+    "scenario_a_obvious_macro": {
+      "description": "BTC vs NVDA earnings correlation",
+      "pre_ceio": {"steps": 6, "api_calls": 3, "reward": 0.9448},
+      "ceio_optimized": {"steps": 3, "api_calls": 1, "reward": 1.4760},
+      "improvement": "56.2%"
+    },
+    "scenario_b_black_swan": {
+      "description": "Geopolitical shock impact on Oil",
+      "result": {"steps": 4, "api_calls": 5, "reward": 1.0287},
+      "analysis": "r_scent (0.27) saved the reward despite r_internal = 0"
+    },
+    "entropy_regime_test": {
+      "h_sc": 1.4504,
+      "regime": "CHAOS",
+      "action": "ABORT",
+      "status": "WORKING_CORRECTLY"
+    },
+    "behavior_classification": {
+      "all_classes_working": true,
+      "tested_scenarios": 4
+    }
+  },
+
+  "artifacts_created": {
+    "database_schema": {
+      "file": "04_DATABASE/MIGRATIONS/094_ceio_optimization_schema.sql",
+      "sha256": "f6fae6a0a462dc243d49849e839489259652ed45c1d4b05cb4822eaa6e511215",
+      "tables": [
+        "fhq_optimization.ceio_hyperparameters",
+        "fhq_optimization.entropy_snapshots",
+        "fhq_optimization.reward_traces",
+        "fhq_optimization.calibration_experiments"
+      ],
+      "functions": [
+        "fhq_optimization.get_active_config()",
+        "fhq_optimization.classify_behavior()"
+      ],
+      "views": [
+        "fhq_optimization.v_reward_efficiency",
+        "fhq_optimization.v_entropy_regimes"
+      ]
+    },
+    "python_engine": {
+      "file": "03_FUNCTIONS/ceio_entropy_engine.py",
+      "sha256": "8e6834f0c06a66de5e84280a277f51514d4eee8c928bfba8228bf9e5cb294261",
+      "functions": [
+        "calculate_structural_causal_entropy()",
+        "calculate_graph_coverage()",
+        "calculate_knowledge_boundary_reward()",
+        "calculate_ceio_reward()",
+        "compute_entropy_snapshot()",
+        "compute_reward_trace()"
+      ]
+    },
+    "integration_layer": {
+      "file": "03_FUNCTIONS/ceio_alpha_graph_integration.py",
+      "sha256": "8e4a052e71103d2701258adba7f0777b0184af3468a7f28c632aed563c7741c8",
+      "functions": [
+        "load_active_config()",
+        "expand_2hop_neighbors()",
+        "get_node_freshness()",
+        "analyze_query()",
+        "should_abort_research()"
+      ]
+    }
+  },
+
+  "database_state": {
+    "schema_created": "fhq_optimization",
+    "default_config_inserted": true,
+    "governance_action_logged": true,
+    "tables_empty": true
+  },
+
+  "action_items_status": {
+    "lars_approve_h_sc_redefinition": "COMPLETED_IN_DIRECTIVE",
+    "stig_deploy_python_engine": "COMPLETED",
+    "vega_backtest_calibration": "PENDING"
+  },
+
+  "freedom_formula_impact": {
+    "formula": "Frihet = Alpha Signal Presisjon / Tidsbruk → Maksimalt",
+    "improvement": {
+      "precision": "Improved via IKEA (internal first) + InForage (information scent)",
+      "time": "Reduced via β decay enforcement + H_sc regime cutoff",
+      "combined": "56.2% reward improvement in Obvious Macro scenario"
+    }
+  },
+
+  "attestation": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "I certify that the CEIO (Causal-Entropy Information Optimization) architecture has been implemented per VISION-IOS CSO Directive 2025-12-08. All components validated, database schema deployed, Python engine tested, and governance records created.",
+    "timestamp": "2025-12-08T20:00:00Z"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-CEIO-IMPLEMENTATION-20251208",
+    "parent_chains": [
+      "HC-ADR020-CONSTITUTIONAL-20251208"
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "directive": "CEO DIRECTIVE: IoS-002 TA ACTIVATION FOR EQUITIES",
+  "document": "TA_ACTIVATION_READY",
+  "status": "READY",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:35:00Z",
+
+  "ta_coverage_summary": {
+    "NVDA": {"momentum_days": 1263, "trend_days": 1263, "volatility_days": 1257, "coverage_pct": 99.1},
+    "AAPL": {"momentum_days": 1263, "trend_days": 1263, "volatility_days": 1257, "coverage_pct": 99.1},
+    "MSFT": {"momentum_days": 1263, "trend_days": 1263, "volatility_days": 1257, "coverage_pct": 99.1},
+    "SPY": {"momentum_days": 1263, "trend_days": 1263, "volatility_days": 1257, "coverage_pct": 99.1},
+    "QQQ": {"momentum_days": 1263, "trend_days": 1263, "volatility_days": 1257, "coverage_pct": 99.1}
+  },
+
+  "ta_coverage_requirement": {
+    "minimum_pct": 99.0,
+    "all_assets_pass": true,
+    "average_coverage_pct": 99.1
+  },
+
+  "indicators_computed": {
+    "momentum": ["RSI_14", "StochRSI_14", "CCI_20", "MFI_14"],
+    "trend": ["MACD", "MACD_Signal", "MACD_Histogram", "EMA_9", "EMA_20", "EMA_50", "EMA_200", "SMA_50", "SMA_200"],
+    "volatility": ["BB_Upper", "BB_Middle", "BB_Lower", "BB_Width", "ATR_14"],
+    "ichimoku": ["Tenkan", "Kijun", "Senkou_A", "Senkou_B", "Chikou"]
+  },
+
+  "data_source_verification": {
+    "price_source": "yahoo_chart_v8_raw",
+    "data_type": "RAW OHLCV (unadjusted)",
+    "split_discontinuities": "PRESERVED",
+    "adjusted_data_used": false
+  },
+
+  "lineage_structure": {
+    "engine_version": "1.0.0",
+    "formula_hash": "71e7f25bbf6ab6d7...",
+    "lineage_hash_algorithm": "SHA-256(asset_id|timestamp|formula_hash|value_json)",
+    "adr_003_compliant": true
+  },
+
+  "regression_protection": {
+    "raw_close_verified": true,
+    "adj_close_not_used_in_ta": true,
+    "nvda_split_check": {
+      "pre_split_close_jun6": 1208.88,
+      "post_split_close_jun9": 121.79,
+      "ratio_verified": 9.93,
+      "expected_ratio": 10.0,
+      "status": "PASSED"
+    }
+  },
+
+  "tables_populated": {
+    "fhq_research.indicator_momentum": "1,742,646 total rows",
+    "fhq_research.indicator_trend": "1,733,282 total rows",
+    "fhq_research.indicator_volatility": "1,706,836 total rows",
+    "fhq_research.indicator_ichimoku": "1,668,218 total rows"
+  },
+
+  "downstream_systems_ready": [
+    "IoS-003: Regime Perception (can now evaluate equities)",
+    "IoS-004: CRIO Allocation Engine (exposure generation)",
+    "IoS-005: Skill Measurement (alpha attribution)",
+    "IoS-007: Alpha Graph (signal integration)"
+  ],
+
+  "governance_status": {
+    "violations": 0,
+    "signature_drift": 0,
+    "adr_compliance": ["ADR-003", "ADR-007", "ADR-013"]
+  },
+
+  "activation_gate": {
+    "data_standard_verified": true,
+    "ta_coverage_above_99": true,
+    "raw_data_confirmed": true,
+    "corporate_actions_integrated": true,
+    "lineage_compliant": true,
+    "all_gates_passed": true
+  },
+
+  "scripts": [
+    "03_FUNCTIONS/calc_indicators_v1.py",
+    "scripts/yahoo_chart_v8_raw.py"
+  ],
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "IoS-002 TA activation verified for equities. Coverage 99.1% across all assets. RAW data confirmed. Corporate actions integrated. Lineage compliant. Ready for IoS-003/004/005 integration."
+  }
+}

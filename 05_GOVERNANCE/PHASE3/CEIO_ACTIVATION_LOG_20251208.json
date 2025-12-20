@@ -1,0 +1,184 @@
+{
+  "evidence_type": "CEIO_ACTIVATION_LOG",
+  "evidence_id": "CEIO-ACT-20251208-001",
+  "issued_at": "2025-12-08T20:55:51Z",
+  "authority": "CEO DIRECTIVE 001-CEIO",
+  "executor": "STIG (CTO)",
+  "employment_contract": "EC-003_2026_PRODUCTION",
+
+  "directive_summary": {
+    "title": "CEIO Shadow Activation",
+    "classification": "STRATEGIC EXECUTION",
+    "mode": "SHADOW_PAPER",
+    "defcon_level": "GREEN (5)",
+    "effective_date": "2025-12-08"
+  },
+
+  "activation_status": {
+    "execution_mode": {
+      "previous": "PAPER_PROD",
+      "current": "SHADOW_PAPER",
+      "set_by": "CEO_DIRECTIVE_001_CEIO",
+      "timestamp": "2025-12-08T20:55:51Z"
+    },
+    "ceio_policy": {
+      "is_active": true,
+      "is_policy_active": true,
+      "shadow_mode_enabled": true,
+      "config_name": "FHQ_CEIO_DEFAULT"
+    },
+    "shadow_ledger": {
+      "table_created": true,
+      "schema": "fhq_optimization",
+      "table_name": "shadow_ledger"
+    },
+    "defcon_state": {
+      "level": "GREEN",
+      "transition_type": "RESET",
+      "aci_autonomy": "FULL"
+    }
+  },
+
+  "hyperparameters_active": {
+    "alpha": 0.30,
+    "beta": 0.90,
+    "gamma": 1.00,
+    "r_kb_positive": 0.50,
+    "api_max": 5,
+    "h_sc_threshold": 0.80,
+    "t_min": 2,
+    "t_max": 4
+  },
+
+  "risk_controls": {
+    "frozen_agent_mitigation": {
+      "description": "If H_sc > 0.80, hard-switch to CASH/NEUTRAL",
+      "threshold": 0.80,
+      "action": "ABORT",
+      "status": "ENFORCED"
+    },
+    "lazy_analyst_mitigation": {
+      "description": "r_kb only awarded if r_signal > 0",
+      "status": "ENFORCED"
+    },
+    "coverage_gaming_mitigation": {
+      "description": "C_FHQ denominator is N_focus (2-hop subgraph), not full graph",
+      "status": "ENFORCED"
+    },
+    "zea_firewall": {
+      "description": "Zero Execution Authority - CEIO cannot execute trades",
+      "status": "ACTIVE"
+    }
+  },
+
+  "agent_task_assignments": [
+    {
+      "agent": "VEGA",
+      "task": "Run USD/NOK backtest using alpha_lab.core.historical_simulator to derive true alpha parameter",
+      "deliverable": "CEIO_RISK_REVIEW_202512xx.json",
+      "status": "ASSIGNED"
+    },
+    {
+      "agent": "LINE",
+      "task": "IoS-012 continuous SHADOW_PAPER mode monitoring, shadow orders SLA",
+      "deliverable": "7-day Shadow PnL Report",
+      "status": "ASSIGNED"
+    },
+    {
+      "agent": "FINN",
+      "task": "Validate r_signal metrics, define boundaries for directionally-correct vs profit-correct signals",
+      "deliverable": "Methodology Memo",
+      "status": "ASSIGNED"
+    }
+  ],
+
+  "artifacts": {
+    "migration_095": {
+      "file": "04_DATABASE/MIGRATIONS/095_ceio_shadow_activation.sql",
+      "sha256": "c9de69afdaaf4b05ba13489095aec78d26d9156bb6e4ac4cc1e00f3416e6eebd",
+      "executed_at": "2025-12-08T20:55:51Z",
+      "status": "COMMITTED"
+    },
+    "ceio_entropy_engine": {
+      "file": "03_FUNCTIONS/ceio_entropy_engine.py",
+      "sha256": "8e6834f0c06a66de5e84280a277f51514d4eee8c928bfba8228bf9e5cb294261",
+      "status": "DEPLOYED"
+    },
+    "ceio_alpha_graph_integration": {
+      "file": "03_FUNCTIONS/ceio_alpha_graph_integration.py",
+      "sha256": "8e4a052e71103d2701258adba7f0777b0184af3468a7f28c632aed563c7741c8",
+      "status": "DEPLOYED"
+    },
+    "migration_094": {
+      "file": "04_DATABASE/MIGRATIONS/094_ceio_optimization_schema.sql",
+      "sha256": "f6fae6a0a462dc243d49849e839489259652ed45c1d4b05cb4822eaa6e511215",
+      "status": "COMMITTED"
+    },
+    "g0_submission": {
+      "file": "05_GOVERNANCE/PHASE3/CEIO_G0_SUBMISSION_20251208.json",
+      "status": "SUBMITTED"
+    }
+  },
+
+  "database_changes": {
+    "schema_modified": ["fhq_governance", "fhq_optimization"],
+    "tables_created": ["fhq_optimization.shadow_ledger"],
+    "columns_added": [
+      "fhq_optimization.ceio_hyperparameters.is_policy_active",
+      "fhq_optimization.ceio_hyperparameters.shadow_mode_enabled"
+    ],
+    "constraints_modified": ["fhq_governance.execution_mode.valid_mode_name"]
+  },
+
+  "governance_records": {
+    "execution_mode_log": "INSERTED",
+    "defcon_transition_log": "INSERTED",
+    "governance_actions_log": "4 ENTRIES (CEIO activation + 3 agent assignments)"
+  },
+
+  "freedom_formula_status": {
+    "formula": "Frihet = Alpha Signal Presisjon / Tidsbruk -> Maksimalt",
+    "optimization_enabled": true,
+    "measurement_mode": "SHADOW_PAPER",
+    "learning_active": true
+  },
+
+  "attestation": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "I certify that CEO DIRECTIVE 001-CEIO has been executed in full. CEIO Shadow Activation is COMPLETE. Execution mode is SHADOW_PAPER, DEFCON level is GREEN (5), shadow_ledger is ACTIVE, and CEIO is bound as the primary research policy. All risk controls are ENFORCED. Agent task assignments have been logged to governance_actions_log.",
+    "timestamp": "2025-12-08T20:55:51Z"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-CEIO-SHADOW-ACTIVATION-20251208",
+    "parent_chains": [
+      "HC-CEIO-IMPLEMENTATION-20251208",
+      "HC-ADR020-CONSTITUTIONAL-20251208"
+    ]
+  },
+
+  "next_actions": {
+    "vega_backtest": {
+      "description": "USD/NOK backtest to derive true alpha parameter",
+      "priority": "HIGH",
+      "deadline": "Within 7 days"
+    },
+    "line_monitoring": {
+      "description": "Continuous shadow execution monitoring",
+      "priority": "HIGH",
+      "ongoing": true
+    },
+    "finn_methodology": {
+      "description": "r_signal validation methodology memo",
+      "priority": "MEDIUM",
+      "deadline": "Within 14 days"
+    },
+    "g2_graduation_review": {
+      "description": "Review shadow performance for potential PAPER_PROD graduation",
+      "criteria": "7+ days of stable shadow execution with positive simulated PnL",
+      "required_approvals": ["VEGA", "CEO"]
+    }
+  }
+}

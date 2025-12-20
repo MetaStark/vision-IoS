@@ -1,0 +1,540 @@
+{
+  "validation_id": "e777190d-cffe-45fc-b5f2-77fa80a4002b",
+  "ios_module": "IoS-002",
+  "module_name": "Indicator Engine (Sensory Cortex)",
+  "validation_type": "G2_GOVERNANCE",
+  "timestamp": "2025-11-29T09:45:47.169728+00:00",
+  "validators": [
+    "LARS (CSO)",
+    "VEGA (Compliance)"
+  ],
+  "overall_status": "G2_GOVERNANCE_PASS",
+  "checks": [
+    {
+      "check_id": "G2-001",
+      "check_name": "Semantic Scope (Measurement Only)",
+      "status": "PASS",
+      "details": {
+        "registry": {
+          "ios_id": "IoS-002",
+          "title": "Indicator Engine \u2013 Sensory Cortex",
+          "description": "Feature extraction layer. Computes deterministic technical indicators from canonical OHLCV. Environment: fhq_market \u2192 fhq_research",
+          "owner_role": "FINN",
+          "governing_adrs": [
+            "ADR-001",
+            "ADR-003",
+            "ADR-007",
+            "ADR-010",
+            "ADR-013"
+          ]
+        },
+        "measurement_only": true,
+        "issues": [],
+        "classification": "MEASUREMENT-ONLY"
+      },
+      "adr_reference": "ADR-001, ADR-013"
+    },
+    {
+      "check_id": "G2-002",
+      "check_name": "Role Permissions Matrix",
+      "status": "PASS",
+      "details": {
+        "authority_matrix": {
+          "cdmo": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "ceio": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "cfao": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "CODE": {
+            "authority_level": 3,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "crio": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          },
+          "cseo": {
+            "authority_level": 2,
+            "can_read": true,
+            "can_write_canonical": false,
+            "can_execute": true
+          }
+        },
+        "calc_indicators_task": {
+          "task_name": "CALC_INDICATORS",
+          "owned_by_agent": "FINN",
+          "executed_by_agent": "CODE",
+          "reads_from_schemas": [
+            "fhq_market"
+          ],
+          "writes_to_schemas": [
+            "fhq_research"
+          ],
+          "task_status": "REGISTERED"
+        },
+        "ec_contracts": {
+          "STIG": {
+            "contract_id": 14,
+            "duties": 8,
+            "constraints": 5,
+            "rights": 5
+          },
+          "FINN": {
+            "contract_id": 15,
+            "duties": 8,
+            "constraints": 5,
+            "rights": 5
+          },
+          "CODE": {
+            "contract_id": 22,
+            "duties": 4,
+            "constraints": 6,
+            "rights": 3
+          }
+        },
+        "permission_matrix": {
+          "STIG": {
+            "read": true,
+            "write": "schema_only",
+            "mechanism": "Migration SQL",
+            "authority": "EC-003"
+          },
+          "CODE": {
+            "read": true,
+            "write": true,
+            "mechanism": "CALC_INDICATORS pipeline",
+            "authority": "EC-011"
+          },
+          "FINN": {
+            "read": true,
+            "write": false,
+            "mechanism": "Specification only",
+            "authority": "EC-004"
+          },
+          "LARS": {
+            "read": true,
+            "write": false,
+            "mechanism": "Strategic oversight",
+            "authority": "EC-002"
+          },
+          "LINE": {
+            "read": true,
+            "write": false,
+            "mechanism": "Infrastructure only",
+            "authority": "EC-005"
+          },
+          "VEGA": {
+            "read": true,
+            "write": false,
+            "mechanism": "Audit/Attestation",
+            "authority": "EC-001"
+          },
+          "Tier-2": {
+            "read": true,
+            "write": "FORBIDDEN",
+            "mechanism": "N/A",
+            "authority": "Authority Matrix"
+          }
+        },
+        "issues": [],
+        "tier2_write_forbidden": true
+      },
+      "adr_reference": "ADR-007, ADR-014, EC-001 through EC-011"
+    },
+    {
+      "check_id": "G2-003",
+      "check_name": "One-True-Source Verification",
+      "status": "PASS",
+      "details": {
+        "canonical_tables": [
+          "indicator_trend",
+          "indicator_momentum",
+          "indicator_volatility",
+          "indicator_ichimoku"
+        ],
+        "shadow_table_analysis": [
+          {
+            "table": "fhq_data.macro_indicators",
+            "classification": "DIFFERENT_DOMAIN",
+            "action": "No action - economic indicators (GDP, inflation)"
+          },
+          {
+            "table": "fhq_research.backtest_results_rsi_threshold",
+            "classification": "DERIVED_OUTPUT",
+            "action": "No action - backtest results, not source data"
+          },
+          {
+            "table": "fhq_research.macro_indicators",
+            "classification": "DIFFERENT_DOMAIN",
+            "action": "No action - economic indicators (GDP, inflation)"
+          }
+        ],
+        "indicator_views": [],
+        "issues": [],
+        "llm_policy_required": "Agents must NOT calculate RSI/MACD/ATR in Python - read from fhq_research only"
+      },
+      "adr_reference": "ADR-013"
+    },
+    {
+      "check_id": "G2-004",
+      "check_name": "Reconciliation & Discrepancy Policy",
+      "status": "PASS",
+      "details": {
+        "existing_field_weights": [
+          {
+            "component_name": "FINN",
+            "field_name": "confidence_score",
+            "criticality_weight": "0.8",
+            "tolerance_type": "NUMERIC",
+            "tolerance_value": "0.001"
+          },
+          {
+            "component_name": "FINN",
+            "field_name": "market_regime",
+            "criticality_weight": "1.0",
+            "tolerance_type": "EXACT",
+            "tolerance_value": "0"
+          }
+        ],
+        "indicator_snapshots_count": 0,
+        "policy": {
+          "classification": {
+            "default_criticality": "MEDIUM",
+            "active_strategy_criticality": "HIGH",
+            "rationale": "Analytical data (Medium), upgraded when used in live strategy"
+          },
+          "tolerances": {
+            "float_values": {
+              "type": "NUMERIC",
+              "threshold": 0.001,
+              "description": "0.1% max deviation"
+            },
+            "categorical": {
+              "type": "EXACT",
+              "threshold": 0,
+              "description": "Must match exactly"
+            }
+          },
+          "daily_checks": [
+            {
+              "test": "Missing rows vs prices",
+              "trigger": "gap_count > 0",
+              "action": "WARNING, trigger backfill"
+            },
+            {
+              "test": "Unexpected NULL values",
+              "trigger": "null_count > 0 in active window",
+              "action": "WARNING"
+            },
+            {
+              "test": "Large jumps vs price",
+              "trigger": "indicator_delta > 3 * price_delta",
+              "action": "ALERT, manual review"
+            }
+          ],
+          "weekly_checks": [
+            {
+              "test": "Formula drift",
+              "trigger": "recalc_delta > 0.001%",
+              "action": "CRITICAL, suspend stage"
+            },
+            {
+              "test": "Benchmark deviation",
+              "trigger": "vs TradingView > 0.001%",
+              "action": "CRITICAL, investigate"
+            }
+          ],
+          "discrepancy_logging": {
+            "target_table": "fhq_governance.discrepancy_events",
+            "required_fields": [
+              "ios_id",
+              "table_name",
+              "discrepancy_type",
+              "severity",
+              "detected_at",
+              "detected_by"
+            ],
+            "tables_found": [
+              "discrepancy_events"
+            ]
+          }
+        },
+        "issues": []
+      },
+      "adr_reference": "ADR-002, ADR-010"
+    },
+    {
+      "check_id": "G2-005",
+      "check_name": "Economic Safety & Fortress Isolation",
+      "status": "PASS",
+      "details": {
+        "isolation_matrix": {
+          "indicator_to_order_fks": 0,
+          "indicator_to_position_fks": 0,
+          "execution_schema_exists": false,
+          "trading_tables_in_research": [],
+          "calc_indicators_target": [
+            "fhq_research"
+          ]
+        },
+        "fortress_test_case": {
+          "test_name": "test_corrupted_indicators_detected",
+          "description": "Insert RSI = 150 (impossible value, max is 100)",
+          "expected_behavior": "VEGA discrepancy scan catches it before strategy layer",
+          "implementation_status": "DEFINED - awaiting ADR-011 test suite integration"
+        },
+        "issues": [],
+        "conclusion": "Errors in IoS-002 can only affect analysis, not capital"
+      },
+      "adr_reference": "ADR-011, ADR-012"
+    },
+    {
+      "check_id": "G2-006",
+      "check_name": "Suspension & DEFCON Behavior",
+      "status": "PASS",
+      "details": {
+        "current_defcon": "GREEN",
+        "active_breakers": [],
+        "relevant_circuit_breakers": [
+          {
+            "breaker_name": "HIGH_LATENCY",
+            "breaker_type": "EXECUTION",
+            "trigger_condition": {
+              "condition": "latency_ms > 2000",
+              "description": "System latency exceeds 2000ms"
+            },
+            "action_on_trigger": {
+              "actions": [
+                "THROTTLE_REQUESTS",
+                "RESTRICT_PULSE_FEEDS"
+              ]
+            },
+            "defcon_threshold": "YELLOW",
+            "is_enabled": true
+          },
+          {
+            "breaker_name": "DISCREPANCY_DRIFT",
+            "breaker_type": "GOVERNANCE",
+            "trigger_condition": {
+              "condition": "discrepancy_score > 0.08",
+              "description": "Discrepancy score exceeds 0.08 threshold"
+            },
+            "action_on_trigger": {
+              "actions": [
+                "FORCE_PAPER_TRADING",
+                "ENABLE_COT_VALIDATION",
+                "CEIO_DEEP_SCAN"
+              ]
+            },
+            "defcon_threshold": "ORANGE",
+            "is_enabled": true
+          },
+          {
+            "breaker_name": "SYSTEM_ERROR_RATE",
+            "breaker_type": "SYSTEM",
+            "trigger_condition": {
+              "condition": "error_rate_pct > 5",
+              "description": "System error rate exceeds 5%"
+            },
+            "action_on_trigger": {
+              "actions": [
+                "HALT_PIPELINES",
+                "CANCEL_ALL_ORDERS",
+                "DATABASE_READ_ONLY",
+                "NOTIFY_CEO"
+              ]
+            },
+            "defcon_threshold": "RED",
+            "is_enabled": true
+          }
+        ],
+        "suspension_triggers": [
+          {
+            "condition": "Discrepancy events > 3 per day",
+            "threshold": 3,
+            "action": "CALC_INDICATORS stage SUSPENDED"
+          },
+          {
+            "condition": "Formula drift > 0.01%",
+            "threshold": 0.0001,
+            "action": "CALC_INDICATORS stage SUSPENDED"
+          },
+          {
+            "condition": "Benchmark deviation > 0.1% sustained",
+            "threshold": 0.001,
+            "action": "IoS-002 module DEGRADED"
+          }
+        ],
+        "defcon_behavior_matrix": {
+          "GREEN": {
+            "behavior": "Normal operations",
+            "calculations": "ACTIVE",
+            "history": "PRESERVED"
+          },
+          "YELLOW": {
+            "behavior": "Extra validation",
+            "calculations": "ACTIVE + VALIDATE",
+            "history": "PRESERVED"
+          },
+          "ORANGE": {
+            "behavior": "Halt new calculations",
+            "calculations": "HALTED",
+            "history": "PRESERVED"
+          },
+          "RED": {
+            "behavior": "Freeze all writes",
+            "calculations": "READ_ONLY",
+            "history": "PRESERVED"
+          },
+          "BLACK": {
+            "behavior": "Complete isolation",
+            "calculations": "ISOLATED",
+            "history": "FORENSIC_SNAPSHOT"
+          }
+        },
+        "emergency_brake_procedure": {
+          "steps": [
+            "1. Detect: discrepancy_score > 0.08 OR repeated failures",
+            "2. Log: INSERT INTO suspension_audit_log (ios_id='IoS-002', reason, timestamp)",
+            "3. Suspend: UPDATE task_registry SET task_status='SUSPENDED' WHERE task_name='CALC_INDICATORS'",
+            "4. Flag: Mark Meta-Perception (IoS-003) as DEGRADED_INPUT",
+            "5. Preserve: Historical data remains intact (no deletion)",
+            "6. Alert: Notify LARS (CSO) for governance review"
+          ],
+          "infrastructure_ready": {
+            "suspension_log_exists": true,
+            "task_status_column": true,
+            "circuit_breakers_configured": true
+          }
+        },
+        "issues": []
+      },
+      "adr_reference": "ADR-009, ADR-016"
+    }
+  ],
+  "governance_matrix": {
+    "ios_module": "IoS-002",
+    "module_name": "Indicator Engine (Sensory Cortex)",
+    "roles": {
+      "STIG": {
+        "read": true,
+        "write": "schema_only",
+        "mechanism": "migration"
+      },
+      "CODE": {
+        "read": true,
+        "write": true,
+        "mechanism": "CALC_INDICATORS"
+      },
+      "FINN": {
+        "read": true,
+        "write": false,
+        "mechanism": "specification"
+      },
+      "LARS": {
+        "read": true,
+        "write": false,
+        "mechanism": "oversight"
+      },
+      "VEGA": {
+        "read": true,
+        "write": false,
+        "mechanism": "attestation"
+      }
+    },
+    "tables": [
+      "indicator_trend",
+      "indicator_momentum",
+      "indicator_volatility",
+      "indicator_ichimoku"
+    ],
+    "unauthorized_write": "EXPLICITLY_FORBIDDEN"
+  },
+  "dataflow_diagram": "\nfhq_market.prices (IoS-001)\n      |\n      v\n+-----------------------------+\n|  CALC_INDICATORS (CODE)     |\n|  Owner: FINN                |\n|  Gate: G1_APPROVED          |\n+-----------------------------+\n      |\n      v\nfhq_research.indicator_* (IoS-002)\n      |\n      +---> VEGA Reconciliation\n      |\n      v\nIoS-003 Meta-Perception (READ ONLY)\n",
+  "risk_register": [
+    {
+      "risk_id": "R-001",
+      "type": "Formula drift",
+      "consequence": "Incorrect signals",
+      "mitigation": "Weekly benchmark test",
+      "owner": "VEGA"
+    },
+    {
+      "risk_id": "R-002",
+      "type": "Missing data",
+      "consequence": "Incomplete analysis",
+      "mitigation": "Daily gap detection",
+      "owner": "VEGA"
+    },
+    {
+      "risk_id": "R-003",
+      "type": "Unauthorized write",
+      "consequence": "Data integrity breach",
+      "mitigation": "Authority matrix enforcement",
+      "owner": "LARS"
+    },
+    {
+      "risk_id": "R-004",
+      "type": "Shadow calculation",
+      "consequence": "One-Source violation",
+      "mitigation": "LLM policy + code review",
+      "owner": "STIG"
+    },
+    {
+      "risk_id": "R-005",
+      "type": "Cascade to trading",
+      "consequence": "Capital loss",
+      "mitigation": "Isolation architecture",
+      "owner": "LARS"
+    }
+  ],
+  "adr_compliance": [
+    "ADR-001",
+    "ADR-002",
+    "ADR-003",
+    "ADR-004",
+    "ADR-006",
+    "ADR-007",
+    "ADR-009",
+    "ADR-010",
+    "ADR-011",
+    "ADR-012",
+    "ADR-013",
+    "ADR-014",
+    "ADR-016"
+  ],
+  "next_gate": "G3_AUDIT",
+  "bundle_hash": "005e5fcf66546a5ef09acc34b944462cc6291f6ca4dde203586d29ab42bb3038",
+  "signature_log": {
+    "lars_approval": {
+      "signer": "LARS",
+      "role": "CSO",
+      "sign_time": "2025-11-29T09:45:47.169728+00:00",
+      "decision": "G2_GOVERNANCE_PASS"
+    },
+    "vega_attestation": {
+      "signer": "VEGA",
+      "role": "Compliance",
+      "sign_time": "2025-11-29T09:45:47.169728+00:00",
+      "attestation_id": "44dc607f-ecff-44c7-b8a0-a69f09357408"
+    },
+    "bundle_hash": "005e5fcf66546a5ef09acc34b944462cc6291f6ca4dde203586d29ab42bb3038"
+  }
+}

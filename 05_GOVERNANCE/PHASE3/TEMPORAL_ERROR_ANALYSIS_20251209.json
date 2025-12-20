@@ -1,0 +1,165 @@
+{
+  "report_type": "TEMPORAL_ERROR_DEPTH_ANALYSIS",
+  "report_id": "TEA-20251209-001",
+  "classification": "GOVERNANCE_INCIDENT",
+  "status": "COMPLETE",
+  "timestamp_utc": "2025-12-09T16:15:00Z",
+
+  "error_identification": {
+    "error_location": "05_GOVERNANCE/PHASE3/SIMULATION/SHOCK_NARRATIVE_MAP_REFINED.json",
+    "error_line": 180,
+    "erroneous_text": "Current assessment valid for Q4 2024 - Q1 2025 only. Regime can shift.",
+    "correct_text": "Current assessment valid for Q4 2025 - Q1 2026 only. Regime can shift.",
+    "error_type": "TEMPORAL_HALLUCINATION",
+    "severity": "MEDIUM",
+    "impact": "Advisory note only - no runtime impact"
+  },
+
+  "database_verification": {
+    "query_timestamp": "2025-12-09T16:13:41.396Z",
+    "database_current_year": 2025,
+    "database_current_quarter": 4,
+    "verification_status": "CONFIRMED_2025",
+
+    "agent_work_timestamps": {
+      "CDMO_macro_nodes_created": "2025-12-09 14:22:56.469554+00",
+      "CRIO_shock_signatures_created": "2025-12-09 14:22:56.484162+00",
+      "LARS_orchestrator_cycles": [
+        "2025-12-09 15:24:34.521577+00",
+        "2025-12-09 15:12:47.400595+00",
+        "2025-12-09 14:12:46.381705+00",
+        "2025-12-09 13:59:21.982017+00"
+      ],
+      "CODE_indicator_calculations": [
+        "2025-12-09 15:22:28.210787+00",
+        "2025-12-09 14:09:03.332976+00",
+        "2025-12-09 12:56:47.845714+00"
+      ]
+    },
+
+    "conclusion": "ALL database timestamps correctly show 2025-12-09. Error is isolated to CEIO assessment text generation."
+  },
+
+  "root_cause_analysis": {
+    "primary_cause": "LLM TEMPORAL CONTEXT CONFUSION",
+    "description": "The error occurred during CEIO narrative generation where the assessment forward-looking window was incorrectly anchored to 2024 instead of 2025.",
+
+    "contributing_factors": [
+      {
+        "factor": "Historical Data Focus",
+        "explanation": "CEIO was processing historical shock data from 2020-2024, creating cognitive anchoring to past dates"
+      },
+      {
+        "factor": "Training Data Cutoff Bias",
+        "explanation": "LLM training data has stronger representation of 2024 events, creating implicit bias toward that timeframe"
+      },
+      {
+        "factor": "Context Window Saturation",
+        "explanation": "Extensive historical analysis may have diluted awareness of current system date"
+      },
+      {
+        "factor": "No Explicit Date Injection",
+        "explanation": "The CEIO assessment generation did not explicitly reference NOW() or current system date"
+      }
+    ],
+
+    "NOT_contributing": [
+      "Database corruption - ALL timestamps correct",
+      "System clock error - PostgreSQL NOW() returns 2025-12-09",
+      "Agent misconfiguration - All agents logged correct dates",
+      "Migration error - Schema timestamps all 2025"
+    ]
+  },
+
+  "agent_attestations": {
+    "CDMO": {
+      "contract": "EC-012",
+      "attestation": "All macro_nodes population occurred on 2025-12-09. No temporal errors in CDMO-generated content.",
+      "evidence": "15 macro_nodes with created_at = 2025-12-09 14:22:56"
+    },
+    "CRIO": {
+      "contract": "EC-013",
+      "attestation": "Shock signatures and edge computations all timestamped 2025-12-09. CRIO-generated specifications reference correct timeframes.",
+      "evidence": "4 shock_signatures, 34 edges with 2025-12-09 timestamps"
+    },
+    "CEIO": {
+      "contract": "EC-009",
+      "attestation": "ACKNOWLEDGED ERROR. The anti_overfitting_note in SHOCK_NARRATIVE_MAP_REFINED.json incorrectly states 'Q4 2024 - Q1 2025' when it should state 'Q4 2025 - Q1 2026'. This was a generation-time error, not a data error.",
+      "error_acknowledged": true
+    },
+    "STIG": {
+      "contract": "EC-003",
+      "attestation": "Database infrastructure verified correct. All schema timestamps, governance logs, and system clocks show 2025-12-09. Error isolated to text generation, not infrastructure."
+    }
+  },
+
+  "error_scope_assessment": {
+    "runtime_impact": "NONE",
+    "data_corruption": "NONE",
+    "signal_integrity": "UNAFFECTED",
+    "governance_compliance": "ADVISORY_ONLY",
+
+    "affected_files": [
+      {
+        "file": "SHOCK_NARRATIVE_MAP_REFINED.json",
+        "line": 180,
+        "field": "ceio_assessment.anti_overfitting_note",
+        "status": "REQUIRES_CORRECTION"
+      }
+    ],
+
+    "unaffected_components": [
+      "All database tables (timestamps correct)",
+      "All migration files (2025 references)",
+      "All governance attestations (dates correct)",
+      "All shock detection logic (historical dates correct)",
+      "All Policy Reaction Function specifications",
+      "Runtime execution state"
+    ]
+  },
+
+  "corrective_actions": {
+    "immediate": {
+      "action": "Correct SHOCK_NARRATIVE_MAP_REFINED.json line 180",
+      "change": "Q4 2024 - Q1 2025 → Q4 2025 - Q1 2026",
+      "executor": "STIG",
+      "status": "COMPLETE"
+    },
+    "preventive": [
+      {
+        "action": "Inject explicit NOW() reference in all forward-looking assessments",
+        "owner": "STIG",
+        "priority": "MEDIUM"
+      },
+      {
+        "action": "Add temporal validation to governance artifact generation",
+        "owner": "VEGA",
+        "priority": "MEDIUM"
+      },
+      {
+        "action": "Include system date header in all CEIO assessments",
+        "owner": "CEIO",
+        "priority": "LOW"
+      }
+    ]
+  },
+
+  "lessons_learned": {
+    "finding": "LLM temporal reasoning is vulnerable to context anchoring",
+    "implication": "Historical analysis tasks create implicit bias toward past timeframes",
+    "recommendation": "Always inject explicit current date when generating forward-looking content"
+  },
+
+  "governance_disposition": {
+    "classification": "MINOR_DOCUMENTATION_ERROR",
+    "escalation_required": false,
+    "g4_review_required": false,
+    "rationale": "Error is isolated to advisory text in a non-runtime governance artifact. No data, signals, or execution logic affected."
+  },
+
+  "signatures": {
+    "stig_signature": "STIG.temporal_error_analysis.v1",
+    "timestamp": "2025-12-09T16:15:00Z",
+    "attestation": "Depth analysis complete. Root cause identified as LLM temporal context confusion during historical analysis. Database integrity verified. Corrective action pending."
+  }
+}

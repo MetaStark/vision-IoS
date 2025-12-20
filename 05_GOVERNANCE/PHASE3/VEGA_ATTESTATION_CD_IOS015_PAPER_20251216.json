@@ -1,0 +1,154 @@
+{
+  "attestation_id": "CD_IOS015_ALPACA_PAPER_20251216",
+  "attestation_type": "G4_EXECUTIVE_DIRECTIVE_IMPLEMENTATION",
+  "attestation_status": "IMPLEMENTED",
+  "attestation_timestamp": "2025-12-16T02:30:00Z",
+  "adr_reference": ["ADR-020", "CD-IOS015-ALPACA-PAPER-001", "AMND-006-EPISODIC-BUFFER"],
+  "constitutional_basis": "CEO Directive: Alpaca Paper Trading Execution Enablement for Learning Activation",
+
+  "directive_summary": {
+    "directive_id": "CD-IOS015-ALPACA-PAPER-001",
+    "issued_by": "CEO",
+    "classification": "G4_EXECUTION_ENABLEMENT",
+    "purpose": "Connect IoS-015 to Alpaca Paper Trading for learning activation. This is a LEARNING ACTIVATION, not a revenue activation.",
+    "amendment": "AMND-006-EPISODIC-BUFFER - Allows non-canonical ephemeral storage for RL gradient learning"
+  },
+
+  "implementation_summary": {
+    "overall_status": "COMPLETE",
+    "components_implemented": 6,
+    "files_created": 4,
+    "files_modified": 1,
+    "database_migrations": 1
+  },
+
+  "components_implemented": [
+    {
+      "name": "fhq_sandbox Schema",
+      "file": "150_alpaca_paper_execution_schema.sql",
+      "status": "COMPLETE",
+      "description": "Non-canonical sandbox for episodic learning traces per Amendment AMND-006",
+      "tables": ["episodic_traces", "training_log_archive"]
+    },
+    {
+      "name": "fhq_execution Schema",
+      "file": "150_alpaca_paper_execution_schema.sql",
+      "status": "COMPLETE",
+      "description": "Canonical execution schema with full audit trail",
+      "tables": ["paper_orders", "paper_positions", "paper_trade_outcomes", "learning_updates"]
+    },
+    {
+      "name": "Alpaca Paper Adapter",
+      "file": "alpaca_paper_adapter.py",
+      "status": "COMPLETE",
+      "description": "Paper trading execution adapter with PAPER_ONLY hardcoded mode",
+      "features": ["Signal lineage validation", "DEFCON check", "Circuit breaker check", "Episodic memory management"]
+    },
+    {
+      "name": "Signal Lineage Tracking",
+      "file": "alpaca_paper_adapter.py",
+      "status": "COMPLETE",
+      "description": "Complete signal lineage for audit trail per Directive Section 3",
+      "fields": ["signal_id", "strategy_source", "regime_state", "cognitive_action", "kelly_fraction", "circuit_breaker_state", "lineage_hash"]
+    },
+    {
+      "name": "Learning Feedback Pipeline",
+      "file": "learning_feedback_pipeline.py",
+      "status": "COMPLETE",
+      "description": "Connects paper trade outcomes to authorized learning sinks",
+      "sinks": ["THOMPSON_BANDIT", "CAUSAL_RL", "STRATEGY_STATS"]
+    },
+    {
+      "name": "FINN Cognitive Brain Integration",
+      "file": "finn_cognitive_brain.py",
+      "status": "COMPLETE",
+      "description": "Phase 5 integration of paper execution and learning feedback",
+      "new_steps": ["Paper Execution (Step 7)", "Learning Update (Step 8)"]
+    }
+  ],
+
+  "directive_compliance": {
+    "section_2_scope_boundaries": {
+      "execution_mode": "PAPER_ONLY (hardcoded)",
+      "alpaca_role": "DOWNSTREAM_ONLY",
+      "canonical_separation": true,
+      "status": "COMPLIANT"
+    },
+    "section_3_lineage_requirements": {
+      "signal_id_tracking": true,
+      "strategy_source_tracking": true,
+      "regime_state_tracking": true,
+      "kelly_fraction_tracking": true,
+      "circuit_breaker_state_tracking": true,
+      "lineage_hash_computation": true,
+      "status": "COMPLIANT"
+    },
+    "section_4_data_flow": {
+      "ios015_signal_generation": true,
+      "regime_validation": true,
+      "cognitive_action_selection": true,
+      "risk_and_sizing_gate": true,
+      "circuit_breaker_check": true,
+      "paper_execution": true,
+      "execution_feedback": true,
+      "learning_update": true,
+      "status": "COMPLIANT"
+    },
+    "section_5_defcon_halt": {
+      "red_blocks_new_entries": true,
+      "orange_reduces_position_size": true,
+      "circuit_breaker_integration": true,
+      "status": "COMPLIANT"
+    },
+    "amendment_6_episodic_buffer": {
+      "sandbox_schema_created": true,
+      "episodic_traces_non_canonical": true,
+      "purge_on_trade_close": true,
+      "storage_limit_1gb": true,
+      "fail_closed_on_limit": true,
+      "status": "COMPLIANT"
+    },
+    "section_7_learning_sinks": {
+      "thompson_bandit_updates": true,
+      "causal_rl_propagation": true,
+      "strategy_statistics": true,
+      "audit_trail": true,
+      "status": "COMPLIANT"
+    }
+  },
+
+  "safety_constraints_verified": {
+    "paper_mode_only": "HARDCODED - Cannot be changed",
+    "defcon_integration": "DEFCON RED/ORANGE blocks execution",
+    "circuit_breaker": "CLOSED state required for execution",
+    "kelly_sizing": "Enforced via KellyPositionSizer",
+    "lineage_validation": "Required for all orders",
+    "episodic_isolation": "fhq_sandbox separate from canonical"
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/150_alpaca_paper_execution_schema.sql",
+    "03_FUNCTIONS/alpaca_paper_adapter.py",
+    "03_FUNCTIONS/learning_feedback_pipeline.py",
+    "05_GOVERNANCE/PHASE3/VEGA_ATTESTATION_CD_IOS015_PAPER_20251216.json"
+  ],
+
+  "files_modified": [
+    "03_FUNCTIONS/finn_cognitive_brain.py"
+  ],
+
+  "attestation_decision": {
+    "decision": "APPROVED_AND_IMPLEMENTED",
+    "rationale": "CEO Directive CD-IOS015-ALPACA-PAPER-001 has been fully implemented with all required components. Paper trading is HARDCODED to PAPER_ONLY mode. Signal lineage tracking, DEFCON integration, circuit breaker checks, Kelly sizing, and learning feedback pipeline are all operational. Amendment AMND-006 episodic buffer is correctly isolated in fhq_sandbox schema.",
+    "executor": "STIG (CTO)",
+    "witness": "VEGA (Governance)"
+  },
+
+  "operational_readiness": {
+    "status": "READY",
+    "startup_command": "python finn_cognitive_brain.py --interval 60 --budget 10.0",
+    "paper_execution_enabled": true,
+    "learning_feedback_enabled": true,
+    "alpaca_credentials_required": true
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "validation_type": "IOS012_G2_PAPER_TRADING",
+    "module": "IoS-012",
+    "gate": "G2",
+    "mode": "PAPER_API",
+    "started_at": "2025-12-07T21:13:46.104674+00:00",
+    "validator": "STIG/LINE",
+    "authority": "BOARD",
+    "completed_at": "2025-12-07T21:13:50.529027+00:00"
+  },
+  "tests": {
+    "G2-A": {
+      "test_id": "G2-A",
+      "test_name": "PAPER_CONNECTIVITY",
+      "status": "PASS",
+      "account": {
+        "id": "1efc48bb-0ba6-434c-8971-5e31a59dd7ec",
+        "status": "ACTIVE",
+        "account_number": "PA3QR0OH6ODW",
+        "buying_power": 199999.08,
+        "cash": 99999.54,
+        "portfolio_value": 99999.54,
+        "currency": "USD",
+        "crypto_status": "ACTIVE"
+      },
+      "latency_ms": 1802,
+      "checks": {
+        "http_200": true,
+        "account_active": true,
+        "paper_environment": true,
+        "buying_power_available": true
+      }
+    },
+    "G2-B": {
+      "test_id": "G2-B",
+      "test_name": "DIFF_ENGINE_STRESS",
+      "scenarios": {
+        "S1_ZERO_STATE": {
+          "current": 0.0,
+          "target": 0.5,
+          "expected_side": "BUY",
+          "expected_qty": 0.5,
+          "actual_side": "BUY",
+          "actual_qty": 0.5,
+          "status": "PASS"
+        },
+        "S2_PARTIAL_STATE": {
+          "current": 0.5,
+          "target": 0.8,
+          "expected_side": "BUY",
+          "expected_qty": 0.3,
+          "actual_side": "BUY",
+          "actual_qty": 0.30000000000000004,
+          "status": "PASS"
+        },
+        "S3_EXCESS_STATE": {
+          "current": 0.8,
+          "target": 0.0,
+          "expected_side": "SELL",
+          "expected_qty": 0.8,
+          "actual_side": "SELL",
+          "actual_qty": 0.8,
+          "status": "PASS"
+        },
+        "S4_ALIGNED": {
+          "current": 0.5,
+          "target": 0.5,
+          "expected_side": "HOLD",
+          "expected_qty": 0.0,
+          "actual_side": "HOLD",
+          "actual_qty": 0.0,
+          "status": "PASS"
+        }
+      },
+      "status": "PASS"
+    },
+    "G2-C": {
+      "test_id": "G2-C",
+      "test_name": "PAPER_ORDER_LIFECYCLE",
+      "status": "PASS",
+      "order": {
+        "order_id": "326e1d38-c45d-4399-85fc-e9f903ded417",
+        "symbol": "BTC/USD",
+        "side": "buy",
+        "qty": 0.00015,
+        "filled_qty": 0.00015,
+        "filled_price": 91316.942,
+        "status": "filled",
+        "submission_latency_ms": 121,
+        "total_lifecycle_ms": 745
+      },
+      "trade_id": "8447c062-840a-4569-9400-84e3ae69cfa2"
+    },
+    "G2-D": {
+      "test_id": "G2-D",
+      "test_name": "LATENCY_BENCHMARK",
+      "threshold_ms": 1000,
+      "status": "PASS",
+      "measured_latency_ms": 745,
+      "components": {
+        "submission_ms": 121,
+        "fill_wait_ms": 624
+      }
+    },
+    "G2-E": {
+      "test_id": "G2-E",
+      "test_name": "STATE_RECONSTRUCTION",
+      "status": "PASS",
+      "broker_positions": 1,
+      "internal_positions": 3,
+      "divergences": [
+        {
+          "symbol": "BTCUSD",
+          "broker_qty": 0.000149625,
+          "internal_qty": 0.0,
+          "diff": 0.000149625
+        }
+      ],
+      "snapshot_id": "f06f861b-29ff-4079-9dd5-017627113027"
+    },
+    "G2-NEG": {
+      "test_id": "G2-NEG",
+      "test_name": "SECURITY_REJECTION",
+      "subtests": {
+        "A_EXPIRED_TTL": {
+          "verified": false,
+          "reason": "TTL_EXPIRED",
+          "order_blocked": true,
+          "status": "PASS"
+        },
+        "B_INVALID_SIG": {
+          "verified": false,
+          "reason": "INVALID_SIGNATURE",
+          "order_blocked": true,
+          "status": "PASS"
+        },
+        "C_HASH_MISMATCH": {
+          "verified": false,
+          "reason": "HASH_MISMATCH",
+          "order_blocked": true,
+          "status": "PASS"
+        }
+      },
+      "status": "PASS"
+    }
+  },
+  "latency_benchmarks": [],
+  "security_events": [
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "A_EXPIRED_TTL",
+      "reason": "TTL_EXPIRED",
+      "timestamp": "2025-12-07T21:13:49.288706+00:00"
+    },
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "B_INVALID_SIG",
+      "reason": "INVALID_SIGNATURE",
+      "timestamp": "2025-12-07T21:13:49.288706+00:00"
+    },
+    {
+      "type": "ORDER_BLOCKED",
+      "subtest": "C_HASH_MISMATCH",
+      "reason": "HASH_MISMATCH",
+      "timestamp": "2025-12-07T21:13:49.288706+00:00"
+    }
+  ],
+  "overall_status": "PASS",
+  "integrity_hash": "027d076470b00ef2997221a8b085bc32debb1808568de0bf04145738a09b47e0"
+}

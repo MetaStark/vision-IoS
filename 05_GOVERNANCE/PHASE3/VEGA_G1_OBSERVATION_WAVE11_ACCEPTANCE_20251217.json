@@ -1,0 +1,212 @@
+{
+  "document_type": "VEGA_G1_OBSERVATION_MEMO",
+  "observation_id": "VEGA-G1-OBS-WAVE11-ACCEPTANCE-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date_issued": "2025-12-17",
+
+  "observation_target": {
+    "component": "EC-018 + EC-020 Cognitive Stack",
+    "name": "CEO Directive Wave 11 - Acceptance Path Validation (Controlled Shadow)",
+    "primary_files": [
+      "03_FUNCTIONS/ec018_alpha_daemon.py",
+      "03_FUNCTIONS/ios020_sitc_planner.py",
+      "03_FUNCTIONS/wave11_acceptance_framework.py"
+    ],
+    "operating_mode": "SHADOW / PAPER ONLY (--force flag due to data freshness)"
+  },
+
+  "directive_reference": {
+    "ceo_directive": "CEO DIRECTIVE WAVE 11: ACCEPTANCE PATH VALIDATION (CONTROLLED SHADOW)",
+    "date": "2025-12-17",
+    "prerequisite_attestation": "VEGA-G1-WAVE10-STRESS-SELECTION-20251217",
+    "objective": "Validate that the system can say 'yes' correctly when conditions are favorable"
+  },
+
+  "observation_status": "FAILED_OVERLY_PERMISSIVE",
+
+  "precondition_summary": {
+    "price_freshness_minutes": 117.5,
+    "price_freshness_required": 30,
+    "regime_confidence": 0.98,
+    "regime_confidence_required": 0.70,
+    "defcon_level": "GREEN",
+    "defcon_required": "GREEN",
+    "force_flag_used": true,
+    "rationale_for_force": "Hourly bar architecture limits freshness to ~1-2 hours. Data was reasonably fresh (117 min vs 18+ hours before ingest)."
+  },
+
+  "batch_results": {
+    "batch_id": "WAVE11-20251217185732",
+    "timestamp": "2025-12-17T18:57:32Z",
+    "total_hypotheses": 20,
+    "hunts_executed": 5,
+    "focus_areas": ["momentum", "mean_reversion", "breakout", "volatility", "regime_transition"],
+    "outcome_distribution": {
+      "HIGH_accepted": 20,
+      "MEDIUM_uncertain": 0,
+      "LOW_rejected": 0,
+      "ABORT_degraded": 0
+    },
+    "rates": {
+      "high_rate": 1.0,
+      "medium_rate": 0.0,
+      "rejection_rate": 0.0
+    },
+    "constitutional_violation": true,
+    "violation_type": "OVERLY_PERMISSIVE"
+  },
+
+  "target_compliance": {
+    "high_rate_5_to_20": {
+      "target": "5-20%",
+      "actual": "100%",
+      "status": "FAIL",
+      "severity": "CRITICAL"
+    },
+    "high_rate_lt_30": {
+      "target": "< 30%",
+      "actual": "100%",
+      "status": "FAIL - WAVE 11 FAILED",
+      "note": "Per CEO Directive: 'If HIGH > 30%, the system is deemed overly permissive'"
+    },
+    "medium_rate_ge_20": {
+      "target": ">= 20%",
+      "actual": "0%",
+      "status": "FAIL"
+    },
+    "rejection_rate_ge_50": {
+      "target": ">= 50%",
+      "actual": "0%",
+      "status": "FAIL"
+    }
+  },
+
+  "root_cause_analysis": {
+    "primary_finding": "SitC Planner confidence thresholds are too permissive under non-stress conditions",
+    "contributing_factors": [
+      {
+        "factor": "Stress detection not triggered",
+        "detail": "Price data at 117 min was below the 120 min DATA_BLACKOUT threshold",
+        "impact": "All hypotheses processed without stress modifiers"
+      },
+      {
+        "factor": "High regime confidence",
+        "detail": "Regime confidence at 0.98 far exceeds 0.55 FOG_OF_WAR threshold",
+        "impact": "No uncertainty introduced by regime state"
+      },
+      {
+        "factor": "Missing intermediate gates",
+        "detail": "SitC has stress/no-stress binary but lacks nuanced confidence grading",
+        "impact": "All hypotheses that pass basic validation get HIGH"
+      },
+      {
+        "factor": "No corpus-based discrimination",
+        "detail": "Hypothesis quality not compared against empirical alpha track record",
+        "impact": "All syntactically valid hypotheses accepted"
+      }
+    ],
+    "recommended_remediation": [
+      "Implement multi-tier confidence grading (not just HIGH/MEDIUM/LOW)",
+      "Add empirical validation layer (compare hypothesis patterns to historical outcomes)",
+      "Lower the HIGH confidence bar significantly",
+      "Require evidence quality scoring, not just presence",
+      "Consider ML-based hypothesis quality classifier"
+    ]
+  },
+
+  "contrasting_evidence": {
+    "wave_10_behavior": {
+      "scenario": "Stale data (17+ hours)",
+      "silence_rate": "100%",
+      "interpretation": "System correctly rejects under adverse conditions"
+    },
+    "wave_11_behavior": {
+      "scenario": "Reasonably fresh data (~2 hours)",
+      "acceptance_rate": "100%",
+      "interpretation": "System incorrectly accepts everything under normal conditions"
+    },
+    "conclusion": "The system demonstrates restraint under stress but lacks judgment under normalcy"
+  },
+
+  "governance_implications": {
+    "wave_11_exit_criteria": {
+      "at_least_one_clean_high": "ACHIEVED (20 HIGH)",
+      "rejection_discipline_dominant": "NOT_ACHIEVED (0% rejection)",
+      "no_constitutional_violations": "NOT_ACHIEVED (overly permissive)",
+      "acceptance_explainable": "PARTIAL (all accepted, none discriminated)"
+    },
+    "g2_eligibility": "NOT_ELIGIBLE",
+    "blocking_issue": "Cannot proceed to G2 until rejection discipline is demonstrated under clean conditions"
+  },
+
+  "observations": {
+    "positive": [
+      "System operational - 5 hunts completed successfully",
+      "ASRP state binding working correctly",
+      "SitC plan creation and logging functional",
+      "IKEA boundary checks active",
+      "RuntimeEconomicGuardian enforcing budgets"
+    ],
+    "concerning": [
+      "100% acceptance rate under any conditions is a governance red flag",
+      "No discrimination between hypothesis quality",
+      "Stress mode is binary (on/off) without gradation",
+      "The acceptance path works but lacks selectivity"
+    ]
+  },
+
+  "constitutional_locks_status": {
+    "no_promotion_to_fhq_research": true,
+    "no_promotion_to_fhq_alpha_g1": true,
+    "no_threshold_tuning": true,
+    "no_manual_rescue": true,
+    "locks_maintained": true,
+    "note": "Constitutional locks were maintained. The system correctly stayed in shadow mode."
+  },
+
+  "vega_recommendations": {
+    "immediate": [
+      "Do NOT proceed to G2 Eligibility Review",
+      "Document this as a calibration failure, not a system failure",
+      "Wave 11 must be re-run after threshold recalibration"
+    ],
+    "before_wave_11_retry": [
+      "Implement empirical hypothesis quality scoring",
+      "Add corpus-based validation (compare to known-good/bad patterns)",
+      "Create tiered confidence thresholds with clear evidence requirements",
+      "Define what distinguishes HIGH from MEDIUM in non-stress conditions"
+    ],
+    "architectural": [
+      "Consider adding a 'skepticism layer' that requires extraordinary evidence for HIGH",
+      "Implement ensemble voting for acceptance decisions",
+      "Add negative evidence tracking (reasons to reject)"
+    ]
+  },
+
+  "next_steps": {
+    "required_before_g2": [
+      "CEO Directive Wave 11.1: Confidence Threshold Recalibration",
+      "Implement and test new discrimination logic",
+      "Re-run Wave 11 with target: HIGH 5-20%, Rejection >= 50%",
+      "Demonstrate that the system can say 'yes' selectively, not universally"
+    ]
+  },
+
+  "executive_summary": {
+    "headline": "Wave 11 FAILED: System Overly Permissive (100% acceptance vs 5-20% target)",
+    "key_insight": "Wave 10 proved the system has restraint. Wave 11 revealed it lacks judgment.",
+    "governance_status": "G2 Eligibility BLOCKED until recalibration",
+    "path_forward": "Implement hypothesis discrimination logic before Wave 11 retry"
+  },
+
+  "observation_signature": {
+    "observed_by": "VEGA (Verification & Governance Authority)",
+    "observation_timestamp": "2025-12-17T19:01:47Z",
+    "predecessor": "VEGA-G1-WAVE10-STRESS-SELECTION-20251217",
+    "next_required": "CEO_DIRECTIVE_WAVE11.1_THRESHOLD_RECALIBRATION"
+  },
+
+  "created_by": "STIG (CTO)",
+  "submitted_for_vega_review": "2025-12-17T19:02:00Z"
+}

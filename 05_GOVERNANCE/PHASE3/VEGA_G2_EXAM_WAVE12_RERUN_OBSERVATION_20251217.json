@@ -1,0 +1,156 @@
+{
+  "document_type": "VEGA_G2_EXAM_OBSERVATION",
+  "observation_id": "VEGA-G2-EXAM-III-WAVE12-RERUN-20251217",
+  "classification": "G2-GOVERNANCE-EXAM",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date_issued": "2025-12-17",
+
+  "exam_reference": {
+    "exam_id": "G2-EXAM-III",
+    "exam_name": "Golden Needle Capability (Rerun with Live Price Witness)",
+    "directive_ref": "CD-EC018-LIVE-PRICE-PRECONDITION-20251217",
+    "execution_order": "CEO DIRECTIVE: EC-018 LIVE PRICE PRECONDITION"
+  },
+
+  "implementation_status": {
+    "live_price_witness_implemented": true,
+    "constitutional_remediation_applied": true,
+    "code_freeze_amendment_documented": true,
+    "implementation_verified": true
+  },
+
+  "execution_summary": {
+    "session_id": "WAVE12-20251217210046",
+    "execution_timestamp": "2025-12-17T21:00:46Z",
+    "scenarios_attempted": 5,
+    "scenarios_successful": 0,
+    "live_price_witness_results": {
+      "all_satisfied": true,
+      "binance_prices_fetched": [
+        {"symbol": "BTCUSDT", "price": 85993.84, "witness_id": "d5a083086b773fae"},
+        {"symbol": "BTCUSDT", "price": 86032.46, "witness_id": "7699ea5d9058b019"},
+        {"symbol": "BTCUSDT", "price": 85983.66, "witness_id": "3f638ea264e3b828"},
+        {"symbol": "BTCUSDT", "price": 85870.73, "witness_id": "8cff7754e6fb1da4"},
+        {"symbol": "BTCUSDT", "price": 85824.31, "witness_id": "dc4a0c6e8b5a65e0"}
+      ]
+    },
+    "hypotheses_generated": 20,
+    "hypotheses_accepted": 0,
+    "golden_needles_found": 0,
+    "total_cost_usd": 0.0028
+  },
+
+  "root_cause_analysis": {
+    "primary_finding": "TWO_LAYER_STALENESS_ISSUE",
+    "description": "Live Price Witness addresses EC-018 precondition but SitC stress detection is independent",
+
+    "layer_analysis": {
+      "layer_1_ec018": {
+        "status": "RESOLVED",
+        "mechanism": "LivePriceWitness class fetches current Binance prices",
+        "result": "All 5 scenarios had SATISFIED precondition",
+        "fresh_prices_used": true
+      },
+      "layer_2_sitc": {
+        "status": "STILL_BLOCKING",
+        "mechanism": "_check_market_stress() queries database for price staleness",
+        "result": "LIARS_POKER triggered in all scenarios (database 3.0-3.1h stale)",
+        "database_staleness": "3.0-3.1 hours"
+      }
+    },
+
+    "causal_chain": [
+      "1. EC-018 Live Price Witness fetched fresh Binance prices (WORKING)",
+      "2. EC-018 precondition SATISFIED - hunt proceeds",
+      "3. DeepSeek generates 4 hypotheses per scenario (WORKING)",
+      "4. SitC _check_market_stress() queries fhq_data.price_series",
+      "5. Database prices are 3.0h stale (BTC-USD last ingest: ~18:00 UTC)",
+      "6. LIARS_POKER stress mode activated (independent of EC-018 witness)",
+      "7. All hypotheses blocked before EQS evaluation"
+    ],
+
+    "critical_distinction": {
+      "what_was_fixed": "EC-018 now verifies current market reality before generating hypotheses",
+      "what_remains": "SitC stress detection uses database staleness, not EC-018's Live Price Witness",
+      "blocking_constraint": "ios020_sitc_planner.py is FROZEN under G2 code freeze"
+    }
+  },
+
+  "code_freeze_status": {
+    "ec018_alpha_daemon.py": {
+      "status": "AMENDED",
+      "authorization": "CD-EC018-LIVE-PRICE-PRECONDITION-20251217",
+      "new_hash": "f3a078d8601b8809da672abc0862b1fb37c1c952fcbdb36436e3b8827408eff7",
+      "live_price_witness": "IMPLEMENTED"
+    },
+    "ios020_sitc_planner.py": {
+      "status": "FROZEN",
+      "hash": "2fb7e4ac9db8d076fd204bb752f2d961516f8c99ee33a0eb4c457d4540c41fa0",
+      "modification_authorized": false,
+      "note": "Cannot modify SitC stress detection without separate CEO authorization"
+    },
+    "wave11_acceptance_framework.py": {
+      "status": "FROZEN",
+      "hash": "e62913914347224f59a083ec0aec82fd4d780447e791a6ecdd3f098761b773e4"
+    }
+  },
+
+  "exam_verdict": {
+    "golden_needle_detection": "INCONCLUSIVE",
+    "reason": "SitC stress detection (Layer 2) still blocks EQS evaluation despite EC-018 witness (Layer 1) being satisfied",
+    "system_fault": false,
+    "design_gap": true,
+    "ec018_implementation_correct": true,
+    "sitc_needs_witness_integration": true
+  },
+
+  "vega_recommendations": {
+    "immediate_options": [
+      {
+        "option": "A - Fresh Price Ingestion",
+        "description": "Run ios001_bulletproof_ingest.py to update database prices",
+        "implication": "SitC _check_market_stress() will find fresh data, LIARS_POKER won't trigger",
+        "recommendation": "FASTEST_PATH_TO_COMPLETION",
+        "requires": "CEO authorization to run ingestion during code freeze"
+      },
+      {
+        "option": "B - SitC Witness Integration",
+        "description": "Authorize modification to SitC to accept Live Price Witness override",
+        "implication": "Would require amendment to ios020_sitc_planner.py code freeze",
+        "recommendation": "ARCHITECTURALLY_CORRECT but requires code freeze amendment",
+        "requires": "CEO authorization to modify FROZEN file"
+      },
+      {
+        "option": "C - Wait for Market Hours",
+        "description": "Re-run during market hours when database is naturally fresh",
+        "implication": "Delays G2 completion",
+        "recommendation": "ACCEPTABLE - ensures proper test conditions",
+        "requires": "Scheduling during next market session"
+      }
+    ],
+    "note": "Option A is the fastest path - ingestion updates database, SitC stress check passes, EQS can be evaluated"
+  },
+
+  "live_price_witness_evidence": {
+    "implementation_complete": true,
+    "binance_integration": "WORKING",
+    "precondition_enforcement": "WORKING",
+    "evidence_logging": "PARTIAL - fhq_meta schema needs task_id column",
+    "ec018_behavior_correct": true
+  },
+
+  "conclusion": {
+    "wave_12_rerun_status": "BLOCKED_BY_LAYER_2",
+    "golden_needle_capability": "UNTESTED (EQS never reached)",
+    "g2_exam_iii_result": "INCONCLUSIVE",
+    "system_integrity": "MAINTAINED",
+    "live_price_witness": "WORKING_CORRECTLY",
+    "path_forward": "CEO decision required on Layer 2 resolution (Option A recommended)"
+  },
+
+  "observation_signature": {
+    "observed_by": "VEGA (Verification & Governance Authority)",
+    "observation_timestamp": "2025-12-17T21:10:00Z",
+    "certification_status": "PENDING_CEO_DECISION"
+  }
+}

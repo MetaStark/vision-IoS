@@ -1,0 +1,53 @@
+{
+  "wave_id": "WAVE-001",
+  "title": "Stabilization Pack",
+  "authority": "LARS (CSO) CEO Mandate",
+  "executor": "STIG (CTO)",
+  "executed_at": "2025-12-03T19:44:10.176108",
+  "patches": [
+    {
+      "id": "W001-A",
+      "target": "ios012_g3_system_loop.py",
+      "issue": "Unicode box-drawing character causes Windows encoding crash",
+      "fix": "Replaced Unicode char with ASCII dashes",
+      "line": 1036,
+      "status": "APPLIED"
+    },
+    {
+      "id": "W001-B",
+      "target": "hmm_backfill_v1.py",
+      "issue": "DataFrame index mismatch with numpy array indices",
+      "fix": "Added reset_index() and enumerate() for safe array indexing",
+      "line": 628,
+      "status": "APPLIED"
+    },
+    {
+      "id": "W001-C",
+      "target": "ios013_hcp_g3_runner.py",
+      "issue": "No error handling for init failures",
+      "fix": "Added graceful error handling with deterministic exit codes",
+      "line": 467,
+      "status": "APPLIED"
+    },
+    {
+      "id": "W001-D",
+      "target": "calc_indicators_v1.py",
+      "issue": "O(n^2) row-by-row .loc access causing 300s timeout",
+      "fix": "Vectorized all 4 persist functions with DataFrame merge + page_size batching",
+      "lines": [
+        230,
+        284,
+        351,
+        405
+      ],
+      "status": "APPLIED"
+    }
+  ],
+  "compliance": {
+    "adr_002_audit": true,
+    "adr_003_lineage": true,
+    "adr_012_economic_safety": true
+  },
+  "vega_ready": true,
+  "evidence_hash": "d584735408d83f5fd0f1351d4ee04048bdd3cf0724d7349d58bcd100933000df"
+}

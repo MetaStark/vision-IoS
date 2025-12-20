@@ -1,0 +1,100 @@
+{
+  "manifest": {
+    "manifest_id": "G3-MANIFEST-SENTINEL-20251208",
+    "authority": "CEO Directive - G3 Fortress Audit",
+    "reference": "ADR-011 Fortress Test Protocol",
+    "timestamp": "2025-12-08T12:44:22Z",
+    "prepared_by": "CODE (via STIG-proxy)"
+  },
+
+  "code_artifacts": {
+    "sentinel_script": {
+      "path": "03_FUNCTIONS/ios_db_integrity_sentinel.py",
+      "sha256": "b9e88b35d7b4c74955b43c6fcc3fa967d138bf85f65ea7e703f0c12bd6732c1d",
+      "version": "1.0",
+      "unchanged_since_g1": true
+    },
+    "test_harness": {
+      "path": "03_FUNCTIONS/g3_fortress_sentinel_tests.py",
+      "description": "G3 Fortress Test Harness"
+    }
+  },
+
+  "config_artifacts": {
+    "config_snapshot": {
+      "file": "config_snapshot.yaml",
+      "sha256": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f",
+      "unchanged_since_g1": true
+    }
+  },
+
+  "evidence_files": [
+    {
+      "file": "g3_fortress_test_results.json",
+      "sha256": "29cca379217ecef66712958e76e0a06a04977a9fad373c751b11754e339d5c89",
+      "type": "MASTER_RESULTS",
+      "description": "Combined results from all G3 test cases"
+    },
+    {
+      "file": "test_case_a_lock_contention.json",
+      "sha256": "e19f8dd62c887237a11897d6979fdf90981c5926836a013034cb9b67f4c5cd03",
+      "type": "TEST_EVIDENCE",
+      "test_case": "A",
+      "verdict": "PASS"
+    },
+    {
+      "file": "test_case_b_bloat_detection.json",
+      "sha256": "d1c263d85532c0341867da1439ac7737451292f0a03dc499538a2ec0195a2ba6",
+      "type": "TEST_EVIDENCE",
+      "test_case": "B",
+      "verdict": "PASS"
+    },
+    {
+      "file": "test_case_c_slow_query.json",
+      "sha256": "43dcfb504bd0bb800c5a7eb96077cef97ccb71f83bd7b7c1c885748d85fa0fb9",
+      "type": "TEST_EVIDENCE",
+      "test_case": "C",
+      "verdict": "PASS"
+    },
+    {
+      "file": "test_case_d_error_handling.json",
+      "sha256": "39ee248e3d2d5cf4d502cb4e3ab385dc8b64b689aed0378599ed5a4825745c96",
+      "type": "TEST_EVIDENCE",
+      "test_case": "D",
+      "verdict": "PASS"
+    },
+    {
+      "file": "test_case_e_deterministic_replay.json",
+      "sha256": "e2630f4a1eb9b44052b7635118629dd4d15e0b06f842e28ad1d2dc898f5d0b60",
+      "type": "TEST_EVIDENCE",
+      "test_case": "E",
+      "verdict": "PASS"
+    }
+  ],
+
+  "test_summary": {
+    "total_tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "overall_verdict": "PASS",
+    "evidence_hash": "58fd516d1e85100542be54c013821bb2"
+  },
+
+  "fortress_compliance": {
+    "deterministic_input": true,
+    "observation_complete": true,
+    "evidence_bundle_created": true,
+    "hash_chain_computed": true,
+    "result_classified": true
+  },
+
+  "re_execution_instructions": {
+    "command": "cd /c/fhq-market-system/vision-ios/03_FUNCTIONS && python g3_fortress_sentinel_tests.py",
+    "prerequisites": [
+      "PostgreSQL running on 127.0.0.1:54322",
+      "Python 3.x with psycopg2, pyyaml, python-dotenv",
+      "Environment variables: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD"
+    ],
+    "expected_output": "All test cases PASS with identical evidence hashes"
+  }
+}

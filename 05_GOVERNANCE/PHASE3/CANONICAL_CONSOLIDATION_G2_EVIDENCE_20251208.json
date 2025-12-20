@@ -1,0 +1,71 @@
+{
+  "governance_record": {
+    "record_id": "CANONICAL-CONSOLIDATION-20251208",
+    "gate_level": "G2",
+    "authority": "CEO Directive - Canonical Consolidation",
+    "adr_reference": "ADR-013 (One-True-Source / Truth Architecture)",
+    "timestamp": "2025-12-08T11:30:00Z",
+    "executor": "STIG"
+  },
+  "directive_summary": {
+    "objective": "Consolidate price data to single canonical source",
+    "rationale": "Dual price tables (fhq_data.price_series + fhq_market.prices) caused sync gaps and violated ADR-013 One-True-Source principle",
+    "root_cause": "IoS-003 reading from fhq_data.price_series (stale Dec 3) while ingest pipeline writing to fhq_market.prices (current Dec 7)"
+  },
+  "changes_implemented": {
+    "code_changes": [
+      {
+        "file": "03_FUNCTIONS/ios003_daily_regime_update.py",
+        "change": "Re-pointed from fhq_data.price_series to fhq_market.prices",
+        "lines_modified": [10, 70-76, 237-250, 252-259, 284-292],
+        "summary": "Removed ASSET_TO_LISTING mapping, changed queries to use canonical_id"
+      }
+    ],
+    "migrations": [
+      {
+        "file": "04_DATABASE/MIGRATIONS/092_canonical_price_consolidation.sql",
+        "changes": [
+          "Added archive_status column to fhq_data.price_series",
+          "Marked 17,377 rows as ARCHIVE",
+          "Added [ARCHIVE] comment to fhq_data.price_series",
+          "Added [CANONICAL] comment to fhq_market.prices",
+          "Logged to fhq_meta.ios_audit_log"
+        ]
+      }
+    ],
+    "data_sources_consolidated": {
+      "deprecated": {
+        "table": "fhq_data.price_series",
+        "status": "ARCHIVE",
+        "rows": 17377,
+        "last_update": "2025-12-03"
+      },
+      "canonical": {
+        "table": "fhq_market.prices",
+        "status": "ONE-TRUE-SOURCE",
+        "rows": 11223,
+        "last_update": "2025-12-07"
+      }
+    }
+  },
+  "verification": {
+    "ios003_test": {
+      "status": "PASSED",
+      "method": "get_missing_dates() returns 0 missing for BTC-USD, ETH-USD",
+      "canonical_source": "fhq_market.prices"
+    },
+    "ios004_status": "NO_CHANGE_NEEDED",
+    "ios005_status": "ALREADY_CANONICAL"
+  },
+  "affected_systems": [
+    "IoS-003 (Sovereign Perception) - UPDATED",
+    "IoS-004 (CRIO Allocation) - Downstream, no change",
+    "IoS-005 (Forecast Calibration) - Already using fhq_market.prices"
+  ],
+  "governance_attestation": {
+    "reviewed_by": "STIG",
+    "gate_status": "G2_COMPLETE",
+    "evidence_hash": "092_canonical_price_consolidation",
+    "ceo_directive_date": "2025-12-08"
+  }
+}

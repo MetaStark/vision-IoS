@@ -1,0 +1,180 @@
+{
+  "evidence_type": "IOS_CDS_ACTIVATION",
+  "ios_id": "IoS-013",
+  "appendix_code": "CDS",
+  "appendix_title": "Context Definition Specification",
+  "version": "2026.DRAFT.1",
+  "activation_timestamp": "2025-12-05T15:33:00Z",
+
+  "authority_chain": {
+    "mandate": "CEO Execution Order",
+    "technical_implementation": "STIG",
+    "data_governance_registration": "CDMO",
+    "compliance_enforcement": "VEGA"
+  },
+
+  "governance_chain": {
+    "level_1": {
+      "component": "Constitution",
+      "artifact": "ADR-018 Agent State Reliability Protocol (ASRP)",
+      "role": "Legal authority for state synchronization"
+    },
+    "level_2": {
+      "component": "Machine",
+      "artifact": "IoS-013 Agent State Protocol Engine (ASPE)",
+      "role": "Exclusive implementation of ADR-018"
+    },
+    "level_3": {
+      "component": "Payload",
+      "artifact": "IoS-013 Context Definition Specification (CDS)",
+      "role": "Canonical context package structure"
+    },
+    "level_4": {
+      "component": "Interface",
+      "artifact": "Context Hydration Layer (CHL)",
+      "role": "Middleware for LLM context injection"
+    }
+  },
+
+  "context_package_structure": {
+    "state_vector": {
+      "description": "Atomic state from ASRP (ADR-018)",
+      "elements": ["defcon", "regime", "regime_confidence", "strategy", "strategy_exposure", "state_snapshot_hash", "timestamp"]
+    },
+    "adr_index": {
+      "description": "Index of all active/approved ADRs",
+      "includes": "id, title, version, tier, status, sha256"
+    },
+    "ios_index": {
+      "description": "Index of all IoS modules with pillar mappings",
+      "includes": "id, purpose, owner, pillar, status, version"
+    },
+    "authority_map": {
+      "description": "Agent tier structure and object ownership",
+      "tier_1_agents": ["LARS", "STIG", "FINN", "VEGA"],
+      "tier_2_agents": ["CFAO", "CEIO", "CSEO", "CDMO", "LINE"],
+      "object_ownership": {
+        "defcon": "STIG",
+        "regime": "FINN",
+        "strategy": "LARS",
+        "governance": "VEGA",
+        "execution": "LINE"
+      }
+    },
+    "operational_constraints": {
+      "description": "Governance constraints and thresholds",
+      "includes": ["lids_threshold", "quad_hash_required", "state_hash_required", "preflight_checklist", "risl_halt_conditions", "defcon_restrictions"]
+    },
+    "_metadata": {
+      "description": "Package integrity metadata",
+      "includes": ["package_id", "package_hash", "state_snapshot_hash", "quad_hash", "generated_at", "retrieved_at", "cds_version"]
+    }
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      {
+        "name": "fhq_governance.context_packages",
+        "purpose": "Pre-computed atomic context packages",
+        "key_columns": ["package_id", "state_vector", "adr_index", "ios_index", "authority_map", "operational_constraints", "package_hash"]
+      },
+      {
+        "name": "fhq_governance.chl_request_log",
+        "purpose": "Audit trail for CHL context requests",
+        "key_columns": ["requesting_agent", "hydration_status", "preflight_passed", "package_hash"]
+      }
+    ],
+    "functions": [
+      {
+        "name": "fhq_governance.generate_context_package()",
+        "purpose": "Builds atomic context package from current state",
+        "returns": "UUID (package_id)"
+      },
+      {
+        "name": "fhq_governance.chl_retrieve_context(agent, source)",
+        "purpose": "CHL API for retrieving context before LLM calls",
+        "returns": "TABLE with context_package, validation status, preflight results"
+      }
+    ],
+    "validation_rules": [
+      {
+        "rule": "CDS_CONTEXT_PACKAGE_REQUIRED",
+        "type": "PRECONDITION",
+        "applies_to": ["LLM_REASONING", "DASHBOARD_QUERY", "AGENT_REASONING"],
+        "basis": "IoS-013 CDS §3 + §4"
+      }
+    ],
+    "preflight_checks": [
+      {
+        "check": "CDS_CONTEXT_VALID",
+        "order": 0,
+        "mandatory": true,
+        "description": "Verify CHL has injected valid context_package before LLM reasoning"
+      },
+      {
+        "check": "CHL_HYDRATION_SUCCESS",
+        "order": 1,
+        "mandatory": true,
+        "description": "Verify CHL hydration completed successfully (not stale, not missing)"
+      }
+    ]
+  },
+
+  "test_results": {
+    "chl_retrieval_test": {
+      "timestamp": "2025-12-05T15:33:17Z",
+      "requesting_agent": "STIG",
+      "request_source": "DASHBOARD",
+      "hydration_status": "SUCCESS",
+      "preflight_passed": true,
+      "latency_ms": 6,
+      "package_hash": "3ab17dade5e5ca5997928d3605be795ad04a134d68578c2dd592b7f01588d66e",
+      "state_snapshot_hash": "88c78ae44895092acca9907e4ff891e4892e23262c68c93b4df0f2bc9c9e2a74"
+    },
+    "context_package_verification": {
+      "state_vector_present": true,
+      "adr_index_present": true,
+      "ios_index_present": true,
+      "authority_map_present": true,
+      "operational_constraints_present": true,
+      "metadata_present": true
+    }
+  },
+
+  "enforcement_status": {
+    "chl_required": true,
+    "fail_closed_semantics": true,
+    "no_llm_without_context": true,
+    "audit_logging_active": true
+  },
+
+  "migration": {
+    "file": "077_ios013_cds_activation.sql",
+    "executed_at": "2025-12-05T15:33:00Z",
+    "status": "SUCCESS",
+    "initial_package_id": "3300d936-58fa-462f-b7f4-358fa568e068"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS-013-ASPE-2026",
+    "chain_type": "IOS_ACTIVATION"
+  },
+
+  "signatures": {
+    "stig": {
+      "role": "Technical Implementation",
+      "attestation": "CDS infrastructure deployed. context_package structure implemented per §2. CHL retrieval API operational per §4.",
+      "timestamp": "2025-12-05T15:33:00Z"
+    },
+    "cdmo": {
+      "role": "Data Governance",
+      "attestation": "CDS document registered in ios_appendix_registry. Canonical status confirmed.",
+      "timestamp": "2025-12-05T15:33:00Z"
+    },
+    "vega": {
+      "role": "Governance Enforcement",
+      "attestation": "CDS_CONTEXT_PACKAGE_REQUIRED validation rule active. Pre-flight checklist updated. No LLM call permitted without CHL activation.",
+      "timestamp": "2025-12-05T15:33:00Z"
+    }
+  }
+}

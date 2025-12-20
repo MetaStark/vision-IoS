@@ -1,0 +1,431 @@
+{
+  "document_type": "G1_INDEXING_STRATEGY_SPECIFICATION",
+  "document_id": "STIG-G1-INDEX-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T19:25:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G1 2025-12-09 Section 2.5",
+  "purpose": "Performance indexing strategy for Cognitive Domain schema per ADR-012 performance requirements",
+
+  "indexing_principles": {
+    "primary_goals": [
+      "Sub-second query response for governance lookups",
+      "Efficient JSONB containment queries for causal_links and context_frame",
+      "Fast hash chain traversal for audit verification",
+      "Minimal storage overhead while maintaining query performance"
+    ],
+    "constraints": [
+      "No over-indexing - each index must have documented query pattern",
+      "Index maintenance cost considered for write-heavy tables",
+      "Partial indexes preferred for sparse data patterns",
+      "ADR-012 economic efficiency - storage cost vs query benefit"
+    ]
+  },
+
+  "index_type_selection_guide": {
+    "B_TREE": {
+      "use_for": "Equality and range queries on scalar types",
+      "examples": ["protocol_id lookups", "timestamp ranges", "status filtering"],
+      "storage_overhead": "LOW",
+      "maintenance_cost": "LOW"
+    },
+    "HASH": {
+      "use_for": "Equality-only lookups on high-cardinality columns",
+      "examples": ["hash_self exact match", "lineage_hash verification"],
+      "storage_overhead": "LOW",
+      "maintenance_cost": "LOW"
+    },
+    "GIN": {
+      "use_for": "JSONB containment and full-text search",
+      "examples": ["causal_links @> queries", "context_frame key existence"],
+      "storage_overhead": "HIGH",
+      "maintenance_cost": "MEDIUM-HIGH"
+    },
+    "PARTIAL": {
+      "use_for": "Sparse data patterns where most rows don't match condition",
+      "examples": ["reflexive_trigger = true (rare)", "boundary_violation = true"],
+      "storage_overhead": "VERY LOW",
+      "maintenance_cost": "VERY LOW"
+    }
+  },
+
+  "table_indexing_specifications": {
+    "fhq_cognition.cognitive_nodes": {
+      "table_characteristics": {
+        "expected_row_count": "10K-100K",
+        "write_frequency": "LOW-MEDIUM",
+        "read_frequency": "HIGH",
+        "primary_access_patterns": ["node_id lookup", "modality filtering", "attention weight sorting"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_cognitive_nodes_node_code",
+          "type": "B-TREE",
+          "columns": ["node_code"],
+          "unique": true,
+          "rationale": "Fast lookup by human-readable code. Uniqueness enforced.",
+          "expected_query": "SELECT * FROM cognitive_nodes WHERE node_code = 'PERCEPTION_001'"
+        },
+        {
+          "index_name": "idx_cognitive_nodes_modality",
+          "type": "B-TREE",
+          "columns": ["modality"],
+          "unique": false,
+          "rationale": "Filter by node type for pipeline routing.",
+          "expected_query": "SELECT * FROM cognitive_nodes WHERE modality = 'perception'"
+        },
+        {
+          "index_name": "idx_cognitive_nodes_causal_links",
+          "type": "GIN",
+          "columns": ["causal_links"],
+          "operator_class": "jsonb_path_ops",
+          "rationale": "JSONB containment queries for causal relationship traversal.",
+          "expected_query": "SELECT * FROM cognitive_nodes WHERE causal_links @> '[{\"target\": \"NODE_X\"}]'"
+        },
+        {
+          "index_name": "idx_cognitive_nodes_hash_self",
+          "type": "HASH",
+          "columns": ["hash_self"],
+          "rationale": "Exact match for hash chain verification.",
+          "expected_query": "SELECT * FROM cognitive_nodes WHERE hash_self = 'abc123...'"
+        },
+        {
+          "index_name": "idx_cognitive_nodes_created_at",
+          "type": "B-TREE",
+          "columns": ["created_at DESC"],
+          "rationale": "Time-series queries and recent node retrieval.",
+          "expected_query": "SELECT * FROM cognitive_nodes WHERE created_at > NOW() - INTERVAL '24 hours'"
+        }
+      ]
+    },
+
+    "fhq_cognition.research_protocols": {
+      "table_characteristics": {
+        "expected_row_count": "1K-10K",
+        "write_frequency": "LOW",
+        "read_frequency": "MEDIUM",
+        "primary_access_patterns": ["protocol_id lookup", "status filtering", "owner filtering"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_research_protocols_code",
+          "type": "B-TREE",
+          "columns": ["protocol_code"],
+          "unique": true,
+          "rationale": "Fast lookup by protocol code. Uniqueness enforced.",
+          "expected_query": "SELECT * FROM research_protocols WHERE protocol_code = 'SITC-PROTO-001'"
+        },
+        {
+          "index_name": "idx_research_protocols_status",
+          "type": "B-TREE",
+          "columns": ["status"],
+          "rationale": "Filter by protocol state for workflow queries.",
+          "expected_query": "SELECT * FROM research_protocols WHERE status = 'ACTIVE'"
+        },
+        {
+          "index_name": "idx_research_protocols_owner",
+          "type": "B-TREE",
+          "columns": ["owner_agent"],
+          "rationale": "Filter by owning agent for authorization queries.",
+          "expected_query": "SELECT * FROM research_protocols WHERE owner_agent = 'FINN'"
+        },
+        {
+          "index_name": "idx_research_protocols_primary_engine",
+          "type": "B-TREE",
+          "columns": ["primary_engine"],
+          "rationale": "Filter by cognitive engine for routing.",
+          "expected_query": "SELECT * FROM research_protocols WHERE primary_engine = 'EC-020'"
+        },
+        {
+          "index_name": "idx_research_protocols_defcon",
+          "type": "B-TREE",
+          "columns": ["defcon_current"],
+          "rationale": "Filter by DEFCON level for safety queries.",
+          "expected_query": "SELECT * FROM research_protocols WHERE defcon_current != 'GREEN'"
+        }
+      ]
+    },
+
+    "fhq_cognition.search_in_chain_events": {
+      "table_characteristics": {
+        "expected_row_count": "100K-1M",
+        "write_frequency": "HIGH",
+        "read_frequency": "HIGH",
+        "primary_access_patterns": ["protocol_id lookup", "chain traversal", "integrity checks"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_sitc_events_protocol_node",
+          "type": "B-TREE",
+          "columns": ["protocol_id", "node_index"],
+          "rationale": "Chain traversal within a protocol. Composite index for range scans.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE protocol_id = ? ORDER BY node_index"
+        },
+        {
+          "index_name": "idx_sitc_events_verification",
+          "type": "B-TREE",
+          "columns": ["verification_status"],
+          "rationale": "Filter for unverified nodes requiring attention.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE verification_status = 'PENDING'"
+        },
+        {
+          "index_name": "idx_sitc_events_integrity_alert",
+          "type": "PARTIAL",
+          "columns": ["chain_integrity_score"],
+          "condition": "chain_integrity_score < 0.80",
+          "rationale": "Fast detection of CATASTROPHIC integrity failures. Partial index for rare condition.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE chain_integrity_score < 0.80"
+        },
+        {
+          "index_name": "idx_sitc_events_hash_self",
+          "type": "HASH",
+          "columns": ["hash_self"],
+          "rationale": "Exact match for hash chain verification.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE hash_self = 'abc123...'"
+        },
+        {
+          "index_name": "idx_sitc_events_hash_prev",
+          "type": "B-TREE",
+          "columns": ["hash_prev"],
+          "rationale": "Chain traversal backwards. B-tree allows NULL handling.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE hash_prev = 'xyz789...'"
+        },
+        {
+          "index_name": "idx_sitc_events_verification_evidence",
+          "type": "GIN",
+          "columns": ["verification_evidence"],
+          "operator_class": "jsonb_path_ops",
+          "rationale": "JSONB queries for evidence details.",
+          "expected_query": "SELECT * FROM search_in_chain_events WHERE verification_evidence @> '{\"source\": \"external\"}'"
+        }
+      ]
+    },
+
+    "fhq_cognition.information_foraging_paths": {
+      "table_characteristics": {
+        "expected_row_count": "100K-1M",
+        "write_frequency": "HIGH",
+        "read_frequency": "MEDIUM",
+        "primary_access_patterns": ["protocol_id lookup", "scent score ranking", "cost aggregation"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_forage_paths_protocol",
+          "type": "B-TREE",
+          "columns": ["protocol_id"],
+          "rationale": "Filter foraging paths by research protocol.",
+          "expected_query": "SELECT * FROM information_foraging_paths WHERE protocol_id = ?"
+        },
+        {
+          "index_name": "idx_forage_paths_scent_desc",
+          "type": "B-TREE",
+          "columns": ["scent_score DESC"],
+          "rationale": "Sort by information scent for priority ranking.",
+          "expected_query": "SELECT * FROM information_foraging_paths ORDER BY scent_score DESC LIMIT 10"
+        },
+        {
+          "index_name": "idx_forage_paths_context_frame",
+          "type": "GIN",
+          "columns": ["context_frame"],
+          "operator_class": "jsonb_path_ops",
+          "rationale": "BCBS-239 lineage queries on context_frame.",
+          "expected_query": "SELECT * FROM information_foraging_paths WHERE context_frame @> '{\"lineage_id\": \"LIN-001\"}'"
+        },
+        {
+          "index_name": "idx_forage_paths_scent_components",
+          "type": "GIN",
+          "columns": ["scent_components"],
+          "operator_class": "jsonb_path_ops",
+          "rationale": "JSONB queries for scent component analysis.",
+          "expected_query": "SELECT * FROM information_foraging_paths WHERE scent_components @> '{\"relevance\": 0.9}'"
+        },
+        {
+          "index_name": "idx_forage_paths_source_tier",
+          "type": "B-TREE",
+          "columns": ["source_tier"],
+          "rationale": "Filter by API waterfall tier for cost analysis.",
+          "expected_query": "SELECT * FROM information_foraging_paths WHERE source_tier = 'SNIPER'"
+        },
+        {
+          "index_name": "idx_forage_paths_termination",
+          "type": "B-TREE",
+          "columns": ["termination_reason"],
+          "rationale": "Analyze termination patterns.",
+          "expected_query": "SELECT termination_reason, COUNT(*) FROM information_foraging_paths GROUP BY termination_reason"
+        }
+      ]
+    },
+
+    "fhq_cognition.knowledge_boundaries": {
+      "table_characteristics": {
+        "expected_row_count": "100K-1M",
+        "write_frequency": "HIGH",
+        "read_frequency": "HIGH",
+        "primary_access_patterns": ["boundary classification lookup", "violation detection", "certainty filtering"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_boundaries_type",
+          "type": "B-TREE",
+          "columns": ["boundary_type"],
+          "rationale": "Filter by IKEA classification result.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE boundary_type = 'EXTERNAL_REQUIRED'"
+        },
+        {
+          "index_name": "idx_boundaries_violation_partial",
+          "type": "PARTIAL",
+          "columns": ["boundary_id"],
+          "condition": "boundary_violation = true",
+          "rationale": "Fast detection of hallucination attempts. Partial index for rare condition.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE boundary_violation = true"
+        },
+        {
+          "index_name": "idx_boundaries_certainty",
+          "type": "B-TREE",
+          "columns": ["internal_certainty"],
+          "rationale": "Filter by model confidence for uncertainty analysis.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE internal_certainty < 0.5"
+        },
+        {
+          "index_name": "idx_boundaries_volatility",
+          "type": "B-TREE",
+          "columns": ["volatility_class"],
+          "rationale": "Filter by data volatility for refresh scheduling.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE volatility_class IN ('EXTREME', 'HIGH')"
+        },
+        {
+          "index_name": "idx_boundaries_defcon",
+          "type": "B-TREE",
+          "columns": ["defcon_level"],
+          "rationale": "Filter by DEFCON state at time of classification.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE defcon_level != 'GREEN'"
+        },
+        {
+          "index_name": "idx_boundaries_reflexive_partial",
+          "type": "PARTIAL",
+          "columns": ["boundary_id"],
+          "condition": "reflexive_trigger = true",
+          "rationale": "Fast detection of reflexive classifications. Very sparse data.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE reflexive_trigger = true"
+        },
+        {
+          "index_name": "idx_boundaries_hash_self",
+          "type": "HASH",
+          "columns": ["hash_self"],
+          "rationale": "Exact match for hash chain verification.",
+          "expected_query": "SELECT * FROM knowledge_boundaries WHERE hash_self = 'abc123...'"
+        }
+      ]
+    },
+
+    "fhq_cognition.lineage_log": {
+      "table_characteristics": {
+        "expected_row_count": "1M+",
+        "write_frequency": "VERY HIGH",
+        "read_frequency": "MEDIUM",
+        "primary_access_patterns": ["target lookup", "sequence traversal", "audit queries"]
+      },
+      "indexes": [
+        {
+          "index_name": "idx_lineage_target",
+          "type": "B-TREE",
+          "columns": ["target_table", "target_id"],
+          "rationale": "Composite index for finding all lineage for a specific record.",
+          "expected_query": "SELECT * FROM lineage_log WHERE target_table = 'cognitive_nodes' AND target_id = ?"
+        },
+        {
+          "index_name": "idx_lineage_sequence",
+          "type": "B-TREE",
+          "columns": ["target_table", "target_id", "sequence_number"],
+          "rationale": "Ordered traversal of lineage chain.",
+          "expected_query": "SELECT * FROM lineage_log WHERE target_table = ? AND target_id = ? ORDER BY sequence_number"
+        },
+        {
+          "index_name": "idx_lineage_hash_self",
+          "type": "HASH",
+          "columns": ["hash_self"],
+          "rationale": "Exact match for hash chain verification.",
+          "expected_query": "SELECT * FROM lineage_log WHERE hash_self = 'abc123...'"
+        },
+        {
+          "index_name": "idx_lineage_operation_agent",
+          "type": "B-TREE",
+          "columns": ["operation_agent"],
+          "rationale": "Audit queries by agent.",
+          "expected_query": "SELECT * FROM lineage_log WHERE operation_agent = 'FINN'"
+        },
+        {
+          "index_name": "idx_lineage_created_at",
+          "type": "B-TREE",
+          "columns": ["created_at DESC"],
+          "rationale": "Time-series audit queries.",
+          "expected_query": "SELECT * FROM lineage_log WHERE created_at > NOW() - INTERVAL '24 hours'"
+        },
+        {
+          "index_name": "idx_lineage_evidence_bundle",
+          "type": "GIN",
+          "columns": ["evidence_bundle"],
+          "operator_class": "jsonb_path_ops",
+          "rationale": "JSONB queries for evidence details.",
+          "expected_query": "SELECT * FROM lineage_log WHERE evidence_bundle @> '{\"attestation_type\": \"G4\"}'"
+        }
+      ]
+    }
+  },
+
+  "index_summary": {
+    "total_indexes": 35,
+    "by_type": {
+      "B_TREE": 22,
+      "HASH": 5,
+      "GIN": 5,
+      "PARTIAL": 3
+    },
+    "by_table": {
+      "cognitive_nodes": 5,
+      "research_protocols": 5,
+      "search_in_chain_events": 6,
+      "information_foraging_paths": 6,
+      "knowledge_boundaries": 7,
+      "lineage_log": 6
+    }
+  },
+
+  "performance_expectations": {
+    "governance_lookup": {
+      "target": "< 10ms",
+      "index_support": "B-TREE on primary keys and codes"
+    },
+    "hash_chain_verification": {
+      "target": "< 5ms per hash lookup",
+      "index_support": "HASH on hash_self columns"
+    },
+    "jsonb_containment": {
+      "target": "< 50ms for @> queries",
+      "index_support": "GIN with jsonb_path_ops"
+    },
+    "violation_detection": {
+      "target": "< 20ms for sparse condition queries",
+      "index_support": "PARTIAL indexes on boolean conditions"
+    },
+    "time_series_queries": {
+      "target": "< 100ms for 24-hour range",
+      "index_support": "B-TREE on created_at DESC"
+    }
+  },
+
+  "maintenance_considerations": {
+    "vacuum_strategy": "AUTOVACUUM with aggressive settings for high-write tables (search_in_chain_events, lineage_log)",
+    "reindex_schedule": "Weekly REINDEX CONCURRENTLY for GIN indexes",
+    "statistics_update": "ANALYZE after bulk operations",
+    "bloat_monitoring": "pg_stat_user_indexes for dead tuple tracking"
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "This Indexing Strategy Specification defines complete performance indexing for all Cognitive Domain tables per CEO Directive G1 Section 2.5. All index types are justified with expected query patterns. Ready for VEGA G2 evaluation.",
+    "timestamp": "2025-12-09T19:25:00.000Z"
+  }
+}

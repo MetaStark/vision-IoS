@@ -1,0 +1,232 @@
+{
+  "metadata": {
+    "document_type": "BEHAVIOURAL_DRIFT_ASSESSMENT",
+    "version": "BDA-v1",
+    "authority": "CEO Directive 2026-FHQ-PHASE-3C",
+    "generated_at": "2025-12-10T16:30:00.000000+00:00",
+    "generated_by": "STIG",
+    "methodology": "MBB Causal Chain Analysis"
+  },
+  "smoke_test_context_lock": {
+    "validated_in_isolation": true,
+    "validated_under_load": false,
+    "validated_multi_agent_concurrency": false,
+    "validated_recursive_research_cycles": false
+  },
+  "mbb_causal_chain_questions": {
+    "Q1": "Does instrumentation change timing?",
+    "Q2": "Does timing change ordering?",
+    "Q3": "Does ordering change cognition?",
+    "Q4": "Does cognition change alpha?"
+  },
+  "call_site_assessments": [
+    {
+      "call_site_id": "CS-001",
+      "file": "finn_deepseek_researcher.py",
+      "agent": "FINN",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES",
+          "analysis": "@metered_execution adds 5-15ms overhead for envelope creation, hash computation, and telemetry write. Pre-call validation adds 10-30ms for 6-gate check.",
+          "magnitude": "15-45ms additional latency per call",
+          "baseline_latency": "500-2000ms (DeepSeek API)",
+          "relative_impact": "1-9% increase"
+        },
+        "Q2_ordering_change": {
+          "answer": "POSSIBLE",
+          "analysis": "If CEIO shadow cycle (CS-010) and night research (CS-002) both invoke CS-001 concurrently, telemetry writes may introduce database contention. Single-connection pattern in current router mitigates but doesn't eliminate.",
+          "scenario": "Two CRIO calls in same 100ms window",
+          "probability": "LOW (night research and shadow cycle typically don't overlap)"
+        },
+        "Q3_cognition_change": {
+          "answer": "NO",
+          "analysis": "The LLM response content is captured BEFORE telemetry is written. Fail-closed triggers AFTER response received. Cognition output unchanged.",
+          "caveat": "If fail-closed discards response, cognition is NULLIFIED not changed"
+        },
+        "Q4_alpha_change": {
+          "answer": "INDIRECT",
+          "analysis": "Alpha is unchanged if call succeeds. If fail-closed triggers, alpha for that cycle is NULL (missing), which downstream systems must handle as 'no signal' not 'wrong signal'.",
+          "mitigation": "Ensure downstream consumers handle NULL fragility_score gracefully"
+        },
+        "drift_risk": "MEDIUM",
+        "drift_vector": "Timing → Contention → Missing Signals"
+      }
+    },
+    {
+      "call_site_id": "CS-002",
+      "file": "finn_night_research_executor.py",
+      "agent": "FINN",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES",
+          "analysis": "Same overhead as CS-001 (15-45ms). Night research has 4-hour window, so relative impact is negligible.",
+          "magnitude": "15-45ms per call",
+          "baseline_latency": "4 hours available",
+          "relative_impact": "<0.001%"
+        },
+        "Q2_ordering_change": {
+          "answer": "NO",
+          "analysis": "Night research runs in isolated 02:00-06:00 UTC window. No concurrent callers expected. Sequential task execution within window.",
+          "scenario": "N/A",
+          "probability": "NEGLIGIBLE"
+        },
+        "Q3_cognition_change": {
+          "answer": "NO",
+          "analysis": "Same as CS-001 - response captured before telemetry write."
+        },
+        "Q4_alpha_change": {
+          "answer": "NO",
+          "analysis": "Night research produces batch signals. Missing one cycle means stale signals next morning, but no cognitive distortion.",
+          "mitigation": "Retry logic already exists in night_research_executor"
+        },
+        "drift_risk": "LOW",
+        "drift_vector": "None significant"
+      }
+    },
+    {
+      "call_site_id": "CS-003",
+      "file": "speciale_parser_wrapper.py",
+      "agent": "CEIO/FINN",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES - CRITICAL",
+          "analysis": "Speciale wrapper makes TWO LLM calls: 1) Speciale reasoning, 2) Chat formatting. If @metered_execution wraps EACH call, total overhead doubles. If wrapping outer function only, inner call metrics are lost.",
+          "magnitude": "30-90ms overhead for dual-call pattern",
+          "baseline_latency": "2000-5000ms (Speciale is slower)",
+          "relative_impact": "1-4%"
+        },
+        "Q2_ordering_change": {
+          "answer": "YES",
+          "analysis": "Speciale EXPIRES 2025-12-15. After expiry, wrapper falls back to standard deepseek-reasoner. Instrumentation must handle this transition WITHOUT breaking telemetry.",
+          "scenario": "Call at 15:58 UTC on Dec 15 uses Speciale, call at 16:01 uses standard",
+          "probability": "CERTAIN (time-bomb)"
+        },
+        "Q3_cognition_change": {
+          "answer": "YES - INDIRECT",
+          "analysis": "The two-step pattern (reasoning → formatting) is itself a cognitive architecture. If instrumentation adds latency between steps, context may drift (though unlikely given JSON formatting task).",
+          "caveat": "More significant: post-expiry model change WILL change cognition"
+        },
+        "Q4_alpha_change": {
+          "answer": "YES - POST-EXPIRY",
+          "analysis": "Pre-expiry: No alpha change. Post-expiry: Different model produces different edges. This is INTENTIONAL DRIFT (model upgrade), but telemetry must capture the transition.",
+          "mitigation": "Add model_version field to telemetry, flag PRE_EXPIRY vs POST_EXPIRY"
+        },
+        "drift_risk": "CRITICAL",
+        "drift_vector": "Model Expiry → Cognitive Shift → Alpha Distribution Change"
+      }
+    },
+    {
+      "call_site_id": "CS-006",
+      "file": "ios013_hcp_g4_runner.py",
+      "agent": "LINE",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES - SIGNIFICANT",
+          "analysis": "HCP runner operates on 15-minute cycles during market hours. Pre-mortem analysis must complete before position decisions. 45ms overhead on a 2-5 second call is material when market is moving.",
+          "magnitude": "15-45ms per call",
+          "baseline_latency": "1000-3000ms",
+          "relative_impact": "1-4% but market-sensitive"
+        },
+        "Q2_ordering_change": {
+          "answer": "YES",
+          "analysis": "HCP G4 interacts with Alpaca paper trading API. If telemetry write takes longer than expected, and Alpaca API has its own latency spike, total round-trip may exceed 15-minute window edge cases.",
+          "scenario": "Pre-mortem analysis at 14:59:45, must complete before 15:00 candle",
+          "probability": "LOW but non-zero"
+        },
+        "Q3_cognition_change": {
+          "answer": "NO",
+          "analysis": "Pre-mortem analysis is advisory. Position decision uses structured output, not timing."
+        },
+        "Q4_alpha_change": {
+          "answer": "TIMING-DEPENDENT",
+          "analysis": "If latency causes position entry/exit to slip into next 15-min candle, realized P&L differs from intended. This is execution drift, not cognitive drift.",
+          "mitigation": "Add latency_budget_exceeded flag if total call time > threshold"
+        },
+        "drift_risk": "HIGH",
+        "drift_vector": "Timing → Execution Slip → P&L Variance"
+      }
+    },
+    {
+      "call_site_id": "CS-009",
+      "file": "orchestrator_daemon.py",
+      "agent": "LARS",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES - CRITICAL",
+          "analysis": "Brain Bridge is in BURN-IN MODE with 500 calls/hour target. At 7.2 seconds between calls, adding 45ms overhead per call adds 22.5 seconds/hour cumulative. Over 24h = 9 minutes lost capacity.",
+          "magnitude": "~9 minutes/day reduced capacity",
+          "baseline_latency": "1000-3000ms per call",
+          "relative_impact": "1-4% per call, cumulative"
+        },
+        "Q2_ordering_change": {
+          "answer": "YES - DEBOUNCE SENSITIVE",
+          "analysis": "Orchestrator has 5-second debounce. If telemetry overhead + API latency exceeds debounce window, events may be dropped or batched differently.",
+          "scenario": "Two market events 5.1 seconds apart, but telemetry makes first event finish at 5.2 seconds",
+          "probability": "MEDIUM during volatile markets"
+        },
+        "Q3_cognition_change": {
+          "answer": "YES - EDGE FRESHNESS",
+          "analysis": "Alpha graph edges are timestamped when LLM call completes. If telemetry adds latency, edge timestamp drifts from actual market event time. Over many edges, this creates temporal skew in the graph.",
+          "quantification": "45ms per edge × 500 edges/hour = 22.5 seconds of cumulative temporal drift"
+        },
+        "Q4_alpha_change": {
+          "answer": "YES",
+          "analysis": "Alpha graph is the foundation of all downstream alpha signals. Temporal skew in edges means causal relationships may be computed with incorrect lead-lag assumptions.",
+          "mitigation": "Capture event_timestamp BEFORE LLM call, use that for edge timestamp, not completion time"
+        },
+        "drift_risk": "CRITICAL",
+        "drift_vector": "Timing → Temporal Skew → Causal Graph Corruption"
+      }
+    },
+    {
+      "call_site_id": "CS-010",
+      "file": "ceio_shadow_cycle_runner.py",
+      "agent": "CEIO",
+      "causal_analysis": {
+        "Q1_timing_change": {
+          "answer": "YES",
+          "analysis": "Shadow cycle imports CS-001 (finn_deepseek_researcher). If CS-001 is wrapped, CS-010 inherits that overhead. Double-wrapping CS-010 would add additional overhead.",
+          "magnitude": "15-45ms inherited from CS-001",
+          "baseline_latency": "500-2000ms",
+          "relative_impact": "1-9%"
+        },
+        "Q2_ordering_change": {
+          "answer": "YES - REWARD TRACE TIMING",
+          "analysis": "CEIO learning loop computes reward based on shadow position entry time vs price movement. If entry timestamp drifts due to telemetry, reward attribution may be miscalculated.",
+          "scenario": "Shadow position 'entered' at 10:00:00.045 instead of 10:00:00.000",
+          "probability": "HIGH for every shadow trade"
+        },
+        "Q3_cognition_change": {
+          "answer": "YES - LEARNING SIGNAL",
+          "analysis": "CEIO learns from reward traces. If timing drift causes systematically biased rewards (always slightly late), CEIO will learn a biased model.",
+          "quantification": "45ms timing error on 60-second holding period = 0.075% timing noise"
+        },
+        "Q4_alpha_change": {
+          "answer": "YES - INDIRECT",
+          "analysis": "CEIO's learned model influences future shadow trade signals. Biased learning → biased signals → biased alpha. This is a slow accumulation, not immediate.",
+          "mitigation": "Capture signal_timestamp at decision point, not at telemetry completion"
+        },
+        "drift_risk": "HIGH",
+        "drift_vector": "Timing → Reward Bias → Learning Drift → Signal Degradation"
+      }
+    }
+  ],
+  "summary": {
+    "critical_drift_sites": ["CS-003 (Speciale)", "CS-009 (Brain Bridge)"],
+    "high_drift_sites": ["CS-006 (HCP G4)", "CS-010 (CEIO Shadow)"],
+    "medium_drift_sites": ["CS-001 (FINN CRIO)"],
+    "low_drift_sites": ["CS-002 (Night Research)"],
+    "common_drift_vectors": [
+      "Timing overhead affecting temporal attribution",
+      "Database contention during concurrent calls",
+      "Model transition (Speciale expiry) changing cognition"
+    ],
+    "recommended_mitigations": [
+      "Capture event_timestamp/signal_timestamp BEFORE LLM call, not after",
+      "Separate telemetry write to async queue to minimize blocking",
+      "Add latency_budget_exceeded flag for market-sensitive calls",
+      "Handle Speciale expiry transition explicitly in telemetry (model_version field)",
+      "Monitor cumulative temporal drift in alpha graph edges"
+    ]
+  }
+}

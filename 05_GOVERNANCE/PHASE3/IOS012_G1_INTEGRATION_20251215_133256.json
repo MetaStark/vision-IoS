@@ -1,0 +1,237 @@
+{
+  "metadata": {
+    "validation_type": "IOS012_G1_INTEGRATION",
+    "module": "IoS-012",
+    "gate": "G1",
+    "mode": "PAPER_MOCK",
+    "started_at": "2025-12-15T13:32:55.075483+00:00",
+    "validator": "STIG/LINE",
+    "authority": "BOARD",
+    "nacl_available": false,
+    "completed_at": "2025-12-15T13:32:56.826328+00:00"
+  },
+  "tests": {
+    "G1-HANDSHAKE": {
+      "test_id": "G1-HANDSHAKE",
+      "test_name": "THE_HANDSHAKE",
+      "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+      "lifecycle": {
+        "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+        "stages": [
+          {
+            "stage": "DETECTION",
+            "latency_ms": 9,
+            "passed": true
+          },
+          {
+            "stage": "VERIFICATION",
+            "latency_ms": 0,
+            "passed": true,
+            "checks": {
+              "ttl_valid": {
+                "passed": true,
+                "current_time": "2025-12-15T13:32:55.279867+00:00",
+                "valid_until": "2025-12-15T14:47:55.250519+01:00"
+              },
+              "signature_present": {
+                "passed": true
+              },
+              "signature_valid": {
+                "passed": true,
+                "reason": "VALID_MOCK"
+              },
+              "context_hash_present": {
+                "passed": true
+              },
+              "schema_valid": {
+                "passed": true,
+                "missing_fields": []
+              }
+            }
+          },
+          {
+            "stage": "POSITION_DIFF",
+            "latency_ms": 5,
+            "passed": true,
+            "diff": {
+              "asset_id": "BTC-USD",
+              "current_position": 0.0,
+              "target_position": 0.5,
+              "position_diff": 0.5,
+              "order_side": "BUY"
+            }
+          },
+          {
+            "stage": "MOCK_EXECUTION",
+            "latency_ms": 0,
+            "passed": true,
+            "order": {
+              "order_id": "ea2bfe8a-772c-4964-968a-043fcb3abb99",
+              "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+              "asset_id": "BTC-USD",
+              "side": "BUY",
+              "quantity": 0.5,
+              "price": 95000,
+              "status": "MOCK_FILLED",
+              "executed_at": "2025-12-15T13:32:55.284869+00:00"
+            }
+          }
+        ],
+        "success": true,
+        "total_latency_ms": 26,
+        "execution_report": {
+          "order_id": "ea2bfe8a-772c-4964-968a-043fcb3abb99",
+          "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+          "asset_id": "BTC-USD",
+          "side": "BUY",
+          "quantity": 0.5,
+          "price": 95000,
+          "status": "MOCK_FILLED",
+          "executed_at": "2025-12-15T13:32:55.284869+00:00"
+        }
+      },
+      "checks": {
+        "detection_under_1000ms": {
+          "passed": true,
+          "latency_ms": 9
+        },
+        "signature_verified": {
+          "passed": true
+        },
+        "position_diff_computed": {
+          "passed": true
+        },
+        "mock_execution_generated": {
+          "passed": true
+        }
+      },
+      "status": "PASS"
+    },
+    "G1-SENTINEL": {
+      "test_id": "G1-SENTINEL",
+      "test_name": "THE_SENTINEL",
+      "subtests": {
+        "A_EXPIRED_TTL": {
+          "decision_id": "450047f2-840b-413d-9d2b-df2ce589e4df",
+          "rejected": true,
+          "ttl_correctly_identified": true,
+          "reason": "TTL_EXPIRED",
+          "status": "PASS"
+        },
+        "B_INVALID_SIGNATURE": {
+          "decision_id": "3e148058-e00c-4c4d-84b8-2a91ad90f4f9",
+          "rejected": true,
+          "reason": "INVALID_MOCK_SIGNATURE",
+          "status": "PASS"
+        },
+        "C_MISSING_HASH": {
+          "decision_id": "126902a9-a672-4d55-aeb0-9e27cf573c6e",
+          "rejected": true,
+          "reason": "MISSING_CONTEXT_HASH",
+          "status": "PASS"
+        }
+      },
+      "security_alerts_logged": 15,
+      "status": "PASS"
+    }
+  },
+  "security_events": [
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "450047f2-840b-413d-9d2b-df2ce589e4df",
+      "description": "DecisionPlan failed verification: TTL_EXPIRED",
+      "timestamp": "2025-12-15T13:32:56.808536+00:00"
+    },
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "3e148058-e00c-4c4d-84b8-2a91ad90f4f9",
+      "description": "DecisionPlan failed verification: INVALID_MOCK_SIGNATURE",
+      "timestamp": "2025-12-15T13:32:56.814000+00:00"
+    },
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "126902a9-a672-4d55-aeb0-9e27cf573c6e",
+      "description": "DecisionPlan failed verification: MISSING_CONTEXT_HASH",
+      "timestamp": "2025-12-15T13:32:56.820330+00:00"
+    }
+  ],
+  "mock_lifecycle": [
+    {
+      "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+      "stages": [
+        {
+          "stage": "DETECTION",
+          "latency_ms": 9,
+          "passed": true
+        },
+        {
+          "stage": "VERIFICATION",
+          "latency_ms": 0,
+          "passed": true,
+          "checks": {
+            "ttl_valid": {
+              "passed": true,
+              "current_time": "2025-12-15T13:32:55.279867+00:00",
+              "valid_until": "2025-12-15T14:47:55.250519+01:00"
+            },
+            "signature_present": {
+              "passed": true
+            },
+            "signature_valid": {
+              "passed": true,
+              "reason": "VALID_MOCK"
+            },
+            "context_hash_present": {
+              "passed": true
+            },
+            "schema_valid": {
+              "passed": true,
+              "missing_fields": []
+            }
+          }
+        },
+        {
+          "stage": "POSITION_DIFF",
+          "latency_ms": 5,
+          "passed": true,
+          "diff": {
+            "asset_id": "BTC-USD",
+            "current_position": 0.0,
+            "target_position": 0.5,
+            "position_diff": 0.5,
+            "order_side": "BUY"
+          }
+        },
+        {
+          "stage": "MOCK_EXECUTION",
+          "latency_ms": 0,
+          "passed": true,
+          "order": {
+            "order_id": "ea2bfe8a-772c-4964-968a-043fcb3abb99",
+            "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+            "asset_id": "BTC-USD",
+            "side": "BUY",
+            "quantity": 0.5,
+            "price": 95000,
+            "status": "MOCK_FILLED",
+            "executed_at": "2025-12-15T13:32:55.284869+00:00"
+          }
+        }
+      ],
+      "success": true,
+      "total_latency_ms": 26,
+      "execution_report": {
+        "order_id": "ea2bfe8a-772c-4964-968a-043fcb3abb99",
+        "decision_id": "ac5144a5-72ff-4a7b-895b-f8f1c931f481",
+        "asset_id": "BTC-USD",
+        "side": "BUY",
+        "quantity": 0.5,
+        "price": 95000,
+        "status": "MOCK_FILLED",
+        "executed_at": "2025-12-15T13:32:55.284869+00:00"
+      }
+    }
+  ],
+  "overall_status": "PASS",
+  "integrity_hash": "ede38499c13370a46f6f22592b08536bbdc77fd6976dc0f2ac66af5efd562c58"
+}

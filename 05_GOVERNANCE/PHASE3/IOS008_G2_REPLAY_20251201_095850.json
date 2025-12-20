@@ -1,0 +1,1095 @@
+{
+  "metadata": {
+    "validation_type": "IOS008_G2_HISTORICAL_REPLAY",
+    "module": "IoS-008",
+    "gate": "G2",
+    "started_at": "2025-12-01T09:58:37.544676+00:00",
+    "validator": "FINN/VEGA",
+    "authority": "BOARD",
+    "completed_at": "2025-12-01T09:58:50.881415+00:00"
+  },
+  "tests": {
+    "G2-1": {
+      "test_id": "G2-1",
+      "test_name": "FTX_COLLAPSE_TEST",
+      "period": "2022-11-01 to 2022-11-30",
+      "total_observations": 90,
+      "regime_distribution": {
+        "BULL": 21,
+        "BEAR": 10,
+        "STRONG_BEAR": 40,
+        "BROKEN": 8,
+        "RANGE_DOWN": 6,
+        "RANGE_UP": 5
+      },
+      "crisis_regime_count": 58,
+      "violations": [],
+      "violation_count": 0,
+      "status": "PASS",
+      "requirement": "All BEAR/STRONG_BEAR/BROKEN regimes must have 0% allocation"
+    },
+    "G2-2": {
+      "test_id": "G2-2",
+      "test_name": "SKILL_DAMPER_VALIDATION",
+      "test_cases": [
+        {
+          "fss": 0.35,
+          "expected_damper": 0.0,
+          "actual_damper": 0.0,
+          "expected_behavior": "FREEZE",
+          "actual_behavior": "FREEZE",
+          "allocation": 0.0,
+          "full_allocation": 1.5,
+          "scaled_correctly": true,
+          "frozen_correctly": true,
+          "status": "PASS"
+        },
+        {
+          "fss": 0.45,
+          "expected_damper": 0.25,
+          "actual_damper": 0.25,
+          "expected_behavior": "REDUCED",
+          "actual_behavior": "REDUCED",
+          "allocation": 0.375,
+          "full_allocation": 1.5,
+          "scaled_correctly": true,
+          "frozen_correctly": true,
+          "status": "PASS"
+        },
+        {
+          "fss": 0.55,
+          "expected_damper": 0.5,
+          "actual_damper": 0.5,
+          "expected_behavior": "CAUTIOUS",
+          "actual_behavior": "CAUTIOUS",
+          "allocation": 0.75,
+          "full_allocation": 1.5,
+          "scaled_correctly": true,
+          "frozen_correctly": true,
+          "status": "PASS"
+        },
+        {
+          "fss": 0.65,
+          "expected_damper": 1.0,
+          "actual_damper": 1.0,
+          "expected_behavior": "NORMAL",
+          "actual_behavior": "NORMAL",
+          "allocation": 1.5,
+          "full_allocation": 1.5,
+          "scaled_correctly": true,
+          "frozen_correctly": true,
+          "status": "PASS"
+        },
+        {
+          "fss": 0.85,
+          "expected_damper": 1.0,
+          "actual_damper": 1.0,
+          "expected_behavior": "HIGH",
+          "actual_behavior": "HIGH",
+          "allocation": 1.5,
+          "full_allocation": 1.5,
+          "scaled_correctly": true,
+          "frozen_correctly": true,
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "requirement": "FSS < 0.6 must scale, FSS < 0.4 must freeze"
+    },
+    "G2-3": {
+      "test_id": "G2-3",
+      "test_name": "NO_SHORTING_G0_MODE",
+      "total_observations": 7838,
+      "violations": [],
+      "violation_count": 0,
+      "status": "PASS",
+      "requirement": "Allocation must never be < 0% in G0 mode"
+    },
+    "G2-4": {
+      "test_id": "G2-4",
+      "test_name": "REGIME_CAUSAL_COHERENCE",
+      "test_cases": [
+        {
+          "regime": "BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.5,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 2.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "STRONG_BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "STRONG_BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.5,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "STRONG_BEAR",
+          "regime_scalar": 0.0,
+          "causal_vector": 2.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "BROKEN",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "BROKEN",
+          "regime_scalar": 0.0,
+          "causal_vector": 1.5,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        },
+        {
+          "regime": "BROKEN",
+          "regime_scalar": 0.0,
+          "causal_vector": 2.0,
+          "allocation": 0.0,
+          "coherent": true,
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "requirement": "BEAR/BROKEN regimes must override positive CausalVector"
+    }
+  },
+  "deviation_log": [],
+  "timeline_2022": {
+    "november": {
+      "2022-11-01": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8884712997794533
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.6582262688730288
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8096490016060047
+        }
+      ],
+      "2022-11-02": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.845120053191623
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8315260389714582
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8031971008433189
+        }
+      ],
+      "2022-11-03": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8399012638244618
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8599143546317813
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8382556053372076
+        }
+      ],
+      "2022-11-04": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8409990685605114
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.8381904208741078
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.7439148587049307
+        }
+      ],
+      "2022-11-05": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.7502446895672542
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.7699737038052827
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.6641560490029073
+        }
+      ],
+      "2022-11-06": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.459852662521951
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.4833649188324222
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.28689235599978075
+        }
+      ],
+      "2022-11-07": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.4666743390965335
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.43590605171680846
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.45130294046446323
+        }
+      ],
+      "2022-11-08": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.531845416570052
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.4868327358495574
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9839272791431141
+        }
+      ],
+      "2022-11-09": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9991047728316125
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9504723951100746
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9999995972467234
+        }
+      ],
+      "2022-11-10": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9797309929135998
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.4686009220578407
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.8470536607418921
+        }
+      ],
+      "2022-11-11": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9994542439346293
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.8819942434220289
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9500699777969127
+        }
+      ],
+      "2022-11-12": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9995562778722905
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9668407917716428
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9989381930467947
+        }
+      ],
+      "2022-11-13": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9996668204486827
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9817159556308322
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9988527757417631
+        }
+      ],
+      "2022-11-14": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9980608636174618
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9736514311438605
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9594236432953076
+        }
+      ],
+      "2022-11-15": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9963674688974382
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9735128576786148
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9563259149394606
+        }
+      ],
+      "2022-11-16": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9971162602893449
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9788449306939028
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.960879828970183
+        }
+      ],
+      "2022-11-17": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9940166823073809
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9740830762623045
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9854711743711582
+        }
+      ],
+      "2022-11-18": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9942447465907882
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9658760755612368
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9916219932300324
+        }
+      ],
+      "2022-11-19": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9912227697832057
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.955212464382306
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.994794855587161
+        }
+      ],
+      "2022-11-20": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9911468713984236
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9550831101803486
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9857959842767055
+        }
+      ],
+      "2022-11-21": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.9675777398225242
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.8718581265114032
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.8752217574772072
+        }
+      ],
+      "2022-11-22": [
+        {
+          "asset": "BTC-USD",
+          "regime": "STRONG_BEAR",
+          "allocation": 0.0,
+          "confidence": 0.46410477545679457
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.45925004401184
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.7988951350415403
+        }
+      ],
+      "2022-11-23": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.5814096064306802
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.5569347361828668
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.9993125933743177
+        }
+      ],
+      "2022-11-24": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.49652705026825744
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.6637668598798222
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.9951167139067496
+        }
+      ],
+      "2022-11-25": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.4786964566999173
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.6047686293708368
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.9770414552665627
+        }
+      ],
+      "2022-11-26": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.38852069688845997
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.43241466308639714
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.9380861283588541
+        }
+      ],
+      "2022-11-27": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.3955183107497367
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.42515029352583744
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "BROKEN",
+          "allocation": 0.0,
+          "confidence": 0.6132771599268833
+        }
+      ],
+      "2022-11-28": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.3413549770117792
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "BEAR",
+          "allocation": 0.0,
+          "confidence": 0.3698175247265729
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "RANGE_UP",
+          "allocation": 0.8999999999999999,
+          "confidence": 0.38554253224275153
+        }
+      ],
+      "2022-11-29": [
+        {
+          "asset": "BTC-USD",
+          "regime": "RANGE_DOWN",
+          "allocation": 0.44999999999999996,
+          "confidence": 0.48736828915238395
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "RANGE_UP",
+          "allocation": 0.8999999999999999,
+          "confidence": 0.4836499812215841
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "RANGE_UP",
+          "allocation": 0.8999999999999999,
+          "confidence": 0.44668256689585034
+        }
+      ],
+      "2022-11-30": [
+        {
+          "asset": "BTC-USD",
+          "regime": "BULL",
+          "allocation": 1.0,
+          "confidence": 0.5719543956764022
+        },
+        {
+          "asset": "ETH-USD",
+          "regime": "RANGE_UP",
+          "allocation": 0.8999999999999999,
+          "confidence": 0.6265275430148353
+        },
+        {
+          "asset": "SOL-USD",
+          "regime": "RANGE_UP",
+          "allocation": 0.8999999999999999,
+          "confidence": 0.5969448839825622
+        }
+      ]
+    },
+    "monthly_btc": {
+      "2022-01": [
+        {
+          "regime": "RANGE_DOWN",
+          "days": 28,
+          "confidence": 0.6102965842484602,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "RANGE_UP",
+          "days": 3,
+          "confidence": 0.4784785122267105,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        }
+      ],
+      "2022-02": [
+        {
+          "regime": "RANGE_DOWN",
+          "days": 15,
+          "confidence": 0.5168353879967342,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BULL",
+          "days": 13,
+          "confidence": 0.6841292645493396,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        }
+      ],
+      "2022-03": [
+        {
+          "regime": "RANGE_DOWN",
+          "days": 15,
+          "confidence": 0.46400262720169994,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "RANGE_UP",
+          "days": 8,
+          "confidence": 0.5789112780690794,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "BULL",
+          "days": 8,
+          "confidence": 0.7841051160067458,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        }
+      ],
+      "2022-04": [
+        {
+          "regime": "RANGE_DOWN",
+          "days": 18,
+          "confidence": 0.7544861918693181,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BEAR",
+          "days": 8,
+          "confidence": 0.8918809504939967,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "BULL",
+          "days": 4,
+          "confidence": 0.5282868609515995,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        }
+      ],
+      "2022-05": [
+        {
+          "regime": "STRONG_BEAR",
+          "days": 10,
+          "confidence": 0.9799956875558268,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "RANGE_UP",
+          "days": 8,
+          "confidence": 0.49707300134030225,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "BROKEN",
+          "days": 5,
+          "confidence": 0.5902342613855911,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "RANGE_DOWN",
+          "days": 4,
+          "confidence": 0.8310740500355607,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BEAR",
+          "days": 4,
+          "confidence": 0.5923838700969432,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        }
+      ],
+      "2022-06": [
+        {
+          "regime": "RANGE_UP",
+          "days": 10,
+          "confidence": 0.6592213298236937,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "STRONG_BEAR",
+          "days": 10,
+          "confidence": 0.9871226897804704,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "BROKEN",
+          "days": 6,
+          "confidence": 0.8817990496700303,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "RANGE_DOWN",
+          "days": 2,
+          "confidence": 0.400619274714309,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BEAR",
+          "days": 2,
+          "confidence": 0.46506796217371804,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        }
+      ],
+      "2022-07": [
+        {
+          "regime": "RANGE_UP",
+          "days": 23,
+          "confidence": 0.576046668201943,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "BULL",
+          "days": 7,
+          "confidence": 0.7950540365951483,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        },
+        {
+          "regime": "BEAR",
+          "days": 1,
+          "confidence": 0.3952980189268017,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        }
+      ],
+      "2022-08": [
+        {
+          "regime": "RANGE_UP",
+          "days": 16,
+          "confidence": 0.723121140196746,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "BEAR",
+          "days": 13,
+          "confidence": 0.7991684423315503,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "NEUTRAL",
+          "days": 2,
+          "confidence": 0.4299571212995327,
+          "regime_scalar": 0.5,
+          "allocation": 0.5
+        }
+      ],
+      "2022-09": [
+        {
+          "regime": "RANGE_DOWN",
+          "days": 18,
+          "confidence": 0.4980631135045016,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BEAR",
+          "days": 8,
+          "confidence": 0.7887525175386836,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "BULL",
+          "days": 4,
+          "confidence": 0.5528703282769325,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        }
+      ],
+      "2022-10": [
+        {
+          "regime": "RANGE_UP",
+          "days": 22,
+          "confidence": 0.6023000606179718,
+          "regime_scalar": 0.6,
+          "allocation": 0.6
+        },
+        {
+          "regime": "BULL",
+          "days": 7,
+          "confidence": 0.8890342261171049,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        },
+        {
+          "regime": "RANGE_DOWN",
+          "days": 2,
+          "confidence": 0.44971509096166323,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        }
+      ],
+      "2022-11": [
+        {
+          "regime": "STRONG_BEAR",
+          "days": 14,
+          "confidence": 0.955097949011727,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "BULL",
+          "days": 8,
+          "confidence": 0.7079022215272738,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        },
+        {
+          "regime": "RANGE_DOWN",
+          "days": 6,
+          "confidence": 0.43133096346175576,
+          "regime_scalar": 0.3,
+          "allocation": 0.3
+        },
+        {
+          "regime": "BROKEN",
+          "days": 1,
+          "confidence": 0.5814096064306802,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        },
+        {
+          "regime": "BEAR",
+          "days": 1,
+          "confidence": 0.531845416570052,
+          "regime_scalar": 0.0,
+          "allocation": 0.0
+        }
+      ],
+      "2022-12": [
+        {
+          "regime": "NEUTRAL",
+          "days": 17,
+          "confidence": 0.46623494460869686,
+          "regime_scalar": 0.5,
+          "allocation": 0.5
+        },
+        {
+          "regime": "BULL",
+          "days": 14,
+          "confidence": 0.6316255990185693,
+          "regime_scalar": 0.8,
+          "allocation": 0.8
+        }
+      ]
+    }
+  },
+  "overall_status": "PASS",
+  "integrity_hash": "3bc77922023b66a1fb5b61d2dd1502ec867c7290f86def02f352dbe4ae60c373"
+}

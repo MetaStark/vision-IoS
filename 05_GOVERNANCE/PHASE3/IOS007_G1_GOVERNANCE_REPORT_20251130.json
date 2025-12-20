@@ -1,0 +1,187 @@
+{
+  "report_type": "G1_GOVERNANCE_REPORT",
+  "report_id": "IOS007-G1-REPORT-20251130",
+  "ios_id": "IoS-007",
+  "title": "Alpha Graph Engine — G1 Technical Validation Complete",
+  "version": "2026.PROD.G1",
+  "submission_date": "2025-11-30",
+  "submission_timestamp": "2025-11-30T19:20:21.520508Z",
+
+  "authorization": {
+    "code": "EXECUTE-IOS007-G1-GLOBAL-2025",
+    "authority": "BOARD (User/Vice-CEO)",
+    "scope": "GLOBAL",
+    "rationale": "Causality is systemic. Segmented graphs destroy cross-asset propagation signals."
+  },
+
+  "execution_summary": {
+    "execution_id": "5b845db5-4ba3-4125-9db6-9e0abeab23f5",
+    "executor": "STIG (CTO, EC-003)",
+    "code_version_sha": "f3b03d6b93ed8133042ead6dc44117ca5fb9a690fb05264b2ee462211384e1d4",
+    "started_at": "2025-11-30T19:20:00.596929Z",
+    "completed_at": "2025-11-30T19:20:21.520508Z",
+    "duration_seconds": 20.92
+  },
+
+  "data_sources": {
+    "IoS-006_MACRO": {
+      "NODE_LIQUIDITY": {"observations": 801, "feature": "GLOBAL_M2_USD"},
+      "NODE_GRAVITY": {"observations": 5974, "feature": "US_10Y_REAL_RATE"}
+    },
+    "IoS-003_REGIME": {
+      "STATE_BTC": {"observations": 3379, "period": "2016-08 to 2025-11"},
+      "STATE_ETH": {"observations": 2671, "period": "2018-08 to 2025-11"},
+      "STATE_SOL": {"observations": 1788, "period": "2021-01 to 2025-11"}
+    }
+  },
+
+  "global_graph": {
+    "date_range": "2015-01-01 to 2025-11-28",
+    "total_dates": 3816,
+    "snapshots_created": 546,
+    "sampling": "weekly",
+    "node_count": 10,
+    "edge_count": 12,
+    "graph_density": 0.21429
+  },
+
+  "g1_test_results": {
+    "G1-A_CANONICAL_INPUT": {
+      "requirement": "All inputs from IoS-001/002/003/006",
+      "status": "PASS",
+      "evidence": "All 10 nodes use valid canonical sources"
+    },
+
+    "G1-B_DETERMINISM": {
+      "requirement": "Bit-identical hashes on independent replays",
+      "status": "PASS",
+      "run1_combined_hash": "ae93f7116c71c9b64cbc63a82dd9f033013c455fc3008a569f228f6e5dc815a9",
+      "run2_combined_hash": "ae93f7116c71c9b64cbc63a82dd9f033013c455fc3008a569f228f6e5dc815a9",
+      "hashes_match": true,
+      "component_matches": {
+        "snapshots": true,
+        "nodes": true,
+        "edges": true,
+        "counts": true
+      }
+    },
+
+    "G1-C_AUDITABILITY": {
+      "requirement": "All inference_log entries traceable to code version SHA",
+      "status": "PASS",
+      "code_version_sha": "f3b03d6b93ed8133042ead6dc44117ca5fb9a690fb05264b2ee462211384e1d4",
+      "enforcement": "trg_enforce_code_version trigger active"
+    },
+
+    "G1-E_TRAVERSAL_LATENCY": {
+      "requirement": "Depth=3 traversal p95 < 50ms",
+      "status": "PASS",
+      "n_tests": 100,
+      "p50_ms": 2.76,
+      "p95_ms": 7.397,
+      "p99_ms": 18.717,
+      "threshold_ms": 50.0,
+      "margin_ms": 42.603,
+      "margin_percent": "85.2%"
+    },
+
+    "G1-E_STORAGE": {
+      "requirement": "10-year storage projection < 10GB",
+      "status": "PASS",
+      "current_size_mb": 0.75,
+      "projected_10yr_gb": 0.0007,
+      "threshold_gb": 10.0,
+      "margin_gb": 9.9993,
+      "margin_percent": "99.99%",
+      "partitioning_required": false
+    },
+
+    "G1-F_GRAPH_VITALITY": {
+      "requirement": "edge_density > 0 for all snapshots",
+      "status": "PASS",
+      "total_snapshots": 546,
+      "zero_density_count": 0,
+      "min_density": 0.21429,
+      "max_density": 0.21429,
+      "avg_density": 0.21429
+    },
+
+    "G1-G_SCHEMA_LOCK": {
+      "requirement": "Hard exception on unknown types",
+      "status": "PASS",
+      "triggers_active": ["trg_validate_node_type", "trg_validate_edge_type"],
+      "enforcement": "Schema is FROZEN per ADR-013"
+    }
+  },
+
+  "overall_assessment": {
+    "status": "PASS",
+    "tests_passed": 7,
+    "tests_failed": 0,
+    "recommendation": "PROCEED TO G2 GOVERNANCE REVIEW"
+  },
+
+  "performance_highlights": {
+    "traversal_performance": {
+      "actual_p95": "7.397ms",
+      "threshold": "50ms",
+      "performance_ratio": "6.8x better than threshold"
+    },
+    "storage_efficiency": {
+      "actual_projection": "0.75MB for 546 snapshots",
+      "10yr_projection": "<1MB",
+      "threshold": "10GB",
+      "efficiency_ratio": ">10,000x under threshold"
+    }
+  },
+
+  "hash_chain_integrity": {
+    "chain_id": "HC-IOS-007-2026",
+    "snapshots_hash": "5d4d36222065952a52ee96a5924efed11c1114b0629920a3df0b7a4f4cc9f711",
+    "nodes_hash": "8de7696ab88e653a85f8c32846b66e8d8fe2d7e161e49494f5e25f612ceb3ae1",
+    "edges_hash": "e4575ba7900e27f37d7eb2313d0ace80a0f95ed1244f495eef804ba6e25534b4",
+    "combined_hash": "ae93f7116c71c9b64cbc63a82dd9f033013c455fc3008a569f228f6e5dc815a9"
+  },
+
+  "governance_recommendation": {
+    "g2_ready": true,
+    "vega_review_required": true,
+    "items_for_g2_review": [
+      "Schema lock formal approval (G1-G → G2 activation)",
+      "Edge ontology freeze confirmation",
+      "Node universe freeze confirmation",
+      "IoS-005 integration contract validation"
+    ]
+  },
+
+  "evidence_bundle": {
+    "migration_files": [
+      "042_ios007_alpha_graph_foundation.sql",
+      "043_ios007_g1_ironclad_technical_validation.sql"
+    ],
+    "execution_results": "IOS007_G1_EXECUTION_RESULTS_20251130_192021.json",
+    "directive_file": "IOS007_G1_IRONCLAD_DIRECTIVE_20251130.json",
+    "g0_submission": "IOS007_G0_SUBMISSION_20251130.json"
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "signed_at": "2025-11-30T19:20:21Z",
+      "certification": "G1 Technical Validation PASSED. All Ironclad requirements met. System ready for G2 Governance Review."
+    }
+  },
+
+  "next_phase": {
+    "gate": "G2",
+    "title": "Governance Validation",
+    "authority": "VEGA (Tier-1 Compliance)",
+    "objectives": [
+      "Formal schema lock approval",
+      "Edge ontology freeze activation",
+      "IoS-005 Statistical Contract binding"
+    ]
+  }
+}

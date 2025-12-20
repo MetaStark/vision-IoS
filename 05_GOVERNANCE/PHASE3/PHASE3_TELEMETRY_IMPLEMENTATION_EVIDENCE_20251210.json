@@ -1,0 +1,273 @@
+{
+  "evidence_bundle_id": "PHASE3-TELEMETRY-IMPL-20251210",
+  "bundle_type": "CEO_DIRECTIVE_IMPLEMENTATION",
+  "authority": "CEO Directive - PHASE 3 AUTHORIZATION",
+  "title": "Telemetry Capture Implementation Evidence Bundle",
+  "subtitle": "No Agent May Think Unobserved",
+  "executor": "STIG (CTO)",
+  "execution_date": "2025-12-10",
+  "compliance": ["ADR-001", "ADR-012", "ADR-013", "ADR-016", "ADR-018", "ADR-020", "ADR-021"],
+
+  "prerequisite_artifacts_verified": {
+    "TCS_v1": {
+      "location": "05_GOVERNANCE/PHASE2/TELEMETRY_CONTRACT_SPEC_v1.json",
+      "status": "VERIFIED",
+      "fields_defined": 28,
+      "error_types_defined": 7
+    },
+    "LLM_Router_Blueprint_v1": {
+      "location": "05_GOVERNANCE/PHASE2/LLM_ROUTER_BLUEPRINT_v1.md",
+      "status": "VERIFIED",
+      "sections": 10,
+      "gates_defined": 6
+    },
+    "Decorator_Contract_v1": {
+      "location": "05_GOVERNANCE/PHASE2/DECORATOR_CONTRACT_v1.md",
+      "status": "VERIFIED",
+      "requirements_defined": 6
+    },
+    "Migration_Plan_LLMCAPTURE_v1": {
+      "location": "05_GOVERNANCE/PHASE2/MIGRATION_PLAN_LLMCAPTURE_v1.sql",
+      "status": "VERIFIED",
+      "sections": 9
+    },
+    "VEGA_Design_Compliance_Attestation": {
+      "location": "05_GOVERNANCE/PHASE2/VEGA_ATTESTATION_PHASE2_20251210.json",
+      "status": "VERIFIED"
+    }
+  },
+
+  "implementation_deliverables": {
+    "database_migration": {
+      "migration_107": {
+        "file": "04_DATABASE/MIGRATIONS/107_phase3_llm_telemetry_capture.sql",
+        "status": "EXECUTED",
+        "tables_altered": ["fhq_governance.llm_routing_log", "fhq_governance.agent_task_log"],
+        "tables_created": ["fhq_governance.telemetry_config", "fhq_governance.telemetry_errors"],
+        "triggers_created": ["trg_llm_routing_budget_increment", "trg_llm_routing_cost_ledger"],
+        "views_created": ["agent_llm_usage_v", "provider_usage_v", "daily_telemetry_summary_v"],
+        "columns_added_to_llm_routing_log": [
+          "envelope_id", "task_name", "task_type", "model", "tokens_in", "tokens_out",
+          "latency_ms", "cost_usd", "timestamp_utc", "correlation_id",
+          "cognitive_parent_id", "protocol_ref", "cognitive_modality",
+          "stream_mode", "stream_chunks", "stream_token_accumulator", "stream_first_token_ms",
+          "governance_context_hash", "error_type", "error_payload",
+          "hash_chain_id", "hash_self", "hash_prev", "lineage_hash", "backfill"
+        ],
+        "config_entries_inserted": 12
+      },
+      "migration_108": {
+        "file": "04_DATABASE/MIGRATIONS/108_phase3_backfill_reward_traces.sql",
+        "status": "EXECUTED",
+        "rows_backfilled": 555,
+        "source_table": "fhq_optimization.reward_traces",
+        "target_table": "fhq_governance.llm_routing_log"
+      }
+    },
+
+    "python_implementation": {
+      "module_path": "03_FUNCTIONS/fhq_telemetry/",
+      "files_created": [
+        {
+          "file": "__init__.py",
+          "purpose": "Module initialization and exports"
+        },
+        {
+          "file": "errors.py",
+          "purpose": "Error hierarchy per TCS-v1 (9 error classes)",
+          "classes": [
+            "TelemetryError",
+            "TelemetryWriteFailure",
+            "BudgetExceededError",
+            "GovernanceBlockError",
+            "ASRPStateBlockedError",
+            "DEFCONBlockedError",
+            "IKEABoundaryError",
+            "InForageTerminationError",
+            "CognitiveContextMissingError",
+            "ProviderError",
+            "TimeoutError"
+          ]
+        },
+        {
+          "file": "telemetry_envelope.py",
+          "purpose": "Canonical envelope per TCS-v1",
+          "classes": ["TelemetryEnvelope", "TaskType", "CognitiveModality", "MeteredResponse", "MeteredError"],
+          "functions": ["calculate_cost"]
+        },
+        {
+          "file": "stream_aggregator.py",
+          "purpose": "Streaming response aggregation for DeepSeek Reasoner",
+          "classes": ["StreamAggregator", "StreamChunk", "AggregatedResponse"],
+          "functions": ["aggregate_stream"]
+        },
+        {
+          "file": "llm_router.py",
+          "purpose": "Centralized LLM Router with fail-closed semantics",
+          "classes": ["LLMRouter", "TelemetryConfig"],
+          "functions": ["get_router"],
+          "validation_gates": [
+            "check_budget (ADR-012)",
+            "check_asrp_state (ADR-018)",
+            "check_defcon_level (ADR-016)",
+            "hydrate_governance_context (IoS-013)",
+            "check_cognitive_context (ADR-021)"
+          ]
+        },
+        {
+          "file": "metered_execution.py",
+          "purpose": "@metered_execution decorator per Decorator Contract v1",
+          "exports": ["metered_execution", "meter_llm_call", "MeteredLLMContext"],
+          "features": [
+            "Automatic context extraction",
+            "Latency measurement",
+            "Token counting (standard + streaming)",
+            "Error capture and classification",
+            "Telemetry envelope writing",
+            "Hash-chain computation (ADR-013)",
+            "Fail-closed semantics"
+          ]
+        }
+      ]
+    }
+  },
+
+  "backfill_results": {
+    "total_rows_backfilled": 555,
+    "total_tokens": 1114555,
+    "total_cost_usd": 2.440811,
+    "agents_covered": {
+      "CRIO": {
+        "call_count": 553,
+        "tokens": 1114555,
+        "cost_usd": 2.4408
+      },
+      "CEIO": {
+        "call_count": 2,
+        "tokens": 0,
+        "cost_usd": 0
+      }
+    },
+    "date_range": {
+      "earliest": "2025-12-08T21:33:42Z",
+      "latest": "2025-12-09T23:17:53Z"
+    },
+    "all_marked_backfill_true": true
+  },
+
+  "telemetry_verification": {
+    "llm_routing_log_row_count": 555,
+    "telemetry_config_entries": 12,
+    "telemetry_errors_count": 0,
+    "views_functional": {
+      "agent_llm_usage_v": true,
+      "provider_usage_v": true,
+      "daily_telemetry_summary_v": true
+    },
+    "triggers_active": {
+      "trg_llm_routing_budget_increment": true,
+      "trg_llm_routing_cost_ledger": true
+    }
+  },
+
+  "compliance_verification": {
+    "ADR_012_economic_safety": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "Budget check gate implemented in LLMRouter.check_budget()",
+        "BudgetExceededError raises on limit breach",
+        "api_budget_log trigger increments on each call",
+        "Cost calculation uses TCS-v1 pricing table"
+      ]
+    },
+    "ADR_013_lineage": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "hash_self computed per ADR-013 formula",
+        "lineage_hash chains to previous call",
+        "hash_chain_id assigned per agent per day",
+        "TelemetryEnvelope.compute_hash_self() and compute_lineage_hash() implemented"
+      ]
+    },
+    "ADR_016_defcon": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "DEFCON check gate implemented in LLMRouter.check_defcon_level()",
+        "DEFCONBlockedError raises when DEFCON 1-2 active",
+        "Configurable via telemetry_config.DEFCON_CHECK_ENABLED"
+      ]
+    },
+    "ADR_018_asrp": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "ASRP state check gate implemented in LLMRouter.check_asrp_state()",
+        "ASRPStateBlockedError raises when agent SUSPENDED",
+        "Configurable via telemetry_config.ASRP_CHECK_ENABLED"
+      ]
+    },
+    "ADR_020_aci": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "IKEABoundaryError implemented per EC-022",
+        "InForageTerminationError implemented per EC-021",
+        "Error payloads match TCS-v1 schema"
+      ]
+    },
+    "ADR_021_cognitive": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "cognitive_parent_id field in envelope",
+        "protocol_ref field for SitC Chain-of-Query",
+        "cognitive_modality enum (search, synthesis, causal, verification, perception, intent)",
+        "CognitiveContextMissingError for enforcement",
+        "check_cognitive_context() gate in router"
+      ]
+    }
+  },
+
+  "fail_closed_architecture": {
+    "principle": "Better NO call than an UNTRACKED call",
+    "implementation": [
+      "TelemetryWriteFailure raised on write failure",
+      "LLM response discarded if telemetry cannot be written",
+      "Configurable via telemetry_config.FAIL_CLOSED_ENABLED",
+      "All writes in single transaction with rollback on failure"
+    ]
+  },
+
+  "streaming_aggregation": {
+    "problem_addressed": "DeepSeek Reasoner streaming causes tokens_out = 0",
+    "solution": "StreamAggregator class accumulates chunks",
+    "features": [
+      "TTFT (time to first token) measurement",
+      "Chunk counting",
+      "Token accumulation",
+      "Content reassembly",
+      "Reasoning content capture"
+    ]
+  },
+
+  "remaining_work": {
+    "call_site_wrapping": {
+      "status": "PENDING",
+      "description": "Apply @metered_execution decorator to 12 identified LLM call sites",
+      "note": "CEO Directive specifies this as PHASE 3 scope, but per directive 'agents must behave 100% identical', decorator wrapping should be minimal-impact"
+    }
+  },
+
+  "exit_criteria_status": {
+    "database_migration_executed": "COMPLETE",
+    "router_implemented": "COMPLETE",
+    "decorator_implemented": "COMPLETE",
+    "streaming_aggregation_implemented": "COMPLETE",
+    "backfill_executed": "COMPLETE (555 rows)",
+    "aol_shows_non_zero_telemetry": "COMPLETE",
+    "call_sites_wrapped": "PENDING",
+    "vega_g3_attestation": "PENDING",
+    "ceo_review": "PENDING"
+  },
+
+  "timestamp_utc": "2025-12-10T15:00:00Z",
+  "prepared_by": "STIG (CTO)",
+  "contract": "EC-003_2026_PRODUCTION"
+}

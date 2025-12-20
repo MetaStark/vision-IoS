@@ -1,0 +1,138 @@
+{
+  "pipeline_name": "DAILY_OHLCV_INGEST",
+  "version": "1.0.0",
+  "authority": {
+    "adrs": ["ADR-013", "ADR-007", "ADR-002"],
+    "ios_ref": "IoS-001"
+  },
+  "schedule": {
+    "cron": "5 0 * * *",
+    "timezone": "UTC",
+    "description": "Daily at 00:05 UTC"
+  },
+  "assets": {
+    "BTC-USD": {
+      "yfinance_ticker": "BTC-USD",
+      "asset_class": "CRYPTO",
+      "priority": 1
+    },
+    "ETH-USD": {
+      "yfinance_ticker": "ETH-USD",
+      "asset_class": "CRYPTO",
+      "priority": 2
+    },
+    "SOL-USD": {
+      "yfinance_ticker": "SOL-USD",
+      "asset_class": "CRYPTO",
+      "priority": 3
+    },
+    "EURUSD": {
+      "yfinance_ticker": "EURUSD=X",
+      "asset_class": "FX",
+      "priority": 4
+    }
+  },
+  "stages": [
+    {
+      "name": "FETCH_PRICES",
+      "owner": "LINE",
+      "executor": "CODE",
+      "description": "Fetch latest OHLCV from yfinance",
+      "timeout_seconds": 300,
+      "retry_count": 3,
+      "retry_delay_seconds": 60
+    },
+    {
+      "name": "GAP_DETECTION",
+      "owner": "CODE",
+      "executor": "CODE",
+      "description": "Detect missing days in data",
+      "timeout_seconds": 60,
+      "depends_on": ["FETCH_PRICES"]
+    },
+    {
+      "name": "BACKFILL",
+      "owner": "CODE",
+      "executor": "CODE",
+      "description": "Fill gaps with historical data",
+      "timeout_seconds": 300,
+      "depends_on": ["GAP_DETECTION"],
+      "condition": "gaps_detected > 0"
+    },
+    {
+      "name": "STAGING",
+      "owner": "CODE",
+      "executor": "CODE",
+      "description": "Write to fhq_market.staging_prices",
+      "timeout_seconds": 120,
+      "depends_on": ["FETCH_PRICES"]
+    },
+    {
+      "name": "RECONCILE",
+      "owner": "VEGA",
+      "executor": "VEGA",
+      "description": "Validate staging vs canonical",
+      "timeout_seconds": 60,
+      "depends_on": ["STAGING"]
+    },
+    {
+      "name": "CANONICALIZE",
+      "owner": "STIG",
+      "executor": "STIG",
+      "description": "Promote to fhq_market.prices",
+      "timeout_seconds": 120,
+      "depends_on": ["RECONCILE"],
+      "condition": "reconciliation.decision == 'APPROVED'"
+    },
+    {
+      "name": "FRESHNESS_SENTINEL",
+      "owner": "STIG",
+      "executor": "STIG",
+      "description": "Verify canonical completeness (WHEN check)",
+      "script": "ios_canonical_freshness_sentinel.py",
+      "timeout_seconds": 60,
+      "depends_on": ["CANONICALIZE"],
+      "on_failure": "WARN",
+      "log_discrepancies": true
+    },
+    {
+      "name": "DRIFT_GUARD",
+      "owner": "STIG",
+      "executor": "STIG",
+      "description": "Verify canonical correctness (WHAT check) - ADR-015",
+      "script": "ios_canonical_drift_guard.py",
+      "timeout_seconds": 60,
+      "depends_on": ["FRESHNESS_SENTINEL"],
+      "on_failure": "ALERT",
+      "log_discrepancies": true,
+      "checks": ["price_zscore", "ohlc_integrity", "volume_anomaly"]
+    }
+  ],
+  "tables": {
+    "staging": "fhq_market.staging_prices",
+    "canonical": "fhq_market.prices",
+    "gaps": "fhq_market.data_gaps",
+    "schedule": "fhq_market.ingest_schedule",
+    "batches": "fhq_market.ingestion_batches",
+    "reconciliation": "fhq_market.reconciliation_log"
+  },
+  "data_quality": {
+    "require_no_nan_ohlc": true,
+    "require_positive_prices": true,
+    "require_ohlc_relationship": true,
+    "allow_zero_volume": true,
+    "gap_threshold_days": 3,
+    "auto_backfill": true
+  },
+  "lineage": {
+    "compute_row_hash": true,
+    "compute_batch_hash": true,
+    "log_to_ios_audit": true,
+    "log_to_task_registry": true
+  },
+  "notifications": {
+    "on_success": false,
+    "on_failure": true,
+    "on_gap_detected": true
+  }
+}

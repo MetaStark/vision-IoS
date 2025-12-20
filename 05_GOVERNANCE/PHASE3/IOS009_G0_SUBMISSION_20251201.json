@@ -1,0 +1,256 @@
+{
+  "evidence_type": "IOS_MODULE_G0_SUBMISSION",
+  "ios_id": "IoS-009",
+  "title": "Meta-Perception Layer - Intent, Stress & Reflexivity Brain",
+  "version": "2026.PROD.G0",
+  "submission_timestamp": "2025-12-01T17:13:58.648Z",
+  "submission_date": "2025-12-01",
+
+  "strategic_mission": "From Reaction to Perception",
+  "description": "IoS-009 is the Meta-Perception Brain of FjordHQ. It transforms raw signals and causal structure from IoS-007 Alpha Graph into auditable PerceptionSnapshots that answer: 'What does the market intend to do, and how stressed is the system?' This layer enables higher modules (IoS-008, IoS-010, IoS-012) to tighten risk, override exposure, or step aside when uncertainty is too high.",
+
+  "implementation_status": {
+    "integration_state": "NOT_BOUND_TO_FHQ_DB",
+    "implementation_commit": "8297f15",
+    "implementation_branch": "claude/fjord-meta-perception-plan-01PsGioiNK8LwGd8inSNN9Sb",
+    "implementation_path": "meta_perception/",
+    "note": "Implementation is generic, self-contained engine. Wiring to FjordHQ schemas deferred to G1+."
+  },
+
+  "governance": {
+    "owner_role": "LARS",
+    "validator": "IoS-005",
+    "governance_authority": "VEGA",
+    "technical_authority": "STIG",
+    "classification": "TIER-1_CRITICAL"
+  },
+
+  "adr_compliance": [
+    "ADR-001 (System Charter)",
+    "ADR-002 (Audit Charter)",
+    "ADR-003 (Institutional Standards)",
+    "ADR-004 (Change Gates G0-G4)",
+    "ADR-006 (VEGA Governance)",
+    "ADR-011 (Fortress Pattern - Append-Only)",
+    "ADR-012 (Economic Safety)",
+    "ADR-013 (Kernel Specification)",
+    "ADR-063 (Event Taxonomy)",
+    "ADR-064 (Perception Taxonomy)"
+  ],
+
+  "dependencies": [
+    "IoS-007 (Alpha Graph Engine - Causal Structure)"
+  ],
+
+  "schema": {
+    "name": "fhq_perception",
+    "tables_created": [
+      "fhq_perception.snapshots",
+      "fhq_perception.intent_reports",
+      "fhq_perception.shock_reports",
+      "fhq_perception.g0_constraints_verification"
+    ],
+    "existing_tables": [
+      "fhq_perception.anomaly_log",
+      "fhq_perception.hmm_features_daily",
+      "fhq_perception.regime_daily",
+      "fhq_perception.state_vectors"
+    ],
+    "triggers_created": [
+      "tr_snapshots_append_only_update",
+      "tr_snapshots_append_only_delete",
+      "tr_intent_reports_append_only_update",
+      "tr_intent_reports_append_only_delete",
+      "tr_shock_reports_append_only_update",
+      "tr_shock_reports_append_only_delete",
+      "tr_snapshots_hash_gen",
+      "tr_intent_reports_hash_gen",
+      "tr_shock_reports_hash_gen"
+    ]
+  },
+
+  "core_algorithms": {
+    "total_modules": 8,
+    "modules": [
+      {
+        "module": "core/entropy.py",
+        "purpose": "Market Information Entropy",
+        "pure_function": true
+      },
+      {
+        "module": "core/noise.py",
+        "purpose": "Noise-to-Signal Evaluation",
+        "pure_function": true
+      },
+      {
+        "module": "core/intent.py",
+        "purpose": "Bayesian Intent Inference",
+        "pure_function": true
+      },
+      {
+        "module": "core/reflexivity.py",
+        "purpose": "Decision-Market Feedback Correlation",
+        "pure_function": true
+      },
+      {
+        "module": "core/shocks.py",
+        "purpose": "Information Shock Detection",
+        "pure_function": true
+      },
+      {
+        "module": "core/regime.py",
+        "purpose": "Regime Pivot / Transition Detection",
+        "pure_function": true
+      },
+      {
+        "module": "core/uncertainty.py",
+        "purpose": "Aggregate Uncertainty Score",
+        "pure_function": true
+      },
+      {
+        "module": "core/state.py",
+        "purpose": "PerceptionState Construction",
+        "pure_function": true
+      }
+    ]
+  },
+
+  "artifacts_produced": [
+    {
+      "artifact": "PerceptionSnapshot",
+      "table": "fhq_perception.snapshots",
+      "description": "Full meta-perception state including entropy, intent, stress, overrides"
+    },
+    {
+      "artifact": "IntentReport",
+      "table": "fhq_perception.intent_reports",
+      "description": "Interpretable view of perceived market intent"
+    },
+    {
+      "artifact": "ShockReport",
+      "table": "fhq_perception.shock_reports",
+      "description": "Active and historical shock detection"
+    }
+  ],
+
+  "g0_constraints_verification": {
+    "pure_function_guarantee": {
+      "status": "VERIFIED",
+      "evidence": "Core modules (core/*.py) remain side-effect free. All state flows through function parameters and return values."
+    },
+    "no_db_connectivity_in_core": {
+      "status": "VERIFIED",
+      "evidence": "IoS-009 does not import or call any fjordhq DB client. All outputs are in-memory objects and JSON/JSONL artifacts."
+    },
+    "stig_adapter_read_only": {
+      "status": "VERIFIED",
+      "evidence": "STIGAdapterAPI is read-only, designed to expose perception artifacts to STIG. Does not implement state mutation."
+    },
+    "no_temporal_nondeterminism": {
+      "status": "VERIFIED",
+      "evidence": "No internal wall-clock reads, no unseeded randomness, no online learning. All timestamps injected from outside."
+    },
+    "integration_deferred": {
+      "status": "VERIFIED",
+      "evidence": "IoS-009 remains a generic engine until G1 integration under VEGA supervision."
+    },
+    "constraints_verified_in_db": true
+  },
+
+  "governance_actions": {
+    "registry_entry": {
+      "table": "fhq_meta.ios_registry",
+      "ios_id": "IoS-009",
+      "status": "DRAFT",
+      "governance_state": "G0_SUBMITTED"
+    },
+    "governance_log": {
+      "table": "fhq_governance.governance_actions_log",
+      "action_type": "IOS_REGISTRATION",
+      "action_target": "IoS-009",
+      "action_target_type": "G0_SUBMISSION",
+      "decision": "APPROVED",
+      "hash_chain_id": "HC-IOS009-G0-20251201-171358"
+    }
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS009-G0-20251201",
+    "chain_type": "IOS_MODULE_G0",
+    "chain_scope": "fhq_perception.snapshots,fhq_perception.intent_reports,fhq_perception.shock_reports",
+    "genesis_hash": "IOS009-G0-VERIFICATION-2025-12-01",
+    "schema_frozen": false,
+    "note": "Schema will be frozen at G4 Constitutional Activation"
+  },
+
+  "g0_acceptance_criteria": {
+    "registry_entry_created": {
+      "status": "PASSED",
+      "evidence": "IoS-009 registered in fhq_meta.ios_registry with status=DRAFT, governance_state=G0_SUBMITTED"
+    },
+    "foundation_schemas_created": {
+      "status": "PASSED",
+      "evidence": "3 new tables created: snapshots, intent_reports, shock_reports"
+    },
+    "append_only_triggers_installed": {
+      "status": "PASSED",
+      "evidence": "6 triggers installed to enforce ADR-011 Fortress Pattern"
+    },
+    "hash_chain_triggers_installed": {
+      "status": "PASSED",
+      "evidence": "3 triggers for automatic lineage hash generation"
+    },
+    "g0_constraints_verified": {
+      "status": "PASSED",
+      "evidence": "All 5 core constraints verified and logged to fhq_perception.g0_constraints_verification"
+    },
+    "governance_action_logged": {
+      "status": "PASSED",
+      "evidence": "APPROVED action logged to fhq_governance.governance_actions_log"
+    }
+  },
+
+  "prohibitions": {
+    "no_write_to_fhq_schemas": "IoS-009 core must never write to fhq_* schemas",
+    "no_embedded_llm": "No LLMs, embeddings, or online learning in core",
+    "no_state_mutation": "STIGAdapterAPI must remain read-only",
+    "no_dynamic_timestamps": "All timestamps must be injected, never generated internally"
+  },
+
+  "next_phase": {
+    "gate": "G1",
+    "title": "Technical Integration",
+    "objectives": [
+      "Create mapping layer from fhq_* data to IoS-009 input models",
+      "Integrate with IoS-007 Alpha Graph snapshots",
+      "Wire STIGAdapterAPI to controlled runtime pipeline",
+      "Deploy under VEGA-approved integration contract"
+    ],
+    "prerequisites": [
+      "IoS-007 G4 Constitutional Activation (COMPLETE)",
+      "VEGA approval of integration specification"
+    ]
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "key_id": "STIG-EC003-IOS009-G0",
+      "signed_at": "2025-12-01T17:13:58.648Z",
+      "action": "G0 Registration & Foundation Schema Creation"
+    },
+    "board_authorization": {
+      "authority": "BOARD (Vice-CEO)",
+      "directive": "IoS-009 G0 REGISTRATION & PERCEPTION FOUNDATION DIRECTIVE",
+      "authorized_at": "2025-12-01"
+    }
+  },
+
+  "migration_artifact": {
+    "file": "04_DATABASE/MIGRATIONS/055_ios009_perception_foundation.sql",
+    "created_by": "STIG",
+    "created_at": "2025-12-01T17:11:59.755Z"
+  }
+}

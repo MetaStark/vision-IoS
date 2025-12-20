@@ -1,0 +1,150 @@
+{
+  "directive": "CEO DIRECTIVE: EQUITY SKILL BASELINE",
+  "document": "EQUITY_SKILL_BASELINE",
+  "status": "INITIALIZED",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T12:10:00Z",
+
+  "ios005_integration": {
+    "description": "Skill measurement activation for equity domain",
+    "table": "fhq_research.forecast_skill_metrics",
+    "metric_scope": "DOMAIN",
+    "engine_version": "ios005_v1.0"
+  },
+
+  "baseline_metrics_initialized": {
+    "EQUITY_AAPL": {
+      "scope_value": "EQUITY_AAPL",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    },
+    "EQUITY_MSFT": {
+      "scope_value": "EQUITY_MSFT",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    },
+    "EQUITY_NVDA": {
+      "scope_value": "EQUITY_NVDA",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    },
+    "EQUITY_QQQ": {
+      "scope_value": "EQUITY_QQQ",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    },
+    "EQUITY_SPY": {
+      "scope_value": "EQUITY_SPY",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    },
+    "EQUITY_UNIVERSE": {
+      "scope_value": "EQUITY_UNIVERSE",
+      "forecast_count": 0,
+      "resolved_count": 0,
+      "brier_score_mean": null,
+      "brier_skill_score": null,
+      "hit_rate": null,
+      "calibration_error": null,
+      "drift_detected": false,
+      "status": "AWAITING_FORECASTS"
+    }
+  },
+
+  "skill_metrics_definition": {
+    "brier_score": {
+      "description": "Mean squared error of probabilistic forecasts",
+      "range": "[0, 1]",
+      "optimal": 0,
+      "baseline": "Climatological frequency"
+    },
+    "brier_skill_score": {
+      "description": "Improvement over baseline",
+      "formula": "1 - (brier_score / brier_baseline)",
+      "optimal": 1.0,
+      "minimum_acceptable": 0.0
+    },
+    "hit_rate": {
+      "description": "Fraction of correct directional forecasts",
+      "range": "[0, 1]",
+      "baseline": 0.5
+    },
+    "calibration_error": {
+      "description": "Deviation between stated confidence and realized accuracy",
+      "optimal": 0,
+      "threshold_warn": 0.10,
+      "threshold_alert": 0.20
+    },
+    "mae": {
+      "description": "Mean Absolute Error for price forecasts",
+      "unit": "USD",
+      "note": "To be computed when price forecasts are issued"
+    },
+    "sharpe_attribution": {
+      "description": "Signal contribution to portfolio Sharpe ratio",
+      "note": "Requires live trading data - pending P3 activation"
+    }
+  },
+
+  "measurement_schedule": {
+    "frequency": "Daily at market close",
+    "lookback_window": "Rolling 30 days",
+    "minimum_forecasts_for_scoring": 10,
+    "drift_detection_threshold": 0.15
+  },
+
+  "governance_thresholds": {
+    "skill_degradation_warning": {
+      "brier_skill_score_drop": 0.10,
+      "hit_rate_drop": 0.05,
+      "action": "ALERT to VEGA"
+    },
+    "skill_degradation_critical": {
+      "brier_skill_score_below": 0.0,
+      "hit_rate_below": 0.45,
+      "action": "SUSPEND signal generation, require CEO review"
+    }
+  },
+
+  "baseline_summary": {
+    "total_baselines": 6,
+    "assets_tracked": ["AAPL", "MSFT", "NVDA", "QQQ", "SPY"],
+    "universe_baseline": true,
+    "status": "All baselines initialized, awaiting forecast generation"
+  },
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "IoS-005 Skill Baseline established. 6 DOMAIN baselines initialized (5 individual + 1 universe). Metrics: Brier, MAE, Sharpe attribution registered. Awaiting forecast generation for first skill scores."
+  }
+}

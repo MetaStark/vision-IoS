@@ -1,0 +1,91 @@
+{
+  "directive": "CEO DIRECTIVE: THE NIGHT WATCH (PERSISTENCE & AUTONOMY)",
+  "title": "Night Watch Activation Report",
+  "executor": "STIG (CTO)",
+  "timestamp_utc": "2025-12-09T02:17:00Z",
+  "status": "ACTIVE",
+
+  "executive_summary": "THE WATCH IS SET. While you sleep, the machine hunts. CRIO Deep Dive Mode is actively analyzing top edges, discovering derivative relationships, and storing full reasoning traces. All thoughts are now being saved.",
+
+  "order_1_save_the_thoughts": {
+    "status": "COMPLETE",
+    "schema_changes": [
+      "ALTER TABLE fhq_optimization.reward_traces ADD COLUMN reasoning_trace TEXT",
+      "ALTER TABLE fhq_optimization.reward_traces ADD COLUMN hypothesis_id UUID",
+      "ALTER TABLE fhq_optimization.reward_traces ADD COLUMN model_used TEXT",
+      "ALTER TABLE fhq_optimization.reward_traces ADD COLUMN reasoning_tokens INTEGER",
+      "ALTER TABLE fhq_optimization.reward_traces ADD COLUMN total_tokens INTEGER"
+    ],
+    "code_changes": [
+      "orchestrator_daemon.py: Added store_reasoning_trace() function",
+      "orchestrator_daemon.py: Modified call_deepseek_speciale() to capture reasoning_content",
+      "orchestrator_daemon.py: Now persists every thought to reward_traces"
+    ],
+    "verification": "Traces are being stored - see initial_metrics below"
+  },
+
+  "order_2_set_the_trap": {
+    "status": "ACTIVE",
+    "script": "scripts/crio_night_watch.py",
+    "mode": "CRIO Deep Dive Mode",
+    "analysis_type": "Level 2 Causal Analysis (Time Lag & Beta)",
+    "phases": {
+      "phase_1": "Deep dive on top 20 edges - probe time lag, beta sensitivity, conditional factors",
+      "phase_2": "Broad sweep on all assets - comprehensive causal mapping"
+    },
+    "process_id": "91ecb3",
+    "session_id": "Generated per run"
+  },
+
+  "order_3_the_promise": {
+    "targets": {
+      "edges": 500,
+      "traces": 500,
+      "tokens": 1000000
+    },
+    "initial_metrics": {
+      "edges": 207,
+      "traces": 2,
+      "tokens": 4676,
+      "timestamp": "2025-12-09T02:16:00Z"
+    },
+    "progress_note": "Night Watch will run continuously until all targets are met"
+  },
+
+  "early_discoveries": [
+    {
+      "edge": "FED_BALANCE_SHEET --AMPLIFIES--> SPY_QQQ_BETA",
+      "type": "Derivative edge from SPY->QQQ analysis",
+      "insight": "Fed liquidity amplifies the SPY-QQQ correlation"
+    },
+    {
+      "edge": "/NQ_FUTURES --LEADS--> QQQ",
+      "type": "Derivative edge from SPY->QQQ analysis",
+      "insight": "Nasdaq futures lead QQQ price action"
+    }
+  ],
+
+  "sample_insight": "The SPY-QQQ correlation is not merely a passive statistical link but an active, liquidity-fueled causal relationship...",
+
+  "files_created": [
+    "scripts/crio_night_watch.py"
+  ],
+
+  "files_modified": [
+    "05_ORCHESTRATOR/orchestrator_daemon.py",
+    "fhq_optimization.reward_traces (schema)"
+  ],
+
+  "monitoring": {
+    "log_file": "logs/night_watch.log",
+    "query_traces": "SELECT COUNT(*), SUM(reasoning_tokens), SUM(total_tokens) FROM fhq_optimization.reward_traces WHERE reasoning_trace IS NOT NULL",
+    "query_edges": "SELECT COUNT(*) FROM vision_signals.alpha_graph_edges WHERE is_active = true"
+  },
+
+  "morning_report_query": "SELECT trace_count, edges, total_tokens FROM (SELECT COUNT(*) as trace_count, SUM(total_tokens) as total_tokens FROM fhq_optimization.reward_traces WHERE reasoning_trace IS NOT NULL) t, (SELECT COUNT(*) as edges FROM vision_signals.alpha_graph_edges) e",
+
+  "signatures": {
+    "executor": "STIG",
+    "attestation": "The Night Watch is active. The machine hunts while you sleep."
+  }
+}

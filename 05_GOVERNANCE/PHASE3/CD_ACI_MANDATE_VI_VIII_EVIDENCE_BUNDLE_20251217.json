@@ -1,0 +1,160 @@
+{
+  "document_type": "CEO_DIRECTIVE_EVIDENCE_BUNDLE",
+  "directive_id": "CD-ACI-MANDATE-VI-VIII-EVIDENCE-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_generated": "2025-12-17",
+  "generated_by": "STIG (CTO)",
+
+  "mandate_vi_audit_grade_metrics": {
+    "status": "CLOSED",
+    "requirement": "Ground truth sources defined, vanity metrics removed",
+    "ground_truth_sources": {
+      "ikea_classification_accuracy": {
+        "measurement": "VEGA Sampling (10% random) - Human review of classifications",
+        "source_table": "fhq_meta.knowledge_boundary_log",
+        "validation": "Manual review by VEGA every 50 classifications"
+      },
+      "inforage_cost_savings": {
+        "measurement": "actual_cost / baseline_cost",
+        "source_table": "fhq_optimization.inforage_cost_log",
+        "current_rows": 10,
+        "formula": "SUM(cumulative_cost) / COUNT(DISTINCT session_id)"
+      },
+      "hypothesis_validation_rate": {
+        "measurement": "g1_validated / g0_submitted",
+        "g0_table": "fhq_alpha.g0_draft_proposals",
+        "g0_count": 160,
+        "g1_table": "fhq_alpha.g1_validated_signals",
+        "g1_count": 100,
+        "calculated_rate": 0.625
+      },
+      "paper_trading_performance": {
+        "measurement": "Realized P&L from Alpaca Paper API",
+        "source_table": "fhq_execution.paper_trade_outcomes",
+        "note": "Broker truth is source-of-truth, not internal models"
+      }
+    },
+    "removed_vanity_metrics": [
+      {"metric": "Chain Integrity Score >0.9", "reason": "No ground truth definition - impossible to mathematically prove"},
+      {"metric": "InForage Scent Accuracy >80%", "reason": "No labeled dataset for validation"}
+    ]
+  },
+
+  "mandate_vii_schema_integrity": {
+    "status": "CLOSED",
+    "requirement": "Evidence of Existence with table names, row counts, migration IDs",
+    "verification_timestamp": "2025-12-17T00:00:00Z",
+    "verification_method": "Direct PostgreSQL SELECT queries",
+    "critical_aci_tables": {
+      "fhq_meta.knowledge_boundary_log": {"exists": true, "row_count": 0, "columns": 20},
+      "fhq_meta.chain_of_query": {"exists": true, "row_count": 0, "columns": 20},
+      "fhq_meta.cognitive_engine_evidence": {"exists": true, "row_count": 0, "columns": 20},
+      "fhq_meta.search_foraging_log": {"exists": true, "row_count": 0, "columns": 26},
+      "fhq_meta.aci_state_snapshot_log": {"exists": true, "row_count": 0, "columns": 18},
+      "fhq_optimization.inforage_cost_log": {"exists": true, "row_count": 10, "columns": 12},
+      "fhq_governance.learning_proposals": {"exists": true, "row_count": 0, "columns": 23},
+      "fhq_governance.learning_proposal_audit": {"exists": true, "row_count": 0, "columns": 10},
+      "fhq_governance.learning_versions": {"exists": true, "row_count": 0, "columns": 13},
+      "fhq_alpha.g0_draft_proposals": {"exists": true, "row_count": 160, "columns": 16},
+      "fhq_alpha.g1_validated_signals": {"exists": true, "row_count": 100, "columns": 16},
+      "fhq_governance.defcon_state": {"exists": true, "row_count": 4, "columns": 8}
+    },
+    "migration_ids": {
+      "learning_proposals_governance": "151_aci_learning_proposals_governance.sql",
+      "cognitive_engine_registration": "102_adr021_cognitive_engine_registration.sql",
+      "aci_console_infrastructure": "129_aci_engineering_console_infrastructure.sql"
+    },
+    "schema_count": {
+      "fhq_meta": 112,
+      "fhq_governance": 86,
+      "fhq_alpha": 34,
+      "fhq_execution": 22,
+      "fhq_optimization": 8
+    }
+  },
+
+  "mandate_viii_role_isolation": {
+    "status": "CLOSED",
+    "requirement": "IKEA/InForage/SitC outputs are Evidence, not Truth. Cannot bypass port-of-admittance.",
+    "schema_boundary_enforcement": {
+      "code_location": "ios022_ikea_boundary_engine.py:52-66",
+      "allowed_write_schemas": ["fhq_meta", "fhq_optimization"],
+      "prohibited_schemas": ["fhq_data", "fhq_market", "fhq_alpha"],
+      "enforcement_mechanism": "MITQuadViolation exception on schema boundary breach"
+    },
+    "evidence_vs_truth_mapping": {
+      "fhq_data": {"type": "CANONICAL_DATA", "cognitive_access": "READ_ONLY"},
+      "fhq_market": {"type": "CANONICAL_TRUTH", "cognitive_access": "NO_ACCESS"},
+      "fhq_meta": {"type": "EVIDENCE", "cognitive_access": "WRITE_ALLOWED"},
+      "fhq_alpha": {"type": "PROPOSALS", "cognitive_access": "VIA_G0_ONLY"},
+      "fhq_optimization": {"type": "OPERATIONAL", "cognitive_access": "WRITE_ALLOWED"}
+    },
+    "port_of_admittance_verification": {
+      "cognitive_output_destination": "fhq_meta.knowledge_boundary_log",
+      "to_become_truth": "Must pass G0-G4 gates",
+      "final_canonical_destination": "fhq_alpha.* (after governance approval)"
+    },
+    "code_evidence": {
+      "ikea_log_target": "INSERT INTO fhq_meta.knowledge_boundary_log",
+      "inforage_log_target": "INSERT INTO fhq_optimization.inforage_cost_log",
+      "learning_proposals_target": "INSERT INTO fhq_governance.learning_proposals"
+    }
+  },
+
+  "supplementary_verifications": {
+    "runtime_economic_guardian_bypass_analysis": {
+      "status": "VERIFIED_UNBYPASSABLE",
+      "reason": "RuntimeEconomicGuardian.check_or_fail() raises RuntimeEconomicViolation if controller unavailable",
+      "code_location": "finn_cognitive_brain.py:136-158",
+      "bypass_scenario_1": {
+        "scenario": "Agent creates FINNCognitiveBrain directly without using scheduler",
+        "result": "RuntimeEconomicGuardian initialized in run_cognitive_cycle(), not in constructor",
+        "mitigation": "All entry points to run_cognitive_cycle() require guardian check"
+      },
+      "bypass_scenario_2": {
+        "scenario": "Import finn_cognitive_brain and call methods directly",
+        "result": "RuntimeEconomicGuardian check happens INSIDE run_cognitive_cycle, cannot be skipped",
+        "mitigation": "Guardian check is first operation after basic safety rails"
+      }
+    },
+    "defcon_gate_above_agent_analysis": {
+      "status": "VERIFIED_ABOVE_AGENT",
+      "reason": "defcon_gate_check() runs in scheduler BEFORE FINNCognitiveBrain.run_cognitive_cycle() is called",
+      "code_location": "finn_brain_scheduler.py:52-94",
+      "architectural_proof": [
+        "1. User runs finn_brain_scheduler.py",
+        "2. FINNScheduler.run() enters main loop",
+        "3. defcon_gate_check() called FIRST",
+        "4. If RED/BLACK: self.shutdown_requested = True, break",
+        "5. If ORANGE: continue (skip cycle)",
+        "6. Only if gate passes: self.run_cycle() calls brain.run_cognitive_cycle()"
+      ],
+      "bypass_scenario": {
+        "scenario": "Direct import and execution of FINNCognitiveBrain",
+        "result": "Would bypass scheduler DEFCON gate",
+        "mitigation": "FINNCognitiveBrain.run_cognitive_cycle() also checks DEFCON via check_defcon()",
+        "defense_in_depth": true
+      }
+    },
+    "current_defcon_state": {
+      "level": "GREEN",
+      "is_current": true,
+      "triggered_at": "2025-12-11T15:28:46.437Z",
+      "triggered_by": "STIG",
+      "trigger_reason": "G4 Activation Order - Sovereign Autonomy Release"
+    }
+  },
+
+  "attestation_required": {
+    "type": "VEGA_G1_ATTESTATION",
+    "status": "PENDING",
+    "attestation_criteria": [
+      "Schema integrity verified via direct DB queries",
+      "Ground truth sources documented with measurement methods",
+      "Role isolation enforced via MITQuadViolation exception",
+      "RuntimeEconomicGuardian demonstrated unbypassable",
+      "DEFCON gates verified above agent will"
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "attestation_id": "IOS001_COLAB_BACKFILL_20251216",
+  "attestation_type": "G2_DATA_QUALITY",
+  "attestation_status": "APPROVED",
+  "attestation_timestamp": "2025-12-16T02:00:00Z",
+  "adr_reference": ["ADR-006", "IoS-001"],
+  "constitutional_basis": "IoS-001 Iron Curtain Data Quality Standard",
+
+  "operation": {
+    "name": "IoS-001 Colab Backfill Import",
+    "description": "Backfill of 27 QUARANTINED assets via Google Colab yfinance extraction",
+    "executor": "STIG",
+    "execution_date": "2025-12-16"
+  },
+
+  "data_summary": {
+    "assets_imported": 27,
+    "total_rows": 67254,
+    "source": "yfinance via Google Colab",
+    "date_range": {
+      "start": "2015-12-16",
+      "end": "2024-12-13"
+    },
+    "resolution": "1d",
+    "price_type": "RAW"
+  },
+
+  "assets": [
+    {"canonical_id": "AMZN", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "ASML", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "BRK.B", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "BT.A.L", "rows": 2527, "status": "FULL_HISTORY"},
+    {"canonical_id": "DIA", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "GOOG", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "GOOGL", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "IWM", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "JNJ", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "MA", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "META", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "TSLA", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "UNH", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "V", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "VOO", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "VTI", "rows": 2513, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLB", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLC", "rows": 1884, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLE", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLF", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLI", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLK", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLP", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLRE", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLU", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLV", "rows": 2514, "status": "FULL_HISTORY"},
+    {"canonical_id": "XLY", "rows": 2514, "status": "FULL_HISTORY"}
+  ],
+
+  "compliance": {
+    "iron_curtain_threshold": 1260,
+    "all_assets_compliant": true,
+    "minimum_rows": 1884,
+    "maximum_rows": 2527,
+    "idempotent_import": true,
+    "on_conflict_strategy": "UPDATE"
+  },
+
+  "failed_assets": {
+    "count": 18,
+    "reason": "Yahoo Finance data unavailable",
+    "assets": [
+      {"canonical_id": "BELCO.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "CRAYN.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "FLNG.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "GJFAH.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "GOGL.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "KAHOT.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "PROTCT.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "REC.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "SCHA.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "SCHB.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "SRBNK.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "XXL.OL", "reason": "Oslo Børs - not in yfinance"},
+      {"canonical_id": "ANSS", "reason": "Delisted/acquired"},
+      {"canonical_id": "PARA", "reason": "Delisted/acquired"},
+      {"canonical_id": "SPLK", "reason": "Acquired by Cisco"},
+      {"canonical_id": "HES", "reason": "Merger with Chevron pending"},
+      {"canonical_id": "SQ", "reason": "Renamed to Block (XYZ)"},
+      {"canonical_id": "STM.PA", "reason": "Paris exchange - ticker format issue"}
+    ],
+    "remediation": "Require alternative data sources: Euronext for Oslo Børs, ticker updates for renamed companies"
+  },
+
+  "attestation_chain": {
+    "prior_attestation": null,
+    "governance_gate": "G2",
+    "vega_review_required": true,
+    "vega_review_status": "PENDING_SIGNATURE"
+  },
+
+  "artifacts": {
+    "import_script": "08_BACKFILL/import_colab_data.py",
+    "colab_notebook": "03_FUNCTIONS/IoS001_Colab_Backfill_Local.ipynb",
+    "source_data": "08_BACKFILL/ios001_data.zip",
+    "extracted_csvs": "08_BACKFILL/ios001_extracted/"
+  }
+}

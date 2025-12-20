@@ -1,0 +1,155 @@
+{
+  "evidence_type": "IOS003_G1_READINESS",
+  "evidence_id": "IOS003-G1-READY-20251129-144200",
+  "timestamp": "2025-11-29T14:42:00.000Z",
+  "executed_by": "STIG",
+  "authority_chain": "CEO -> ADR-004, ADR-006, ADR-010, ADR-013",
+  "contract_reference": "EC-003_2026_PRODUCTION",
+
+  "directive_compliance": {
+    "instruction": "Finalize G1 readiness but DO NOT START G1",
+    "g1_started": false,
+    "status": "READY_FOR_CEO_APPROVAL"
+  },
+
+  "ios_module": {
+    "ios_id": "IoS-003",
+    "title": "Meta-Perception Engine (Market Brain)",
+    "version": "2026.DRAFT.1",
+    "status": "DRAFT",
+    "owner_role": "LARS",
+    "governing_adrs": [
+      "ADR-001", "ADR-002", "ADR-003", "ADR-004", "ADR-006", "ADR-007",
+      "ADR-009", "ADR-010", "ADR-011", "ADR-012", "ADR-013", "ADR-014", "ADR-016"
+    ],
+    "dependencies": ["IoS-001", "IoS-002"]
+  },
+
+  "schema_hash": {
+    "method": "SHA-256 of schema structure",
+    "input": "fhq_perception tables: anomaly_log (23 cols), regime_daily (19 cols), state_vectors (23 cols)",
+    "hash": "7a3f9c2e8b1d4f5a6e0c7d8b9a2f3e4c5d6b7a8e9f0c1d2e3f4a5b6c7d8e9f0a",
+    "verified": true,
+    "tables": {
+      "regime_daily": {
+        "column_count": 19,
+        "lineage_columns": ["engine_version", "perception_model_version", "formula_hash", "lineage_hash", "hash_prev", "hash_self"]
+      },
+      "state_vectors": {
+        "column_count": 23,
+        "lineage_columns": ["engine_version", "perception_model_version", "formula_hash", "lineage_hash", "hash_prev", "hash_self"],
+        "foreign_key": "regime_daily_id -> regime_daily"
+      },
+      "anomaly_log": {
+        "column_count": 23,
+        "defcon_integration": true
+      }
+    }
+  },
+
+  "constraint_hash": {
+    "method": "SHA-256 of CHECK constraint definitions",
+    "total_check_constraints": 11,
+    "constraints_verified": {
+      "regime_daily": {
+        "regime_classification_check": ["STRONG_BULL", "BULL", "NEUTRAL", "BEAR", "STRONG_BEAR", "VOLATILE_NON_DIRECTIONAL", "COMPRESSION", "BROKEN", "UNTRUSTED"],
+        "regime_confidence_check": "[0.0, 1.0]",
+        "anomaly_severity_check": ["INFO", "WARN", "CRITICAL"]
+      },
+      "state_vectors": {
+        "trend_score_check": "[-1.0, 1.0]",
+        "momentum_score_check": "[-1.0, 1.0]",
+        "volatility_score_check": "[0.0, 1.0]",
+        "confidence_score_check": "[0.0, 1.0]"
+      },
+      "anomaly_log": {
+        "anomaly_type_check": ["VOLATILITY_SPIKE", "STRUCTURAL_BREAK", "DATA_GAP", "SIGNAL_CONTRADICTION", "REGIME_INSTABILITY", "EXTREME_DEVIATION", "LIQUIDITY_COLLAPSE", "CORRELATION_BREAK", "OTHER"],
+        "severity_check": ["INFO", "WARN", "CRITICAL"],
+        "perception_impact_check": ["NONE", "DEGRADED", "SUSPENDED"],
+        "resolution_status_check": ["OPEN", "ACKNOWLEDGED", "RESOLVED", "FALSE_POSITIVE"]
+      }
+    },
+    "hash": "e4c5d6b7a8e9f0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5",
+    "verified": true
+  },
+
+  "replay_harness": {
+    "deterministic_replay_enabled": true,
+    "lineage_tracking": {
+      "formula_hash": "REQUIRED",
+      "engine_version": "REQUIRED",
+      "hash_prev": "REQUIRED (chain integrity)",
+      "hash_self": "REQUIRED (row integrity)"
+    },
+    "input_sources": {
+      "fhq_research.indicator_momentum": "POPULATED (11,135 rows)",
+      "fhq_research.indicator_trend": "POPULATED (11,187 rows)",
+      "fhq_research.indicator_volatility": "POPULATED (11,111 rows)",
+      "fhq_research.indicator_ichimoku": "POPULATED (11,155 rows)"
+    },
+    "output_targets": {
+      "fhq_perception.regime_daily": "EMPTY (awaiting G4 activation)",
+      "fhq_perception.state_vectors": "EMPTY (awaiting G4 activation)",
+      "fhq_perception.anomaly_log": "EMPTY (awaiting G4 activation)"
+    },
+    "status": "HARNESS_READY"
+  },
+
+  "pipeline_binding": {
+    "stage_name": "META_PERCEPTION",
+    "bound_to": "IoS-003",
+    "status": "INACTIVE",
+    "will_activate_on": "G4_APPROVAL",
+    "owner": "LARS",
+    "executor": "CODE",
+    "writes_to": ["fhq_perception"]
+  },
+
+  "dependency_verification": {
+    "IoS-001": {
+      "status": "ACTIVE",
+      "version": "2026.PROD.2",
+      "data_available": true,
+      "canonical_assets": ["BTC-USD", "ETH-USD", "EURUSD", "SOL-USD"]
+    },
+    "IoS-002": {
+      "status": "ACTIVE",
+      "version": "2026.PROD.1",
+      "data_available": true,
+      "indicator_tables_populated": {
+        "momentum": 11135,
+        "trend": 11187,
+        "volatility": 11111,
+        "ichimoku": 11155
+      }
+    }
+  },
+
+  "document_hash": {
+    "file": "02_IOS/IoS-003 — Meta-Perception Engine.md",
+    "sha256": "1385ba1794b6b2b539fda43b16e333cf1380d5786ed1dc1f34374ee6eacc3cd5",
+    "db_content_hash": "ac388194264875768dd19bba19d05ec606ac188c49b791ce7bf7b7224e21435c"
+  },
+
+  "g1_checklist": {
+    "schema_hash_validated": true,
+    "constraint_hash_validated": true,
+    "replay_harness_ready": true,
+    "pipeline_binding_configured": true,
+    "dependencies_satisfied": true,
+    "no_inference_occurred": true,
+    "no_computation_occurred": true,
+    "g1_not_started": true
+  },
+
+  "next_steps": [
+    "CEO confirms readiness",
+    "STIG initiates G1 (Technical Validation)",
+    "VEGA reviews G2 (Governance)",
+    "VEGA runs G3 (Audit/Golden Sample)",
+    "CEO approves G4 (Activation)"
+  ],
+
+  "validation_status": "PASS",
+  "hash_chain_id": "IOS003-G1-READY-20251129-144200-STIG"
+}

@@ -1,0 +1,326 @@
+{
+  "evidence_type": "IOS_MODULE_G0_SUBMISSION",
+  "ios_id": "IoS-007",
+  "title": "Alpha Graph Engine — Causal Reasoning Core",
+  "version": "2026.PROD.G0",
+  "submission_timestamp": "2025-11-30T18:22:27.492Z",
+  "submission_date": "2025-11-30",
+
+  "strategic_mission": "From Correlation to Causality",
+  "description": "Transforms FjordHQ from a reactive system to a reasoning system. Models the Transmission Mechanism of the market: How liquidity shocks (IoS-006) propagate to regime shifts (IoS-003) to asset prices (IoS-001).",
+
+  "governance": {
+    "owner_role": "FINN",
+    "validator": "IoS-005",
+    "governance_authority": "VEGA",
+    "technical_authority": "STIG",
+    "execution_agent": "CODE",
+    "employment_contract": "EC-011"
+  },
+
+  "adr_compliance": [
+    "ADR-002 (Audit Charter)",
+    "ADR-003 (Institutional Standards)",
+    "ADR-011 (Fortress & Hash Chains)",
+    "ADR-013 (Kernel Specification)",
+    "ADR-054 (Causal Framework)"
+  ],
+
+  "dependencies": [
+    "IoS-001 (Canonical Asset Registry)",
+    "IoS-003 (Meta-Perception Engine)",
+    "IoS-005 (Forecast Calibration & Skill Engine)",
+    "IoS-006 (Global Macro & Factor Integration Engine)"
+  ],
+
+  "schema": {
+    "name": "fhq_graph",
+    "tables": [
+      "fhq_graph.nodes",
+      "fhq_graph.edges",
+      "fhq_graph.snapshots",
+      "fhq_graph.snapshot_nodes",
+      "fhq_graph.snapshot_edges",
+      "fhq_graph.deltas",
+      "fhq_graph.inference_log"
+    ],
+    "types": [
+      "fhq_graph.node_type",
+      "fhq_graph.relationship_type",
+      "fhq_graph.edge_direction"
+    ]
+  },
+
+  "node_universe": {
+    "total_nodes": 10,
+    "active_nodes": 8,
+    "reserved_nodes": 2,
+    "macro_nodes": [
+      {
+        "node_id": "NODE_LIQUIDITY",
+        "label": "Global M2 Liquidity",
+        "source_ios": "IoS-006",
+        "source_feature_id": "GLOBAL_M2_USD",
+        "hypothesis": "Liquidity expansion leads to increased risk appetite and higher asset prices with lag.",
+        "status": "ACTIVE"
+      },
+      {
+        "node_id": "NODE_GRAVITY",
+        "label": "US 10Y Real Rate",
+        "source_ios": "IoS-006",
+        "source_feature_id": "US_10Y_REAL_RATE",
+        "hypothesis": "Rising real rates increase hurdle rate for risk assets, dampening valuations.",
+        "status": "ACTIVE"
+      }
+    ],
+    "regime_nodes": [
+      {
+        "node_id": "STATE_BTC",
+        "label": "Bitcoin Regime State",
+        "source_ios": "IoS-003",
+        "status": "ACTIVE"
+      },
+      {
+        "node_id": "STATE_ETH",
+        "label": "Ethereum Regime State",
+        "source_ios": "IoS-003",
+        "status": "ACTIVE"
+      },
+      {
+        "node_id": "STATE_SOL",
+        "label": "Solana Regime State",
+        "source_ios": "IoS-003",
+        "status": "ACTIVE"
+      }
+    ],
+    "asset_nodes": [
+      {
+        "node_id": "ASSET_BTC",
+        "label": "Bitcoin Price & Volatility",
+        "source_ios": "IoS-001",
+        "status": "ACTIVE"
+      },
+      {
+        "node_id": "ASSET_ETH",
+        "label": "Ethereum Price & Volatility",
+        "source_ios": "IoS-001",
+        "status": "ACTIVE"
+      },
+      {
+        "node_id": "ASSET_SOL",
+        "label": "Solana Price & Volatility",
+        "source_ios": "IoS-001",
+        "status": "ACTIVE"
+      }
+    ],
+    "future_nodes": [
+      {
+        "node_id": "NODE_SENTIMENT",
+        "label": "Narrative Intensity",
+        "source_ios": "IoS-009",
+        "status": "RESERVED"
+      },
+      {
+        "node_id": "NODE_RISK",
+        "label": "Systemic Stress Level",
+        "source_ios": "IoS-009",
+        "status": "RESERVED"
+      }
+    ]
+  },
+
+  "edge_ontology": {
+    "total_edges": 12,
+    "edge_types_ios007": ["LEADS", "INHIBITS", "AMPLIFIES", "COUPLES", "BREAKS"],
+    "edge_types_alpha_graph_v1": ["CORRELATION", "CAUSALITY", "LEAD_LAG", "REGIME_CONDITIONAL"],
+    "hypothesized_edges": [
+      {
+        "edge_id": "edge_liq_btc_leads",
+        "from": "NODE_LIQUIDITY",
+        "to": "STATE_BTC",
+        "type": "LEADS",
+        "lag_days": 21,
+        "hypothesis": "Expanding global M2 precedes bullish BTC regime transitions."
+      },
+      {
+        "edge_id": "edge_liq_eth_leads",
+        "from": "NODE_LIQUIDITY",
+        "to": "STATE_ETH",
+        "type": "LEADS",
+        "lag_days": 21,
+        "hypothesis": "Expanding global M2 precedes bullish ETH regime transitions."
+      },
+      {
+        "edge_id": "edge_liq_sol_leads",
+        "from": "NODE_LIQUIDITY",
+        "to": "STATE_SOL",
+        "type": "LEADS",
+        "lag_days": 14,
+        "hypothesis": "SOL shows highest sensitivity to liquidity changes (shorter lag)."
+      },
+      {
+        "edge_id": "edge_grav_btc_inhibits",
+        "from": "NODE_GRAVITY",
+        "to": "STATE_BTC",
+        "type": "INHIBITS",
+        "lag_days": 7,
+        "hypothesis": "Rising real rates dampen risk appetite, pressuring BTC regimes."
+      },
+      {
+        "edge_id": "edge_grav_eth_inhibits",
+        "from": "NODE_GRAVITY",
+        "to": "STATE_ETH",
+        "type": "INHIBITS",
+        "lag_days": 7,
+        "hypothesis": "Rising real rates dampen tech valuations including ETH."
+      },
+      {
+        "edge_id": "edge_btc_regime_amplifies",
+        "from": "STATE_BTC",
+        "to": "ASSET_BTC",
+        "type": "AMPLIFIES",
+        "lag_days": 0,
+        "hypothesis": "Bullish BTC regime amplifies positive price momentum."
+      },
+      {
+        "edge_id": "edge_eth_regime_amplifies",
+        "from": "STATE_ETH",
+        "to": "ASSET_ETH",
+        "type": "AMPLIFIES",
+        "lag_days": 0,
+        "hypothesis": "Bullish ETH regime amplifies positive price momentum."
+      },
+      {
+        "edge_id": "edge_sol_regime_amplifies",
+        "from": "STATE_SOL",
+        "to": "ASSET_SOL",
+        "type": "AMPLIFIES",
+        "lag_days": 0,
+        "hypothesis": "Bullish SOL regime amplifies positive price momentum."
+      },
+      {
+        "edge_id": "edge_btc_eth_couples",
+        "from": "ASSET_BTC",
+        "to": "ASSET_ETH",
+        "type": "COUPLES",
+        "lag_days": 0,
+        "hypothesis": "BTC and ETH move together in most market conditions."
+      },
+      {
+        "edge_id": "edge_btc_sol_couples",
+        "from": "ASSET_BTC",
+        "to": "ASSET_SOL",
+        "type": "COUPLES",
+        "lag_days": 0,
+        "hypothesis": "BTC and SOL move together with SOL showing higher beta."
+      },
+      {
+        "edge_id": "edge_eth_sol_couples",
+        "from": "ASSET_ETH",
+        "to": "ASSET_SOL",
+        "type": "COUPLES",
+        "lag_days": 0,
+        "hypothesis": "ETH and SOL coupled via shared DeFi/smart contract narrative."
+      },
+      {
+        "edge_id": "edge_liq_btc_lead_lag",
+        "from": "NODE_LIQUIDITY",
+        "to": "ASSET_BTC",
+        "type": "LEAD_LAG",
+        "lag_days": 28,
+        "hypothesis": "Direct liquidity-to-price pathway (not via regime)."
+      }
+    ]
+  },
+
+  "ios005_validation_contract": {
+    "requirement": "All edges must satisfy IoS-005 Statistical Contract before G2 activation",
+    "contract": "Permutation p < 0.05 AND Bootstrap p < 0.05 for the selected lag",
+    "status": "PENDING_G2_VALIDATION"
+  },
+
+  "python_compatibility": {
+    "package": "alpha_graph",
+    "version": "1.0.0",
+    "pydantic_models_aligned": [
+      "AlphaNode",
+      "AlphaEdge",
+      "AlphaGraphSnapshot",
+      "AlphaGraphDelta",
+      "QueryResult",
+      "InfluenceScore"
+    ],
+    "field_mapping": {
+      "from_node_id": "matches AlphaEdge.from_node_id",
+      "to_node_id": "matches AlphaEdge.to_node_id",
+      "strength": "matches AlphaEdge.strength",
+      "confidence": "matches AlphaEdge.confidence",
+      "regimes": "matches AlphaEdge.regimes (TEXT[])"
+    }
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS-007-2026",
+    "chain_type": "IOS_MODULE",
+    "chain_scope": "fhq_graph.nodes,fhq_graph.edges,fhq_graph.snapshots",
+    "genesis_hash": "c47f59a5f4d8b883049a72eec8d2f48eeabe354cdc25e05bf78d160c3fec6c0b",
+    "chain_length": 1,
+    "schema_frozen": true,
+    "integrity_verified": true
+  },
+
+  "governance_action": {
+    "action_id": "6e8ec922-0a53-49e9-85ea-5c9ec82e8cde",
+    "action_type": "IOS_MODULE_G0_SUBMISSION",
+    "decision": "APPROVED",
+    "signature_id": "2bf8fe50-c3cc-4606-bf1a-3bda6086f1c5",
+    "initiated_by": "STIG",
+    "initiated_at": "2025-11-30T18:22:27.492Z"
+  },
+
+  "g0_acceptance_criteria": {
+    "schema_created": {
+      "status": "PASSED",
+      "evidence": "fhq_graph schema with 7 tables created"
+    },
+    "node_types_hardcoded": {
+      "status": "PASSED",
+      "evidence": "10 canonical nodes from IoS-001/003/006 (no free text nodes)"
+    },
+    "governance_assigned": {
+      "status": "PASSED",
+      "evidence": "FINN assigned as Owner in ios_registry"
+    },
+    "evidence_file_generated": {
+      "status": "PASSED",
+      "evidence": "IOS007_G0_SUBMISSION_20251130.json"
+    }
+  },
+
+  "next_phase": {
+    "gate": "G1",
+    "title": "Historical Build",
+    "objectives": [
+      "Populate graph history using 10-year canonical data from IoS-006 and IoS-003",
+      "Build the Historical Graph to train edge weights",
+      "Integrate with alpha_graph Python package for computation"
+    ]
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "key_id": "STIG-EC003-IOS007-G0",
+      "signed_at": "2025-11-30T18:22:27.492Z"
+    }
+  },
+
+  "ontology_freeze_notice": {
+    "status": "FROZEN",
+    "authority": "ADR-013",
+    "requirement": "Any modification to Node Universe or Edge Ontology requires full G1-G4 Governance Cycle",
+    "dynamic_node_creation": "PROHIBITED"
+  }
+}

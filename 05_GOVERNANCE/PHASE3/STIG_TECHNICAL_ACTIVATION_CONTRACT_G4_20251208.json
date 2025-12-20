@@ -1,0 +1,157 @@
+{
+  "technical_activation_contract": {
+    "contract_id": "TAC-SENTINEL-DB-INTEGRITY-G4-001",
+    "version": "1.0",
+    "effective_date": "2025-12-08",
+    "authority": "CEO Directive - G4 Constitutional Activation",
+    "prepared_by": "STIG",
+    "classification": "Constitutional Infrastructure"
+  },
+
+  "component_binding": {
+    "component_id": "SENTINEL_DB_INTEGRITY",
+    "ios_id": "IoS-014",
+    "version": "1.0",
+    "code_hash": "b9e88b35d7b4c74955b43c6fcc3fa967d138bf85f65ea7e703f0c12bd6732c1d",
+    "config_hash": "c6863d3f30b49a02cd0350a5639ccb134765227ca122d3182740e2da95f7d45f",
+    "activation_status": "CONSTITUTIONAL"
+  },
+
+  "ios_014_heartbeat_binding": {
+    "binding_type": "PERMANENT",
+    "orchestrator_integration": {
+      "module_path": "03_FUNCTIONS/ios_db_integrity_sentinel.py",
+      "entry_point": "run_db_integrity_sentinel()",
+      "execution_context": "Orchestrator main loop callable",
+      "invocation_method": "Direct Python import"
+    },
+    "heartbeat_schedule": {
+      "interval_seconds": 300,
+      "interval_description": "Every 5 minutes",
+      "configurable": true,
+      "config_location": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+      "minimum_interval_seconds": 60,
+      "maximum_interval_seconds": 3600
+    },
+    "execution_guarantees": {
+      "fault_tolerant": true,
+      "continue_on_module_failure": true,
+      "max_execution_time_ms": 1000,
+      "connection_retry_enabled": true
+    }
+  },
+
+  "canonical_scheduler_binding": {
+    "scheduler_table": "fhq_governance.task_registry",
+    "task_entry": {
+      "task_name": "Sentinel_DB_Integrity",
+      "task_type": "SENTINEL",
+      "task_scope": "DATABASE_MONITORING",
+      "owned_by_agent": "STIG",
+      "executed_by_agent": "STIG",
+      "schedule_cron": "*/5 * * * *",
+      "schedule_description": "Every 5 minutes"
+    },
+    "runtime_tracking": {
+      "last_run_logged": true,
+      "run_count_tracked": true,
+      "duration_monitored": true,
+      "status_recorded": true
+    }
+  },
+
+  "defcon_hooks_integration": {
+    "adr_reference": "ADR-016",
+    "hook_type": "CIRCUIT_BREAKER_CONTRIBUTOR",
+    "defcon_triggers": {
+      "DEFCON_3": {
+        "condition": "CRITICAL.DB_LOCK_CONTENTION persists for 2+ intervals",
+        "action": "Escalate to LINE for execution impact assessment",
+        "automatic": false
+      },
+      "DEFCON_3_ALT": {
+        "condition": "CRITICAL.DB_BLOAT_RISK unresolved after vacuum attempt",
+        "action": "Freeze writes to affected schema",
+        "automatic": true,
+        "scope": "Affected schema only"
+      },
+      "DEFCON_2": {
+        "condition": "SYSTEM_ERROR persists for 2+ intervals",
+        "action": "Trigger full system inspection",
+        "automatic": false
+      },
+      "DEFCON_2_ALT": {
+        "condition": "Multiple CRITICAL events detected simultaneously",
+        "action": "Escalate to CEO and VEGA",
+        "automatic": false
+      }
+    },
+    "circuit_breaker_authority": "VEGA",
+    "manual_override_authority": "CEO"
+  },
+
+  "data_flow_bindings": {
+    "inputs": {
+      "pg_stat_activity": "Lock contention detection",
+      "pg_locks": "Lock dependency analysis",
+      "pg_stat_user_tables": "Bloat and vacuum monitoring",
+      "pg_stat_statements": "Slow query identification"
+    },
+    "outputs": {
+      "fhq_governance.discrepancy_events": {
+        "event_types": ["DB_LOCK_CONTENTION", "DB_BLOAT_RISK", "SLOW_QUERY_CANDIDATE", "SYSTEM_ERROR"],
+        "write_mode": "INSERT_ONLY",
+        "immutability": "TRIGGER_PROTECTED"
+      },
+      "fhq_meta.ios_audit_log": {
+        "event_type": "DB_INTEGRITY_SENTINEL",
+        "write_mode": "INSERT_ONLY",
+        "evidence_hash_required": true
+      }
+    },
+    "protected_schemas": {
+      "read_only_access": ["fhq_market", "fhq_perception", "fhq_research", "fhq_positions"],
+      "no_write_guarantee": true,
+      "enforcement": "Code-level restriction"
+    }
+  },
+
+  "operational_parameters": {
+    "thresholds": {
+      "lock_monitor": {
+        "warn_wait_seconds": 10,
+        "critical_consecutive": 2,
+        "critical_schemas": ["fhq_market", "fhq_perception", "fhq_research", "fhq_positions"]
+      },
+      "bloat_watchdog": {
+        "warn_bloat_ratio": 0.10,
+        "critical_bloat_ratio": 0.25,
+        "critical_vacuum_days": 7
+      },
+      "slow_query": {
+        "mean_time_warn_ms": 500,
+        "min_calls": 10,
+        "top_n_queries": 10
+      }
+    },
+    "threshold_modification": {
+      "authority": "STIG with VEGA approval",
+      "ceo_notification_required": true,
+      "governance_log_required": true
+    }
+  },
+
+  "activation_ceremony": {
+    "activation_type": "CONSTITUTIONAL",
+    "activation_date": "2025-12-08",
+    "activated_by": "CEO",
+    "witnessed_by": ["VEGA", "STIG", "LINE"],
+    "binding_declaration": "Sentinel_DB_Integrity is hereby bound permanently to IoS-014 as constitutional infrastructure. It shall operate continuously, participate in all DEFCON protocols, and be included in all future backtests, replays, and system decisions."
+  },
+
+  "technical_signature": {
+    "signed_by": "STIG",
+    "signature_date": "2025-12-08",
+    "contract_hash": "pending_signature"
+  }
+}

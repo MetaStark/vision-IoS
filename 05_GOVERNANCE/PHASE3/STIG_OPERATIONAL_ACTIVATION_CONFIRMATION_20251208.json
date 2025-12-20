@@ -1,0 +1,150 @@
+{
+  "operational_activation_confirmation": {
+    "document_id": "OAC-SENTINEL-DB-INTEGRITY-20251208",
+    "version": "1.0",
+    "timestamp": "2025-12-08T14:11:00Z",
+    "authority": "CEO Addendum - G4 Operational Activation Directive",
+    "prepared_by": "STIG",
+    "classification": "CEO-MANDATED CONFIRMATION"
+  },
+
+  "section_2_1_status": {
+    "question": "Is sentinel already in drift?",
+    "answer": "YES - NOW OPERATIONAL",
+    "verification_method": "Direct execution test and database verification",
+    "factual_evidence": {
+      "execution_test": {
+        "timestamp": "2025-12-08T13:11:06Z",
+        "result": "SUCCESS",
+        "config_loaded": "sentinel_db_integrity_config.yaml",
+        "modules_executed": 3,
+        "overall_status": "CRITICAL",
+        "discrepancies_logged": 2
+      },
+      "database_verification": {
+        "discrepancy_events_logged": true,
+        "latest_event": "2025-12-08T13:11:07Z",
+        "event_types_logged": ["DB_BLOAT_RISK", "SLOW_QUERY_CANDIDATE"],
+        "severity_levels_logged": ["CRITICAL", "WARN"]
+      },
+      "task_registry_status": {
+        "task_name": "IOS014_DB_INTEGRITY_SENTINEL",
+        "task_type": "VISION_FUNCTION",
+        "task_status": "ACTIVE",
+        "function_path": "03_FUNCTIONS/ios_db_integrity_sentinel.py",
+        "owned_by_agent": "STIG"
+      }
+    },
+    "prior_issue_resolved": {
+      "issue": "Original task entry had task_type='SENTINEL' instead of 'VISION_FUNCTION'",
+      "impact": "Orchestrator query only selects task_type='VISION_FUNCTION', so sentinel was not being executed",
+      "resolution": "Created new task entry with correct task_type='VISION_FUNCTION'",
+      "resolution_timestamp": "2025-12-08T13:10:21Z"
+    }
+  },
+
+  "section_2_2_restart_requirement": {
+    "question": "Must orchestrator be restarted?",
+    "answer": "NO",
+    "answer_type": "DEFINITIVE",
+    "technical_rationale": {
+      "orchestrator_architecture": "The orchestrator uses subprocess.run() to execute each function (orchestrator_v1.py line 359). Functions are NOT loaded as persistent Python imports.",
+      "task_loading_mechanism": "Tasks are read fresh from fhq_governance.task_registry at the START of each cycle (orchestrator_v1.py line 116-136, method read_vision_tasks())",
+      "module_reload_support": "Not applicable - no modules to reload. Each cycle spawns fresh subprocesses.",
+      "conclusion": "The orchestrator will automatically pick up the new IOS014_DB_INTEGRITY_SENTINEL task on its next cycle without any restart."
+    },
+    "code_references": [
+      "orchestrator_v1.py:116-136 - read_vision_tasks() queries task_registry each cycle",
+      "orchestrator_v1.py:359-365 - subprocess.run() executes functions as separate processes",
+      "orchestrator_v1.py:463-471 - Cycle iterates through freshly-loaded tasks"
+    ]
+  },
+
+  "section_2_3_ceo_actions": {
+    "question": "What must CEO do now?",
+    "answer": "NO CEO ACTION REQUIRED FOR ACTIVATION",
+    "explicit_list": [
+      {
+        "action": "None",
+        "rationale": "Sentinel task has been registered in task_registry with correct configuration",
+        "status": "COMPLETE"
+      }
+    ],
+    "verification_instructions": {
+      "verify_next_orchestrator_cycle": {
+        "description": "Wait for next orchestrator cycle to complete",
+        "expected_log_pattern": "IOS014_DB_INTEGRITY_SENTINEL in task execution list",
+        "how_to_verify": "Check governance_actions_log for ORCHESTRATOR_CYCLE_COMPLETE entries"
+      },
+      "verify_discrepancy_logging": {
+        "description": "Confirm sentinel events in discrepancy_events",
+        "sql_query": "SELECT * FROM fhq_governance.discrepancy_events WHERE ios_id = 'IoS-014' ORDER BY created_at DESC LIMIT 5;",
+        "expected_result": "Events with discrepancy_type in (DB_LOCK_CONTENTION, DB_BLOAT_RISK, SLOW_QUERY_CANDIDATE)"
+      },
+      "success_markers": [
+        "Task IOS014_DB_INTEGRITY_SENTINEL appears in orchestrator cycle execution",
+        "discrepancy_events table contains IoS-014 entries",
+        "No SYSTEM_ERROR events (indicates fault tolerance working)"
+      ]
+    }
+  },
+
+  "operational_binding_verification": {
+    "ios_014_heartbeat": {
+      "status": "BOUND",
+      "mechanism": "Orchestrator VISION_FUNCTION execution",
+      "schedule": "Each orchestrator cycle (currently 1-hour intervals)",
+      "note": "For 5-minute intervals as specified in G4 contract, orchestrator interval must be adjusted or cron scheduler added"
+    },
+    "task_registry_binding": {
+      "task_id": "3d0a3420-1205-4977-a78a-0c8fb91450ec",
+      "task_name": "IOS014_DB_INTEGRITY_SENTINEL",
+      "created_at": "2025-12-08T13:10:21Z",
+      "immutable": true
+    },
+    "discrepancy_output_binding": {
+      "target_table": "fhq_governance.discrepancy_events",
+      "verified_writes": true,
+      "latest_write": "2025-12-08T13:11:07Z"
+    }
+  },
+
+  "first_operational_run_evidence": {
+    "run_timestamp": "2025-12-08T13:11:06Z",
+    "config_source": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml",
+    "modules_status": {
+      "lock_monitor": "NORMAL",
+      "bloat_watchdog": "CRITICAL",
+      "slow_query_monitor": "WARNING"
+    },
+    "findings": {
+      "critical": [
+        "fhq_research.nightly_insights: bloat=50.0%, dead=1"
+      ],
+      "warning": [
+        "12 queries above threshold (500ms mean time)",
+        "Top query: 14022ms avg, 64 calls"
+      ]
+    },
+    "discrepancies_logged": 2,
+    "evidence_hash": "1049855fafd69081ca30241de9df97ff"
+  },
+
+  "schedule_configuration_note": {
+    "current_state": "Sentinel runs with each orchestrator cycle (currently 1-hour intervals)",
+    "g4_specification": "Every 5 minutes (*/5 * * * *)",
+    "alignment_options": [
+      "Option A: Reduce orchestrator CONTINUOUS_INTERVAL_SECONDS to 300 (5 minutes)",
+      "Option B: Add dedicated cron/scheduler for sentinel (separate from main orchestrator)",
+      "Option C: Keep current 1-hour cycle (sufficient for database monitoring use case)"
+    ],
+    "ceo_decision_required": "If strict 5-minute interval is required per G4 specification"
+  },
+
+  "stig_signature": {
+    "confirmed_by": "STIG",
+    "confirmation_date": "2025-12-08",
+    "statement": "I confirm that Sentinel_DB_Integrity (IoS-014) is now operationally bound to the orchestrator, executing successfully, and logging discrepancy events to fhq_governance.discrepancy_events. No orchestrator restart is required. No CEO action is required for basic activation - the sentinel will execute on the next orchestrator cycle.",
+    "document_hash": "pending_signature"
+  }
+}

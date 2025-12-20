@@ -1,0 +1,114 @@
+{
+  "governance_document": "CD-IOS-001-PRICE-ARCH-001",
+  "document_type": "IMPLEMENTATION_EVIDENCE",
+  "classification": "G4_CONSTITUTIONAL",
+  "implementation_date": "2025-12-18T23:52:00Z",
+  "implemented_by": "STIG",
+  "summary": "Canonical Price Architecture & Orchestrator Activation per CEO Directive",
+
+  "components_implemented": {
+    "price_class_ontology": {
+      "table": "fhq_meta.price_class_ontology",
+      "status": "ACTIVE",
+      "classes": [
+        {"id": "P1", "name": "CANONICAL_DAILY_PRICE", "storage": "IMMUTABLE", "permitted_use": ["regime", "risk", "backtest", "indicators"]},
+        {"id": "P2", "name": "OPERATIONAL_INTRADAY_PRICE", "storage": "EPHEMERAL", "ttl_hours": 48, "permitted_use": ["execution", "freshness_gates", "paper_trading"]},
+        {"id": "P3", "name": "HISTORICAL_BACKFILL_PRICE", "storage": "WRITE_ONCE", "permitted_use": ["gap_repair", "bootstrap", "backfill"]}
+      ]
+    },
+
+    "vendor_registry": {
+      "table": "fhq_meta.vendors",
+      "status": "ACTIVE",
+      "vendors": [
+        {"id": "binance", "roles": ["CANONICAL_PRIMARY", "OPERATIONAL_FEED"], "authority": ["P1", "P2"], "asset_classes": ["crypto"]},
+        {"id": "alpaca", "roles": ["CANONICAL_PRIMARY", "OPERATIONAL_FEED"], "authority": ["P1", "P2"], "asset_classes": ["equity", "etf"]},
+        {"id": "coingecko", "roles": ["BACKUP_ONLY"], "authority": [], "asset_classes": ["crypto"]},
+        {"id": "cryptodatadownload", "roles": ["BACKFILL_ONLY"], "authority": ["P3"], "asset_classes": ["crypto"]},
+        {"id": "yahoo_finance", "roles": ["BACKUP_ONLY", "BACKFILL_ONLY"], "authority": ["P3"], "asset_classes": ["equity", "etf", "fx", "crypto"]}
+      ]
+    },
+
+    "vendor_role_definitions": {
+      "table": "fhq_meta.vendor_role_definitions",
+      "status": "ACTIVE",
+      "roles": [
+        {"id": "CANONICAL_PRIMARY", "can_write_canonical": true, "priority": 1},
+        {"id": "OPERATIONAL_FEED", "can_write_operational": true, "priority": 2},
+        {"id": "BACKUP_ONLY", "priority": 3},
+        {"id": "BACKFILL_ONLY", "can_write_backfill": true, "priority": 4}
+      ]
+    },
+
+    "orchestrator_authority": {
+      "table": "fhq_governance.orchestrator_authority",
+      "status": "ACTIVE",
+      "orchestrators": [
+        {"id": "FHQ-IoS001-Bulletproof-CRYPTO", "scope": "Crypto daily OHLCV", "primary_vendor": "binance", "constitutional": true},
+        {"id": "FHQ-IoS001-Bulletproof-EQUITY", "scope": "Equity daily OHLCV", "primary_vendor": "alpaca", "constitutional": true},
+        {"id": "FHQ-IoS001-Bulletproof-FX", "scope": "FX daily rates", "primary_vendor": "yahoo_finance", "constitutional": true}
+      ]
+    },
+
+    "freshness_decoupling_rules": {
+      "table": "fhq_governance.freshness_decoupling_rules",
+      "status": "ACTIVE",
+      "rules": [
+        {"id": "FDR-001", "source": "REGIME_ENGINE", "target": "OPERATIONAL_INTRADAY_PRICE", "allowed": false, "class": "CLASS_A"},
+        {"id": "FDR-002", "source": "EXECUTION_ENGINE", "target": "CANONICAL_DAILY_PRICE", "allowed": false, "class": "CLASS_A"},
+        {"id": "FDR-003", "source": "BACKTEST_ENGINE", "target": "OPERATIONAL_INTRADAY_PRICE", "allowed": false, "class": "CLASS_A"},
+        {"id": "FDR-004", "source": "PAPER_TRADING", "target": "CANONICAL_DAILY_PRICE", "allowed": false, "class": "ADVISORY"}
+      ]
+    },
+
+    "ios_registry_update": {
+      "ios_id": "IoS-001",
+      "version": "3.5.0",
+      "title": "Price Data Ingestion & Canonical Storage",
+      "amendment": "§3.5 - Canonical Price Storage & Vendor Role Architecture",
+      "status": "ACTIVE"
+    }
+  },
+
+  "execution_daemon_updates": {
+    "file": "03_FUNCTIONS/signal_executor_daemon.py",
+    "changes": [
+      "Added multi-asset symbol configuration",
+      "Implemented direct equity symbol list (27 symbols)",
+      "Added crypto symbol mapping to Alpaca format",
+      "Implemented proxy mapping for crypto-to-equity execution",
+      "Updated select_symbol_for_needle() for multi-asset support",
+      "Added CEO directive reference in header",
+      "Added orchestrator binding: FHQ-IoS001-Bulletproof-EQUITY"
+    ],
+    "multi_asset_support": {
+      "direct_equities": 27,
+      "crypto_symbols": 10,
+      "symbol_mappings": 12,
+      "proxy_mappings": 5
+    }
+  },
+
+  "migration_file": "04_DATABASE/MIGRATIONS/156_ios001_price_architecture_governance.sql",
+  "migration_status": "COMMITTED",
+
+  "canonical_truth_tables": {
+    "prices": "fhq_market.prices (536 MB, 1.23M rows)",
+    "price_view": "fhq_data.price_series (VIEW on canonical)",
+    "live_prices": "fhq_core.market_prices_live (ephemeral, P2 class)"
+  },
+
+  "constitutional_constraints": {
+    "price_class_separation": "ENFORCED",
+    "vendor_role_binding": "ENFORCED",
+    "orchestrator_authority": "CONSTITUTIONAL",
+    "freshness_decoupling": "CLASS_A_VIOLATION_IF_BREACHED"
+  },
+
+  "vega_attestation_pending": true,
+  "effective_date": "2025-12-18",
+  "expires": null,
+
+  "signed_by": "STIG",
+  "signature_timestamp": "2025-12-18T23:55:00Z"
+}

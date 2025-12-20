@@ -1,0 +1,136 @@
+{
+  "config_name": "RUNTIME_TASKS_V1",
+  "version": "2026.PROD.1",
+  "created_at": "2025-12-02T21:00:00.000Z",
+  "created_by": "STIG",
+  "authority": {
+    "directive": "CEO_DIRECTIVE_TASK_ACTIVATION",
+    "hash_chain": "HC-CEO-TASK-ACTIVATION-20251202",
+    "adrs": ["ADR-001", "ADR-004", "ADR-012", "ADR-016"]
+  },
+
+  "tasks": [
+    {
+      "task_id": "IOS012_PAPER_EXECUTION_V1",
+      "ios_reference": "IoS-012",
+      "title": "Paper Execution Loop",
+      "owner": "LINE",
+      "executor": "LINE",
+      "mode": "PAPER",
+      "status": "ACTIVE",
+
+      "schedule": {
+        "cron": "*/5 * * * *",
+        "offset_seconds": 0,
+        "timezone": "UTC",
+        "description": "Every 5 minutes"
+      },
+
+      "data_sources": {
+        "feed_tier": "TIER_1_PUBLIC",
+        "allowed_sources": ["yfinance", "FRED"],
+        "forbidden_sources": ["MarketAux", "AlphaVantage", "FMP"]
+      },
+
+      "read_schemas": [
+        "fhq_data",
+        "fhq_research",
+        "fhq_governance",
+        "fhq_graph"
+      ],
+
+      "write_schemas": [
+        "fhq_execution"
+      ],
+
+      "outputs": {
+        "primary_table": "fhq_execution.paper_log",
+        "metrics_table": "fhq_execution.paper_metrics"
+      },
+
+      "economic_safety": {
+        "adr_reference": "ADR-012",
+        "max_single_order_usd": 1000.00,
+        "max_position_usd": 10000.00,
+        "max_daily_trades": 50,
+        "max_daily_turnover_usd": 50000.00,
+        "max_leverage": 1.0,
+        "live_trading_enabled": false
+      },
+
+      "governance": {
+        "gate_level": "G4",
+        "vega_can_suspend": true,
+        "ceo_override_required": true,
+        "finn_modification_rights": false
+      }
+    },
+
+    {
+      "task_id": "IOS013_HCP_LAB_GENERATOR_V1",
+      "ios_reference": "IoS-013.HCP-LAB",
+      "title": "HCP Lab Generator",
+      "owner": "STIG",
+      "executor": "STIG",
+      "mode": "LAB_GENERATION",
+      "status": "ACTIVE",
+
+      "schedule": {
+        "cron": "*/5 * * * *",
+        "offset_seconds": 30,
+        "timezone": "UTC",
+        "description": "Every 5 minutes, 30s offset from IoS-012"
+      },
+
+      "dependencies": {
+        "required_ios": ["IoS-006", "IoS-003"],
+        "soft_dependencies": ["IoS-007"]
+      },
+
+      "read_schemas": [
+        "fhq_macro",
+        "fhq_perception",
+        "fhq_research",
+        "fhq_graph"
+      ],
+
+      "write_schemas": [
+        "fhq_positions"
+      ],
+
+      "outputs": {
+        "primary_table": "fhq_positions.hcp_signal_state",
+        "candidates_table": "fhq_positions.hcp_combo_tracker",
+        "lab_journal": "fhq_positions.lab_journal"
+      },
+
+      "lab_constraints": {
+        "max_candidates_per_run": 10,
+        "min_regime_confidence": 0.6,
+        "require_macro_alignment": true,
+        "risk_multiplier_cap": 0.5
+      },
+
+      "governance": {
+        "gate_level": "G4",
+        "vega_can_suspend": true,
+        "ceo_override_required": true,
+        "finn_modification_rights": false
+      }
+    }
+  ],
+
+  "runtime_isolation": {
+    "task_separation": true,
+    "shared_state_protection": true,
+    "temporal_offset_enforced": true,
+    "race_condition_mitigation": "30s offset between IoS-012 and IoS-013"
+  },
+
+  "monitoring": {
+    "log_execution_start": true,
+    "log_execution_end": true,
+    "log_errors_to_governance": true,
+    "alert_on_consecutive_failures": 3
+  }
+}

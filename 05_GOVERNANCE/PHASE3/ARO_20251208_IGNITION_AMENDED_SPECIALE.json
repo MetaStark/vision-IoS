@@ -1,0 +1,157 @@
+{
+  "evidence_type": "IGNITION_AMENDMENT",
+  "evidence_id": "ARO-20251208-IGNITION-AMENDED-SPECIALE",
+  "issued_at": "2025-12-08T23:15:00.000Z",
+  "directive_reference": "ARO-20251208/IGNITION (AMENDED)",
+  "directive_title": "CEO DIRECTIVE - Ignition with Speciale Model & Mandatory Deprecation Schedule",
+  "classification": "CRITICAL PRIORITY",
+
+  "amendment_summary": {
+    "purpose": "Utilize limited-time DeepSeek-V3.2-Speciale for System Ignition Phase",
+    "duration": "6 days (until 2025-12-15 15:59 UTC)",
+    "benefit": "Maximize initial causal density of Alpha Graph"
+  },
+
+  "speciale_configuration": {
+    "model_name": "deepseek-reasoner",
+    "base_url": "https://api.deepseek.com/v3.2_speciale_expires_on_20251215",
+    "mode": "Thinking Mode (Mandatory)",
+    "context_window": 128000,
+    "expiry_date": "2025-12-15T15:59:00Z",
+    "status": "ACTIVE"
+  },
+
+  "parser_wrapper": {
+    "status": "IMPLEMENTED",
+    "file": "03_FUNCTIONS/speciale_parser_wrapper.py",
+    "purpose": "Two-stage processing for Speciale (no JSON output support)",
+    "stages": [
+      {
+        "stage": 1,
+        "model": "deepseek-reasoner (Speciale)",
+        "output": "Raw reasoning/strategy"
+      },
+      {
+        "stage": 2,
+        "model": "deepseek-chat (Standard)",
+        "output": "Structured JSON for database"
+      }
+    ],
+    "functions_provided": [
+      "check_speciale_expiry()",
+      "SpecialeParserWrapper.reason_and_format()",
+      "reason_causal_inference()",
+      "reason_strategy()"
+    ]
+  },
+
+  "death_date_protocol": {
+    "status": "SCHEDULED",
+    "task_id": "GOV-MIGRATE-MODEL-NORMALIZATION",
+    "scheduled_at": "2025-12-14T23:59:00Z",
+    "safety_buffer_hours": 24,
+    "action": {
+      "type": "MODEL_ROTATION",
+      "old_base_url": "https://api.deepseek.com/v3.2_speciale_expires_on_20251215",
+      "new_base_url": "https://api.deepseek.com",
+      "verify_connectivity": true,
+      "log_event": "MODEL_ROTATION_SUCCESS"
+    },
+    "responsible_agent": "LINE"
+  },
+
+  "fail_safe_mechanism": {
+    "status": "INJECTED",
+    "file_modified": "05_ORCHESTRATOR/orchestrator_v1.py",
+    "version_updated": "1.0.0 -> 1.0.1",
+    "components_added": [
+      "CriticalGovernanceError exception class",
+      "Config.check_speciale_expiry() method",
+      "Config.get_deepseek_base_url() method",
+      "Config.SPECIALE_BASE_URL constant",
+      "Config.STANDARD_BASE_URL constant",
+      "Config.SPECIALE_EXPIRY_DATE constant"
+    ],
+    "behavior": "System halts with CriticalGovernanceError if date > 2025-12-15 and 'speciale' in base_url"
+  },
+
+  "database_configuration": {
+    "llm_provider_config": {
+      "reasoning_tasks_updated": 5,
+      "speciale_metadata_added": true,
+      "parser_wrapper_flag": true,
+      "context_window": 128000
+    },
+    "eloop_config_entries": [
+      "DEEPSEEK_SPECIALE_BASE_URL",
+      "DEEPSEEK_SPECIALE_EXPIRES",
+      "DEEPSEEK_SPECIALE_ACTIVE",
+      "DEEPSEEK_STANDARD_BASE_URL",
+      "PARSER_WRAPPER_ENABLED",
+      "THINKING_MODE_ENABLED"
+    ],
+    "scheduled_tasks": {
+      "GOV-MIGRATE-MODEL-NORMALIZATION": "SCHEDULED"
+    }
+  },
+
+  "use_case_mapping": {
+    "aci_reasoning_engine": {
+      "components": ["LARS", "FINN", "IoS-007"],
+      "model": "deepseek-reasoner",
+      "base_url": "https://api.deepseek.com/v3.2_speciale_expires_on_20251215",
+      "mode": "thinking",
+      "requires_parser_wrapper": true
+    }
+  },
+
+  "timeline": {
+    "speciale_active": {
+      "start": "2025-12-08T23:15:00Z",
+      "end": "2025-12-15T15:59:00Z"
+    },
+    "migration_task": {
+      "scheduled": "2025-12-14T23:59:00Z",
+      "safety_buffer": "24 hours before expiry"
+    },
+    "model_expiry": {
+      "date": "2025-12-15T15:59:00Z",
+      "action_if_missed": "CriticalGovernanceError - System Halt"
+    }
+  },
+
+  "attestations": {
+    "stig": {
+      "certified_by": "STIG",
+      "role": "Chief Technology Officer",
+      "contract": "EC-003_2026_PRODUCTION",
+      "statement": "DeepSeek V3.2-Speciale configured. Parser wrapper implemented. Time-bomb fail-safe injected into orchestrator. GOV-MIGRATE-MODEL-NORMALIZATION scheduled for 2025-12-14 23:59 UTC."
+    },
+    "line": {
+      "certified_by": "LINE",
+      "role": "Chief Operations Officer",
+      "contract": "EC-005_2026_PRODUCTION",
+      "statement": "Model normalization task scheduled. Will execute MODEL_ROTATION action 24 hours before Speciale expiry. System events logging active."
+    }
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-ARO-20251208-IGNITION-AMENDED",
+    "parent_chains": [
+      "HC-ARO-20251208-IGNITION-FINAL"
+    ]
+  },
+
+  "warnings": [
+    {
+      "type": "CRITICAL",
+      "message": "Speciale model is TOXIC after 2025-12-15 15:59 UTC",
+      "action": "Automatic halt via CriticalGovernanceError if migration missed"
+    },
+    {
+      "type": "IMPORTANT",
+      "message": "Speciale does NOT support JSON Output or Tool Calls",
+      "action": "Use parser wrapper for all Speciale calls"
+    }
+  ]
+}

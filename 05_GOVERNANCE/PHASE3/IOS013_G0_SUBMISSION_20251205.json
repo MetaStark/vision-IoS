@@ -1,0 +1,189 @@
+{
+  "evidence_type": "IOS_G0_SUBMISSION",
+  "module_id": "IoS-013",
+  "module_title": "Agent State Protocol Engine (ASPE)",
+  "version": "2026.PROD.G0",
+  "gate": "G0",
+  "submission_timestamp": "2025-12-05T12:18:00Z",
+
+  "authority_chain": {
+    "mandate": "CEO Execution Order",
+    "constitutional_basis": "ADR-018",
+    "technical_authority": "STIG",
+    "strategic_authority": "LARS",
+    "research_authority": "FINN",
+    "governance_authority": "VEGA"
+  },
+
+  "adr_reference": {
+    "adr_id": "ADR-018",
+    "adr_title": "Agent State Reliability Protocol (ASRP)",
+    "adr_status": "APPROVED",
+    "adr_type": "CONSTITUTIONAL",
+    "version": "2026.PROD.2"
+  },
+
+  "constitutional_mandate": {
+    "description": "IoS-013 is the exclusive implementation of ADR-018 ASRP",
+    "principles": [
+      "Zero drift in agent perception",
+      "Deterministic coordination across MIT Quad",
+      "Immutable auditability of all decisions",
+      "Fail-closed default (Zero-Trust)",
+      "No local caching permitted"
+    ],
+    "applicability": [
+      "Tier-1 Executives (LARS, STIG, FINN, VEGA)",
+      "Tier-2 Sub-Executives (CFAO, CSEO, CEIO, CDMO, LINE)",
+      "Tier-3 Units (CODE, pipelines, orchestrators)"
+    ]
+  },
+
+  "state_vector_components": {
+    "current_defcon": {
+      "authority": "STIG",
+      "source_table": "fhq_governance.system_state",
+      "adr_reference": "ADR-016"
+    },
+    "btc_regime": {
+      "authority": "FINN",
+      "source_table": "fhq_research.regime_predictions_v2",
+      "ios_reference": "IoS-003"
+    },
+    "canonical_strategy": {
+      "authority": "LARS",
+      "source_table": "fhq_governance.canonical_strategy",
+      "ios_reference": "IoS-004"
+    }
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      {
+        "name": "fhq_governance.canonical_strategy",
+        "purpose": "Active strategic posture storage",
+        "owner": "LARS"
+      },
+      {
+        "name": "fhq_governance.shared_state_snapshots",
+        "purpose": "Atomic state vectors",
+        "owner": "STIG"
+      },
+      {
+        "name": "fhq_governance.state_retrieval_log",
+        "purpose": "Audit trail for retrievals",
+        "owner": "STIG"
+      },
+      {
+        "name": "fhq_governance.output_bindings",
+        "purpose": "Links outputs to state hashes",
+        "owner": "STIG"
+      },
+      {
+        "name": "fhq_governance.asrp_violations",
+        "purpose": "Class A governance violations",
+        "owner": "VEGA"
+      }
+    ],
+    "functions": [
+      {
+        "name": "fhq_governance.create_state_snapshot()",
+        "purpose": "Atomic state capture",
+        "authority": "STIG"
+      },
+      {
+        "name": "fhq_governance.retrieve_state_vector(agent_id, tier)",
+        "purpose": "Fail-closed state retrieval",
+        "authority": "ALL_AGENTS"
+      },
+      {
+        "name": "fhq_governance.vega_validate_state_request(agent, hash, action)",
+        "purpose": "VEGA rejection integration",
+        "authority": "VEGA"
+      }
+    ],
+    "python_engine": {
+      "file": "03_FUNCTIONS/ios013_aspe_engine.py",
+      "classes": ["ASPEEngine", "StateVector"],
+      "functions": ["get_state_vector"]
+    }
+  },
+
+  "initial_state_snapshot": {
+    "snapshot_id": "a535dc45-a78b-4c8b-b27e-bdd69ea558bc",
+    "defcon_level": "GREEN",
+    "btc_regime_label": "BULL",
+    "btc_regime_confidence": 0.6,
+    "strategy_posture": "NEUTRAL",
+    "strategy_exposure": 0.0,
+    "is_valid": true
+  },
+
+  "test_results": {
+    "retrieve_state_vector": "PASSED",
+    "validate_output_binding": "PASSED",
+    "create_snapshot": "PASSED",
+    "fail_closed_semantics": "VERIFIED"
+  },
+
+  "dependencies": [
+    "IoS-003 (Regime Engine)",
+    "IoS-004 (Allocation Engine)",
+    "ADR-016 (DEFCON Protocol)"
+  ],
+
+  "next_gates": {
+    "G1": {
+      "objective": "Integration validation with orchestrator",
+      "owner": "STIG",
+      "criteria": [
+        "All agents successfully retrieve state vector",
+        "Output bindings verified for all output types",
+        "Fail-closed semantics tested under failure conditions"
+      ]
+    },
+    "G2": {
+      "objective": "Governance attestation",
+      "owner": "VEGA",
+      "criteria": [
+        "VEGA rejection logic validated",
+        "Violation logging verified",
+        "DEFCON gating confirmed"
+      ]
+    },
+    "G3": {
+      "objective": "Audit and lineage verification",
+      "owner": "VEGA",
+      "criteria": [
+        "Hash chain integrity verified",
+        "Output binding audit trail complete",
+        "Retrieval log comprehensive"
+      ]
+    },
+    "G4": {
+      "objective": "Constitutional activation",
+      "owner": "CEO",
+      "criteria": [
+        "All agents migrated to ASPE",
+        "No bypass paths exist",
+        "Full MIT Quad integration confirmed"
+      ]
+    }
+  },
+
+  "signatures": {
+    "stig": {
+      "agent_id": "STIG",
+      "role": "Technical Authority & Module Owner",
+      "attestation": "G0 infrastructure deployed per CEO Execution Order. ADR-018 ASRP implemented with fail-closed semantics.",
+      "timestamp": "2025-12-05T12:18:00Z"
+    }
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-IOS-013-ASPE-2026",
+    "chain_type": "IOS_MODULE",
+    "genesis_hash": "computed_at_migration",
+    "current_hash": "computed_at_migration"
+  }
+}

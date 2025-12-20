@@ -1,0 +1,202 @@
+{
+  "evidence_type": "GOVERNANCE_RECONCILIATION_REPORT",
+  "reconciliation_id": "RECONCILE-20251201-173911",
+  "reconciliation_date": "2025-12-01",
+  "reconciliation_timestamp": "2025-12-01T17:39:11.000Z",
+
+  "authority": {
+    "directive_from": "BOARD (Vice-CEO)",
+    "executed_by": "STIG (CTO)",
+    "reviewed_by": "VEGA (Governance Authority)"
+  },
+
+  "rationale": {
+    "trigger": "Registry audit revealed mismatch between operational system state and governance records",
+    "adr_reference": "ADR-013 (One-Source-Truth)",
+    "objective": "Reconcile registry entries to reflect actual gate progression without prematurely elevating modules to constitutional status"
+  },
+
+  "pre_reconciliation_state": {
+    "ios_008": {
+      "status": "NOT_REGISTERED",
+      "note": "Module operational but not in governance registry"
+    },
+    "ios_011": {
+      "status": "NOT_REGISTERED",
+      "note": "Code and pipeline exist but never registered"
+    },
+    "ios_012": {
+      "status": "NOT_REGISTERED",
+      "note": "Module operational but not in governance registry"
+    }
+  },
+
+  "reconciliation_actions": [
+    {
+      "ios_id": "IoS-008",
+      "title": "Runtime Decision Engine",
+      "action": "REGISTERED",
+      "previous_state": null,
+      "new_state": {
+        "status": "G2_VALIDATED",
+        "governance_state": "G2_COMPLETE",
+        "version": "2026.PROD.G2",
+        "owner_role": "LINE",
+        "dependencies": ["IoS-004", "IoS-005", "IoS-007"],
+        "canonical": false,
+        "classification": "TIER-1_CRITICAL"
+      },
+      "rationale": "IoS-008 has passed G1/G2/G3 logic but has NOT undergone G4 constitutional activation. Registered at actual gate progression.",
+      "hash_chain_id": "HC-IOS008-RECONCILE-20251201-173911",
+      "vega_reviewed": true
+    },
+    {
+      "ios_id": "IoS-011",
+      "title": "Technical Analysis Pipeline",
+      "action": "REGISTERED",
+      "previous_state": null,
+      "new_state": {
+        "status": "G0_SUBMITTED",
+        "governance_state": "G0_SUBMITTED",
+        "version": "2026.PROD.G0",
+        "owner_role": "FINN",
+        "dependencies": ["IoS-002"],
+        "canonical": false,
+        "classification": "TIER-2_ANALYTICS"
+      },
+      "rationale": "IoS-011 code and pipeline exist, but the module has never been registered in governance. First-time registration.",
+      "hash_chain_id": "HC-IOS011-RECONCILE-20251201-173911",
+      "vega_reviewed": true
+    },
+    {
+      "ios_id": "IoS-012",
+      "title": "Execution Engine",
+      "action": "REGISTERED",
+      "previous_state": null,
+      "new_state": {
+        "status": "G3_INTEGRATED",
+        "governance_state": "G3_COMPLETE",
+        "version": "2026.PROD.G3",
+        "owner_role": "LINE",
+        "dependencies": ["IoS-008"],
+        "canonical": false,
+        "classification": "TIER-1_CRITICAL"
+      },
+      "rationale": "IoS-012 passed G1/G2/G3 integration but has no G4 trigger from VEGA or CEO. Registered at actual gate progression.",
+      "hash_chain_id": "HC-IOS012-RECONCILE-20251201-173911",
+      "vega_reviewed": true
+    }
+  ],
+
+  "schema_changes": {
+    "constraint_modified": "ios_registry_status_check",
+    "new_status_values_added": [
+      "G0_SUBMITTED",
+      "G1_TECHNICAL",
+      "G2_VALIDATED",
+      "G3_INTEGRATED",
+      "G4_CONSTITUTIONAL"
+    ],
+    "rationale": "Expanded constraint to support accurate gate progression tracking per ADR-004"
+  },
+
+  "new_table_created": {
+    "table": "fhq_governance.registry_reconciliation_log",
+    "purpose": "ADR-013 One-Source-Truth reconciliation audit trail",
+    "columns": [
+      "id", "reconciliation_date", "reconciliation_timestamp",
+      "initiated_by", "ios_id", "action", "previous_state",
+      "new_state", "rationale", "adr_reference", "vega_reviewed", "hash_chain_id"
+    ]
+  },
+
+  "post_reconciliation_state": {
+    "full_registry": [
+      {"ios_id": "IoS-001", "status": "ACTIVE", "governance_state": null, "canonical": false},
+      {"ios_id": "IoS-002", "status": "ACTIVE", "governance_state": null, "canonical": false},
+      {"ios_id": "IoS-003", "status": "ACTIVE", "governance_state": null, "canonical": false},
+      {"ios_id": "IoS-004", "status": "ACTIVE", "governance_state": null, "canonical": false},
+      {"ios_id": "IoS-005", "status": "ACTIVE", "governance_state": null, "canonical": true},
+      {"ios_id": "IoS-006", "status": "GOVERNANCE-ACTIVE", "governance_state": null, "canonical": true},
+      {"ios_id": "IoS-007", "status": "ACTIVE", "governance_state": "G4_CONSTITUTIONAL", "canonical": true},
+      {"ios_id": "IoS-008", "status": "G2_VALIDATED", "governance_state": "G2_COMPLETE", "canonical": false},
+      {"ios_id": "IoS-009", "status": "G0_SUBMITTED", "governance_state": "G0_SUBMITTED", "canonical": false},
+      {"ios_id": "IoS-011", "status": "G0_SUBMITTED", "governance_state": "G0_SUBMITTED", "canonical": false},
+      {"ios_id": "IoS-012", "status": "G3_INTEGRATED", "governance_state": "G3_COMPLETE", "canonical": false}
+    ],
+    "total_modules": 11,
+    "constitutional_modules": 1,
+    "canonical_modules": 3,
+    "pending_g4_activation": ["IoS-008", "IoS-012"]
+  },
+
+  "governance_gate_summary": {
+    "G0_SUBMITTED": ["IoS-009", "IoS-011"],
+    "G2_VALIDATED": ["IoS-008"],
+    "G3_INTEGRATED": ["IoS-012"],
+    "G4_CONSTITUTIONAL": ["IoS-007"],
+    "ACTIVE": ["IoS-001", "IoS-002", "IoS-003", "IoS-004", "IoS-005"],
+    "GOVERNANCE-ACTIVE": ["IoS-006"]
+  },
+
+  "compliance_verification": {
+    "adr_013_one_source_truth": {
+      "status": "RESTORED",
+      "evidence": "Registry now reflects actual gate progression for all operational modules"
+    },
+    "adr_004_change_gates": {
+      "status": "COMPLIANT",
+      "evidence": "No module elevated to G4/constitutional without proper activation"
+    },
+    "canonical_integrity": {
+      "status": "VERIFIED",
+      "evidence": "Only IoS-005, IoS-006, IoS-007 marked as canonical; all reconciled modules canonical=FALSE"
+    }
+  },
+
+  "required_actions_for_g4": {
+    "IoS-008": {
+      "current_state": "G2_VALIDATED",
+      "required_for_g4": [
+        "G3 Integration Testing with IoS-012",
+        "VEGA Constitutional Review",
+        "CEO Signature (Two-Man Rule)"
+      ]
+    },
+    "IoS-012": {
+      "current_state": "G3_INTEGRATED",
+      "required_for_g4": [
+        "VEGA Constitutional Review",
+        "CEO Signature (Two-Man Rule)",
+        "ADR-012 Economic Safety Limits Verification"
+      ]
+    }
+  },
+
+  "migration_artifact": {
+    "file": "04_DATABASE/MIGRATIONS/056_ios_governance_reconciliation.sql",
+    "created_by": "STIG",
+    "created_at": "2025-12-01T17:39:11.000Z"
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "action": "Governance Reconciliation Executed",
+      "signed_at": "2025-12-01T17:39:11.000Z"
+    },
+    "vega_attestation": {
+      "agent": "VEGA",
+      "role": "Governance Authority",
+      "attestation": "Reconciliation actions reviewed and approved. ADR-013 One-Source-Truth restored.",
+      "attested_at": "2025-12-01T17:39:11.000Z"
+    },
+    "board_authorization": {
+      "authority": "BOARD (Vice-CEO)",
+      "directive": "GOVERNANCE RECONCILIATION — IoS-008, IoS-011, IoS-012",
+      "authorized_at": "2025-12-01"
+    }
+  }
+}

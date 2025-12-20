@@ -1,0 +1,224 @@
+{
+  "governance_contract": {
+    "contract_id": "GC-SENTINEL-DB-INTEGRITY-001",
+    "version": "1.0",
+    "effective_date": "2025-12-08",
+    "authority": "CEO Directive - G2 Governance Review",
+    "adr_binding": ["ADR-002", "ADR-009", "ADR-010", "ADR-011", "ADR-015", "ADR-016"],
+    "contract_status": "ACTIVE"
+  },
+
+  "component_identification": {
+    "component_id": "SENTINEL_DB_INTEGRITY",
+    "ios_id": "IoS-014",
+    "version": "1.0",
+    "classification": "OODA-Loop Critical Infrastructure",
+    "custodian": "STIG",
+    "oversight": "VEGA"
+  },
+
+  "responsibility_domain": {
+    "primary_function": "Database integrity monitoring and discrepancy detection",
+    "scope": "Read-only surveillance of PostgreSQL catalog views and critical tables",
+    "principle": "A slow but correct query is acceptable. A fast but incorrect/inconsistent query is NOT acceptable.",
+    "operational_rhythm": {
+      "default_interval_seconds": 300,
+      "configurable": true,
+      "config_location": "05_ORCHESTRATOR/sentinel_db_integrity_config.yaml"
+    }
+  },
+
+  "monitored_tables": {
+    "canonical_data_tables": [
+      {
+        "table": "fhq_market.prices",
+        "protection_level": "CRITICAL",
+        "rationale": "One-True-Source for price data (ADR-013)"
+      },
+      {
+        "table": "fhq_market.staging_prices",
+        "protection_level": "HIGH",
+        "rationale": "Staging area for price ingestion"
+      },
+      {
+        "table": "fhq_perception.regime_daily",
+        "protection_level": "CRITICAL",
+        "rationale": "IoS-003 regime classification output"
+      },
+      {
+        "table": "fhq_research.regime_predictions_v2",
+        "protection_level": "HIGH",
+        "rationale": "FINN prediction storage"
+      },
+      {
+        "table": "fhq_research.nightly_insights",
+        "protection_level": "HIGH",
+        "rationale": "Night research outputs"
+      }
+    ],
+    "catalog_views_used": [
+      "pg_stat_activity",
+      "pg_locks",
+      "pg_stat_user_tables",
+      "pg_stat_statements"
+    ]
+  },
+
+  "discrepancy_event_types": {
+    "DB_LOCK_CONTENTION": {
+      "description": "Lock wait exceeds threshold, potentially blocking critical operations",
+      "severity_levels": ["WARN", "CRITICAL"],
+      "critical_condition": "Lock wait > 10s on critical schemas for 2+ consecutive intervals",
+      "source_module": "lock_monitor",
+      "adr_010_score_range": [0.05, 0.15]
+    },
+    "DB_BLOAT_RISK": {
+      "description": "Dead tuple ratio exceeds threshold, risking planner integrity",
+      "severity_levels": ["WARN", "CRITICAL"],
+      "critical_condition": "Bloat ratio > 25% OR no vacuum in 7+ days on critical tables",
+      "source_module": "bloat_watchdog",
+      "adr_010_score_range": [0.05, 0.15]
+    },
+    "SLOW_QUERY_CANDIDATE": {
+      "description": "Query mean execution time exceeds threshold",
+      "severity_levels": ["WARN"],
+      "critical_condition": "Not automatically critical - investigation only",
+      "source_module": "slow_query_monitor",
+      "adr_010_score_range": [0.025, 0.05]
+    },
+    "SYSTEM_ERROR": {
+      "description": "Sentinel module failure or fault tolerance event",
+      "severity_levels": ["CRITICAL"],
+      "critical_condition": "Module execution failure or persistent errors",
+      "source_module": "fault_tolerance",
+      "adr_010_score_range": [0.10, 0.15]
+    }
+  },
+
+  "severity_classification": {
+    "INFO": {
+      "db_enum": "INFO",
+      "adr_010_score": 0.0,
+      "logging_required": false,
+      "vega_review_required": false,
+      "automatic_action": "None"
+    },
+    "WARN": {
+      "db_enum": "WARN",
+      "adr_010_score": 0.05,
+      "logging_required": true,
+      "vega_review_required": false,
+      "automatic_action": "Log to discrepancy_events, include in next governance report"
+    },
+    "CRITICAL": {
+      "db_enum": "CRITICAL",
+      "adr_010_score": 0.15,
+      "logging_required": true,
+      "vega_review_required": true,
+      "automatic_action": "Log to discrepancy_events, trigger escalation matrix"
+    }
+  },
+
+  "escalation_matrix": {
+    "matrix_version": "1.0",
+    "effective_date": "2025-12-08",
+    "signed_by": ["VEGA", "STIG"],
+    "approved_by": "CEO",
+
+    "escalation_rules": [
+      {
+        "event_type": "CRITICAL.DB_LOCK_CONTENTION",
+        "response": "Immediate review by STIG + LINE",
+        "timeline": "Within 15 minutes of detection",
+        "actions": [
+          "STIG investigates blocking PIDs",
+          "LINE assesses execution impact",
+          "If persistent: escalate to DEFCON-3"
+        ],
+        "automatic_halt": false
+      },
+      {
+        "event_type": "CRITICAL.DB_BLOAT_RISK",
+        "response": "Freeze writes to affected schema until STIG resolution",
+        "timeline": "Within 30 minutes of detection",
+        "actions": [
+          "STIG executes VACUUM ANALYZE on affected tables",
+          "If bloat persists: suspend ingestion pipelines",
+          "Document resolution in governance log"
+        ],
+        "automatic_halt": true,
+        "halt_scope": "Write operations to affected schema only"
+      },
+      {
+        "event_type": "CRITICAL.SLOW_QUERY_CANDIDATE",
+        "response": "Investigation only (no automatic halt)",
+        "timeline": "Within 24 hours",
+        "actions": [
+          "STIG analyzes query plans",
+          "Document findings for optimization review",
+          "No automatic system changes"
+        ],
+        "automatic_halt": false
+      },
+      {
+        "event_type": "SYSTEM_ERROR (Persistent 2+ intervals)",
+        "response": "Trigger DEFCON-2 inspection",
+        "timeline": "Immediate",
+        "actions": [
+          "STIG inspects sentinel health",
+          "LINE verifies orchestrator stability",
+          "VEGA reviews for governance implications",
+          "If unresolved: escalate to DEFCON-1"
+        ],
+        "automatic_halt": false,
+        "defcon_pathway": "ADR-016"
+      }
+    ]
+  },
+
+  "defcon_integration": {
+    "reference": "ADR-016",
+    "sentinel_defcon_mapping": {
+      "CRITICAL.DB_LOCK_CONTENTION_persistent": "DEFCON-3",
+      "CRITICAL.DB_BLOAT_RISK_unresolved": "DEFCON-3",
+      "SYSTEM_ERROR_persistent": "DEFCON-2",
+      "multiple_critical_simultaneous": "DEFCON-2"
+    },
+    "circuit_breaker_authority": "VEGA",
+    "manual_override_authority": "CEO"
+  },
+
+  "governance_controls": {
+    "suspension_authority": {
+      "who_can_suspend": ["VEGA", "CEO"],
+      "suspension_reasons": [
+        "False positive rate exceeds acceptable threshold",
+        "Resource consumption impacts production",
+        "Configuration error detected",
+        "Security concern identified"
+      ],
+      "procedure_reference": "SENTINEL_DB_INTEGRITY_OPS_MANUAL.md"
+    },
+    "modification_authority": {
+      "config_changes": "STIG with VEGA approval",
+      "logic_changes": "Requires full G0-G4 re-certification",
+      "threshold_tuning": "STIG with CEO notification"
+    },
+    "audit_requirements": {
+      "every_run_logged": true,
+      "evidence_hash_computed": true,
+      "fortress_replay_compatible": true,
+      "retention_period_days": 365
+    }
+  },
+
+  "legal_binding": {
+    "statement": "This governance contract is legally binding within the FjordHQ operational framework. Violations trigger ADR-009 disciplinary review.",
+    "signatories": [
+      {"role": "VEGA", "authority": "Governance Oversight"},
+      {"role": "STIG", "authority": "Technical Custodian"},
+      {"role": "CEO", "authority": "Final Approval"}
+    ],
+    "contract_hash": "pending_signature"
+  }
+}

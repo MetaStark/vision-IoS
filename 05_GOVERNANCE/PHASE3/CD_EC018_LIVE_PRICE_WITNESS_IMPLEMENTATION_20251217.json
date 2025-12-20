@@ -1,0 +1,168 @@
+{
+  "document_type": "CEO_DIRECTIVE_IMPLEMENTATION_EVIDENCE",
+  "evidence_id": "CD-EC018-LIVE-PRICE-WITNESS-IMPL-20251217",
+  "classification": "G2-CONSTITUTIONAL-REMEDIATION",
+  "authority": "CEO DIRECTIVE: EC-018 LIVE PRICE PRECONDITION (2025-12-17)",
+  "date_issued": "2025-12-17",
+
+  "directive_reference": {
+    "directive_id": "CD-EC018-LIVE-PRICE-PRECONDITION-20251217",
+    "directive_name": "EC-018 Live Price Precondition",
+    "remediation_target": "Wave 12 INCONCLUSIVE Root Cause",
+    "root_cause": "LIARS_POKER stress mode activated due to stale price data (2.3 hours)",
+    "remedy": "Live Price Witness as blocking precondition before hypothesis generation"
+  },
+
+  "implementation_summary": {
+    "files_modified": [
+      {
+        "file": "03_FUNCTIONS/ec018_alpha_daemon.py",
+        "changes": [
+          "Added LivePriceWitness class (lines 251-424)",
+          "Added MAX_WITNESS_AGE_MINUTES = 30 constant",
+          "Added _live_price_witness instance to EC018AlphaDaemon.__init__",
+          "Added _verify_live_price_precondition() method",
+          "Added _get_database_price_staleness() helper method",
+          "Added _log_witness_evidence() for fhq_meta logging",
+          "Integrated blocking precondition in run_hunt() before hypothesis generation"
+        ]
+      }
+    ],
+    "implementation_timestamp": "2025-12-17T20:30:00Z",
+    "implementing_agent": "STIG (System for Technical Implementation & Governance)"
+  },
+
+  "technical_specification": {
+    "class": "LivePriceWitness",
+    "purpose": "Ephemeral, strictly time-bounded proof of current market prices",
+
+    "constitutional_constraints": {
+      "ephemeral": "Witness is not stored as canonical truth",
+      "time_bounded": "Valid only for MAX_WITNESS_AGE_MINUTES (30 minutes)",
+      "evidence_only": "Logged to fhq_meta only, NEVER to fhq_data or fhq_market"
+    },
+
+    "data_sources": {
+      "crypto": {
+        "provider": "Binance",
+        "endpoint": "https://api.binance.com/api/v3/ticker/price",
+        "symbols": ["BTCUSDT", "ETHUSDT (fallback)"],
+        "authentication": "None required (public endpoint)"
+      },
+      "equities": {
+        "provider": "Alpaca",
+        "endpoint": "https://data.alpaca.markets/v2/stocks/{symbol}/trades/latest",
+        "symbols": ["SPY"],
+        "authentication": "APCA-API-KEY-ID, APCA-API-SECRET-KEY"
+      }
+    },
+
+    "methods": [
+      {
+        "name": "fetch_binance_price(symbol)",
+        "returns": "Dict with symbol, price, timestamp, source, witness_id or None"
+      },
+      {
+        "name": "fetch_alpaca_price(symbol)",
+        "returns": "Dict with symbol, price, timestamp, source, witness_id or None"
+      },
+      {
+        "name": "verify_witness_freshness(witness)",
+        "returns": "bool - True if witness age <= MAX_WITNESS_AGE_MINUTES"
+      },
+      {
+        "name": "get_crypto_witness()",
+        "returns": "Fresh crypto witness (BTC primary, ETH fallback) or None"
+      },
+      {
+        "name": "get_equity_witness()",
+        "returns": "Fresh equity witness (SPY) or None"
+      },
+      {
+        "name": "clear_witnesses()",
+        "returns": "Clears cached witnesses (called at start of each hunt)"
+      }
+    ]
+  },
+
+  "integration_points": {
+    "blocking_precondition": {
+      "location": "run_hunt() method",
+      "position": "After session creation, before news search and hypothesis generation",
+      "behavior": {
+        "satisfied": "Hunt proceeds normally, witness added to context",
+        "not_satisfied": "Hunt aborts silently with LIVE_PRICE_PRECONDITION_FAILED"
+      }
+    },
+    "evidence_logging": {
+      "target": "fhq_meta.cognitive_engine_evidence",
+      "invocation_type": "LIVE_PRICE_PRECONDITION",
+      "fields_logged": [
+        "precondition_type",
+        "directive_ref",
+        "max_witness_age_minutes",
+        "staleness_minutes",
+        "decision_rationale"
+      ]
+    },
+    "session_status_update": {
+      "target": "fhq_alpha.hunt_sessions",
+      "status_on_failure": "PRECONDITION_FAILED"
+    }
+  },
+
+  "compliance_verification": {
+    "ceo_directive_mandates": [
+      {
+        "mandate": "EC-018 is assigned sole responsibility for live price verification",
+        "status": "COMPLIANT",
+        "implementation": "LivePriceWitness class in ec018_alpha_daemon.py"
+      },
+      {
+        "mandate": "Live Price Witness as mandatory precondition to hypothesis formation",
+        "status": "COMPLIANT",
+        "implementation": "_verify_live_price_precondition() in run_hunt()"
+      },
+      {
+        "mandate": "Time-bounded proof (30 minutes)",
+        "status": "COMPLIANT",
+        "implementation": "MAX_WITNESS_AGE_MINUTES = 30"
+      },
+      {
+        "mandate": "Logged only as decision evidence, never as market truth",
+        "status": "COMPLIANT",
+        "implementation": "_log_witness_evidence() writes to fhq_meta only"
+      },
+      {
+        "mandate": "Silent abort on failure",
+        "status": "COMPLIANT",
+        "implementation": "Returns early with reason, no exceptions raised"
+      }
+    ]
+  },
+
+  "expected_behavior": {
+    "wave_12_rerun": {
+      "scenario": "Fresh price available from Binance",
+      "expected_result": "Precondition SATISFIED, hunt proceeds to hypothesis generation",
+      "eqs_evaluation": "EQS > 0.85 threshold can now be properly tested"
+    },
+    "stale_data_scenario": {
+      "scenario": "Binance/Alpaca unreachable, database price > 30 min old",
+      "expected_result": "Precondition FAILED, hunt aborts silently",
+      "mitigation": "Prevents LIARS_POKER stress mode from blocking EQS evaluation"
+    }
+  },
+
+  "governance_status": {
+    "code_freeze_exception": "AUTHORIZED - CEO Directive explicitly authorized modification",
+    "vega_attestation_required": true,
+    "g2_exam_rerun_authorized": true
+  },
+
+  "signature": {
+    "implemented_by": "STIG",
+    "implementation_timestamp": "2025-12-17T20:30:00Z",
+    "directive_authority": "CEO/FjordHQ Executive Board"
+  }
+}

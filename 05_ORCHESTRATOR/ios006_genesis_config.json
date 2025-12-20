@@ -1,0 +1,133 @@
+{
+  "_comment": "IoS-006 GENESIS CONFIGURATION BUNDLE - ADR-017 MIT Quad Compliant",
+  "_authority": "STIG (CTO) | FINN (CRIO)",
+  "_version": "2026.PROD.1",
+  "_created": "2025-12-08",
+
+  "batch_id": "GENESIS_2026_001",
+  "governance_hash": "ADR017_QUAD_LOCKED",
+  "execution_mode": "LIVE",
+
+  "four_pillars": {
+    "GLOBAL_LIQUIDITY_M2": {
+      "role": "THE_FUEL",
+      "cluster": "LIQUIDITY",
+      "direction": "POSITIVE"
+    },
+    "US_10Y_REAL_YIELD": {
+      "role": "THE_FRICTION",
+      "cluster": "CREDIT",
+      "direction": "NEGATIVE"
+    },
+    "BTC_PERP_FUNDING": {
+      "role": "THE_GREED",
+      "cluster": "ONCHAIN",
+      "direction": "NEGATIVE"
+    },
+    "MOVE_INDEX_CLOSE": {
+      "role": "THE_FEAR",
+      "cluster": "VOLATILITY",
+      "direction": "NEGATIVE"
+    }
+  },
+
+  "ceio_hunter_jobs": [
+    {
+      "target_id": "GLOBAL_LIQUIDITY_M2",
+      "source_api": "FRED",
+      "fetch_param": "M2SL",
+      "secondary_param": "WALCL",
+      "data_lag_allowed": "48h",
+      "transformation": "LOG_DIFF",
+      "on_fail": "REPORT_RISL_DRIFT"
+    },
+    {
+      "target_id": "US_10Y_REAL_YIELD",
+      "source_api": "FRED",
+      "fetch_param": "DFII10",
+      "data_lag_allowed": "24h",
+      "transformation": "DIFF",
+      "on_fail": "REPORT_RISL_DRIFT"
+    },
+    {
+      "target_id": "BTC_PERP_FUNDING",
+      "source_api": "GLASSNODE",
+      "fallback_api": "COINGLASS",
+      "fetch_param": "funding_rate_aggregated",
+      "data_lag_allowed": "4h",
+      "transformation": "Z_SCORE",
+      "z_score_window": "7D",
+      "on_fail": "REPORT_RISL_DRIFT"
+    },
+    {
+      "target_id": "MOVE_INDEX_CLOSE",
+      "source_api": "FRED",
+      "fetch_param": "MOVE",
+      "data_lag_allowed": "24h",
+      "transformation": "Z_SCORE",
+      "z_score_window": "30D",
+      "on_fail": "REPORT_RISL_DRIFT"
+    }
+  ],
+
+  "crio_lab_protocols": [
+    {
+      "protocol_id": "STATIONARITY_CHECK_V1",
+      "description": "Augmented Dickey-Fuller test for unit root",
+      "method": "ADF_TEST",
+      "p_value_threshold": 0.05,
+      "action_if_fail": "APPLY_DIFFERENCING",
+      "max_diff_order": 2
+    },
+    {
+      "protocol_id": "ANOMALY_FILTER_V1",
+      "description": "Z-score clipping for outlier management",
+      "method": "Z_SCORE_CLIPPING",
+      "threshold": 4.0,
+      "action": "CLAMP_AND_LOG"
+    },
+    {
+      "protocol_id": "FLATLINE_DETECTOR_V1",
+      "description": "Detect sensor failure via variance collapse",
+      "method": "VARIANCE_CHECK",
+      "min_variance": 1e-6,
+      "window": "30D",
+      "action_if_fail": "REJECT_AND_ALERT"
+    }
+  ],
+
+  "lids_truth_gates": {
+    "LIDS_STD_3": {
+      "description": "Standard truth gate for daily macro data",
+      "max_staleness_hours": 72,
+      "min_variance_30d": 1e-6,
+      "adf_p_threshold": 0.05,
+      "require_crio_signature": true
+    },
+    "LIDS_STD_4": {
+      "description": "Strict truth gate for high-frequency data",
+      "max_staleness_hours": 8,
+      "min_variance_30d": 1e-6,
+      "adf_p_threshold": 0.05,
+      "require_crio_signature": true
+    }
+  },
+
+  "risl_escalation_rules": {
+    "DATA_STALE": {
+      "severity": "WARNING",
+      "defcon_trigger": false,
+      "action": "LOG_AND_NOTIFY"
+    },
+    "SENSOR_FAILURE": {
+      "severity": "CRITICAL",
+      "defcon_trigger": true,
+      "action": "HALT_DEPENDENT_PIPELINES"
+    },
+    "SIGNATURE_INVALID": {
+      "severity": "CRITICAL",
+      "defcon_trigger": true,
+      "action": "BLOCK_AND_ESCALATE_CEO"
+    }
+  }
+}

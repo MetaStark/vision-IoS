@@ -1,0 +1,196 @@
+{
+  "audit_id": "TRADING_LOGIC_AUDIT_20251209",
+  "audit_type": "CEO_DIRECTIVE_COMPLIANCE",
+  "auditor": "STIG",
+  "authority": "EC-003_2026_PRODUCTION",
+  "timestamp": "2025-12-09T09:45:00Z",
+  "directive_reference": "CEO DIRECTIVE - AUDIT: TRADING LOGIC & DATA INTEGRITY",
+  "status": "CRITICAL_FAILURES_DETECTED",
+
+  "executive_summary": {
+    "verdict": "EQUITY TRADING MUST REMAIN HALTED",
+    "critical_failures": 3,
+    "blocking_issues": [
+      "IoS-012 hardcodes MARKET orders - no LIMIT order support",
+      "Equity data depth insufficient for 200SMA (need 200 daily candles, have ~1000 minute candles = <1 day)",
+      "Technical indicators NOT injected into DeepSeek context"
+    ]
+  },
+
+  "section_A_execution_capability": {
+    "question": "Does IoS-012 support LIMIT orders?",
+    "answer": "NO",
+    "status": "FAIL",
+    "evidence": {
+      "file": "03_FUNCTIONS/ios012_g3_system_loop.py",
+      "line": 719,
+      "code": "type='market'",
+      "context": "Order submission hardcoded to MARKET type"
+    },
+    "root_cause": "IoS-012 G3 system loop hardcodes order type='market' at line 719. The underlying adapter (ios012_g2_paper_trading.py:144-155) DOES support configurable order_type parameter, but the caller never passes it.",
+    "remediation_required": {
+      "action": "IMPLEMENT submit_limit_order(price=last_close * 0.995)",
+      "priority": "CRITICAL",
+      "files_to_modify": [
+        "03_FUNCTIONS/ios012_g3_system_loop.py"
+      ],
+      "implementation_spec": {
+        "function": "_execute_order",
+        "change": "Add limit_price parameter, change type='market' to type='limit', set limit_price=current_price * 0.995"
+      }
+    }
+  },
+
+  "section_B_data_depth": {
+    "question": "Is there sufficient data depth for 200SMA calculation?",
+    "answer": "NO - CATASTROPHIC FAILURE",
+    "status": "FAIL",
+    "pass_criteria": "> 200 daily candles for each proposed equity asset",
+    "actual_data": {
+      "AAPL": {
+        "candle_count": 1013,
+        "candle_type": "MINUTE (NOT DAILY)",
+        "earliest": "2025-12-08T23:34:37.325Z",
+        "latest": "2025-12-09T09:33:47.821Z",
+        "effective_days": 0.42,
+        "status": "FAIL - Need 200 days, have <1 day"
+      },
+      "NVDA": {
+        "candle_count": 1014,
+        "candle_type": "MINUTE (NOT DAILY)",
+        "earliest": "2025-12-08T23:34:35.375Z",
+        "latest": "2025-12-09T09:34:23.199Z",
+        "effective_days": 0.42,
+        "status": "FAIL - Need 200 days, have <1 day"
+      },
+      "MSFT": {
+        "candle_count": 1013,
+        "candle_type": "MINUTE (NOT DAILY)",
+        "earliest": "2025-12-08T23:34:37.325Z",
+        "latest": "2025-12-09T09:33:47.821Z",
+        "effective_days": 0.42,
+        "status": "FAIL - Need 200 days, have <1 day"
+      },
+      "SPY": {
+        "candle_count": 1013,
+        "candle_type": "MINUTE (NOT DAILY)",
+        "earliest": "2025-12-08T23:34:37.325Z",
+        "latest": "2025-12-09T09:33:47.821Z",
+        "effective_days": 0.42,
+        "status": "FAIL - Need 200 days, have <1 day"
+      },
+      "QQQ": {
+        "candle_count": 1013,
+        "candle_type": "MINUTE (NOT DAILY)",
+        "earliest": "2025-12-08T23:34:37.325Z",
+        "latest": "2025-12-09T09:33:47.821Z",
+        "effective_days": 0.42,
+        "status": "FAIL - Need 200 days, have <1 day"
+      }
+    },
+    "comparison_crypto_assets": {
+      "BTC-USD": {
+        "candle_count": 3660,
+        "candle_type": "DAILY",
+        "earliest": "2015-12-01T23:00:00.000Z",
+        "latest": "2025-12-07T22:00:00.000Z",
+        "status": "PASS - 10 years of daily data"
+      },
+      "ETH-USD": {
+        "candle_count": 2952,
+        "candle_type": "DAILY",
+        "earliest": "2017-11-08T23:00:00.000Z",
+        "latest": "2025-12-07T22:00:00.000Z",
+        "status": "PASS - 8 years of daily data"
+      }
+    },
+    "remediation_required": {
+      "action": "TRIGGER CEIO.run_backfill(assets=['AAPL','NVDA','MSFT','SPY','QQQ','GOOGL','AMZN','META','TSLA'], depth='2y')",
+      "priority": "CRITICAL",
+      "estimated_rows_needed": "200 daily candles * 9 assets = 1800 rows minimum",
+      "data_source_recommendation": "yfinance (Tier 1 Lake) for historical daily OHLCV"
+    }
+  },
+
+  "section_C_technical_analysis_linkage": {
+    "question": "Does DeepSeek receive TA indicators (RSI, MACD, Bollinger) in its context?",
+    "answer": "NO",
+    "status": "FAIL",
+    "evidence": {
+      "context_injection_file": "03_FUNCTIONS/context_injection_layer.py",
+      "fields_injected": [
+        "MarketClock (timestamp, session)",
+        "MarketState (BTC price, ETH price, USD/NOK, regime)",
+        "MemoryContext (episodic, causal truths, semantic)",
+        "EventContext (recent system events)"
+      ],
+      "fields_NOT_injected": [
+        "RSI_14",
+        "MACD",
+        "MACD_signal",
+        "MACD_histogram",
+        "Bollinger_Band_Position",
+        "SMA_50",
+        "SMA_200",
+        "EMA_9/20/50/200"
+      ]
+    },
+    "root_cause": "calc_indicators_v1.py calculates all TA indicators and persists to fhq_research.indicator_* tables, but context_injection_layer.py does NOT query these tables. DeepSeek is flying blind on technical analysis.",
+    "consequence": "DeepSeek may recommend buying overbought stocks (RSI > 70) or selling oversold stocks (RSI < 30) because it has NO visibility into technical state.",
+    "remediation_required": {
+      "action": "Extend ContextRetriever to query fhq_research.indicator_momentum, indicator_trend, indicator_volatility and inject into SystemContext",
+      "priority": "CRITICAL",
+      "files_to_modify": [
+        "03_FUNCTIONS/context_injection_layer.py"
+      ],
+      "implementation_spec": {
+        "new_dataclass": "TechnicalIndicators",
+        "fields": ["rsi_14", "macd", "macd_signal", "bb_position", "sma_50", "sma_200"],
+        "query_target": "fhq_research.indicator_momentum, indicator_trend, indicator_volatility"
+      }
+    }
+  },
+
+  "governance_attestation": {
+    "auditor_signature": "STIG_EC003_20251209",
+    "classification": "Tier-2 Technical Executive",
+    "authority_chain": "CEO > LARS > STIG",
+    "adr_references": [
+      "ADR-012 (Economic Safety)",
+      "ADR-013 (Infrastructure Sovereignty)",
+      "ADR-020 (Context Injection)"
+    ]
+  },
+
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "priority": 1,
+        "action": "MAINTAIN EQUITY TRADING HALT",
+        "rationale": "All three audit criteria failed"
+      },
+      {
+        "priority": 2,
+        "action": "Execute CEIO backfill for equity daily candles (2 years)",
+        "command": "python 03_FUNCTIONS/daily_ingest_worker.py --assets AAPL,NVDA,MSFT,SPY,QQQ,GOOGL,AMZN,META,TSLA --depth 2y --timeframe daily"
+      },
+      {
+        "priority": 3,
+        "action": "Implement LIMIT order support in ios012_g3_system_loop.py",
+        "estimate": "30-60 minutes development"
+      },
+      {
+        "priority": 4,
+        "action": "Extend context_injection_layer.py with TechnicalIndicators dataclass",
+        "estimate": "60-90 minutes development"
+      }
+    ],
+    "re_audit_criteria": {
+      "trigger": "After all three remediations complete",
+      "validator": "STIG",
+      "approval_required": "CEO"
+    }
+  },
+
+  "integrity_hash": "sha256:pending_signature"
+}

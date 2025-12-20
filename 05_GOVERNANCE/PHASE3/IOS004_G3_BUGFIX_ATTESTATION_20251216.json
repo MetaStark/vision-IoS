@@ -1,0 +1,60 @@
+{
+  "attestation_type": "IoS-004 G3 Bug Fix Validation",
+  "attestation_id": "1602a863-7a68-4d85-a4da-f3e2c23555c6",
+  "timestamp": "2025-12-16T13:35:21+01:00",
+  "attested_by": "STIG",
+  "gate_level": "G3",
+  "constitutional_basis": "EC-003",
+  "adr_reference": "ADR-011",
+  
+  "bug_details": {
+    "description": "Look-ahead bias in VOLATILITY backtest",
+    "location": "ios004_backtest_worker.py:289-290",
+    "severity": "CRITICAL",
+    "root_cause": "Using abs() on price differences guaranteed 100% win rate regardless of direction",
+    "code_before": "pnl_pct = abs(exit_price - entry_price) / entry_price * 100",
+    "code_after": "Directional logic based on recent momentum before entry point"
+  },
+  
+  "before_fix_metrics": {
+    "VOLATILITY": {
+      "win_rate": 1.0000,
+      "sharpe_ratio": 18.0890,
+      "total_signals": 34,
+      "validation_outcome": "VALIDATED (INCORRECT)"
+    },
+    "fake_g1_approved_signals": 13
+  },
+  
+  "after_fix_metrics": {
+    "VOLATILITY": {
+      "win_rate": 0.5294,
+      "sharpe_ratio": 1.0947,
+      "total_signals": 34,
+      "validation_outcome": "REJECTED",
+      "rejection_reason": "P-value 0.6946 > 0.05 (not statistically significant)"
+    },
+    "validated_signals": 0
+  },
+  
+  "validation_thresholds_verified": {
+    "win_rate_minimum": "52%",
+    "sharpe_ratio_minimum": "positive",
+    "p_value_maximum": "0.05",
+    "minimum_samples": 30
+  },
+  
+  "database_cleanup": {
+    "invalid_results_deleted": 717,
+    "queue_items_reset": 286,
+    "proposals_reprocessed": 145,
+    "invalid_g1_signals_deleted": 16
+  },
+  
+  "conclusion": {
+    "status": "REMEDIATED",
+    "evidence": "VOLATILITY category now shows realistic 52.94% win rate instead of impossible 100%",
+    "system_integrity": "IoS-004 backtest validation logic is now functioning correctly",
+    "recommendation": "System can proceed with alpha generation - all backtests require statistical significance"
+  }
+}

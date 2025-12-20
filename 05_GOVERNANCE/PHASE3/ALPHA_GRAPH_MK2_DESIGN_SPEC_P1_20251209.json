@@ -1,0 +1,258 @@
+{
+  "directive": "OPERATION CAUSAL ENTROPY - TASK B",
+  "document": "ALPHA_GRAPH_MK2_DESIGN_SPEC_P1",
+  "status": "DESIGN_COMPLETE",
+  "executor": "CRIO (Research Ops)",
+  "timestamp_utc": "2025-12-09T13:15:00Z",
+  "gate": "G0",
+
+  "architecture_overview": {
+    "current_state": {
+      "ios007_version": "1.0",
+      "node_types": ["EQUITY", "INDICATOR"],
+      "edge_types": ["MOMENTUM_SIGNAL", "TREND_SIGNAL", "VOLATILITY_SIGNAL", "TREND_STRUCTURE"],
+      "total_nodes": 10,
+      "total_edges": 231,
+      "limitation": "Technical indicators only, no macro transmission"
+    },
+    "target_state": {
+      "ios007_version": "2.0 (MK2)",
+      "node_types": ["EQUITY", "INDICATOR", "MACRO_FACTOR", "LIQUIDITY", "VOLATILITY", "CREDIT", "ACTIVITY"],
+      "edge_types": ["LEADS", "AMPLIFIES", "INHIBITS", "CORRELATES", "TRANSMITS", "DAMPENS"],
+      "estimated_nodes": 35,
+      "estimated_edges": 500,
+      "capability": "Full causal transmission from macro to asset price"
+    }
+  },
+
+  "node_specification": {
+    "MACRO_FACTOR": {
+      "node_type": "MACRO_FACTOR",
+      "description": "Primary macro driver nodes",
+      "instances": [
+        {"node_id": "MACRO_VIX", "subtype": "VOLATILITY", "frequency": "DAILY", "relevance_horizon_days": 5},
+        {"node_id": "MACRO_MOVE", "subtype": "VOLATILITY", "frequency": "DAILY", "relevance_horizon_days": 7},
+        {"node_id": "MACRO_NET_LIQ", "subtype": "LIQUIDITY", "frequency": "WEEKLY", "relevance_horizon_days": 30},
+        {"node_id": "MACRO_DXY", "subtype": "FX", "frequency": "DAILY", "relevance_horizon_days": 14},
+        {"node_id": "MACRO_HY_OAS", "subtype": "CREDIT", "frequency": "DAILY", "relevance_horizon_days": 7},
+        {"node_id": "MACRO_10Y2Y", "subtype": "RATES", "frequency": "DAILY", "relevance_horizon_days": 30},
+        {"node_id": "MACRO_BE5Y", "subtype": "INFLATION", "frequency": "DAILY", "relevance_horizon_days": 14},
+        {"node_id": "MACRO_ISM_PMI", "subtype": "ACTIVITY", "frequency": "MONTHLY", "relevance_horizon_days": 30},
+        {"node_id": "MACRO_CPI_YOY", "subtype": "INFLATION", "frequency": "MONTHLY", "relevance_horizon_days": 30}
+      ],
+      "node_attributes": {
+        "statistical_signature": {
+          "mean": "FLOAT - Rolling 252d mean",
+          "std": "FLOAT - Rolling 252d standard deviation",
+          "percentile": "FLOAT - Current value percentile (0-100)",
+          "zscore": "FLOAT - Current z-score",
+          "regime_state": "ENUM - LOW/NORMAL/ELEVATED/EXTREME"
+        },
+        "sampling_frequency": "ENUM - DAILY/WEEKLY/MONTHLY",
+        "relevance_horizon": "INT - Days this factor remains relevant",
+        "volatility_sensitivity": "FLOAT - Beta to VIX",
+        "missing_data_tolerance": "INT - Max days before stale flag"
+      }
+    },
+
+    "EQUITY": {
+      "node_type": "EQUITY",
+      "description": "Equity asset nodes (existing)",
+      "instances": ["AAPL", "MSFT", "NVDA", "QQQ", "SPY"],
+      "node_attributes": {
+        "regime": "ENUM - BULL/BEAR/NEUTRAL",
+        "regime_confidence": "FLOAT - 0 to 1",
+        "rsi_14": "FLOAT",
+        "macd": "FLOAT",
+        "volatility_regime": "ENUM - LOW/MEDIUM/HIGH"
+      }
+    },
+
+    "INDICATOR": {
+      "node_type": "INDICATOR",
+      "description": "Technical indicator nodes (existing)",
+      "instances": ["RSI_14", "MACD", "BB_WIDTH", "ATR_14", "EMA_STRUCTURE"]
+    }
+  },
+
+  "edge_type_definitions": {
+    "LEADS": {
+      "description": "Source node changes predict target node changes with time lag",
+      "formal_definition": {
+        "window_options": [3, 7, 14, 21],
+        "minimum_correlation": 0.3,
+        "minimum_observations": 60,
+        "directional_consistency": 0.6
+      },
+      "mathematical_rule": {
+        "formula": "corr(source[t], target[t+lag]) > threshold",
+        "lag_selection": "argmax(abs(corr)) over window_options",
+        "significance_test": "p-value < 0.05 (Pearson)"
+      },
+      "examples": [
+        {"source": "MACRO_NET_LIQ", "target": "SPY", "lag_days": 14, "correlation": 0.65},
+        {"source": "MACRO_VIX", "target": "QQQ", "lag_days": 1, "correlation": -0.72}
+      ],
+      "deterministic": true,
+      "rerunnable": true
+    },
+
+    "AMPLIFIES": {
+      "description": "Source node amplifies target node's volatility under stress conditions",
+      "formal_definition": {
+        "stress_condition": "source.percentile > 80",
+        "amplification_metric": "target.realized_vol[stress] / target.realized_vol[normal]",
+        "minimum_amplification": 1.5,
+        "lookback_days": 252
+      },
+      "mathematical_rule": {
+        "formula": "IF source.percentile > 80 THEN target.vol_ratio > 1.5",
+        "vol_ratio": "std(target_returns[stress_periods]) / std(target_returns[normal_periods])",
+        "stress_period_definition": "days where source.percentile > 80"
+      },
+      "examples": [
+        {"source": "MACRO_VIX", "target": "NVDA", "amplification_factor": 2.1},
+        {"source": "MACRO_HY_OAS", "target": "QQQ", "amplification_factor": 1.8}
+      ],
+      "deterministic": true,
+      "rerunnable": true
+    },
+
+    "INHIBITS": {
+      "description": "Source node constrains target node's upside potential",
+      "formal_definition": {
+        "inhibition_condition": "source exceeds threshold",
+        "effect": "target return distribution shifts negative",
+        "threshold_types": ["ABSOLUTE", "PERCENTILE", "RATE_OF_CHANGE"]
+      },
+      "mathematical_rule": {
+        "formula": "IF source > threshold THEN E[target_return] < baseline",
+        "inhibition_score": "(baseline_return - constrained_return) / baseline_std",
+        "minimum_inhibition_score": 0.5
+      },
+      "threshold_functions": {
+        "VIX_inhibition": "VIX > 30 inhibits equity upside",
+        "REAL_RATES_inhibition": "10Y_real > 2% inhibits growth equity",
+        "DXY_inhibition": "DXY > 105 inhibits EM/commodities"
+      },
+      "examples": [
+        {"source": "MACRO_VIX", "target": "AAPL", "threshold": 30, "inhibition_score": 0.8},
+        {"source": "MACRO_10Y2Y", "target": "QQQ", "threshold": -0.5, "inhibition_score": 0.6}
+      ],
+      "deterministic": true,
+      "rerunnable": true
+    },
+
+    "CORRELATES": {
+      "description": "Contemporaneous correlation (no lead/lag)",
+      "formal_definition": {
+        "window": 60,
+        "minimum_correlation": 0.4,
+        "stability_requirement": "correlation sign stable over 3 rolling windows"
+      },
+      "mathematical_rule": {
+        "formula": "abs(corr(source[t], target[t])) > threshold",
+        "rolling_window": 60,
+        "stability_check": "sign(corr_w1) == sign(corr_w2) == sign(corr_w3)"
+      },
+      "deterministic": true,
+      "rerunnable": true
+    },
+
+    "TRANSMITS": {
+      "description": "Causal transmission of regime state",
+      "formal_definition": {
+        "transmission_type": "REGIME_STATE",
+        "propagation_delay": "0-3 days",
+        "transmission_probability": "P(target_regime_change | source_regime_change)"
+      },
+      "mathematical_rule": {
+        "formula": "P(target_regime[t+d] != target_regime[t] | source_regime[t] changed) > 0.6",
+        "delay_options": [0, 1, 2, 3],
+        "minimum_probability": 0.6
+      },
+      "deterministic": true,
+      "rerunnable": true
+    },
+
+    "DAMPENS": {
+      "description": "Source node reduces target node's signal strength",
+      "formal_definition": {
+        "damping_condition": "source in specific regime",
+        "effect": "target signal strength reduced",
+        "damping_factor": "0 to 1"
+      },
+      "mathematical_rule": {
+        "formula": "effective_signal = raw_signal * (1 - damping_factor * I[damping_condition])",
+        "I": "indicator function"
+      },
+      "examples": [
+        {"source": "MACRO_VIX", "target": "RSI_14", "condition": "VIX > 25", "damping_factor": 0.3}
+      ],
+      "deterministic": true,
+      "rerunnable": true
+    }
+  },
+
+  "causal_transmission_pathways": {
+    "volatility_pathway": {
+      "source": "MACRO_VIX",
+      "transmission": [
+        {"edge": "AMPLIFIES", "targets": ["NVDA", "AAPL", "QQQ"]},
+        {"edge": "INHIBITS", "targets": ["SPY", "QQQ"], "condition": "VIX > 30"},
+        {"edge": "DAMPENS", "targets": ["RSI_14", "MACD"], "condition": "VIX > 25"}
+      ],
+      "interpretation": "VIX spike amplifies individual stock vol, inhibits index upside, dampens technical signals"
+    },
+    "liquidity_pathway": {
+      "source": "MACRO_NET_LIQ",
+      "transmission": [
+        {"edge": "LEADS", "targets": ["SPY", "QQQ"], "lag": 14},
+        {"edge": "TRANSMITS", "targets": ["EQUITY_REGIME"], "type": "REGIME_STATE"}
+      ],
+      "interpretation": "Net liquidity leads equity prices by ~2 weeks, transmits risk regime"
+    },
+    "credit_pathway": {
+      "source": "MACRO_HY_OAS",
+      "transmission": [
+        {"edge": "LEADS", "targets": ["SPY"], "lag": 5},
+        {"edge": "CORRELATES", "targets": ["MACRO_VIX"]},
+        {"edge": "INHIBITS", "targets": ["AAPL", "MSFT"], "condition": "OAS > 500"}
+      ],
+      "interpretation": "Credit spreads lead equities, correlate with VIX, inhibit quality stocks when wide"
+    },
+    "rates_pathway": {
+      "source": "MACRO_10Y2Y",
+      "transmission": [
+        {"edge": "LEADS", "targets": ["MSFT", "AAPL"], "lag": 21},
+        {"edge": "TRANSMITS", "targets": ["EQUITY_REGIME"], "condition": "inversion"}
+      ],
+      "interpretation": "Yield curve inversion signals recession risk, transmits to defensive posture"
+    }
+  },
+
+  "schema_alignment": {
+    "nodes_table": "vision_signals.alpha_graph_nodes",
+    "edges_table": "vision_signals.alpha_graph_edges",
+    "new_columns_required": {
+      "nodes": ["statistical_signature", "relevance_horizon", "regime_state"],
+      "edges": ["lag_days", "threshold_value", "amplification_factor", "inhibition_score"]
+    }
+  },
+
+  "validation_requirements": {
+    "edge_validation": {
+      "minimum_observations": 60,
+      "significance_level": 0.05,
+      "stability_windows": 3,
+      "out_of_sample_test": true
+    },
+    "determinism_guarantee": "All edge computations produce identical results given same input data",
+    "reproducibility": "Edge weights recomputable from raw data + parameters"
+  },
+
+  "signatures": {
+    "crio_signature": "CRIO.alpha_graph_mk2_design_p1",
+    "attestation": "TASK B complete. Alpha Graph MK2 architecture designed. 6 edge types formally specified with mathematical rules. 4 causal transmission pathways defined. All specifications are deterministic, rerunnable, and schema-aligned. Ready for G1 validation."
+  }
+}

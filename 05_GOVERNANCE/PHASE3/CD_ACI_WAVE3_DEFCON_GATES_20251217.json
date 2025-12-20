@@ -1,0 +1,87 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE3-DEFCON-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "ACTIVE",
+
+  "title": "ACI Wave 3: DEFCON Deterministic Gating",
+  "summary": "Hard gates in daemon scheduler linked to DEFCON state per ADR-016",
+
+  "mandate_compliance": {
+    "mandate_iii": {
+      "requirement": "DEFCON Deterministic Gating (ADR-016)",
+      "implementation": "defcon_gate_check() called before every scheduler cycle",
+      "evidence": "finn_brain_scheduler.py:defcon_gate_check() function"
+    }
+  },
+
+  "implementation_artifacts": {
+    "primary_function": "defcon_gate_check()",
+    "integration_points": [
+      "03_FUNCTIONS/finn_brain_scheduler.py"
+    ],
+    "database_queries": [
+      "SELECT current_level FROM fhq_governance.defcon_status"
+    ]
+  },
+
+  "defcon_behavior_matrix": {
+    "GREEN": {
+      "research_cycles": "ALLOWED",
+      "running_processes": "ALLOWED",
+      "learning_updates": "STAGING_ONLY"
+    },
+    "YELLOW": {
+      "research_cycles": "ALLOWED_REDUCED",
+      "running_processes": "ALLOWED",
+      "learning_updates": "STAGING_ONLY"
+    },
+    "ORANGE": {
+      "research_cycles": "BLOCKED",
+      "running_processes": "NO_NEW_ALLOWED",
+      "learning_updates": "BLOCKED"
+    },
+    "RED": {
+      "research_cycles": "BLOCKED",
+      "running_processes": "KILLED",
+      "learning_updates": "BLOCKED"
+    },
+    "BLACK": {
+      "research_cycles": "BLOCKED",
+      "running_processes": "KILLED",
+      "learning_updates": "BLOCKED"
+    }
+  },
+
+  "gate_check_logic": {
+    "returns": "(can_proceed: bool, reason: str, defcon_level: str)",
+    "red_black_behavior": "Immediate termination required",
+    "orange_behavior": "Block new cycles, allow existing to complete",
+    "yellow_behavior": "Proceed with caution",
+    "green_behavior": "Full operation permitted"
+  },
+
+  "scheduler_integration": {
+    "check_frequency": "Before every cognitive cycle",
+    "on_red_black": "Set shutdown_requested = True, break main loop",
+    "on_orange": "Skip cycle, wait 60 seconds, recheck",
+    "on_yellow": "Log warning, proceed"
+  },
+
+  "vega_attestation": {
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "target": "ADR-016",
+    "gate_level": "G1",
+    "status": "PENDING",
+    "validation_criteria": [
+      "Gate check executed before every cycle",
+      "RED/BLACK triggers immediate termination",
+      "ORANGE blocks new cycles"
+    ]
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}

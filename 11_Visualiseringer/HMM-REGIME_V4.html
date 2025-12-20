@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision-IoS: HMM Regime v4 Specification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1121;
+            color: #e2e8f0;
+        }
+
+        h1, h2, h3, .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 500px;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-blue-500 selection:text-white">
+
+    <nav class="sticky top-0 z-50 glass-panel border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold tracking-tight text-white mono-font">VISION-IoS <span class="text-blue-500">::</span> HMM_v4</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#architecture" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Architecture</a>
+                        <a href="#features" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Features</a>
+                        <a href="#logic" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">CRIO Logic</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <section class="mb-16 text-center">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+                <span class="gradient-text">IoS-003</span> Meta-Perception
+            </h1>
+            <p class="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                The <span class="text-white font-semibold">HMM Regime v4</span> engine transforms raw market noise into probabilistic state definitions. Utilizing a <span class="text-blue-400">Student-t emission model</span> and <span class="text-purple-400">IOHMM covariate transitions</span>, it delivers institutional-grade signal precision for the Golden Alpha system.
+            </p>
+            <div class="mt-8 flex justify-center gap-4">
+                <div class="px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded text-blue-300 text-sm font-mono">VEGA Verified</div>
+                <div class="px-4 py-2 bg-purple-900/30 border border-purple-500/30 rounded text-purple-300 text-sm font-mono">Fat-Tail Robust</div>
+            </div>
+        </section>
+
+        <section id="architecture" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-blue-500 stat-card">
+                <h3 class="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Emission Model</h3>
+                <p class="text-2xl font-bold text-white mb-2">Student-t (ν=5.0)</p>
+                <p class="text-sm text-slate-400">Optimized for financial data "fat tails," rejecting Gaussian assumptions to capture extreme events without model collapse.</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 stat-card">
+                <h3 class="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Changepoint Detection</h3>
+                <p class="text-2xl font-bold text-white mb-2">BOCD (Adams/MacKay)</p>
+                <p class="text-sm text-slate-400">Bayesian Online Changepoint Detection with a hazard rate of 0.01-0.02 for rapid adaptation.</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-emerald-500 stat-card">
+                <h3 class="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Learning Method</h3>
+                <p class="text-2xl font-bold text-white mb-2">Online EM</p>
+                <p class="text-sm text-slate-400">Continuous parameter adaptation (Decaying LR 0.01 &rarr; 0.001) ensuring the model evolves with market structure.</p>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div class="col-span-1 md:col-span-2">
+                <div class="border-b border-slate-700 pb-4 mb-6">
+                    <h2 class="text-3xl font-bold text-white">Asset Class Topology</h2>
+                    <p class="text-slate-400 mt-2">Distinct state definitions and hysteresis controls per asset class to prevent signal flicker.</p>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-xl">
+                <h3 class="text-xl font-bold text-white mb-4">State Cardinality & Labels</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⚡</span>
+                            <div>
+                                <p class="font-bold text-white">CRYPTO</p>
+                                <p class="text-xs text-slate-400">High Volatility Specification</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-mono text-blue-400">4 States</span>
+                            <div class="flex gap-1 mt-1">
+                                <span class="w-2 h-2 rounded-full bg-green-500" title="Bull"></span>
+                                <span class="w-2 h-2 rounded-full bg-gray-500" title="Neutral"></span>
+                                <span class="w-2 h-2 rounded-full bg-red-500" title="Bear"></span>
+                                <span class="w-2 h-2 rounded-full bg-purple-500" title="Stress"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🏢</span>
+                            <div>
+                                <p class="font-bold text-white">EQUITIES</p>
+                                <p class="text-xs text-slate-400">Structural Market Specification</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-mono text-blue-400">4 States</span>
+                            <div class="flex gap-1 mt-1">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">💱</span>
+                            <div>
+                                <p class="font-bold text-white">FX (Forex)</p>
+                                <p class="text-xs text-slate-400">Mean Reverting Specification</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-mono text-blue-400">3 States</span>
+                            <div class="flex gap-1 mt-1">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-xl">
+                <h3 class="text-xl font-bold text-white mb-4">Hysteresis (Signal Stability)</h3>
+                <p class="text-slate-400 text-sm mb-4">Minimum days a state must persist before a transition is confirmed. This reduces "whipsaw" losses.</p>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="hysteresisChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="mb-16">
+            <div class="glass-panel p-8 rounded-xl">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="col-span-1">
+                        <h2 class="text-3xl font-bold text-white mb-4">Feature Vector <span class="text-blue-500">v4</span></h2>
+                        <p class="text-slate-400 mb-6">
+                            The model ingests 7 z-normalized technical features. This radar chart illustrates the expected "signature" of a <span class="text-green-400 font-bold">BULL</span> regime versus a <span class="text-purple-400 font-bold">STRESS</span> regime.
+                        </p>
+                        <div class="bg-slate-800/50 p-4 rounded border border-slate-700">
+                            <h4 class="font-bold text-white mb-2 text-sm">COVARIATE DRIVERS</h4>
+                            <ul class="space-y-2 text-sm text-slate-300">
+                                <li class="flex justify-between"><span>VIX / Volatility</span> <span class="text-xs font-mono text-purple-400">Risk Proxy</span></li>
+                                <li class="flex justify-between"><span>Global Liquidity</span> <span class="text-xs font-mono text-blue-400">Flow Proxy</span></li>
+                                <li class="flex justify-between"><span>Yield Spread</span> <span class="text-xs font-mono text-emerald-400">Macro Proxy</span></li>
+                                <li class="flex justify-between"><span>Inflation</span> <span class="text-xs font-mono text-orange-400">Rates Proxy</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="chart-container">
+                            <canvas id="featureRadar"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="logic" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-8">CRIO Sovereign Modifiers (Overrides)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div class="glass-panel p-5 rounded border-t-4 border-red-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="font-mono text-xs text-red-400">RULE 01</span>
+                        <span class="text-2xl">🛡️</span>
+                    </div>
+                    <h4 class="font-bold text-white text-lg">Fragility Override</h4>
+                    <div class="my-3 bg-slate-900 p-2 rounded text-xs font-mono text-slate-300">
+                        if fragility > 0.80:<br>
+                        &nbsp;&nbsp;FORCE STRESS/BEAR
+                    </div>
+                    <p class="text-xs text-slate-500">Absolute safety break. If systemic fragility is critical, bullish signals are ignored.</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded border-t-4 border-orange-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="font-mono text-xs text-orange-400">RULE 02</span>
+                        <span class="text-2xl">📉</span>
+                    </div>
+                    <h4 class="font-bold text-white text-lg">VIX Spike Filter</h4>
+                    <div class="my-3 bg-slate-900 p-2 rounded text-xs font-mono text-slate-300">
+                        if VIX_SPIKE + <br>fragility > 0.50:<br>
+                        &nbsp;&nbsp;FORCE STRESS
+                    </div>
+                    <p class="text-xs text-slate-500">Reacts to sudden volatility expansion in fragile environments.</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded border-t-4 border-yellow-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="font-mono text-xs text-yellow-400">RULE 03</span>
+                        <span class="text-2xl">💧</span>
+                    </div>
+                    <h4 class="font-bold text-white text-lg">Liquidity Cap</h4>
+                    <div class="my-3 bg-slate-900 p-2 rounded text-xs font-mono text-slate-300">
+                        if fragility > 0.60 + <br>LIQ_CONTRACTION:<br>
+                        &nbsp;&nbsp;CAP at NEUTRAL
+                    </div>
+                    <p class="text-xs text-slate-500">Prevents entering Bull states when liquidity is withdrawing.</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded border-t-4 border-green-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="font-mono text-xs text-green-400">RULE 04</span>
+                        <span class="text-2xl">🚀</span>
+                    </div>
+                    <h4 class="font-bold text-white text-lg">Expansion Gate</h4>
+                    <div class="my-3 bg-slate-900 p-2 rounded text-xs font-mono text-slate-300">
+                        if fragility < 0.40 + <br>LIQ_EXPANSION:<br>
+                        &nbsp;&nbsp;ALLOW BULL
+                    </div>
+                    <p class="text-xs text-slate-500">The only condition that explicitly authorizes high-confidence Bull regimes.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="glass-panel p-8 rounded-xl mb-12">
+            <h2 class="text-3xl font-bold text-white mb-6">Regime Phase Space (3D Conceptual)</h2>
+            <p class="text-slate-400 mb-6">
+                Visualizing the separation of regimes in a 3-dimensional feature space (Return, Volatility, Liquidity). The HMM v4 excels at identifying the "Stress" clusters (Purple) distinct from standard "Bear" (Red) phases.
+            </p>
+            <div id="plot3d" class="w-full h-[500px] rounded-lg overflow-hidden border border-slate-700"></div>
+        </section>
+
+        <footer class="border-t border-slate-800 pt-8 pb-12 text-center">
+            <p class="text-slate-500 text-sm font-mono">VISION-IoS SYSTEM // Generated for C-Level Strategic Review</p>
+            <p class="text-slate-600 text-xs mt-2">IoS-003 Specification Compliance Verified</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- Utility: Label Splitting (16-char limit) ---
+        function splitLabel(str) {
+            if (str.length <= 16) return str;
+            const words = str.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                if ((currentLine + ' ' + words[i]).length <= 16) {
+                    currentLine += ' ' + words[i];
+                } else {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // --- Utility: Common Tooltip Config (Mandatory) ---
+        function getCommonPlugins() {
+            return {
+                legend: {
+                    labels: { color: '#94a3b8', font: { family: 'Inter' } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                                return label.join(' ');
+                            } else {
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // --- Chart 1: Hysteresis Bar Chart ---
+        const ctxHysteresis = document.getElementById('hysteresisChart').getContext('2d');
+        const hysteresisLabels = ['Crypto (Volatile)', 'Equities (Standard)', 'FX (Mean Rev)'];
+        const processedHysteresisLabels = hysteresisLabels.map(splitLabel);
+
+        new Chart(ctxHysteresis, {
+            type: 'bar',
+            data: {
+                labels: processedHysteresisLabels,
+                datasets: [{
+                    label: 'Hysteresis Days (Signal Stability)',
+                    data: [3, 5, 5],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)', // Blue
+                        'rgba(168, 85, 247, 0.7)', // Purple
+                        'rgba(16, 185, 129, 0.7)'  // Green
+                    ],
+                    borderColor: [
+                        '#3b82f6',
+                        '#a855f7',
+                        '#10b981'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: 'Days', color: '#64748b' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                plugins: getCommonPlugins()
+            }
+        });
+
+        // --- Chart 2: Feature Radar Chart ---
+        const ctxRadar = document.getElementById('featureRadar').getContext('2d');
+        const rawFeatures = [
+            'return_z', 'volatility_z', 'drawdown_z', 
+            'macd_diff_z', 'bb_width_z', 'rsi_14_z', 'roc_20_z'
+        ];
+        const processedFeatures = rawFeatures.map(splitLabel);
+
+        new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: processedFeatures,
+                datasets: [{
+                    label: 'Bull Regime Signature',
+                    data: [2.5, -1.0, 0.2, 1.5, 0.5, 1.8, 2.0], // Mock High z-scores for Bull
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: '#10b981',
+                    pointBackgroundColor: '#10b981',
+                    borderWidth: 2
+                }, {
+                    label: 'Stress Regime Signature',
+                    data: [-3.0, 3.5, 3.0, -2.0, 3.0, -2.5, -2.5], // Mock Extreme z-scores for Stress
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    borderColor: '#a855f7',
+                    pointBackgroundColor: '#a855f7',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(148, 163, 184, 0.1)' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                        pointLabels: {
+                            color: '#e2e8f0',
+                            font: { size: 12, family: 'JetBrains Mono' }
+                        },
+                        ticks: { display: false, backdropColor: 'transparent' }
+                    }
+                },
+                plugins: getCommonPlugins()
+            }
+        });
+
+        // --- Chart 3: Plotly 3D Scatter (Regime Phase Space) ---
+        // Generating synthetic data for visualization
+        function generateCluster(n, xMean, yMean, zMean, spread, color) {
+            const x = [], y = [], z = [], c = [];
+            for (let i = 0; i < n; i++) {
+                x.push(xMean + (Math.random() - 0.5) * spread);
+                y.push(yMean + (Math.random() - 0.5) * spread);
+                z.push(zMean + (Math.random() - 0.5) * spread);
+                c.push(color);
+            }
+            return { x, y, z, c };
+        }
+
+        const bull = generateCluster(50, 2, -1, 1, 1.5, '#10b981'); // High Return, Low Vol, High Liq
+        const bear = generateCluster(50, -1, 1, -1, 1.5, '#ef4444'); // Low Return, Med Vol, Low Liq
+        const stress = generateCluster(30, -4, 4, -3, 2.0, '#a855f7'); // Crash Return, High Vol, Crash Liq
+        const neutral = generateCluster(50, 0, 0, 0, 1.0, '#64748b'); // Zero center
+
+        const traceBull = {
+            x: bull.x, y: bull.y, z: bull.z,
+            mode: 'markers',
+            marker: { size: 5, color: bull.c, opacity: 0.8 },
+            type: 'scatter3d',
+            name: 'Bull'
+        };
+
+        const traceBear = {
+            x: bear.x, y: bear.y, z: bear.z,
+            mode: 'markers',
+            marker: { size: 5, color: bear.c, opacity: 0.8 },
+            type: 'scatter3d',
+            name: 'Bear'
+        };
+
+        const traceStress = {
+            x: stress.x, y: stress.y, z: stress.z,
+            mode: 'markers',
+            marker: { size: 5, color: stress.c, opacity: 0.8 },
+            type: 'scatter3d',
+            name: 'Stress'
+        };
+
+        const traceNeutral = {
+            x: neutral.x, y: neutral.y, z: neutral.z,
+            mode: 'markers',
+            marker: { size: 4, color: neutral.c, opacity: 0.6 },
+            type: 'scatter3d',
+            name: 'Neutral'
+        };
+
+        const layout = {
+            margin: { l: 0, r: 0, b: 0, t: 0 },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            scene: {
+                xaxis: { title: 'Return (z)', color: '#94a3b8', gridcolor: '#334155' },
+                yaxis: { title: 'Volatility (z)', color: '#94a3b8', gridcolor: '#334155' },
+                zaxis: { title: 'Liquidity (z)', color: '#94a3b8', gridcolor: '#334155' },
+                bgcolor: 'rgba(0,0,0,0)'
+            },
+            legend: {
+                x: 0, y: 1,
+                font: { color: '#e2e8f0' }
+            }
+        };
+
+        const config = { responsive: true, displayModeBar: false };
+
+        Plotly.newPlot('plot3d', [traceBull, traceNeutral, traceBear, traceStress], layout, config);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+{
+  "document_type": "G1_VEGA_INTERFACE_CONTRACT",
+  "document_id": "STIG-G1-VEGA-IFC-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T19:20:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G1 2025-12-09 Section 2.4",
+  "purpose": "Define VEGA evaluation interface for G2 governance validation of Cognitive Engine schema",
+
+  "interface_specification": {
+    "protocol": "VEGA_G2_EVALUATION_PROTOCOL",
+    "version": "1.0",
+    "compliance_framework": ["ADR-006", "ADR-011", "ADR-013", "ADR-016"]
+  },
+
+  "input_contract": {
+    "description": "Data structures STIG provides to VEGA for G2 evaluation",
+    "inputs": [
+      {
+        "input_id": "IFC-IN-001",
+        "name": "schema_proposal",
+        "type": "SQL_DDL_DOCUMENT",
+        "format": "Commented SQL file",
+        "location": "04_DATABASE/STAGING/103_adr021_g1_cognitive_schema_PROPOSAL.sql",
+        "required": true,
+        "validation": "VEGA must verify all table definitions, constraints, and indexes align with ADR-021/EC-020/021/022"
+      },
+      {
+        "input_id": "IFC-IN-002",
+        "name": "field_mapping",
+        "type": "JSON_DOCUMENT",
+        "format": "Canonical Field Specification JSON",
+        "location": "05_GOVERNANCE/PHASE3/STIG_G1_FIELD_MAPPING_20251209.json",
+        "required": true,
+        "validation": "VEGA must verify all fields have ADR references and proper type definitions"
+      },
+      {
+        "input_id": "IFC-IN-003",
+        "name": "validation_matrix",
+        "type": "JSON_DOCUMENT",
+        "format": "Field-to-Document Traceability Matrix JSON",
+        "location": "05_GOVERNANCE/PHASE3/STIG_G1_VALIDATION_MATRIX_20251209.json",
+        "required": true,
+        "validation": "VEGA must verify all governance hooks are properly defined"
+      },
+      {
+        "input_id": "IFC-IN-004",
+        "name": "indexing_strategy",
+        "type": "JSON_DOCUMENT",
+        "format": "Indexing Strategy Specification JSON",
+        "location": "05_GOVERNANCE/PHASE3/STIG_G1_INDEXING_STRATEGY_20251209.json",
+        "required": true,
+        "validation": "VEGA must verify index types are appropriate for query patterns"
+      },
+      {
+        "input_id": "IFC-IN-005",
+        "name": "g1_validation_report",
+        "type": "JSON_DOCUMENT",
+        "format": "STIG G1 Validation Report JSON",
+        "location": "05_GOVERNANCE/PHASE3/STIG_G1_VALIDATION_REPORT_20251209.json",
+        "required": true,
+        "validation": "VEGA must verify STIG attestation and completeness"
+      }
+    ]
+  },
+
+  "output_contract": {
+    "description": "Data structures VEGA returns after G2 evaluation",
+    "outputs": [
+      {
+        "output_id": "IFC-OUT-001",
+        "name": "g2_attestation",
+        "type": "VEGA_ATTESTATION",
+        "format": "JSON with signature",
+        "expected_fields": [
+          "attestation_id",
+          "attestation_type",
+          "target_documents",
+          "evaluation_result",
+          "findings",
+          "recommendations",
+          "vega_signature",
+          "timestamp"
+        ],
+        "required": true
+      },
+      {
+        "output_id": "IFC-OUT-002",
+        "name": "governance_decision",
+        "type": "GOVERNANCE_ACTION",
+        "format": "Entry in fhq_governance.governance_actions_log",
+        "expected_fields": [
+          "action_type: G2_GOVERNANCE_VALIDATION",
+          "decision: APPROVED | REJECTED | CONDITIONAL",
+          "conditions (if CONDITIONAL)",
+          "vega_attestation_id"
+        ],
+        "required": true
+      },
+      {
+        "output_id": "IFC-OUT-003",
+        "name": "hash_chain_update",
+        "type": "HASH_CHAIN_ENTRY",
+        "format": "Entry in vision_verification.hash_chains",
+        "expected_fields": [
+          "chain_id",
+          "chain_type: G2_VALIDATION",
+          "document_hash",
+          "integrity_verified"
+        ],
+        "required": true
+      }
+    ]
+  },
+
+  "evaluation_criteria": {
+    "description": "Criteria VEGA must evaluate for G2 approval",
+    "criteria": [
+      {
+        "criterion_id": "VEGA-G2-001",
+        "name": "ADR-021 Compliance",
+        "description": "Schema implements all requirements from ADR-021 Cognitive Engine Architecture",
+        "weight": "CRITICAL",
+        "pass_condition": "All 6 tables defined per ADR-021 Section 6.1"
+      },
+      {
+        "criterion_id": "VEGA-G2-002",
+        "name": "EC-020 SitC Compliance",
+        "description": "search_in_chain_events table implements SitC protocol requirements",
+        "weight": "CRITICAL",
+        "pass_condition": "All SitC fields present with correct types and constraints"
+      },
+      {
+        "criterion_id": "VEGA-G2-003",
+        "name": "EC-021 InForage Compliance",
+        "description": "information_foraging_paths table implements InForage protocol requirements",
+        "weight": "CRITICAL",
+        "pass_condition": "Scent score, context frame, and cost tracking implemented"
+      },
+      {
+        "criterion_id": "VEGA-G2-004",
+        "name": "EC-022 IKEA Compliance",
+        "description": "knowledge_boundaries table implements IKEA protocol requirements",
+        "weight": "CRITICAL",
+        "pass_condition": "Boundary classification, certainty, and violation detection implemented"
+      },
+      {
+        "criterion_id": "VEGA-G2-005",
+        "name": "ADR-011 Hash Chain Compliance",
+        "description": "All tables implement hash chain fields per Fortress Standard",
+        "weight": "CRITICAL",
+        "pass_condition": "hash_self, hash_prev, lineage_hash present on all tables"
+      },
+      {
+        "criterion_id": "VEGA-G2-006",
+        "name": "ADR-013 Governance Traceability",
+        "description": "All tables have source_document and governance_class fields",
+        "weight": "HIGH",
+        "pass_condition": "Governance fields present with NOT NULL constraints"
+      },
+      {
+        "criterion_id": "VEGA-G2-007",
+        "name": "ADR-016 DEFCON Integration",
+        "description": "DEFCON state tracking implemented where required",
+        "weight": "HIGH",
+        "pass_condition": "defcon_level field present on protocol and boundary tables"
+      },
+      {
+        "criterion_id": "VEGA-G2-008",
+        "name": "Index Strategy Appropriateness",
+        "description": "Indexes support expected query patterns without over-indexing",
+        "weight": "MEDIUM",
+        "pass_condition": "GIN for JSONB, B-tree for lookups, partial indexes for sparse data"
+      },
+      {
+        "criterion_id": "VEGA-G2-009",
+        "name": "ENUM Type Safety",
+        "description": "All enum fields use PostgreSQL ENUM types for type safety",
+        "weight": "MEDIUM",
+        "pass_condition": "cognitive_modality, boundary_type, protocol_status defined as ENUMs"
+      },
+      {
+        "criterion_id": "VEGA-G2-010",
+        "name": "Economic Safety Integration",
+        "description": "Cost tracking fields support ADR-012 economic safety requirements",
+        "weight": "HIGH",
+        "pass_condition": "budget_allocated_usd, budget_consumed_usd, estimated_cost_usd with NUMERIC type"
+      }
+    ]
+  },
+
+  "governance_hooks_interface": {
+    "description": "Interface for VEGA governance hooks in runtime",
+    "hooks": [
+      {
+        "hook_id": "VEGA_HOOK_001",
+        "name": "pre_insert_validation",
+        "trigger": "BEFORE INSERT",
+        "tables": ["ALL fhq_cognition tables"],
+        "actions": [
+          "Validate hash chain integrity",
+          "Validate enum constraints",
+          "Validate JSONB schema where applicable",
+          "Log to fhq_meta.adr_audit_log"
+        ]
+      },
+      {
+        "hook_id": "VEGA_HOOK_002",
+        "name": "catastrophic_alert_trigger",
+        "trigger": "AFTER INSERT OR UPDATE",
+        "tables": ["fhq_cognition.search_in_chain_events"],
+        "condition": "chain_integrity_score < 0.80",
+        "actions": [
+          "Insert CATASTROPHIC alert to fhq_governance.governance_alerts",
+          "Notify VEGA via governance_actions_log",
+          "Consider DEFCON escalation per ADR-016"
+        ]
+      },
+      {
+        "hook_id": "VEGA_HOOK_003",
+        "name": "boundary_violation_alert",
+        "trigger": "AFTER INSERT OR UPDATE",
+        "tables": ["fhq_cognition.knowledge_boundaries"],
+        "condition": "boundary_violation = true",
+        "actions": [
+          "Log hallucination attempt",
+          "Insert HIGH alert to fhq_governance.governance_alerts",
+          "Track in violation statistics"
+        ]
+      },
+      {
+        "hook_id": "VEGA_HOOK_004",
+        "name": "economic_ceiling_check",
+        "trigger": "BEFORE INSERT",
+        "tables": ["fhq_cognition.research_protocols", "fhq_cognition.information_foraging_paths"],
+        "condition": "cost exceeds ADR-012 ceiling",
+        "actions": [
+          "Reject insert if budget exceeded",
+          "Log to api_budget_log",
+          "Alert if approaching ceiling"
+        ]
+      }
+    ]
+  },
+
+  "attestation_workflow": {
+    "description": "Workflow for VEGA G2 attestation",
+    "steps": [
+      {
+        "step": 1,
+        "action": "STIG submits G1 deliverables",
+        "actor": "STIG",
+        "output": "All 5 input documents placed in specified locations"
+      },
+      {
+        "step": 2,
+        "action": "VEGA receives notification",
+        "actor": "SYSTEM",
+        "output": "G2 evaluation request logged in governance_actions_log"
+      },
+      {
+        "step": 3,
+        "action": "VEGA evaluates criteria",
+        "actor": "VEGA",
+        "output": "Evaluation results for all 10 criteria"
+      },
+      {
+        "step": 4,
+        "action": "VEGA issues attestation",
+        "actor": "VEGA",
+        "output": "G2_ATTESTATION with APPROVED/REJECTED/CONDITIONAL"
+      },
+      {
+        "step": 5,
+        "action": "Hash chain update",
+        "actor": "SYSTEM",
+        "output": "G2 validation hash chain entry created"
+      },
+      {
+        "step": 6,
+        "action": "Gate advancement",
+        "actor": "SYSTEM",
+        "output": "If APPROVED: ADR-021/EC-020/021/022 advanced to G2_VALIDATED status"
+      }
+    ]
+  },
+
+  "error_handling": {
+    "description": "Error conditions and handling for interface",
+    "errors": [
+      {
+        "error_code": "IFC-ERR-001",
+        "condition": "Missing input document",
+        "handling": "VEGA returns REJECTED with missing_documents list"
+      },
+      {
+        "error_code": "IFC-ERR-002",
+        "condition": "Schema proposal has syntax errors",
+        "handling": "VEGA returns REJECTED with syntax_errors list"
+      },
+      {
+        "error_code": "IFC-ERR-003",
+        "condition": "Field mapping inconsistent with schema",
+        "handling": "VEGA returns CONDITIONAL with inconsistencies list"
+      },
+      {
+        "error_code": "IFC-ERR-004",
+        "condition": "Critical criterion fails",
+        "handling": "VEGA returns REJECTED with failed_criteria list"
+      },
+      {
+        "error_code": "IFC-ERR-005",
+        "condition": "Non-critical criterion fails",
+        "handling": "VEGA returns CONDITIONAL with recommendations"
+      }
+    ]
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "This VEGA Interface Contract defines the complete input/output specification for G2 evaluation per CEO Directive G1 Section 2.4. All evaluation criteria, governance hooks, and attestation workflows are specified. Ready for VEGA acceptance.",
+    "timestamp": "2025-12-09T19:20:00.000Z"
+  }
+}

@@ -1,0 +1,178 @@
+================================================================================
+G3 PGVECTOR COMPATIBILITY VERIFICATION
+================================================================================
+Document ID: G3-PGVECTOR-COMPAT-20251209
+Created: 2025-12-09T20:10:00.000Z
+Created By: STIG (CTO)
+Authority: CEO Directive G3 2025-12-09 Section 2.3
+================================================================================
+
+SECTION 1: EXTENSION STATUS
+--------------------------------------------------------------------------------
+
+Extension Name: vector (pgvector)
+Installed Version: 0.8.0
+Default Version: 0.8.0
+Status: INSTALLED AND OPERATIONAL
+
+Verification Query Results:
+  pg_extension: vector | 0.8.0
+  pg_available_extensions: vector | 0.8.0 | 0.8.0
+  pg_type: vector (type exists)
+
+SECTION 2: BACKUP/RESTORE COMPATIBILITY (ADR-013)
+--------------------------------------------------------------------------------
+
+2.1 pg_dump Compatibility
+  - pgvector uses standard PostgreSQL extension mechanism
+  - pg_dump includes "CREATE EXTENSION vector" in dump
+  - VECTOR columns are dumped as array literals (e.g., '[0.1,0.2,0.3]')
+  - Restore requires pgvector extension to be available on target
+
+2.2 Backup Strategy
+  Recommended: Include in standard pg_dump with --extension flag
+
+  Command: pg_dump -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+           --extension=vector -F c -f backup.dump
+
+2.3 Restore Requirements
+  - Target database must have pgvector extension available
+  - Extension must be created before restoring VECTOR columns
+  - Supabase includes pgvector by default
+
+2.4 ADR-013 Compliance
+  - Extension is documented in fhq_meta schema
+  - Version tracked in system metadata
+  - No proprietary lock-in (open source extension)
+
+SECTION 3: EMBEDDING VECTOR HASHING STRATEGY (ADR-011)
+--------------------------------------------------------------------------------
+
+3.1 Challenge
+  VECTOR(1536) fields contain floating-point arrays.
+  Direct hashing of floats can be non-deterministic due to precision.
+
+3.2 Strategy: Canonical Serialization
+
+  Step 1: Serialize vector to fixed-precision string
+    - Round each dimension to 6 decimal places
+    - Join with commas, wrap in brackets
+    - Example: [0.123456,0.234567,0.345678,...]
+
+  Step 2: Compute SHA-256 of canonical string
+    - hash_embedding = SHA256(canonical_string)
+
+  Step 3: Include in row hash computation
+    - hash_self includes hash_embedding as one input
+    - Not the raw vector, but its canonical hash
+
+3.3 Implementation (Pseudo-SQL)
+
+  CREATE OR REPLACE FUNCTION canonical_vector_hash(v vector)
+  RETURNS TEXT AS $$
+  DECLARE
+    arr float[];
+    canonical text;
+  BEGIN
+    -- Convert vector to array
+    arr := v::float[];
+
+    -- Build canonical string with fixed precision
+    canonical := '[';
+    FOR i IN 1..array_length(arr, 1) LOOP
+      IF i > 1 THEN canonical := canonical || ','; END IF;
+      canonical := canonical || round(arr[i]::numeric, 6)::text;
+    END LOOP;
+    canonical := canonical || ']';
+
+    -- Return SHA-256 hash
+    RETURN encode(sha256(canonical::bytea), 'hex');
+  END;
+  $$ LANGUAGE plpgsql IMMUTABLE;
+
+3.4 ADR-011 Impact Assessment
+
+  Impact: LOW
+  - Vector hash is computed deterministically
+  - Included in hash_self computation
+  - Does not break existing hash chain logic
+  - Precision rounding prevents floating-point drift
+
+SECTION 4: COGNITIVE DOMAIN VECTOR FIELDS
+--------------------------------------------------------------------------------
+
+4.1 Fields Using VECTOR Type
+
+  Table: fhq_cognition.information_foraging_paths
+  Field: query_embedding
+  Type: VECTOR(1536)
+  Purpose: Semantic similarity for query deduplication
+
+  Table: fhq_cognition.knowledge_boundaries
+  Field: query_embedding
+  Type: VECTOR(1536)
+  Purpose: Semantic classification of knowledge queries
+
+4.2 Index Strategy for Vector Fields
+
+  Recommended Index: HNSW (Hierarchical Navigable Small World)
+
+  CREATE INDEX idx_forage_query_embedding
+    ON fhq_cognition.information_foraging_paths
+    USING hnsw (query_embedding vector_cosine_ops);
+
+  CREATE INDEX idx_boundaries_query_embedding
+    ON fhq_cognition.knowledge_boundaries
+    USING hnsw (query_embedding vector_cosine_ops);
+
+  Parameters:
+    - m = 16 (connections per layer)
+    - ef_construction = 64 (build-time accuracy)
+
+  Note: HNSW indexes are NOT included in FINAL_MIGRATION_SCRIPT.sql
+        Vector indexes should be created post-G4 during optimization phase.
+
+SECTION 5: CONSTRAINT: NO EMBEDDINGS IN G3/G4
+--------------------------------------------------------------------------------
+
+Per CEO Directive G3 Section 2.3:
+  "Ingen embeddings skal genereres, kun infrastrukturen verifiseres."
+
+This means:
+  - VECTOR columns will be created with NULL values initially
+  - No embedding generation code will be executed
+  - query_embedding fields are nullable in schema
+  - Embedding infrastructure is READY but DORMANT
+
+Activation of embeddings requires separate CEO directive post-G4.
+
+SECTION 6: VERIFICATION CHECKLIST
+--------------------------------------------------------------------------------
+
+[X] pgvector extension installed (v0.8.0)
+[X] VECTOR type available in database
+[X] Backup/restore strategy documented
+[X] Hashing strategy for ADR-011 defined
+[X] No existing backup routines broken
+[X] Index strategy defined (not implemented)
+[X] Embedding generation PROHIBITED per directive
+
+SECTION 7: CERTIFICATION
+--------------------------------------------------------------------------------
+
+I, STIG, as Chief Technology Officer, certify that:
+
+1. pgvector extension (v0.8.0) is installed and operational
+2. VECTOR type can be used in fhq_cognition schema
+3. Backup/restore compatibility is maintained per ADR-013
+4. ADR-011 hash chain integrity is preserved via canonical serialization
+5. No embeddings will be generated in G3/G4 per directive
+
+Signed: STIG
+Role: Chief Technology Officer
+Employment Contract: EC-003_2026_PRODUCTION
+Timestamp: 2025-12-09T20:10:00.000Z
+
+================================================================================
+END OF PGVECTOR COMPATIBILITY NOTE
+================================================================================

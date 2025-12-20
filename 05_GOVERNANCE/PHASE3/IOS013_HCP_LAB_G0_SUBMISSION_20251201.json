@@ -1,0 +1,169 @@
+{
+  "artifact_type": "G0_SUBMISSION",
+  "ios_id": "IoS-013.HCP-LAB",
+  "title": "High-Convexity Options Laboratory",
+  "version": "2026.LAB.G0",
+  "submission_date": "2025-12-01T22:41:00Z",
+  "submitted_by": "STIG",
+  "authority": "CEO_DIRECTIVE",
+
+  "mission": {
+    "statement": "Funding the Escape Velocity",
+    "core_principle": "Small capital requires convexity, not leverage",
+    "objectives": [
+      "Identify strategies with extreme asymmetry (High Convexity)",
+      "Test and validate Gamma (acceleration) and Vega (explosion) plays",
+      "Scale small capital aggressively through synthetic research"
+    ]
+  },
+
+  "operational_parameters": {
+    "synthetic_identity": {
+      "domain": "fhq_positions.synthetic_lab_nav",
+      "initial_state_usd": 100000,
+      "isolation": "No flow of data or risk against production_nav"
+    },
+    "allocation_exposure": {
+      "nav_cap": "REMOVED - 100% allocation permitted",
+      "otm_limits": "REMOVED - Delta < 10 (Deep OTM) permitted"
+    },
+    "advanced_structures": [
+      "Ratio Backspreads (Sell 1 ATM / Buy 2 OTM)",
+      "Calendar Spreads (Term Structure plays)",
+      "Vol-Crush Plays (Short Straddles with wings required)"
+    ],
+    "adr012_partial_suspension": {
+      "suspended": [
+        "Capital Preservation Protocol",
+        "Max Drawdown checks",
+        "Risk of Ruin checks"
+      ],
+      "acceptance": "synthetic_lab_nav may go to 0",
+      "active": [
+        "Operational Safety Protocol",
+        "API cost limits",
+        "Rate limits",
+        "Infinite-loop protections"
+      ]
+    }
+  },
+
+  "intelligence_chain": {
+    "precedence_matrix": {
+      "rule": "IoS-007 (Causal) > IoS-003 (Regime)",
+      "matrix": [
+        {
+          "ios003_price_regime": "BULL",
+          "ios007_liquidity_state": "EXPANDING",
+          "action": "AGGRESSIVE_LONG_CALL",
+          "rationale": "Trend + Fuel aligned"
+        },
+        {
+          "ios003_price_regime": "BULL",
+          "ios007_liquidity_state": "CONTRACTING",
+          "action": "LONG_PUT_OR_BACKSPREAD",
+          "rationale": "Divergence = Crash Risk (High Convexity)"
+        },
+        {
+          "ios003_price_regime": "BEAR",
+          "ios007_liquidity_state": "CONTRACTING",
+          "action": "BEAR_PUT_SPREAD",
+          "rationale": "Trend + Fuel aligned"
+        },
+        {
+          "ios003_price_regime": "BEAR",
+          "ios007_liquidity_state": "EXPANDING",
+          "action": "CALL_BACKSPREAD",
+          "rationale": "Melt-up risk (Short squeeze)"
+        }
+      ]
+    },
+    "deepseek_premortem": {
+      "requirement": "RiskEnvelope must pass before execution",
+      "prompt": "Simulate 3 scenarios for total loss. Calculate Vol-Crush probability.",
+      "hash_chain": "Required per ADR-011"
+    }
+  },
+
+  "dependencies": {
+    "required": [
+      {
+        "ios_id": "IoS-003",
+        "purpose": "Regime classification (BULL/BEAR)"
+      },
+      {
+        "ios_id": "IoS-005",
+        "purpose": "Skill validation and calibration"
+      },
+      {
+        "ios_id": "IoS-007",
+        "purpose": "Causal signals and liquidity state"
+      },
+      {
+        "ios_id": "IoS-012",
+        "purpose": "Paper mode execution (synthetic_lab_nav target)"
+      }
+    ]
+  },
+
+  "governing_adrs": [
+    "ADR-001",
+    "ADR-002",
+    "ADR-003",
+    "ADR-004",
+    "ADR-011",
+    "ADR-012-PARTIAL",
+    "ADR-013",
+    "ADR-016"
+  ],
+
+  "output_artifacts": {
+    "structure_plan_hcp": "Options structure (Legs, Strikes, Expiry)",
+    "risk_envelope": "Stress-test report (Hash-chained)",
+    "lab_journal": "Immutable log of synthetic_lab_nav evolution"
+  },
+
+  "infrastructure_created": {
+    "tables": [
+      "fhq_positions.synthetic_lab_nav",
+      "fhq_positions.lab_journal",
+      "fhq_positions.structure_plan_hcp",
+      "fhq_positions.risk_envelope_hcp",
+      "fhq_positions.hcp_precedence_matrix"
+    ],
+    "migration": "061_ios013_hcp_lab_g0.sql",
+    "initial_nav": {
+      "amount": 100000.00,
+      "currency": "Virtual USD",
+      "isolation_hash": "ffb72dd94ce92c56bc1aac765f58116233424e8a42c4ef8d8e5bd34cc26b7904"
+    }
+  },
+
+  "governance_state": {
+    "current": "G0_SUBMITTED",
+    "next_gate": "G1_TECHNICAL_VALIDATION",
+    "g1_requirements": [
+      "VEGA review of ADR-012 partial suspension",
+      "Schema freeze attestation",
+      "Risk isolation verification"
+    ]
+  },
+
+  "acceptance_criteria": {
+    "audit_resolution": [
+      "LAB capital isolated (synthetic_lab_nav)",
+      "ADR-012 suspension specified (Capital Preservation only, not Operational)",
+      "Deterministic hierarchy defined (Causal > Regime)"
+    ]
+  },
+
+  "authorization": {
+    "execute": "IoS-013.HCP-LAB G1",
+    "mode": "SYNTHETIC / UNRESTRICTED RESEARCH",
+    "authorized_by": "CEO",
+    "implemented_by": "STIG"
+  },
+
+  "content_hash": "fb6e7c157e1d2ba3acc984c25d4b5c3426ea87ea400ff51b8a92b9239f18b75c",
+  "hash_chain_id": "HC-HCP-LAB-G0-20251201"
+}

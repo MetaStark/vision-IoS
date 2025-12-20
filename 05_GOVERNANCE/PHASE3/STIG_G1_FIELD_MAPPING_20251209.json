@@ -1,0 +1,277 @@
+{
+  "document_type": "G1_CANONICAL_FIELD_SPECIFICATION",
+  "document_id": "STIG-G1-FIELD-MAP-20251209",
+  "version": "1.0",
+  "created_at": "2025-12-09T19:00:00.000Z",
+  "created_by": "STIG (CTO)",
+  "authority": "CEO Directive G1 2025-12-09 §2.2",
+  "purpose": "Canonical Field Specification (Cognitive Mapping Layer) - Foundation for VEGA G2 evaluation",
+
+  "field_specifications": [
+    {
+      "logical_field": "cognitive_node_id",
+      "physical_type": "UUID",
+      "adr_reference": "ADR-020 §6",
+      "table": "fhq_cognition.cognitive_nodes",
+      "nullable": false,
+      "hash_anchored": true,
+      "notes": "Primary key. Must be hash-anchored per ADR-020 §6. Generated via gen_random_uuid()."
+    },
+    {
+      "logical_field": "modality",
+      "physical_type": "TEXT (ENUM: cognitive_modality)",
+      "adr_reference": "EC-020 §3",
+      "table": "fhq_cognition.cognitive_nodes",
+      "nullable": false,
+      "enum_values": ["perception", "causal", "intent", "search", "verification", "synthesis"],
+      "notes": "Node type classification per EC-020 §3. Determines processing pipeline."
+    },
+    {
+      "logical_field": "causal_links",
+      "physical_type": "JSONB",
+      "adr_reference": "EC-020 §4",
+      "table": "fhq_cognition.cognitive_nodes",
+      "nullable": false,
+      "default": "[]::jsonb",
+      "vector_embedding_ready": true,
+      "notes": "Must support future vector embedding per EC-020 §4. Stores array of causal relationships."
+    },
+    {
+      "logical_field": "search_depth",
+      "physical_type": "INT",
+      "adr_reference": "EC-020 (SitC)",
+      "table": "fhq_cognition.search_in_chain_events",
+      "nullable": false,
+      "constraint": "CHECK (search_depth >= 0)",
+      "notes": "SitC chain depth. Must be non-negative. Validated ≥0."
+    },
+    {
+      "logical_field": "boundary_type",
+      "physical_type": "TEXT (ENUM: boundary_type)",
+      "adr_reference": "EC-022 (IKEA)",
+      "table": "fhq_cognition.knowledge_boundaries",
+      "nullable": false,
+      "enum_values": ["PARAMETRIC", "EXTERNAL_REQUIRED", "HYBRID"],
+      "notes": "IKEA classification result per EC-022 §2. Enum-bound for data integrity."
+    },
+    {
+      "logical_field": "attention_weight",
+      "physical_type": "FLOAT8",
+      "adr_reference": "ADR-021",
+      "table": "fhq_cognition.cognitive_nodes",
+      "nullable": false,
+      "default": 0.5,
+      "constraint": "CHECK (attention_weight >= 0 AND attention_weight <= 1)",
+      "notes": "Must be normalized 0-1 per ADR-021. Determines node priority in attention mechanism."
+    },
+    {
+      "logical_field": "context_frame",
+      "physical_type": "JSONB",
+      "adr_reference": "EC-021 (InForage)",
+      "table": "fhq_cognition.information_foraging_paths",
+      "nullable": false,
+      "default": "{}::jsonb",
+      "bcbs_239_compliant": true,
+      "notes": "BCBS-239 lineage required per CEO directive. Stores search context and provenance."
+    },
+    {
+      "logical_field": "lineage_hash",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-011",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "hash_chain_required": true,
+      "notes": "Full hashing chain per ADR-011 Fortress Standard. SHA-256 of concatenated previous hashes."
+    },
+    {
+      "logical_field": "hash_self",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-011",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "hash_chain_required": true,
+      "notes": "SHA-256 hash of current row data. Part of ADR-011 hash chain."
+    },
+    {
+      "logical_field": "hash_prev",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-011",
+      "table": "ALL TABLES",
+      "nullable": true,
+      "hash_chain_required": true,
+      "notes": "Reference to previous row's hash_self. NULL for genesis entries."
+    },
+    {
+      "logical_field": "source_document",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-013",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "notes": "ADR/EC reference for governance traceability. Required for ADR-013 compliance."
+    },
+    {
+      "logical_field": "governance_class",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-013",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "notes": "Governance classification (e.g., 'RESEARCH-METHOD', 'CONSTITUTIONAL-RESEARCH')."
+    },
+    {
+      "logical_field": "created_at",
+      "physical_type": "TIMESTAMPTZ",
+      "adr_reference": "ADR-002",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "default": "NOW()",
+      "notes": "Record creation timestamp. Required for audit trail per ADR-002."
+    },
+    {
+      "logical_field": "ingested_at",
+      "physical_type": "TIMESTAMPTZ",
+      "adr_reference": "ADR-002",
+      "table": "ALL TABLES",
+      "nullable": false,
+      "default": "NOW()",
+      "notes": "Data ingestion timestamp. May differ from created_at for bulk loads."
+    },
+    {
+      "logical_field": "scent_score",
+      "physical_type": "NUMERIC(5,4)",
+      "adr_reference": "EC-021 §4.1",
+      "table": "fhq_cognition.information_foraging_paths",
+      "nullable": false,
+      "constraint": "CHECK (scent_score >= 0 AND scent_score <= 1)",
+      "notes": "Predicted information value per EC-021 §4.1. Range 0.0-1.0."
+    },
+    {
+      "logical_field": "internal_certainty",
+      "physical_type": "NUMERIC(5,4)",
+      "adr_reference": "EC-022 §4.2",
+      "table": "fhq_cognition.knowledge_boundaries",
+      "nullable": false,
+      "constraint": "CHECK (internal_certainty >= 0 AND internal_certainty <= 1)",
+      "notes": "Model confidence in internal knowledge per EC-022 §4.2. Range 0.0-1.0."
+    },
+    {
+      "logical_field": "chain_integrity_score",
+      "physical_type": "NUMERIC(5,4)",
+      "adr_reference": "EC-020 §8",
+      "table": "fhq_cognition.search_in_chain_events",
+      "nullable": true,
+      "notes": "Per EC-020 §8: verified_nodes / total_nodes. Score < 0.80 triggers CATASTROPHIC alert."
+    },
+    {
+      "logical_field": "volatility_class",
+      "physical_type": "TEXT",
+      "adr_reference": "EC-022 §4.3",
+      "table": "fhq_cognition.knowledge_boundaries",
+      "nullable": true,
+      "enum_values": ["EXTREME", "HIGH", "MEDIUM", "LOW", "STATIC"],
+      "notes": "Data volatility classification per EC-022 §4.3 volatility map."
+    },
+    {
+      "logical_field": "defcon_level",
+      "physical_type": "TEXT",
+      "adr_reference": "ADR-016",
+      "table": "fhq_cognition.knowledge_boundaries, fhq_cognition.research_protocols",
+      "nullable": false,
+      "default": "GREEN",
+      "notes": "DEFCON state at time of operation. Per ADR-016 integration."
+    },
+    {
+      "logical_field": "boundary_violation",
+      "physical_type": "BOOLEAN",
+      "adr_reference": "EC-022 §7",
+      "table": "fhq_cognition.knowledge_boundaries",
+      "nullable": false,
+      "default": false,
+      "notes": "True if EXTERNAL_REQUIRED but output attempted without retrieval. Hallucination detection."
+    },
+    {
+      "logical_field": "reflexive_trigger",
+      "physical_type": "BOOLEAN",
+      "adr_reference": "EC-022",
+      "table": "fhq_cognition.knowledge_boundaries",
+      "nullable": true,
+      "default": false,
+      "sparse": true,
+      "notes": "Sparse field for reflexive classification cases. Partial index candidate."
+    }
+  ],
+
+  "table_field_summary": {
+    "fhq_cognition.cognitive_nodes": {
+      "total_fields": 16,
+      "required_fields": ["cognitive_node_id", "node_code", "node_name", "modality", "attention_weight", "causal_links", "source_document", "governance_class", "hash_self", "lineage_hash", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": ["causal_links"]
+    },
+    "fhq_cognition.research_protocols": {
+      "total_fields": 22,
+      "required_fields": ["protocol_id", "protocol_code", "protocol_name", "protocol_type", "status", "primary_engine", "budget_allocated_usd", "defcon_at_creation", "defcon_current", "source_document", "governance_class", "initiating_agent", "hash_self", "lineage_hash", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": []
+    },
+    "fhq_cognition.search_in_chain_events": {
+      "total_fields": 20,
+      "required_fields": ["sitc_event_id", "protocol_id", "node_index", "node_type", "verification_status", "search_depth", "source_document", "governance_class", "hash_self", "lineage_hash", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": ["verification_evidence"]
+    },
+    "fhq_cognition.information_foraging_paths": {
+      "total_fields": 21,
+      "required_fields": ["forage_id", "protocol_id", "search_query", "scent_score", "estimated_cost_usd", "source_tier", "context_frame", "source_document", "governance_class", "hash_self", "lineage_hash", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": ["scent_components", "context_frame"]
+    },
+    "fhq_cognition.knowledge_boundaries": {
+      "total_fields": 23,
+      "required_fields": ["boundary_id", "query_text", "boundary_type", "classification_confidence", "internal_certainty", "certainty_threshold", "volatility_flag", "retrieval_triggered", "boundary_violation", "decision_rationale", "defcon_level", "source_document", "governance_class", "hash_self", "lineage_hash", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": []
+    },
+    "fhq_cognition.lineage_log": {
+      "total_fields": 14,
+      "required_fields": ["lineage_id", "target_table", "target_id", "sequence_number", "hash_self", "lineage_hash", "operation_type", "operation_agent", "source_document", "governance_class", "created_at", "ingested_at"],
+      "hash_chain_fields": ["hash_self", "hash_prev", "lineage_hash"],
+      "jsonb_fields": ["evidence_bundle"]
+    }
+  },
+
+  "cross_document_coherence": {
+    "adr_021_coverage": {
+      "cecf_1_authority_hierarchy": "Mapped via governance_class and owner_agent fields",
+      "cecf_2_activation_model": "Mapped via protocol status state machine",
+      "cecf_5_economic_safety": "Mapped via budget_allocated_usd, budget_consumed_usd",
+      "cecf_6_discrepancy_scoring": "Mapped via chain_integrity_score, boundary_violation",
+      "cecf_7_evidence_requirements": "Mapped via evidence_bundle in lineage_log"
+    },
+    "ec_020_sitc_coverage": {
+      "chain_of_query": "search_in_chain_events table",
+      "node_verification": "verification_status, chain_integrity_score",
+      "plan_revision": "revision_count, nodes_invalidated",
+      "search_depth": "search_depth field with >= 0 constraint"
+    },
+    "ec_021_inforage_coverage": {
+      "scent_score": "information_foraging_paths.scent_score",
+      "adaptive_termination": "termination_reason enum",
+      "budget_management": "estimated_cost_usd, actual_cost_usd",
+      "context_frame": "BCBS-239 compliant JSONB field"
+    },
+    "ec_022_ikea_coverage": {
+      "query_classification": "boundary_type enum",
+      "uncertainty_quantification": "internal_certainty, classification_confidence",
+      "volatility_flagging": "volatility_flag, volatility_class",
+      "boundary_violation": "boundary_violation, hallucination_attempt fields"
+    }
+  },
+
+  "certification": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "This Field Mapping Document provides complete technical specification for all Cognitive Domain fields per CEO Directive G1 §2.2. All fields have defined physical types, ADR references, and governance bindings. Ready for VEGA G2 evaluation.",
+    "timestamp": "2025-12-09T19:00:00.000Z"
+  }
+}

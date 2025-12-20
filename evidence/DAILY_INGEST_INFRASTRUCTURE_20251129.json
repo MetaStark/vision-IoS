@@ -1,0 +1,99 @@
+{
+  "operation": "DAILY_INGEST_INFRASTRUCTURE",
+  "timestamp": "2025-11-29T02:31:00Z",
+  "authority": {
+    "adrs": ["ADR-013", "ADR-007", "ADR-002"],
+    "ios_ref": "IoS-001"
+  },
+  "owner": "STIG",
+  "status": "OPERATIONAL",
+
+  "pipeline": {
+    "name": "DAILY_OHLCV_INGEST",
+    "schedule": "5 0 * * * (00:05 UTC daily)",
+    "assets": ["BTC-USD", "ETH-USD", "SOL-USD", "EURUSD"],
+    "source": "yfinance",
+    "stages": [
+      {"name": "FETCH_PRICES", "owner": "LINE", "executor": "CODE"},
+      {"name": "GAP_DETECTION", "owner": "CODE", "executor": "CODE"},
+      {"name": "BACKFILL", "owner": "CODE", "executor": "CODE"},
+      {"name": "STAGING", "owner": "CODE", "target": "fhq_market.staging_prices"},
+      {"name": "RECONCILE", "owner": "VEGA", "executor": "VEGA"},
+      {"name": "CANONICALIZE", "owner": "STIG", "target": "fhq_market.prices"}
+    ]
+  },
+
+  "database_infrastructure": {
+    "schema": "fhq_market",
+    "tables": {
+      "staging_prices": {
+        "purpose": "Raw ingested OHLCV data before validation",
+        "rows": 11187
+      },
+      "prices": {
+        "purpose": "Canonical validated OHLCV data",
+        "rows": 11187
+      },
+      "data_gaps": {
+        "purpose": "Track detected and filled gaps"
+      },
+      "ingest_schedule": {
+        "purpose": "Daily schedule configuration"
+      },
+      "ingestion_batches": {
+        "purpose": "Batch lineage tracking"
+      },
+      "reconciliation_log": {
+        "purpose": "VEGA reconciliation decisions"
+      }
+    }
+  },
+
+  "data_quality": {
+    "idempotent_ingest": true,
+    "auto_gap_detection": true,
+    "auto_backfill": true,
+    "row_level_hashing": true,
+    "batch_level_hashing": true
+  },
+
+  "audit_integration": {
+    "ios_audit_log": true,
+    "task_registry": true,
+    "governance_actions_log": true
+  },
+
+  "current_state": {
+    "staging_rows": 11187,
+    "canonical_rows": 11187,
+    "date_range": {
+      "start": "2015-12-02",
+      "end": "2025-11-28"
+    },
+    "assets": {
+      "BTC-USD": {"rows": 3650, "start": "2015-12-02"},
+      "ETH-USD": {"rows": 2942, "start": "2017-11-09"},
+      "SOL-USD": {"rows": 2059, "start": "2020-04-10"},
+      "EURUSD": {"rows": 2536, "start": "2015-12-02"}
+    }
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/022_genesis_ingestion_infrastructure.sql",
+    "04_DATABASE/MIGRATIONS/023_daily_ingestion_infrastructure.sql",
+    "03_FUNCTIONS/pipeline_ingest_history_v1.py",
+    "03_FUNCTIONS/daily_ingest_worker.py",
+    "05_ORCHESTRATOR/daily_ingest_config.json",
+    "scripts/setup_daily_ingest_task.ps1",
+    "scripts/canonicalize_staging_data.py"
+  ],
+
+  "next_scheduled_run": "2025-11-30T00:05:00Z",
+
+  "usage": {
+    "manual_run": "python 03_FUNCTIONS/daily_ingest_worker.py --full-pipeline",
+    "install_scheduler": ".\\scripts\\setup_daily_ingest_task.ps1 -Install",
+    "check_status": ".\\scripts\\setup_daily_ingest_task.ps1 -Status",
+    "trigger_now": ".\\scripts\\setup_daily_ingest_task.ps1 -RunNow"
+  }
+}

@@ -1,0 +1,353 @@
+{
+  "evidence_type": "REMEDIATION_PLAN",
+  "ios_id": "IoS-012",
+  "title": "Execution Engine — Constitutional Violation Remediation Plan",
+  "plan_id": "STIG-IOS012-REMEDIATION-20251201",
+  "plan_timestamp": "2025-12-01T20:15:00.000Z",
+  "plan_date": "2025-12-01",
+
+  "authority": {
+    "ordered_by": "CEO",
+    "technical_lead": "STIG (CTO)",
+    "governance_oversight": "VEGA",
+    "mandate_reference": "CEO Mandate — G4 Conditional Activation & Remediation Order"
+  },
+
+  "violations_to_remediate": [
+    {
+      "id": "CV-001",
+      "severity": "CRITICAL",
+      "adr": "ADR-008",
+      "description": "No Ed25519 signature validation for execution mandates"
+    },
+    {
+      "id": "CV-002",
+      "severity": "CRITICAL",
+      "adr": "ADR-012",
+      "description": "No ExecutionGuard pattern to verify execution authority"
+    },
+    {
+      "id": "HV-001",
+      "severity": "HIGH",
+      "adr": "ADR-013",
+      "description": "No IoS-008 source mandate enforcement for signals"
+    },
+    {
+      "id": "HV-002",
+      "severity": "HIGH",
+      "adr": "ADR-016",
+      "description": "No DEFCON circuit breaker integration"
+    }
+  ],
+
+  "remediation_1_ed25519_signatures": {
+    "violation_id": "CV-001",
+    "adr_reference": "ADR-008",
+    "title": "Ed25519 Signature Validation",
+
+    "objective": "Implement mandatory cryptographic signature verification for all execution mandates. Reject unsigned or invalid mandates.",
+
+    "implementation_plan": {
+      "location": "trade_engine/guards.py (NEW FILE)",
+      "components": [
+        {
+          "name": "SignatureValidator",
+          "purpose": "Verify Ed25519 signatures on execution mandates",
+          "interface": "ed25519_verify(payload: bytes, signature: bytes, pub_key: bytes) -> bool"
+        },
+        {
+          "name": "MandateEnvelope",
+          "purpose": "Wrapper for signed execution mandates",
+          "fields": ["payload", "signature", "signer_id", "timestamp"]
+        },
+        {
+          "name": "verify_mandate_signature()",
+          "purpose": "Top-level validation function",
+          "raises": "InvalidSignatureError on failure"
+        }
+      ],
+      "integration_points": [
+        "engine.py:run_trade_engine() — Add signature verification before processing",
+        "models.py:SignalSnapshot — Add optional signature field"
+      ]
+    },
+
+    "acceptance_criteria": [
+      "All incoming mandates must be signed",
+      "Invalid signatures raise InvalidSignatureError",
+      "Missing signatures raise MissingSignatureError",
+      "Signature validation logged to governance table",
+      "Key lookup via fhq_governance.agent_keys registry"
+    ],
+
+    "test_cases": [
+      "Valid signature → proceed to execution",
+      "Invalid signature → raise InvalidSignatureError",
+      "Missing signature → raise MissingSignatureError",
+      "Expired key → raise ExpiredKeyError",
+      "Unknown signer → raise UnknownSignerError"
+    ],
+
+    "dependencies": [
+      "nacl (PyNaCl) or ed25519 library",
+      "fhq_governance.agent_keys table access"
+    ],
+
+    "estimated_effort": "4-6 hours implementation + 2 hours testing"
+  },
+
+  "remediation_2_execution_guard": {
+    "violation_id": "CV-002",
+    "adr_reference": "ADR-012",
+    "title": "ExecutionGuard Pattern",
+
+    "objective": "Implement comprehensive execution authority validation. Execution must not be possible without explicit authorization context.",
+
+    "implementation_plan": {
+      "location": "trade_engine/guards.py",
+      "components": [
+        {
+          "name": "ExecutionGuard",
+          "purpose": "Gate all execution through mandatory validation",
+          "interface": "ExecutionGuard.validate(context: ExecutionContext) -> ValidationResult"
+        },
+        {
+          "name": "ExecutionContext",
+          "purpose": "Container for all authorization context",
+          "fields": [
+            "mandate_source",
+            "mandate_signature",
+            "execution_mode (PAPER/LIVE)",
+            "defcon_level",
+            "lineage_hash",
+            "timestamp"
+          ]
+        },
+        {
+          "name": "ValidationResult",
+          "purpose": "Result of guard validation",
+          "fields": ["authorized", "reason", "constraints"]
+        }
+      ],
+      "validation_sequence": [
+        "1. validate_authority() — Check execution permission",
+        "2. validate_mandate_source() — Verify IoS-008 origin",
+        "3. validate_defcon_state() — Check DEFCON level",
+        "4. validate_lineage_hash() — Verify data lineage"
+      ]
+    },
+
+    "acceptance_criteria": [
+      "No execution without ExecutionGuard.validate() returning authorized=True",
+      "All four validation steps must pass",
+      "Failed validation raises ExecutionDeniedError with reason",
+      "Guard validation logged to governance table"
+    ],
+
+    "test_cases": [
+      "Valid context → authorized=True",
+      "Missing authority → ExecutionDeniedError",
+      "Wrong mandate source → ExecutionDeniedError",
+      "DEFCON > 3 → ExecutionDeniedError",
+      "Invalid lineage → ExecutionDeniedError"
+    ],
+
+    "dependencies": [
+      "fhq_governance.paper_execution_authority table",
+      "fhq_monitoring.defcon_level table",
+      "Remediation 1 (CV-001) for signature validation"
+    ],
+
+    "estimated_effort": "6-8 hours implementation + 3 hours testing"
+  },
+
+  "remediation_3_ios008_mandate": {
+    "violation_id": "HV-001",
+    "adr_reference": "ADR-013",
+    "title": "IoS-008 Source Mandate Enforcement",
+
+    "objective": "Hard rule: signals must originate from IoS-008 Runtime Decision Engine. Reject all other sources.",
+
+    "implementation_plan": {
+      "location": "trade_engine/guards.py",
+      "components": [
+        {
+          "name": "MandateSourceValidator",
+          "purpose": "Validate signal origin",
+          "interface": "validate_mandate_source(signal: SignalSnapshot) -> bool"
+        },
+        {
+          "name": "ConstitutionalError",
+          "purpose": "Exception for constitutional violations",
+          "raised_when": "source_module != 'IoS-008'"
+        }
+      ],
+      "implementation_logic": {
+        "code_pattern": "if source_module != 'IoS-008': raise ConstitutionalError('Only IoS-008 mandates accepted')",
+        "placement": "Top of execution path in run_trade_engine()"
+      }
+    },
+
+    "acceptance_criteria": [
+      "Only signals with source_module='IoS-008' accepted",
+      "All other sources raise ConstitutionalError",
+      "Source validation logged to governance table",
+      "PAPER mode: signals must include override_source='CEO_TEMPORARY_AUTH'"
+    ],
+
+    "test_cases": [
+      "IoS-008 signal → proceed",
+      "IoS-005 signal → ConstitutionalError",
+      "Unknown source → ConstitutionalError",
+      "PAPER mode without override tag → ConstitutionalError"
+    ],
+
+    "dependencies": [
+      "models.py:SignalSnapshot — Add source_module field",
+      "fhq_governance.ios008_mandate_authority table"
+    ],
+
+    "estimated_effort": "2-3 hours implementation + 1 hour testing"
+  },
+
+  "remediation_4_defcon_integration": {
+    "violation_id": "HV-002",
+    "adr_reference": "ADR-016",
+    "title": "DEFCON Circuit Breaker Integration",
+
+    "objective": "Connect IoS-012 execution to DEFCON system. Block execution when defcon_level > 3.",
+
+    "implementation_plan": {
+      "location": "trade_engine/guards.py",
+      "components": [
+        {
+          "name": "DefconGuard",
+          "purpose": "Check DEFCON level before execution",
+          "interface": "check_defcon_level() -> int"
+        },
+        {
+          "name": "DefconBlockError",
+          "purpose": "Exception when DEFCON blocks execution",
+          "raised_when": "defcon_level > 3"
+        }
+      ],
+      "implementation_logic": {
+        "code_pattern": "if defcon_level > 3: block_execution(reason='ADR-016 Safety Lock')",
+        "defcon_source": "fhq_monitoring.defcon_level table"
+      },
+      "defcon_levels": {
+        "DEFCON-5": "Normal operations — execution allowed",
+        "DEFCON-4": "Elevated caution — execution allowed with logging",
+        "DEFCON-3": "High alert — execution allowed, enhanced monitoring",
+        "DEFCON-2": "Severe — execution BLOCKED",
+        "DEFCON-1": "Critical — all operations HALTED"
+      }
+    },
+
+    "acceptance_criteria": [
+      "DEFCON level checked before every execution",
+      "DEFCON > 3 blocks execution with DefconBlockError",
+      "DEFCON checks logged to governance table",
+      "Fallback: if DEFCON check fails, assume DEFCON-2 (fail-safe)"
+    ],
+
+    "test_cases": [
+      "DEFCON-5 → proceed",
+      "DEFCON-4 → proceed with enhanced logging",
+      "DEFCON-3 → proceed with enhanced monitoring",
+      "DEFCON-2 → DefconBlockError",
+      "DEFCON-1 → DefconBlockError",
+      "DEFCON check failure → assume DEFCON-2, block"
+    ],
+
+    "dependencies": [
+      "fhq_monitoring.defcon_level table (READ access)",
+      "Database connection for DEFCON lookup"
+    ],
+
+    "estimated_effort": "3-4 hours implementation + 2 hours testing"
+  },
+
+  "implementation_order": [
+    {
+      "phase": 1,
+      "remediation": "HV-001",
+      "title": "IoS-008 Source Mandate",
+      "rationale": "Simplest implementation, provides foundation for other guards"
+    },
+    {
+      "phase": 2,
+      "remediation": "HV-002",
+      "title": "DEFCON Integration",
+      "rationale": "Independent of signature validation, critical safety feature"
+    },
+    {
+      "phase": 3,
+      "remediation": "CV-001",
+      "title": "Ed25519 Signatures",
+      "rationale": "Requires external library, more complex"
+    },
+    {
+      "phase": 4,
+      "remediation": "CV-002",
+      "title": "ExecutionGuard Pattern",
+      "rationale": "Depends on all other remediations, integration layer"
+    }
+  ],
+
+  "new_files_required": [
+    {
+      "file": "trade_engine/guards.py",
+      "purpose": "All guard implementations (ExecutionGuard, SignatureValidator, MandateSourceValidator, DefconGuard)",
+      "estimated_lines": 300
+    },
+    {
+      "file": "trade_engine/exceptions.py",
+      "purpose": "Add new exceptions (existing file, modify)",
+      "new_exceptions": ["ConstitutionalError", "InvalidSignatureError", "MissingSignatureError", "ExecutionDeniedError", "DefconBlockError"]
+    }
+  ],
+
+  "migration_required": {
+    "file": "04_DATABASE/MIGRATIONS/061_ios012_guard_infrastructure.sql",
+    "purpose": "Create guard logging tables and DEFCON access views"
+  },
+
+  "total_estimated_effort": {
+    "implementation": "15-21 hours",
+    "testing": "8-10 hours",
+    "vega_review": "2-4 hours",
+    "total": "25-35 hours"
+  },
+
+  "success_criteria_for_live": [
+    "All four remediations implemented and tested",
+    "VEGA re-certification with G4_PASS",
+    "CEO signature for LIVE activation",
+    "Multi-year backtest completed (per ADR-012)",
+    "Economic risk dossier approved"
+  ],
+
+  "governance_actions": {
+    "remediation_tracking": {
+      "table": "fhq_governance.constitutional_violations",
+      "update_on_completion": "remediation_status = 'COMPLETED', resolved_at = NOW(), resolved_by = 'STIG'"
+    },
+    "governance_log": {
+      "table": "fhq_governance.governance_actions_log",
+      "action_type": "REMEDIATION_PLAN_SUBMITTED",
+      "action_target": "IoS-012"
+    }
+  },
+
+  "signatures": {
+    "stig_signature": {
+      "agent": "STIG",
+      "role": "CTO",
+      "employment_contract": "EC-003",
+      "action": "Remediation Plan Submitted",
+      "signed_at": "2025-12-01T20:15:00.000Z",
+      "commitment": "I commit to implementing all four remediations in the specified order. LIVE activation blocked until VEGA re-certification."
+    }
+  }
+}

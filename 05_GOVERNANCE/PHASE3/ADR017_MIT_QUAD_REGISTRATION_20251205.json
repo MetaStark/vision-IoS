@@ -1,0 +1,193 @@
+{
+  "evidence_type": "ADR_CONSTITUTIONAL_REGISTRATION",
+  "adr_id": "ADR-017",
+  "adr_title": "The MIT Quad Protocol for Alpha Sovereignty",
+  "version": "2026.PROD.1",
+  "adr_type": "CONSTITUTIONAL",
+  "governance_tier": "Tier-1",
+  "registration_timestamp": "2025-12-05T12:43:00Z",
+
+  "authority_chain": {
+    "mandate": "CEO Execution Order",
+    "owner": "CEO",
+    "technical_authority": "STIG",
+    "governance_authority": "VEGA",
+    "data_governance": "CDMO"
+  },
+
+  "dependencies": {
+    "adr_dependencies": ["ADR-001", "ADR-013"],
+    "ios_dependencies": ["IoS-005", "IoS-010"]
+  },
+
+  "mit_quad_pillars": {
+    "LIDS": {
+      "name": "THE BRAIN",
+      "lab": "Lab for Information & Decision Systems",
+      "core_function": "Inference & Truth",
+      "mit_methodology": "Inference over Networks, ADEV Framework",
+      "fhq_implementation": "STIG Gateway (Control Plane): Calculates probability of signal truth",
+      "primary_ios": ["IoS-003", "IoS-005", "IoS-007"],
+      "primary_agents": ["FINN", "STIG"],
+      "threshold": "P(Truth) > 0.85"
+    },
+    "ACL": {
+      "name": "THE MANAGER",
+      "lab": "Aerospace Controls Lab",
+      "core_function": "Coordination",
+      "mit_methodology": "CBBA (Consensus-Based Bundle Algorithm), Robust Planning",
+      "fhq_implementation": "ADR-007 Orchestrator: Agents bid on tasks",
+      "primary_ios": ["IoS-008"],
+      "primary_agents": ["LARS", "LINE"]
+    },
+    "DSL": {
+      "name": "THE ENGINE",
+      "lab": "Data Science Lab",
+      "core_function": "Optimization",
+      "mit_methodology": "Stochastic Optimization, Simchi-Levi Algorithms",
+      "fhq_implementation": "IoS-004 Allocation Engine: Optimizes bet sizing under uncertainty",
+      "primary_ios": ["IoS-004", "IoS-012"],
+      "primary_agents": ["LARS", "LINE"]
+    },
+    "RISL": {
+      "name": "THE SHIELD",
+      "lab": "Resilient Infrastructure Lab",
+      "core_function": "Immunity",
+      "mit_methodology": "Adversarial Robustness, Failure Detection",
+      "fhq_implementation": "IoS-010 Circuit Breakers: Detects hallucination loops & data attacks",
+      "primary_ios": ["IoS-010", "IoS-013"],
+      "primary_agents": ["VEGA", "STIG"]
+    }
+  },
+
+  "operational_mechanics": {
+    "lids_lock": {
+      "rule": "No allocation (DSL) happens without probabilistic truth score (LIDS)",
+      "threshold": "P(Truth) > 0.85",
+      "enforced_by": "STIG Gateway"
+    },
+    "acl_protocol": {
+      "rule": "No central bottleneck. Agents self-organize",
+      "mechanism": "CBBA Auction on regime change",
+      "participants": ["LARS", "FINN"]
+    },
+    "dsl_optimization": {
+      "rule": "Optimize for worst-case tail (CVaR), not average return",
+      "mechanism": "Stochastic position sizing based on LIDS uncertainty",
+      "module": "IoS-004"
+    },
+    "risl_defense": {
+      "rule": "Fail-Safe over Fail-Open",
+      "triggers": ["Data_Drift > Threshold", "Agent_Hallucination"],
+      "action": "ADR-016 DEFCON escalation and node isolation"
+    }
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      {
+        "name": "fhq_governance.mit_quad_pillars",
+        "purpose": "Registry of MIT Quad pillars",
+        "records": 4
+      },
+      {
+        "name": "fhq_governance.quad_hash_registry",
+        "purpose": "Quad-Hash tracking for audit trail",
+        "format": "{LIDS_Score}_{ACL_Agent}_{DSL_Model}_{RISL_Status}"
+      },
+      {
+        "name": "fhq_governance.ios_quad_mapping",
+        "purpose": "Maps IoS modules to Quad pillars",
+        "records": 10
+      },
+      {
+        "name": "fhq_governance.vega_validation_rules",
+        "purpose": "VEGA governance validation rules",
+        "records": 4
+      }
+    ],
+    "functions": [
+      {
+        "name": "fhq_governance.generate_quad_hash()",
+        "purpose": "Generate and register Quad-Hash"
+      },
+      {
+        "name": "fhq_governance.validate_quad_compliance()",
+        "purpose": "Validate MIT Quad compliance"
+      },
+      {
+        "name": "fhq_governance.risl_escalate_immunity()",
+        "purpose": "RISL immunity escalation"
+      }
+    ]
+  },
+
+  "vega_validation_rules": [
+    {
+      "rule": "QUAD_HASH_REQUIRED_FOR_TRADE",
+      "type": "PRECONDITION",
+      "applies_to": ["TRADE", "EXECUTION_PLAN", "ALLOCATION"],
+      "basis": "ADR-017 §4"
+    },
+    {
+      "rule": "LIDS_THRESHOLD_FOR_ALLOCATION",
+      "type": "PRECONDITION",
+      "applies_to": ["ALLOCATION", "STRATEGY_PROPOSAL"],
+      "condition": "lids_score > 0.85",
+      "basis": "ADR-017 §3.1"
+    },
+    {
+      "rule": "RISL_NOT_HALTED",
+      "type": "PRECONDITION",
+      "applies_to": ["TRADE", "EXECUTION_PLAN", "ALLOCATION", "STRATEGY_PROPOSAL"],
+      "condition": "risl_status != 'HALTED'",
+      "basis": "ADR-017 §3.4"
+    },
+    {
+      "rule": "STATE_HASH_VALID",
+      "type": "PRECONDITION",
+      "applies_to": ["REASONING", "TRADE", "EXECUTION_PLAN", "ALLOCATION", "STRATEGY_PROPOSAL"],
+      "basis": "ADR-018 §4"
+    }
+  ],
+
+  "ios_quad_mappings": {
+    "LIDS": ["IoS-003 (Meta-Perception)", "IoS-005 (Skill Engine)", "IoS-007 (Alpha Graph)", "IoS-009 (Intent Detection)"],
+    "ACL": ["IoS-008 (Runtime Decision)", "IoS-012 (Execution Coordination)"],
+    "DSL": ["IoS-004 (Allocation)", "IoS-012 (Order Optimization)"],
+    "RISL": ["IoS-010 (Prediction Ledger)", "IoS-013 (ASPE State Integrity)"]
+  },
+
+  "freedom_formula": {
+    "formula": "Freedom = Alpha Signal Precision (LIDS + DSL) / Time to Autonomy (ACL + RISL)",
+    "interpretation": "Maximize signal precision while minimizing coordination overhead and maximizing resilience"
+  },
+
+  "constitutional_status": {
+    "immutable": true,
+    "amendment_requires": "G4 CEO Approval",
+    "effective": "IMMEDIATE",
+    "supersedes": "All prior Trinity drafts"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-ADR-017-MIT-QUAD-2026",
+    "chain_type": "ADR_CONSTITUTIONAL"
+  },
+
+  "signatures": {
+    "ceo": {
+      "status": "RATIFIED",
+      "timestamp": "2025-12-05T12:43:00Z"
+    },
+    "stig": {
+      "role": "Technical Authority",
+      "attestation": "IoS modules mapped to constitutional roles. Quad-Hash infrastructure deployed.",
+      "timestamp": "2025-12-05T12:43:00Z"
+    },
+    "vega": {
+      "status": "PENDING_FORMAL_ATTESTATION",
+      "attestation": "Validation rules created. Awaiting formal certification."
+    }
+  }
+}

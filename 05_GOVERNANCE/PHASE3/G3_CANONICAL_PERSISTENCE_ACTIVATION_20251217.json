@@ -1,0 +1,135 @@
+{
+  "document_type": "G3_CANONICAL_PERSISTENCE_ACTIVATION",
+  "activation_id": "G3-CPA-20251217",
+  "classification": "G3-GOVERNANCE-CRITICAL",
+  "authority": "CEO Directive WAVE 13",
+  "date_issued": "2025-12-17",
+
+  "directive_reference": {
+    "directive": "WAVE 13 – G3 AUTHORIZATION",
+    "mandate": "I - CANONICAL PERSISTENCE MANDATE (ADR-013)",
+    "date_issued": "2025-12-17",
+    "issuing_authority": "CEO / FjordHQ Executive Board"
+  },
+
+  "implementation_status": {
+    "schema_created": true,
+    "persistence_function_operational": true,
+    "immutability_enforced": true,
+    "audit_reconstruction_functional": true,
+    "first_golden_needle_persisted": true
+  },
+
+  "schema_details": {
+    "schema_name": "fhq_canonical",
+    "primary_table": "golden_needles",
+    "column_count": 59,
+    "storage_type": "QUERYABLE_SQL",
+    "json_blob_usage": "MINIMAL (only falsification_criteria and backtest_requirements)"
+  },
+
+  "mandatory_fields_implemented": {
+    "eqs_score": {
+      "type": "NUMERIC(5,4)",
+      "constraint": "CHECK (eqs_score >= 0.85 AND eqs_score <= 1.0)",
+      "precision_preserved": true
+    },
+    "confluence_factors": {
+      "type": "7 BOOLEAN columns (explicit, enumerable)",
+      "computed_count": "GENERATED ALWAYS AS (sum of factors) STORED",
+      "queryable": true
+    },
+    "asrp_hash": {
+      "type": "TEXT NOT NULL",
+      "purpose": "ADR-018 State Binding"
+    },
+    "sitc_plan_id": {
+      "type": "UUID NOT NULL",
+      "purpose": "Chain-of-Query reference"
+    },
+    "price_witness": {
+      "columns": ["price_witness_id", "price_witness_symbol", "price_witness_value", "price_witness_source", "price_witness_timestamp"],
+      "purpose": "CEO Directive Wave 12 compliance"
+    },
+    "regime_context": {
+      "columns": ["regime_asset_id", "regime_technical", "regime_sovereign", "regime_confidence", "regime_crio_driver", "regime_snapshot_timestamp", "defcon_level"],
+      "ios003_compatible": true
+    },
+    "validation_timestamp": {
+      "type": "TIMESTAMPTZ NOT NULL",
+      "purpose": "Audit timeline"
+    }
+  },
+
+  "immutability_enforcement": {
+    "update_blocked": true,
+    "delete_blocked": true,
+    "correction_method": "Superseding records only",
+    "triggers": [
+      "trg_needle_immutability (blocks UPDATE of core fields)",
+      "trg_block_needle_delete (blocks all DELETE)"
+    ],
+    "tested": true,
+    "test_results": {
+      "delete_attempt": "BLOCKED with IMMUTABILITY VIOLATION error",
+      "update_attempt": "BLOCKED with IMMUTABILITY VIOLATION error"
+    }
+  },
+
+  "eqs_threshold_enforcement": {
+    "threshold": 0.85,
+    "enforcement_level": "DATABASE",
+    "check_constraint": "CHECK (eqs_score >= 0.85 AND eqs_score <= 1.0)",
+    "function_validation": "RAISE EXCEPTION if p_eqs_score < 0.85",
+    "tested": true,
+    "test_result": "Attempted insert with EQS=0.50 correctly rejected"
+  },
+
+  "audit_reconstruction": {
+    "function": "fhq_canonical.reconstruct_needle_audit(UUID)",
+    "questions_answered": [
+      "What data was observed?",
+      "When was it observed?",
+      "Which regime context applied?",
+      "Why was this hypothesis accepted?",
+      "Which checks passed?",
+      "Canonical integrity hash?"
+    ],
+    "tested": true
+  },
+
+  "first_golden_needle": {
+    "needle_id": "b81a1840-868a-49e1-9799-5d7cd5526ab9",
+    "source": "Wave 12 G2 Exam III",
+    "session_id": "WAVE12-20251217215954",
+    "eqs_score": 1.0000,
+    "confluence_factor_count": 7,
+    "hypothesis_title": "Bull Regime Catalyst Amplification: ETH/BTC Ratio Breakout on Positive Catalyst",
+    "canonical_hash": "496114a7df5726ec104d67d9597c921ccee1f1d0307554fa5f36e57e867e321c",
+    "persisted_at": "2025-12-17T21:27:28.394Z"
+  },
+
+  "forward_compatibility": {
+    "ios004_backtest_hooks": true,
+    "five_year_audit_support": true,
+    "no_opaque_blobs_for_core_data": true,
+    "win_rate_analysis_ready": true,
+    "expectancy_calculation_ready": true,
+    "decay_analysis_ready": true
+  },
+
+  "g3_mandate_compliance": {
+    "mandate_i_canonical_persistence": "COMPLETE",
+    "mandate_ii_immutability": "COMPLETE",
+    "mandate_iii_audit_trail": "COMPLETE (function operational)",
+    "mandate_iv_dry_run_simulation": "PENDING (next phase)",
+    "mandate_v_economic_safety": "PENDING (next phase)"
+  },
+
+  "attestation": {
+    "implemented_by": "STIG (CTO)",
+    "implementation_timestamp": "2025-12-17T22:30:00Z",
+    "migration_file": "04_DATABASE/MIGRATIONS/148_g3_golden_needle_canonical_persistence.sql",
+    "vega_attestation_required": true
+  }
+}

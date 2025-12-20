@@ -1,0 +1,109 @@
+{
+  "evidence_id": "IOS004-G4-ACTIVATION-20251129-215456",
+  "evidence_type": "G4_CANONICAL_ACTIVATION",
+  "module": "IoS-004",
+  "module_name": "Regime-Driven Allocation Engine",
+  "engine_version": "IoS-004_v2026.PROD.1",
+  "generated_at": "2025-11-29T21:54:56.825Z",
+  "generated_by": "STIG",
+  "authority": "CEO DIRECTIVE",
+  "adr_compliance": ["ADR-002", "ADR-004", "ADR-008", "ADR-011", "ADR-012", "ADR-013"],
+
+  "registry_state": {
+    "task_name": "REGIME_ALLOCATION_ENGINE_V1",
+    "task_status": "ACTIVE",
+    "gate_level": "G4",
+    "gate_approved": true,
+    "gate_approved_by": "CEO",
+    "vega_reviewed": true,
+    "vega_approved": true,
+    "schema_frozen": true,
+    "frozen_at": "2025-11-29T21:54:56.825Z"
+  },
+
+  "row_count_parity": {
+    "source_table": "fhq_research.regime_predictions_v2",
+    "target_table": "fhq_positions.target_exposure_daily",
+    "source_rows": 10103,
+    "target_rows": 10103,
+    "parity_achieved": true
+  },
+
+  "data_coverage": {
+    "first_date": "2016-08-29",
+    "last_date": "2025-11-28",
+    "total_days": 3379,
+    "total_rows": 10103,
+    "unique_assets": 4,
+    "assets": ["BTC-USD", "ETH-USD", "SOL-USD", "EURUSD"]
+  },
+
+  "allocation_statistics": {
+    "active_exposure_rows": 3271,
+    "zero_exposure_rows": 6832,
+    "active_percentage": 32.38
+  },
+
+  "invariants_report": {
+    "invariant_definition": "SUM(exposure_constrained) + cash_weight = 1.0",
+    "compliant_days": 3379,
+    "total_days": 3379,
+    "compliance_percentage": 100.0,
+    "all_invariants_hold": true
+  },
+
+  "version_integrity": {
+    "engine_version": "IoS-004_v2026.PROD.1",
+    "rows_with_version": 10103,
+    "version_consistency": true
+  },
+
+  "hash_verification": {
+    "chain_id": "HC-IOS-004-2026",
+    "chain_type": "IOS_MODULE",
+    "genesis_hash": "864ea45e1f8bbd766dd8e14213cc522bb9411213362aa07d92a0cff2b494921a",
+    "current_hash": "a9cc368ad9c24d033346ddc86604f786e9a14d13d72994ce808568b53197938b",
+    "chain_length": 10103,
+    "integrity_verified": true
+  },
+
+  "signature": {
+    "signature_id": "87fead3a-5286-4dd4-b4df-10bc0d0e6218",
+    "operation_type": "IOS_MODULE_G4_ACTIVATION",
+    "signing_agent": "STIG",
+    "signing_key_id": "STIG-EC003-G4-ACTIVATION",
+    "signature_value": "803e431d89e06d5b56a10dc4b4868350b17e769533decb5cad116291793a49df",
+    "verified": true,
+    "verified_at": "2025-11-29T21:54:56.825Z",
+    "verified_by": "VEGA"
+  },
+
+  "regime_activation_logic": {
+    "activation_set": {
+      "STRONG_BULL": 1.0,
+      "PARABOLIC": 1.0,
+      "BULL": 0.7,
+      "RANGE_UP": 0.4
+    },
+    "non_activation_regimes": ["NEUTRAL", "RANGE_DOWN", "BEAR", "STRONG_BEAR", "BROKEN"],
+    "confidence_threshold": 0.50,
+    "confidence_filter_rule": "IF confidence < 0.50 THEN exposure_raw = 0.0"
+  },
+
+  "allocator_constraint": {
+    "method": "equal_weight_full_deployment",
+    "formula": "weight = 1.0 / N_active (where N_active > 0)",
+    "cash_rule": "cash_weight = 1.0 - SUM(exposure_constrained)"
+  },
+
+  "exit_criteria_validation": {
+    "evidence_file_exists": true,
+    "vega_hash_validation_passed": true,
+    "no_invariants_violated": true,
+    "schema_freeze_enforced": true,
+    "row_count_parity_perfect": true,
+    "all_criteria_met": true
+  },
+
+  "hash_self": "795e090b6bcd059a53f770ca2101a05eca7c17f4555b65b7d759b56a10e5bd26"
+}

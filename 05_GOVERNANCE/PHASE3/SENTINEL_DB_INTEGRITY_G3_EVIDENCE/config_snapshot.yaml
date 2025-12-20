@@ -1,0 +1,199 @@
+# =============================================================================
+# SENTINEL_DB_INTEGRITY CONFIGURATION v1.0
+# =============================================================================
+# Authority: CEO Directive - Sentinel_DB_Integrity G1 Activation
+# ADR Binding: ADR-010, ADR-011, ADR-013, ADR-015
+# EC Binding: EC-003 (STIG as sole schema custodian)
+# Generated: 2025-12-08
+#
+# PRINCIPLE: A slow but correct query is acceptable.
+#            A fast but incorrect/inconsistent query is NOT acceptable.
+#
+# NOTE: All thresholds are externalized per G1 mandate. No hardcoding.
+# =============================================================================
+
+sentinel:
+  name: "Sentinel_DB_Integrity"
+  version: "1.0"
+  executor: "STIG"
+  ios_id: "IoS-014"  # Registered sentinel
+
+  # Operational rhythm
+  interval_seconds: 300  # 5 minutes default
+  mode: "read-only"
+  enabled: true
+
+  # ADR bindings for governance
+  adr_binding:
+    - "ADR-001"  # System Charter
+    - "ADR-002"  # Audit Charter
+    - "ADR-003"  # Institutional Standards
+    - "ADR-010"  # Discrepancy Scoring
+    - "ADR-011"  # Fortress Evidence Chain
+    - "ADR-012"  # Economic Safety
+    - "ADR-013"  # One-True-Source
+    - "ADR-015"  # Meta-Governance
+
+# =============================================================================
+# MODULE 1: LOCK MONITOR (Priority 1 - Correctness/Availability)
+# =============================================================================
+# Detects concurrency problems that could cause:
+# - Write processes blocking reads (stale data for IoS-003/004)
+# - Deadlocks/timeouts causing incomplete data (ADR-013 violation)
+# Data Sources: pg_stat_activity, pg_locks
+# =============================================================================
+
+lock_monitor:
+  priority: 1
+  category: "Correctness/Availability"
+  enabled: true
+
+  thresholds:
+    # WARN if any lock wait exceeds this duration
+    warn_wait_seconds: 10
+
+    # CRITICAL if seen in N consecutive sentinel intervals
+    critical_consecutive: 2
+
+  # Schemas where lock contention is CRITICAL (not just WARNING)
+  critical_schemas:
+    - "fhq_market"
+    - "fhq_perception"
+    - "fhq_research"
+    - "fhq_positions"
+
+  # Discrepancy event type for ADR-010 logging
+  discrepancy_type: "DB_LOCK_CONTENTION"
+
+# =============================================================================
+# MODULE 2: VACUUM & BLOAT WATCHDOG (Priority 2 - Stability/Planner Integrity)
+# =============================================================================
+# Prevents table bloat and stale statistics from causing bad plans.
+# Supports ADR-011 Fortress requirement for deterministic replay.
+# Data Source: pg_stat_user_tables
+# =============================================================================
+
+bloat_watchdog:
+  priority: 2
+  category: "Stability/Planner Integrity"
+  enabled: true
+
+  thresholds:
+    # Bloat ratio = n_dead_tup / (n_live_tup + n_dead_tup)
+    warn_bloat_ratio: 0.10     # WARN if > 10% dead tuples
+    critical_bloat_ratio: 0.25 # CRITICAL if > 25% dead tuples
+
+    # CRITICAL if no vacuum in N days (for critical tables only)
+    critical_vacuum_days: 7
+
+  # Tables where bloat/vacuum issues are CRITICAL
+  # These are the canonical data tables protected by ADR-013
+  critical_tables:
+    - "fhq_market.prices"
+    - "fhq_market.staging_prices"
+    - "fhq_perception.regime_daily"
+    - "fhq_research.regime_predictions_v2"
+    - "fhq_research.nightly_insights"
+
+  # Discrepancy event type for ADR-010 logging
+  discrepancy_type: "DB_BLOAT_RISK"
+
+# =============================================================================
+# MODULE 3: HIGH-IMPACT SLOW QUERY MONITOR (Priority 3 - Performance)
+# =============================================================================
+# Captures strategically problematic queries - not cosmetic performance tuning.
+# Does NOT suggest indexes or modify schema.
+# Produces curated, governance-loggable shortlist only.
+# Data Source: pg_stat_statements
+# =============================================================================
+
+slow_query:
+  priority: 3
+  category: "Performance"
+  enabled: true
+
+  thresholds:
+    # WARN if mean execution time exceeds this
+    mean_time_warn_ms: 500
+
+    # Only consider queries with at least N calls (avoid one-off slow queries)
+    min_calls: 10
+
+    # Report top N most expensive queries
+    top_n_queries: 10
+
+  # Schemas where slow queries should be flagged with higher priority
+  focus_schemas:
+    - "fhq_market"
+    - "fhq_perception"
+    - "fhq_research"
+    - "fhq_positions"
+
+  # Discrepancy event type for ADR-010 logging
+  discrepancy_type: "SLOW_QUERY_CANDIDATE"
+
+# =============================================================================
+# ADR-010 SEVERITY MAPPING
+# =============================================================================
+# Maps sentinel severity levels to ADR-010 discrepancy scores
+# NORMAL: 0.0 (no log)
+# WARNING: 0.05 (log, non-blocking)
+# CRITICAL: 0.15 (log, may trigger circuit breaker)
+# =============================================================================
+
+adr010_severity:
+  NORMAL:
+    score: 0.0
+    log: false
+    circuit_breaker: false
+  WARNING:
+    score: 0.05
+    log: true
+    circuit_breaker: false
+  CRITICAL:
+    score: 0.15
+    log: true
+    circuit_breaker: true
+
+# =============================================================================
+# FAULT TOLERANCE (G1 Requirement)
+# =============================================================================
+# Sentinel must fail silently - never crash orchestrator
+# On error, emit SYSTEM_ERROR discrepancy event
+# =============================================================================
+
+fault_tolerance:
+  # Maximum retries before giving up
+  max_retries: 3
+
+  # Delay between retries (seconds)
+  retry_delay_seconds: 5
+
+  # Timeout for each module (seconds)
+  module_timeout_seconds: 30
+
+  # On unrecoverable error, emit this event type
+  error_event_type: "SYSTEM_ERROR"
+
+  # Continue running other modules if one fails
+  continue_on_module_failure: true
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+logging:
+  # Log to fhq_governance.discrepancy_events
+  log_discrepancies: true
+
+  # Log to fhq_meta.ios_audit_log
+  log_audit: true
+
+  # Include detailed query text in logs (may contain sensitive data)
+  include_query_text: true
+
+  # Truncate query text to this length
+  query_text_max_length: 500
+
+  # Compute SHA-256 hash for Fortress evidence chain
+  compute_evidence_hash: true

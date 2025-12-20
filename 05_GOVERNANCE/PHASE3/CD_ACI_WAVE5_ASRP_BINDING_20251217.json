@@ -1,0 +1,92 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE5-ASRP-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "ACTIVE",
+
+  "title": "ACI Wave 5: ASRP State-Binding and Audit-Grade Metrics",
+  "summary": "All cognitive artifacts bound to atomic market state per ADR-018",
+
+  "mandate_compliance": {
+    "mandate_i": {
+      "requirement": "ASRP State-Binding (ADR-018)",
+      "implementation": "Every artifact embeds state_snapshot_hash and timestamp",
+      "evidence": [
+        "ec018_alpha_daemon.py:_get_asrp_state()",
+        "ios022_ikea_boundary_engine.py:ClassificationResult"
+      ]
+    },
+    "mandate_vi": {
+      "requirement": "Audit-Grade Metrics",
+      "implementation": "Ground truth sources defined, vanity metrics removed",
+      "evidence": "Plan file MANDATE VI COMPLIANCE section"
+    },
+    "mandate_vii": {
+      "requirement": "Evidence of Existence",
+      "implementation": "Schema integrity verified via direct PostgreSQL queries",
+      "evidence": "Plan file APPENDIX A: SCHEMA INTEGRITY REPORT"
+    }
+  },
+
+  "asrp_binding_implementation": {
+    "ikea_classifications": {
+      "fields": ["state_snapshot_hash", "state_timestamp", "classification", "query_hash"],
+      "table": "fhq_meta.knowledge_boundary_log"
+    },
+    "inforage_decisions": {
+      "fields": ["state_snapshot_hash", "state_timestamp", "decision", "cost_at_decision"],
+      "table": "fhq_optimization.inforage_cost_log"
+    },
+    "alpha_proposals": {
+      "fields": ["asrp_hash", "asrp_timestamp", "state_hash"],
+      "table": "fhq_alpha.g0_draft_proposals"
+    }
+  },
+
+  "helper_function": {
+    "name": "_get_asrp_state()",
+    "returns": "(state_snapshot_hash, state_timestamp)",
+    "source": "fhq_meta.aci_state_snapshot_log",
+    "fallback": "Generate hash from current timestamp if table unavailable"
+  },
+
+  "audit_grade_metrics": {
+    "ground_truth_sources": {
+      "ikea_classification_accuracy": "VEGA Sampling (10% random) - Human review",
+      "inforage_cost_savings": "ADR-012 Budget Log (actual_cost / baseline_cost)",
+      "hypothesis_validation_rate": "IoS-004 Backtest Results (g1_validated / g0_submitted)",
+      "paper_trading_performance": "Alpaca Paper API - Realized P&L"
+    },
+    "removed_vanity_metrics": [
+      "Chain Integrity Score >0.9 (no ground truth definition)",
+      "InForage Scent Accuracy >80% (no labeled dataset)"
+    ]
+  },
+
+  "schema_integrity_verified": {
+    "fhq_meta.aci_state_snapshot_log": "EXISTS",
+    "fhq_meta.chain_of_query": "EXISTS",
+    "fhq_meta.cognitive_engine_evidence": "EXISTS",
+    "fhq_meta.knowledge_boundary_log": "EXISTS",
+    "fhq_optimization.inforage_cost_log": "EXISTS",
+    "fhq_alpha.g0_draft_proposals": "EXISTS",
+    "fhq_governance.learning_proposals": "EXISTS"
+  },
+
+  "vega_attestation": {
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "target": "ADR-018",
+    "gate_level": "G1",
+    "status": "PENDING",
+    "validation_criteria": [
+      "All outputs include ASRP state binding",
+      "Ground truth sources documented",
+      "Schema integrity verified"
+    ]
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}

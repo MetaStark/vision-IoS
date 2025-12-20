@@ -1,0 +1,172 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "evidence_id": "ARO-20251208-AUTONOMY-RESTORATION",
+  "issued_at": "2025-12-08T22:15:00.000Z",
+  "directive": "CEO DIRECTIVE - AUTONOMY RESTORATION ORDER (ARO-20251208)",
+  "classification": "Tier-1 Executive Mandate - Constitutional-level correction",
+  "executor": "STIG (CTO)",
+  "employment_contract": "EC-003_2026_PRODUCTION",
+
+  "directive_summary": {
+    "purpose": "Constitutional correction to install memory system, heartbeat infrastructure, event loop, and normalize shadow trades",
+    "severity": "Constitutional-level correction",
+    "gate_impact": "G0 -> G4 Architecture Alignment"
+  },
+
+  "binding_adrs": [
+    "ADR-007 (Orchestrator Law - event-driven autonomy)",
+    "ADR-012 (Economic Safety)",
+    "ADR-013 (Schema Governance)",
+    "ADR-014 (Agent Activation Charter)",
+    "ADR-015 (Meta-Governance & Drift Detection)",
+    "ADR-016 (DEFCON Runtime Doctrine)"
+  ],
+
+  "employment_contracts_affected": [
+    "EC-003 (STIG) - Infrastructure sovereignty",
+    "EC-004 (FINN) - Research memory",
+    "EC-005 (LINE) - Execution reflexes"
+  ],
+
+  "system_reality_audit_findings": {
+    "vector_memory": {
+      "expected": "pgvector extension installed",
+      "actual": "NOT INSTALLED",
+      "status": "CRITICAL",
+      "fix": "Migration 096"
+    },
+    "memory_schema": {
+      "expected": "fhq_memory schema exists",
+      "actual": "DOES NOT EXIST",
+      "status": "CRITICAL",
+      "fix": "Migration 096"
+    },
+    "event_loop": {
+      "expected": "system_events table with active heartbeats",
+      "actual": "NO EVENTS LOGGED",
+      "status": "CRITICAL",
+      "fix": "Migration 097 + 098"
+    },
+    "shadow_trades": {
+      "expected": "fhq_execution.shadow_trades",
+      "actual": "fhq_optimization.shadow_ledger (non-standard)",
+      "status": "NON-COMPLIANT",
+      "fix": "Migration 099"
+    }
+  },
+
+  "migrations_staged": {
+    "096_pgvector_memory_foundation.sql": {
+      "status": "STAGED",
+      "purpose": "Install pgvector + fhq_memory schema",
+      "tables_created": [
+        "fhq_memory.embedding_store",
+        "fhq_memory.agent_memory",
+        "fhq_memory.episodic_memory",
+        "fhq_memory.state_snapshots",
+        "fhq_memory.perception_memory",
+        "fhq_memory.retrieval_audit_log"
+      ],
+      "functions_created": [
+        "fhq_memory.calculate_effective_relevance()",
+        "fhq_memory.regime_gated_search()"
+      ],
+      "aro_sections": ["Section 1", "Section 8"]
+    },
+    "097_system_heartbeat_infrastructure.sql": {
+      "status": "STAGED",
+      "purpose": "System events + heartbeat + DEFCON tracking",
+      "tables_created": [
+        "fhq_governance.system_events",
+        "fhq_governance.agent_heartbeats",
+        "fhq_governance.defcon_state",
+        "fhq_governance.event_type_registry"
+      ],
+      "functions_created": [
+        "fhq_governance.publish_heartbeat()",
+        "fhq_governance.check_heartbeats()",
+        "fhq_governance.trigger_defcon_change()",
+        "fhq_governance.publish_event()"
+      ],
+      "aro_sections": ["Section 2"]
+    },
+    "098_event_loop_activation.sql": {
+      "status": "STAGED",
+      "purpose": "Event-driven orchestrator (ELOOP v1)",
+      "tables_created": [
+        "fhq_governance.event_trigger_registry",
+        "fhq_governance.event_queue",
+        "fhq_governance.market_event_types",
+        "fhq_governance.eloop_config"
+      ],
+      "functions_created": [
+        "fhq_governance.dispatch_event()",
+        "fhq_governance.process_event_queue()",
+        "fhq_governance.complete_queue_item()"
+      ],
+      "triggers_registered": 15,
+      "deprecations": ["FIXED_INTERVAL_EXECUTION"],
+      "aro_sections": ["Section 3", "Section 4"]
+    },
+    "099_shadow_trades_renormalization.sql": {
+      "status": "STAGED",
+      "purpose": "Rename shadow_ledger to shadow_trades, event-trigger only",
+      "tables_created": [
+        "fhq_execution.shadow_trades"
+      ],
+      "views_created": [
+        "fhq_execution.v_shadow_trade_analytics",
+        "fhq_optimization.shadow_ledger (deprecated compatibility view)"
+      ],
+      "functions_created": [
+        "fhq_execution.create_event_shadow_trade()",
+        "fhq_execution.close_event_shadow_trade()"
+      ],
+      "columns_added": [
+        "fhq_optimization.reward_traces.trigger_event_id",
+        "fhq_optimization.reward_traces.shadow_trade_id"
+      ],
+      "aro_sections": ["Section 5"]
+    }
+  },
+
+  "target_state_after_execution": {
+    "sensors": "Real-time event system (system_events)",
+    "memory": "Vector embeddings + semantic search (pgvector + fhq_memory)",
+    "working_memory": "Episodic + state snapshots",
+    "continuity": "Event loop (ELOOP v1)",
+    "self_awareness": "Heartbeat monitoring (30-second intervals)",
+    "reflexes": "Event-driven CEIO/agent triggers",
+    "auditability": "Complete lineage + reward linking"
+  },
+
+  "contextual_retrieval_protocol": {
+    "regime_gated_lookup": "MANDATORY - All memory queries must filter by current regime",
+    "temporal_decay": "ACTIVE - relevance = base * exp(-lambda * age_days)",
+    "eternal_truths": "PERMANENT_CAUSAL tag bypasses decay",
+    "cross_agent_boundaries": "Enforced per agent role",
+    "vega_oversight": "All retrievals logged for compliance"
+  },
+
+  "execution_timeline": {
+    "migrations_staged_at": "2025-12-08T22:15:00Z",
+    "delivery_deadline": "2025-12-09T22:15:00Z (24 hours)",
+    "executor_responsible": "STIG"
+  },
+
+  "attestation": {
+    "certified_by": "STIG",
+    "role": "Chief Technology Officer",
+    "employment_contract": "EC-003_2026_PRODUCTION",
+    "statement": "I certify that all four migrations (096-099) have been staged per CEO DIRECTIVE ARO-20251208. Each migration includes: deterministic primary keys, SHA256 lineage compatibility, VEGA discrepancy compatibility, ADR-013 alignment, and rollback scripts. Fixed-interval execution has been formally deprecated. Event-driven architecture is now the constitutional standard.",
+    "timestamp": "2025-12-08T22:15:00Z"
+  },
+
+  "hash_chain": {
+    "chain_id": "HC-ARO-20251208-EXECUTION",
+    "parent_chains": [
+      "HC-CEO-CEIO-SHADOW-COMPLETE-20251208",
+      "HC-SYSTEM-REALITY-AUDIT-20251208"
+    ]
+  }
+}

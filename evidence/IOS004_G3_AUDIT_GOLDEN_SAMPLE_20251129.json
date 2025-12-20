@@ -1,0 +1,102 @@
+{
+  "module_id": "IoS-004",
+  "gate": "G3_AUDIT_GOLDEN_SAMPLE",
+  "status": "PASS",
+  "audited_by": "VEGA (EC-001)",
+  "audit_timestamp": "2025-11-29T21:17:00.000Z",
+
+  "sample_window": {
+    "start_date": "2025-09-01",
+    "end_date": "2025-11-28",
+    "total_days": 89,
+    "total_observations": 330,
+    "canonical_assets": ["BTC-USD", "ETH-USD", "SOL-USD", "EURUSD"]
+  },
+
+  "active_model": {
+    "model_id": "e97cd4b5-a328-45cf-8f70-d203be22329e",
+    "engine_version": "HMM_v2.0",
+    "perception_model_version": "2026.PROD.1"
+  },
+
+  "regime_distribution": {
+    "BTC-USD": {
+      "RANGE_DOWN": 26,
+      "BEAR": 26,
+      "BULL": 21,
+      "STRONG_BEAR": 16
+    },
+    "ETH-USD": {
+      "RANGE_DOWN": 38,
+      "NEUTRAL": 30,
+      "BEAR": 21
+    },
+    "EURUSD": {
+      "NEUTRAL": 40,
+      "RANGE_DOWN": 23
+    },
+    "SOL-USD": {
+      "BEAR": 22,
+      "NEUTRAL": 20,
+      "RANGE_DOWN": 14,
+      "BULL": 14,
+      "STRONG_BEAR": 12,
+      "RANGE_UP": 7
+    }
+  },
+
+  "g3_checks": {
+    "portfolio_invariant": {
+      "status": "PASS",
+      "description": "All 89 days have SUM(exposure_constrained) + cash_weight = 1.0",
+      "tolerance": 1e-9,
+      "violations": 0
+    },
+    "regime_mapping_consistency": {
+      "status": "PASS",
+      "risk_on_with_zero_exposure_violations": 0,
+      "risk_off_with_positive_exposure_violations": 0,
+      "low_confidence_with_exposure_violations": 0
+    },
+    "bounds_sanity": {
+      "status": "PASS",
+      "exposure_out_of_bounds": 0,
+      "confidence_out_of_bounds": 0,
+      "null_values": 0
+    },
+    "volatility_block": {
+      "low_confidence_observations": 35,
+      "correctly_blocked": true,
+      "note": "35 observations with confidence < 0.5 correctly treated as exposure_raw = 0"
+    }
+  },
+
+  "allocation_logic_verification": {
+    "regime_to_exposure_mapping": {
+      "STRONG_BULL": 1.00,
+      "BULL": 0.70,
+      "RANGE_UP": 0.40,
+      "PARABOLIC": 1.00,
+      "NEUTRAL": 0.00,
+      "RANGE_DOWN": 0.00,
+      "BEAR": 0.00,
+      "STRONG_BEAR": 0.00,
+      "BROKEN": 0.00
+    },
+    "equal_weight_rule": "exposure_constrained = 1.0 / N_risk_on for risk-on assets",
+    "cash_weight_computation": "cash_weight = 1.0 - SUM(exposure_constrained)",
+    "no_leverage_guarantee": "SUM(exposure_constrained) <= 1.0 enforced"
+  },
+
+  "golden_sample_hash": "a8952c7a0cf3af20868eda66d855ccd023bba25c4dc67cccc27fbbde3aa7c9e0",
+  "hash_algorithm": "SHA-256",
+  "hash_input_format": "asset_id|trade_date|exposure_constrained|cash_weight ordered by (trade_date, asset_id)",
+
+  "hash_chain_id": "HC-IOS-004-2026",
+
+  "determinism_attestation": {
+    "statement": "IoS-004 allocation logic is fully deterministic given IoS-003 regime outputs. Same inputs will produce identical allocations.",
+    "verified_by": "VEGA",
+    "replay_capability": "Full replay possible using regime_predictions_v2 and documented allocation rules"
+  }
+}

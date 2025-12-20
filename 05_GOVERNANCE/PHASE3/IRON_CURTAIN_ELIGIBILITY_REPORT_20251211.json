@@ -1,0 +1,136 @@
+{
+  "report_type": "IRON_CURTAIN_ELIGIBILITY_REPORT",
+  "generated_at": "2025-12-11T14:14:00Z",
+  "authority": "STIG (CTO) per EC-003",
+  "ios_reference": "IoS-001 §4.1 (Iron Curtain Rule)",
+  "classification": "G4 – CEO Pre-IoS-002 Activation Audit",
+
+  "executive_summary": {
+    "total_assets": 352,
+    "ios003_eligible": 5,
+    "ios003_blocked": 347,
+    "eligibility_rate": "1.4%",
+    "status": "PARTIAL_COMPLIANCE"
+  },
+
+  "status_distribution": {
+    "FULL_HISTORY": {
+      "count": 5,
+      "min_rows": 1896,
+      "max_rows": 3993,
+      "avg_rows": 2926,
+      "ios003_access": "FULL"
+    },
+    "SHORT_HISTORY": {
+      "count": 0,
+      "ios003_access": "FLAGGED"
+    },
+    "QUARANTINED": {
+      "count": 347,
+      "min_rows": 0,
+      "max_rows": 0,
+      "ios003_access": "BLOCKED"
+    }
+  },
+
+  "by_asset_class": {
+    "CRYPTO": {
+      "FULL_HISTORY": 3,
+      "QUARANTINED": 47,
+      "total": 50
+    },
+    "EQUITY": {
+      "FULL_HISTORY": 1,
+      "QUARANTINED": 276,
+      "total": 277
+    },
+    "FX": {
+      "FULL_HISTORY": 1,
+      "QUARANTINED": 24,
+      "total": 25
+    }
+  },
+
+  "ios003_eligible_assets": [
+    {
+      "canonical_id": "BTC-USD",
+      "asset_class": "CRYPTO",
+      "exchange": "XCRY",
+      "valid_row_count": 3993,
+      "status": "FULL_HISTORY",
+      "history_years": 10.9
+    },
+    {
+      "canonical_id": "ETH-USD",
+      "asset_class": "CRYPTO",
+      "exchange": "XCRY",
+      "valid_row_count": 3259,
+      "status": "FULL_HISTORY",
+      "history_years": 8.9
+    },
+    {
+      "canonical_id": "SPY",
+      "asset_class": "EQUITY",
+      "exchange": "ARCX",
+      "valid_row_count": 2747,
+      "status": "FULL_HISTORY",
+      "history_years": 10.9
+    },
+    {
+      "canonical_id": "EURUSD",
+      "asset_class": "FX",
+      "exchange": "XFOR",
+      "valid_row_count": 2735,
+      "status": "FULL_HISTORY",
+      "history_years": 10.8
+    },
+    {
+      "canonical_id": "SOL-USD",
+      "asset_class": "CRYPTO",
+      "exchange": "XCRY",
+      "valid_row_count": 1896,
+      "status": "FULL_HISTORY",
+      "history_years": 5.2
+    }
+  ],
+
+  "iron_curtain_thresholds": {
+    "EQUITY_FX": {
+      "quarantine_threshold": 252,
+      "full_history_threshold": 1260,
+      "description": "252 trading days = 1 year, 1260 = 5 years"
+    },
+    "CRYPTO": {
+      "quarantine_threshold": 365,
+      "full_history_threshold": 1825,
+      "description": "365 calendar days = 1 year, 1825 = 5 years (24/7 market)"
+    }
+  },
+
+  "blocking_issues": {
+    "yfinance_rate_limit": {
+      "status": "ACTIVE",
+      "description": "Yahoo Finance API is rate-limiting requests. Backfill for remaining 347 assets requires overnight batch processing.",
+      "mitigation": "Scheduled night-time execution with conservative rate limits (10 assets/batch, 5s delay, 2min between batches)"
+    }
+  },
+
+  "recommendations": [
+    "IoS-002/003/004 can begin processing the 5 eligible FULL_HISTORY assets immediately",
+    "Schedule overnight backfill (02:00-06:00 UTC) for remaining 347 assets",
+    "Consider alternative data providers (Alpha Vantage, Polygon.io) for faster backfill",
+    "Monitor yfinance rate limit status - typically clears after 1-2 hours"
+  ],
+
+  "next_steps": {
+    "immediate": "IoS-002 can begin indicator calculation for BTC-USD, ETH-USD, SOL-USD, SPY, EURUSD",
+    "scheduled": "Run ios001_price_backfill.py overnight for remaining assets",
+    "after_backfill": "Re-run this report to verify Iron Curtain compliance"
+  },
+
+  "governance": {
+    "report_hash": "PENDING_CALCULATION",
+    "vega_attestation": "PENDING",
+    "logged_to": "fhq_governance.governance_actions_log"
+  }
+}

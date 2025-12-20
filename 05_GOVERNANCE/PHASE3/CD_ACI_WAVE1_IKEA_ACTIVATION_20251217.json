@@ -1,0 +1,79 @@
+{
+  "document_type": "CEO_DIRECTIVE",
+  "directive_id": "CD-ACI-WAVE1-IKEA-20251217",
+  "classification": "STIG-2025-ACI-INTEGRATION",
+  "authority": "CEO FjordHQ",
+  "date_issued": "2025-12-17",
+  "status": "ACTIVE",
+
+  "title": "ACI Wave 1: IKEA Knowledge Boundary Engine Activation",
+  "summary": "Activation of EC-022 IKEA as the hallucination firewall for the ACI system",
+
+  "mandate_compliance": {
+    "mandate_i": {
+      "requirement": "ASRP State-Binding (ADR-018)",
+      "implementation": "All IKEA classifications include state_snapshot_hash and timestamp",
+      "evidence": "ios022_ikea_boundary_engine.py:ClassificationResult includes state binding fields"
+    },
+    "mandate_v": {
+      "requirement": "IKEA Fail-Safe Default",
+      "implementation": "If uncertain or failed, default to EXTERNAL_REQUIRED (maximum safety)",
+      "evidence": "ios022_ikea_boundary_engine.py:classify_query() returns EXTERNAL_REQUIRED on low confidence (<0.7)"
+    },
+    "mandate_viii": {
+      "requirement": "Role Isolation (MIT Quad)",
+      "implementation": "IKEA outputs written to fhq_meta.knowledge_boundary_log only",
+      "evidence": "ALLOWED_SCHEMAS constraint enforced"
+    }
+  },
+
+  "implementation_artifacts": {
+    "primary_file": "03_FUNCTIONS/ios022_ikea_boundary_engine.py",
+    "integration_points": [
+      "03_FUNCTIONS/finn_cognitive_brain.py",
+      "03_FUNCTIONS/ec018_alpha_daemon.py"
+    ],
+    "database_tables": [
+      "fhq_meta.knowledge_boundary_log"
+    ]
+  },
+
+  "key_classes": {
+    "IKEABoundaryEngine": {
+      "purpose": "Core hallucination firewall",
+      "methods": [
+        "classify_query(query) -> ClassificationResult",
+        "check_volatility_class(data_type) -> VolatilityClass",
+        "get_statistics() -> Dict"
+      ]
+    },
+    "Classification": {
+      "values": ["PARAMETRIC", "EXTERNAL_REQUIRED", "HYBRID"]
+    },
+    "VolatilityClass": {
+      "values": ["EXTREME", "HIGH", "MEDIUM", "LOW", "STATIC"]
+    }
+  },
+
+  "fail_safe_behavior": {
+    "low_confidence_threshold": 0.7,
+    "default_on_failure": "EXTERNAL_REQUIRED",
+    "default_on_error": "EXTERNAL_REQUIRED",
+    "burden_of_proof": "INVERTED - Must prove PARAMETRIC with high confidence"
+  },
+
+  "vega_attestation": {
+    "attestation_type": "G1_TECHNICAL_VALIDATION",
+    "target": "EC-022",
+    "gate_level": "G1",
+    "status": "PENDING",
+    "validation_criteria": [
+      "Code implements fail-safe default",
+      "State binding included in all outputs",
+      "Schema boundaries enforced"
+    ]
+  },
+
+  "created_by": "STIG (CTO)",
+  "created_at": "2025-12-17T00:00:00Z"
+}
