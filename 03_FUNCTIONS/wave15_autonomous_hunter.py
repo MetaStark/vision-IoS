@@ -350,7 +350,9 @@ class GoldenNeedleAutoPersister:
                         p_defcon_level := %s,
                         p_falsification_criteria := %s,
                         p_backtest_requirements := %s,
-                        p_g2_exam_session_id := NULL
+                        p_g2_exam_session_id := %s,
+                        p_chain_of_query_hash := %s,
+                        p_target_asset := %s
                     ) AS needle_id
                 """, (
                     str(uuid.uuid4()),  # p_hypothesis_id
@@ -384,7 +386,10 @@ class GoldenNeedleAutoPersister:
                     datetime.now(timezone.utc),  # p_regime_snapshot_timestamp
                     DEFCON_GREEN,  # p_defcon_level
                     Json({'criteria': hypothesis.get('falsification_criteria', '')}),  # p_falsification_criteria
-                    Json({'entry': hypothesis.get('entry_conditions', []), 'exit': hypothesis.get('exit_conditions', {})})  # p_backtest_requirements
+                    Json({'entry': hypothesis.get('entry_conditions', []), 'exit': hypothesis.get('exit_conditions', {})}),  # p_backtest_requirements
+                    None,  # p_g2_exam_session_id
+                    validation.get('chain_of_query_hash'),  # p_chain_of_query_hash (EC-020 SitC)
+                    'BTC-USD'  # p_target_asset - canonical crypto asset (CEO-ACI-FINN-TA-2025-12-21)
                 ))
 
                 needle_id = cur.fetchone()[0]
@@ -974,6 +979,23 @@ OUTPUT FORMAT (JSON array):
             confidence = 'LOW'
             action = 'REJECT'
 
+        # Build SitC chain of query for EC-020 compliance
+        sitc_chain = {
+            'plan_init': {'query': title, 'timestamp': datetime.now(timezone.utc).isoformat()},
+            'nodes': [
+                {'type': 'HYPOTHESIS', 'content': statement[:200]},
+                {'type': 'CONFLUENCE_CHECK', 'factors': factors_present},
+                {'type': 'EQS_CALCULATION', 'score': eqs_score, 'components': eqs_components},
+                {'type': 'CONFIDENCE_EVAL', 'level': confidence, 'action': action}
+            ],
+            'synthesis': {'final_score': eqs_score, 'decision': action}
+        }
+
+        # Generate chain_of_query_hash for EC-020 SitC verification
+        chain_of_query_hash = hashlib.sha256(
+            json.dumps(sitc_chain, sort_keys=True, default=str).encode()
+        ).hexdigest()
+
         return {
             'validated': eqs_score >= EQS_THRESHOLD,
             'action': action,
@@ -985,7 +1007,9 @@ OUTPUT FORMAT (JSON array):
             },
             'plan_id': str(uuid.uuid4()),
             'asrp_hash': hashlib.sha256(f"{statement}{datetime.now().isoformat()}".encode()).hexdigest()[:16],
-            'nodes_count': len(factors_present)
+            'nodes_count': len(factors_present),
+            'chain_of_query_hash': chain_of_query_hash,  # EC-020 SitC chain
+            'sitc_chain': sitc_chain  # Full chain for evidence pack
         }
 
     def create_hunt_session(self, focus_area: str) -> str:
