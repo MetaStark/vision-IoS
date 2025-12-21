@@ -52,42 +52,41 @@
 
 ## 3. EXECUTION SEQUENCE
 
+### UPDATE 2025-12-21T02:10:00Z: ORDERS ALREADY QUEUED
+
+**CRITICAL**: Liquidation orders are **already submitted** as GTC MARKET orders.
+They will execute automatically at Monday market open.
+
+| Order ID | Symbol | Side | Qty | Type | TIF | Status |
+|----------|--------|------|-----|------|-----|--------|
+| b7c2ceaf-f2d4-41b2-ae4f-3413bf6600b9 | MSTR | SELL | 1088 | MARKET | GTC | ACCEPTED |
+| 91bdd9a3-d40a-438e-b863-ffcfcadc2302 | NVDA | SELL | 86 | MARKET | GTC | ACCEPTED |
+
+**No manual order submission required Monday.**
+
 ### Phase 1: Pre-Market Verification (9:00 AM ET)
 
 ```
 1. Verify broker connectivity
-2. Confirm position quantities match plan
+2. Confirm GTC sell orders still ACCEPTED (not canceled)
 3. Check for any overnight corporate actions
-4. Verify no pending orders exist
+4. Verify position quantities match expected (MSTR 1088, NVDA 86)
 5. Capture pre-execution broker snapshot
 ```
 
-### Phase 2: Market Open Execution (9:30 AM ET)
+### Phase 2: Market Open Auto-Execution (9:30 AM ET)
 
-**Order 1: MSTR Liquidation**
-```
-Type: MARKET ORDER
-Symbol: MSTR
-Side: SELL
-Quantity: 1088
-Time in Force: DAY
-Priority: EXECUTE FIRST (larger position)
-```
+**Orders will execute automatically at market open.**
 
-**Order 2: NVDA Liquidation** (after MSTR confirmed)
-```
-Type: MARKET ORDER
-Symbol: NVDA
-Side: SELL
-Quantity: 86
-Time in Force: DAY
-Priority: EXECUTE SECOND
-```
+LINE should monitor:
+- Order status changes from ACCEPTED to FILLED
+- Fill prices and slippage
+- Any partial fills (unlikely for MARKET orders)
 
 ### Phase 3: Execution Verification (9:35 AM ET)
 
 ```
-1. Confirm both orders filled
+1. Confirm both orders show status=FILLED
 2. Verify zero open positions
 3. Verify cash is positive (no margin)
 4. Capture post-execution broker snapshot
