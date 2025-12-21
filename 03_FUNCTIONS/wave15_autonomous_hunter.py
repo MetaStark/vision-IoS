@@ -44,6 +44,14 @@ import requests
 from dotenv import load_dotenv
 load_dotenv('C:/fhq-market-system/vision-ios/.env')
 
+# CEO Directive: CEO-EQS-2-2025-12-21
+# EQS 2.0 Shadow Evaluator - parallel evaluation (shadow mode only)
+try:
+    from eqs2_shadow_evaluator import evaluate_and_log as eqs2_evaluate
+    EQS2_AVAILABLE = True
+except ImportError:
+    EQS2_AVAILABLE = False
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
@@ -1149,6 +1157,26 @@ OUTPUT FORMAT (JSON array):
             validation = self.validate_with_sitc(hypothesis, context)
 
             eqs_score = validation.get('envelope', {}).get('evidence_quality_score', 0)
+            eqs1_decision = 'ACCEPT' if eqs_score >= EQS_THRESHOLD else 'REJECT'
+
+            # CEO Directive: CEO-EQS-2-2025-12-21
+            # EQS 2.0 Shadow Evaluation - runs for ALL hypotheses (shadow mode)
+            if EQS2_AVAILABLE:
+                try:
+                    eqs2_result = eqs2_evaluate(
+                        hypothesis=hypothesis,
+                        eqs1_score=eqs_score,
+                        eqs1_decision=eqs1_decision,
+                        context=context,
+                        conn=self.conn
+                    )
+                    if eqs2_result:
+                        logger.debug(
+                            f"EQS2 Shadow: {eqs2_result.eqs2_final_score:.4f} "
+                            f"({eqs2_result.eqs2_decision}) vs EQS1: {eqs_score:.4f}"
+                        )
+                except Exception as e:
+                    logger.warning(f"EQS2 shadow evaluation failed (non-blocking): {e}")
 
             # Check if Golden Needle
             if eqs_score >= EQS_THRESHOLD:
