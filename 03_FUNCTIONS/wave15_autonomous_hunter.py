@@ -61,6 +61,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 EQS_THRESHOLD = 0.85  # LOCKED - CEO Directive
 BUDGET_CAP_USD = 20.00  # HARD STOP at $20
 DEFCON_GREEN = 5  # Only GREEN allows operation
+FINN_MODEL_VERSION = "WAVE15-DEEPSEEK-2025-12"  # For rejection ledger
 
 # API Configuration
 BINANCE_BASE_URL = "https://api.binance.com/api/v3"
@@ -671,6 +672,74 @@ class AutonomousHunterEngine:
         if self.conn:
             self.conn.close()
 
+    def log_rejected_hypothesis(self, hypothesis: Dict, validation: Dict, context: Dict, price_witness: Dict) -> Optional[str]:
+        """
+        Log rejected hypothesis to shadow ledger.
+        CEO Directive: CEO-REJECTION-LEDGER-2025-12-21
+
+        MODE: Passive / Evidence-Only
+        PURPOSE: Preserve negative selection evidence
+        """
+        try:
+            eqs_score = validation.get('envelope', {}).get('evidence_quality_score', 0)
+            eqs_components = validation.get('envelope', {}).get('eqs_components', {})
+
+            # Build market context snapshot
+            market_context = {
+                'price': price_witness.get('price'),
+                'symbol': price_witness.get('symbol'),
+                'regime': context.get('regime'),
+                'regime_confidence': context.get('regime_confidence'),
+                'defcon': context.get('defcon'),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+
+            # Generate hypothesis hash for deduplication
+            hypothesis_hash = hashlib.sha256(
+                json.dumps({
+                    'title': hypothesis.get('title', ''),
+                    'statement': hypothesis.get('statement', ''),
+                    'target_asset': hypothesis.get('target_asset', 'BTC-USD')
+                }, sort_keys=True).encode()
+            ).hexdigest()
+
+            # Determine rejection reason
+            if eqs_score < 0.70:
+                rejection_reason = 'EQS_CRITICALLY_LOW'
+            elif eqs_score < EQS_THRESHOLD:
+                rejection_reason = 'EQS_BELOW_THRESHOLD'
+            else:
+                rejection_reason = 'UNKNOWN'
+
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT fhq_research.log_rejected_hypothesis(
+                        p_target_asset := %s,
+                        p_model_version := %s,
+                        p_eqs_total_score := %s,
+                        p_eqs_breakdown := %s,
+                        p_market_context := %s,
+                        p_hypothesis_hash := %s,
+                        p_rejection_reason := %s
+                    )
+                """, (
+                    hypothesis.get('target_asset', 'BTC-USD'),
+                    FINN_MODEL_VERSION,
+                    eqs_score,
+                    Json(eqs_components),
+                    Json(market_context),
+                    hypothesis_hash,
+                    rejection_reason
+                ))
+                rejection_id = cur.fetchone()[0]
+
+            logger.debug(f"Rejection logged: {rejection_id} (EQS={eqs_score:.4f})")
+            return str(rejection_id)
+
+        except Exception as e:
+            logger.warning(f"Failed to log rejection (non-blocking): {e}")
+            return None
+
     def get_market_context(self) -> Dict:
         """Get current market context."""
         context = {
@@ -1115,6 +1184,10 @@ OUTPUT FORMAT (JSON array):
                         f"    Title: {hypothesis.get('title', '')[:60]}\n"
                         f"    Needle ID: {needle_id}"
                     )
+            else:
+                # CEO Directive: CEO-REJECTION-LEDGER-2025-12-21
+                # Log rejected hypothesis to shadow ledger (passive, non-blocking)
+                self.log_rejected_hypothesis(hypothesis, validation, context, price_witness)
 
         self.hunts_completed += 1
 
