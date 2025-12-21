@@ -6,6 +6,43 @@ CEO Directive: CD-IOS-001-PRICE-ARCH-001
 Classification: G5_PAPER_EXECUTION
 Orchestrator: FHQ-IoS001-Bulletproof-EQUITY
 
+===============================================================================
+CEO DIRECTIVE 2025-12-21: HARD KILL SWITCH ACTIVE
+===============================================================================
+Status: DISABLED - CASCADE FAILURE CONTAINMENT
+Incident: 3x over-limit execution (MSTR 1088 shares, 2x leverage)
+Root Cause: Database/Broker desync, exposure gate logged but didn't block
+
+This daemon is HARD DISABLED until:
+1. Fix A: Exposure gate BLOCKS (not just logs)
+2. Fix B: Position counts query BROKER, not database
+3. Fix C: Trade logging atomic with execution
+4. Fix D: Single-symbol accumulation guard
+5. Fix E: Incremental exposure check
+
+Re-enablement requires:
+- STIG confirmation of all fixes
+- VEGA attestation
+- CEO explicit approval
+
+DO NOT REMOVE THIS BLOCK WITHOUT CEO AUTHORIZATION.
+===============================================================================
+"""
+
+import sys
+print("=" * 70)
+print("SIGNAL EXECUTOR DAEMON: HARD DISABLED")
+print("CEO Directive 2025-12-21: Cascade Failure Containment")
+print("=" * 70)
+print("This daemon cannot run until remediation is complete.")
+print("Required: STIG fixes + VEGA attestation + CEO approval")
+print("=" * 70)
+sys.exit(1)
+
+# Original code below - unreachable until kill switch removed
+# ============================================================================
+
+"""
 Purpose:
     Monitors Golden Needles across ALL asset classes and CCO state.
     Executes trades via Alpaca Paper when CCO permits.
@@ -81,6 +118,25 @@ except ImportError:
     GATEWAY_AVAILABLE = False
     PAPER_MODE_ENABLED = True
     PAPER_MODE_MAX_EXPOSURE_PCT = 0.10
+
+# ============================================================================
+# BROKER TRUTH ENFORCER (CEO Directive 2025-12-21)
+# Position/exposure queries MUST use broker, NOT database
+# ============================================================================
+try:
+    from broker_truth_enforcer import (
+        get_broker_account_state,
+        get_open_position_count as broker_get_open_position_count,
+        get_open_symbols as broker_get_open_symbols,
+        has_position_for_symbol,
+        get_exposure_metrics,
+        validate_exposure_from_broker,
+        get_pending_orders
+    )
+    BROKER_TRUTH_AVAILABLE = True
+except ImportError:
+    BROKER_TRUTH_AVAILABLE = False
+    logger.warning("BROKER TRUTH ENFORCER NOT AVAILABLE - EXECUTION BLOCKED")
 
 # Alpaca SDK
 try:
@@ -241,16 +297,38 @@ class SignalExecutorDaemon:
     # It validates ACTUAL Alpaca positions, not just our records.
     # This protects against external trades, bugs, and margin abuse.
 
-    def validate_exposure_gate(self, proposed_trade_usd: float = 0) -> Tuple[bool, str]:
+    def validate_exposure_gate(
+        self,
+        proposed_trade_usd: float = 0,
+        proposed_symbol: Optional[str] = None
+    ) -> Tuple[bool, str]:
         """
         Validate HARD exposure limits before allowing any new trade.
 
-        This checks ACTUAL Alpaca positions, not just database records.
-        Returns (is_allowed, reason_if_blocked)
+        CEO Directive 2025-12-21: This checks ACTUAL Alpaca positions.
+        Database state is NEVER trusted for exposure decisions.
+
+        Args:
+            proposed_trade_usd: Size of proposed trade in USD (Fix E)
+            proposed_symbol: Symbol for proposed trade (Fix D - same-symbol guard)
+
+        Returns:
+            (is_allowed, reason_if_blocked)
         """
         if not self.trading_client:
             return False, "No Alpaca connection"
 
+        # =====================================================================
+        # CEO DIRECTIVE 2025-12-21: Use broker_truth_enforcer if available
+        # This centralizes all broker queries in one module
+        # =====================================================================
+        if BROKER_TRUTH_AVAILABLE:
+            return validate_exposure_from_broker(
+                proposed_trade_usd=proposed_trade_usd,
+                proposed_symbol=proposed_symbol
+            )
+
+        # Fallback to direct Alpaca queries if broker_truth_enforcer not available
         try:
             # Get ACTUAL account state from Alpaca
             account = self.trading_client.get_account()
@@ -259,6 +337,9 @@ class SignalExecutorDaemon:
 
             # Get ACTUAL positions from Alpaca
             positions = self.trading_client.get_all_positions()
+
+            # Build list of open symbols for same-symbol check
+            open_symbols = [p.symbol for p in positions]
 
             # Calculate total exposure
             total_exposure = sum(float(p.market_value) for p in positions)
@@ -295,7 +376,19 @@ class SignalExecutorDaemon:
                 logger.critical(f"HARD GATE BLOCKED: Position {largest_symbol} at ${largest_position:,.0f} > ${HARD_LIMITS['max_single_position_usd']:,.0f}")
                 return False, f"ABSOLUTE USD VIOLATION: {largest_symbol} at ${largest_position:,.0f} exceeds ${HARD_LIMITS['max_single_position_usd']:,.0f} limit"
 
-            # GATE 5: Check if proposed trade would exceed limits
+            # =====================================================================
+            # GATE 5: SAME-SYMBOL ACCUMULATION GUARD (Fix D - CEO Directive 2025-12-21)
+            # Prevents multiple positions in the same symbol
+            # This was the ROOT CAUSE of 3x MSTR accumulation
+            # =====================================================================
+            if proposed_symbol and proposed_symbol in open_symbols:
+                logger.critical(f"SAME-SYMBOL BLOCKED: Already have position in {proposed_symbol}")
+                return False, f"SAME-SYMBOL VIOLATION: Already have position in {proposed_symbol}"
+
+            # =====================================================================
+            # GATE 6: INCREMENTAL EXPOSURE CHECK (Fix E - CEO Directive 2025-12-21)
+            # Validates that proposed trade won't push us over limits
+            # =====================================================================
             if proposed_trade_usd > 0:
                 new_exposure_pct = (total_exposure + proposed_trade_usd) / portfolio_value
                 if new_exposure_pct > HARD_LIMITS['max_total_exposure_pct']:
@@ -306,11 +399,23 @@ class SignalExecutorDaemon:
                     logger.warning(f"Proposed trade blocked: ${proposed_trade_usd:,.0f} exceeds ${HARD_LIMITS['max_single_position_usd']:,.0f}")
                     return False, f"PROPOSED TRADE BLOCKED: ${proposed_trade_usd:,.0f} exceeds single position limit"
 
-            # GATE 6: Check minimum cash reserve
+            # GATE 7: Check minimum cash reserve
             cash_pct = cash / portfolio_value if portfolio_value > 0 else 0
             if cash_pct < HARD_LIMITS['min_cash_reserve_pct'] and proposed_trade_usd > 0:
                 logger.warning(f"Cash reserve low: {cash_pct:.1%} < {HARD_LIMITS['min_cash_reserve_pct']:.0%}")
                 return False, f"CASH RESERVE LOW: {cash_pct:.1%} below {HARD_LIMITS['min_cash_reserve_pct']:.0%} minimum"
+
+            # GATE 8: Check for pending orders on same symbol
+            if proposed_symbol:
+                try:
+                    pending = self.trading_client.get_orders(
+                        GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[proposed_symbol])
+                    )
+                    if pending:
+                        logger.warning(f"Pending order exists for {proposed_symbol}")
+                        return False, f"PENDING ORDER EXISTS: {len(pending)} pending order(s) for {proposed_symbol}"
+                except Exception as e:
+                    logger.warning(f"Could not check pending orders: {e}")
 
             # All gates passed
             logger.info(f"Exposure gate PASSED: {len(positions)} positions, {total_exposure_pct:.1%} exposure, ${cash:,.0f} cash")
@@ -430,19 +535,33 @@ class SignalExecutorDaemon:
 
     # =========================================================================
     # POSITION MANAGEMENT
+    # CEO DIRECTIVE 2025-12-21: BROKER IS SOURCE OF TRUTH
+    # All position/exposure queries for DECISION-MAKING must use BROKER
+    # Database queries permitted ONLY for internal bookkeeping (needle_id tracking)
     # =========================================================================
 
     def get_open_positions_count(self) -> int:
-        """Get count of open paper positions"""
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                SELECT COUNT(*) FROM fhq_canonical.g5_paper_trades
-                WHERE exit_timestamp IS NULL
-            """)
-            return cur.fetchone()[0]
+        """
+        Get count of open positions FROM BROKER (not database).
+
+        CEO Directive 2025-12-21 FIX B:
+        This function MUST query Alpaca directly.
+        Database counts may be used only for reporting, never for decision-making.
+        """
+        if BROKER_TRUTH_AVAILABLE:
+            return broker_get_open_position_count()
+        else:
+            # Broker unavailable = execution blocked = return max to prevent new trades
+            logger.critical("BROKER UNAVAILABLE - Returning MAX to block execution")
+            return DAEMON_CONFIG['max_concurrent_positions']
 
     def get_traded_needles(self) -> List[str]:
-        """Get list of needle IDs that have been traded"""
+        """
+        Get list of needle IDs that have been traded.
+
+        NOTE: This is internal bookkeeping only (broker doesn't track needle IDs).
+        This does NOT affect position/exposure decisions.
+        """
         with self.conn.cursor() as cur:
             cur.execute("""
                 SELECT DISTINCT needle_id::text FROM fhq_canonical.g5_paper_trades
@@ -450,16 +569,30 @@ class SignalExecutorDaemon:
             return [row[0] for row in cur.fetchall()]
 
     def get_open_symbols(self) -> List[str]:
-        """Get symbols with open positions"""
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                SELECT DISTINCT symbol FROM fhq_canonical.g5_paper_trades
-                WHERE exit_timestamp IS NULL
-            """)
-            return [row[0] for row in cur.fetchall()]
+        """
+        Get symbols with open positions FROM BROKER (not database).
+
+        CEO Directive 2025-12-21 FIX B:
+        This function MUST query Alpaca directly.
+        Database symbols may be used only for reporting, never for decision-making.
+        """
+        if BROKER_TRUTH_AVAILABLE:
+            return broker_get_open_symbols()
+        else:
+            # Broker unavailable = execution blocked
+            logger.critical("BROKER UNAVAILABLE - Cannot get open symbols")
+            return []
 
     def get_open_positions(self) -> List[Dict]:
-        """Get all open positions with entry details"""
+        """
+        Get all open positions with entry details.
+
+        WARNING: This is for internal bookkeeping ONLY (exit monitoring).
+        The database records provide needle_id, entry_price, entry_context
+        which the broker doesn't track.
+
+        For position/exposure DECISIONS, use broker_truth_enforcer functions.
+        """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT
@@ -856,9 +989,10 @@ class SignalExecutorDaemon:
 
         # =====================================================================
         # HARD EXPOSURE GATE - MANDATORY PRE-EXECUTION CHECK
-        # This validates ACTUAL Alpaca state before any trade.
+        # CEO Directive 2025-12-21: Validates ACTUAL Alpaca state before any trade.
+        # Fix D: Same-symbol accumulation guard via proposed_symbol
         # =====================================================================
-        gate_ok, gate_reason = self.validate_exposure_gate()
+        gate_ok, gate_reason = self.validate_exposure_gate(proposed_symbol=symbol)
         if not gate_ok:
             logger.critical(f"EXECUTION BLOCKED by HARD EXPOSURE GATE: {gate_reason}")
             self.log_exposure_violation(gate_reason, {
@@ -909,8 +1043,12 @@ class SignalExecutorDaemon:
 
         # =====================================================================
         # SECONDARY GATE: Validate proposed trade against limits
+        # CEO Directive 2025-12-21: Fix D (same-symbol) + Fix E (incremental exposure)
         # =====================================================================
-        gate_ok, gate_reason = self.validate_exposure_gate(proposed_trade_usd=dollar_amount)
+        gate_ok, gate_reason = self.validate_exposure_gate(
+            proposed_trade_usd=dollar_amount,
+            proposed_symbol=symbol
+        )
         if not gate_ok:
             logger.warning(f"Proposed trade blocked: {gate_reason}")
             return None
@@ -971,8 +1109,18 @@ class SignalExecutorDaemon:
         value: float,
         order_id: str
     ) -> str:
-        """Log trade to database"""
+        """
+        Log trade to database.
+
+        CEO Directive 2025-12-21 FIX C: Trade logging must be atomic with execution.
+        If primary logging fails, we MUST log to recovery table because the broker
+        trade has already executed.
+
+        The trade cannot be rolled back at broker level, so we ensure logging
+        succeeds or falls back to a simpler recovery log.
+        """
         trade_id = str(uuid.uuid4())
+        execution_time = datetime.now(timezone.utc)
         cco_state = self.get_cco_state()
 
         entry_context = json.dumps({
@@ -980,67 +1128,131 @@ class SignalExecutorDaemon:
             'global_permit': cco_state['global_permit'] if cco_state else 'UNKNOWN',
             'regime': cco_state['current_regime'] if cco_state else 'UNKNOWN',
             'vol_percentile': float(cco_state['current_vol_percentile']) if cco_state else 0,
-            'needle_title': needle['hypothesis_title'],
-            'needle_category': needle['hypothesis_category'],
-            'eqs_score': float(needle['eqs_score']),
+            'needle_title': needle.get('hypothesis_title', 'UNKNOWN'),
+            'needle_category': needle.get('hypothesis_category', 'UNKNOWN'),
+            'eqs_score': float(needle.get('eqs_score', 0)),
             'alpaca_order_id': order_id,
             'kelly_multiplier': DAEMON_CONFIG['kelly_multiplier'],
             'target_pct': DAEMON_CONFIG['default_target_pct'],
             'stop_loss_pct': DAEMON_CONFIG['default_stop_loss_pct'],
             'executed_by': 'SIGNAL_EXECUTOR_DAEMON',
-            'execution_timestamp': datetime.now(timezone.utc).isoformat()
+            'execution_timestamp': execution_time.isoformat()
         })
 
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO fhq_canonical.g5_paper_trades (
-                    trade_id, needle_id, symbol, direction, entry_price,
-                    position_size, entry_context, entry_cco_status,
-                    entry_vol_percentile, entry_regime, entry_timestamp
-                ) VALUES (
-                    %s, %s, %s, 'LONG', %s, %s, %s, %s, %s, %s, NOW()
-                )
-            """, (
-                trade_id,
-                needle['needle_id'],
-                symbol,
-                price,
-                value,
-                entry_context,
-                cco_state['cco_status'] if cco_state else 'UNKNOWN',
-                float(cco_state['current_vol_percentile']) if cco_state else 0,
-                cco_state['current_regime'] if cco_state else 'UNKNOWN'
-            ))
+        try:
+            # =====================================================================
+            # PRIMARY LOGGING - Normal trade record
+            # =====================================================================
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_canonical.g5_paper_trades (
+                        trade_id, needle_id, symbol, direction, entry_price,
+                        position_size, entry_context, entry_cco_status,
+                        entry_vol_percentile, entry_regime, entry_timestamp
+                    ) VALUES (
+                        %s, %s, %s, 'LONG', %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, (
+                    trade_id,
+                    needle['needle_id'],
+                    symbol,
+                    price,
+                    value,
+                    entry_context,
+                    cco_state['cco_status'] if cco_state else 'UNKNOWN',
+                    float(cco_state['current_vol_percentile']) if cco_state else 0,
+                    cco_state['current_regime'] if cco_state else 'UNKNOWN',
+                    execution_time
+                ))
 
-            # Update signal state
-            cur.execute("""
-                UPDATE fhq_canonical.g5_signal_state
-                SET
-                    current_state = 'PRIMED',
-                    primed_at = NOW(),
-                    position_direction = 'LONG',
-                    position_entry_price = %s,
-                    position_size = %s,
-                    last_transition = 'DORMANT_TO_PRIMED',
-                    last_transition_at = NOW(),
-                    transition_count = transition_count + 1,
-                    updated_at = NOW()
-                WHERE needle_id = %s
-            """, (price, value, needle['needle_id']))
+                # Update signal state
+                cur.execute("""
+                    UPDATE fhq_canonical.g5_signal_state
+                    SET
+                        current_state = 'PRIMED',
+                        primed_at = %s,
+                        position_direction = 'LONG',
+                        position_entry_price = %s,
+                        position_size = %s,
+                        last_transition = 'DORMANT_TO_PRIMED',
+                        last_transition_at = %s,
+                        transition_count = transition_count + 1,
+                        updated_at = %s
+                    WHERE needle_id = %s
+                """, (execution_time, price, value, execution_time, execution_time, needle['needle_id']))
 
-            # Log transition
-            cur.execute("""
-                INSERT INTO fhq_canonical.g5_state_transitions (
-                    needle_id, from_state, to_state, transition_trigger,
-                    context_snapshot, cco_status, transition_valid, transitioned_at
-                ) VALUES (
-                    %s, 'DORMANT', 'PRIMED', 'SIGNAL_EXECUTOR_DAEMON',
-                    %s, %s, TRUE, NOW()
-                )
-            """, (needle['needle_id'], entry_context, cco_state['cco_status'] if cco_state else 'UNKNOWN'))
+                # Log transition
+                cur.execute("""
+                    INSERT INTO fhq_canonical.g5_state_transitions (
+                        needle_id, from_state, to_state, transition_trigger,
+                        context_snapshot, cco_status, transition_valid, transitioned_at
+                    ) VALUES (
+                        %s, 'DORMANT', 'PRIMED', 'SIGNAL_EXECUTOR_DAEMON',
+                        %s, %s, TRUE, %s
+                    )
+                """, (needle['needle_id'], entry_context, cco_state['cco_status'] if cco_state else 'UNKNOWN', execution_time))
 
-        self.conn.commit()
-        return trade_id
+            self.conn.commit()
+            logger.info(f"Trade logged successfully: {trade_id} ({symbol})")
+            return trade_id
+
+        except Exception as primary_error:
+            # =====================================================================
+            # FIX C: ATOMIC FALLBACK - If primary fails, log to governance
+            # The trade HAS executed at broker. We MUST record it somewhere.
+            # =====================================================================
+            logger.critical(f"PRIMARY TRADE LOGGING FAILED: {primary_error}")
+
+            try:
+                self.conn.rollback()  # Clean up failed transaction
+
+                # Log to governance actions as CRITICAL - this will be visible
+                with self.conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO fhq_governance.governance_actions_log (
+                            action_type,
+                            action_target,
+                            action_target_type,
+                            initiated_by,
+                            decision,
+                            decision_rationale,
+                            agent_id,
+                            metadata
+                        ) VALUES (
+                            'TRADE_LOGGING_FAILURE',
+                            %s,
+                            'CRITICAL_RECOVERY',
+                            'SIGNAL_EXECUTOR_DAEMON',
+                            'FAILED',
+                            %s,
+                            'STIG',
+                            %s::jsonb
+                        )
+                    """, (
+                        symbol,
+                        f"CRITICAL: Trade executed at broker but logging failed. Order ID: {order_id}. Error: {primary_error}",
+                        json.dumps({
+                            'trade_id': trade_id,
+                            'needle_id': str(needle.get('needle_id')),
+                            'symbol': symbol,
+                            'qty': qty,
+                            'price': price,
+                            'value': value,
+                            'order_id': order_id,
+                            'execution_time': execution_time.isoformat(),
+                            'primary_error': str(primary_error),
+                            'entry_context': entry_context
+                        })
+                    ))
+                self.conn.commit()
+                logger.critical(f"RECOVERY LOG CREATED for failed trade: {trade_id}")
+
+            except Exception as recovery_error:
+                logger.critical(f"RECOVERY LOGGING ALSO FAILED: {recovery_error}")
+                logger.critical(f"MANUAL INTERVENTION REQUIRED: Order {order_id} for {symbol}")
+
+            # Return trade_id even on failure - the trade DID execute
+            return trade_id
 
     # =========================================================================
     # IoS-003-B: FLASH-CONTEXT CONSUMPTION (Intraday Regime-Delta)
@@ -1208,9 +1420,10 @@ class SignalExecutorDaemon:
 
         # =====================================================================
         # HARD EXPOSURE GATE - MANDATORY PRE-EXECUTION CHECK
-        # This validates ACTUAL Alpaca state before any trade.
+        # CEO Directive 2025-12-21: Validates ACTUAL Alpaca state before any trade.
+        # Fix D: Same-symbol accumulation guard via proposed_symbol
         # =====================================================================
-        gate_ok, gate_reason = self.validate_exposure_gate()
+        gate_ok, gate_reason = self.validate_exposure_gate(proposed_symbol=symbol)
         if not gate_ok:
             logger.critical(f"EPHEMERAL EXECUTION BLOCKED by HARD EXPOSURE GATE: {gate_reason}")
             self.log_exposure_violation(gate_reason, {
@@ -1522,6 +1735,25 @@ class SignalExecutorDaemon:
                     'detection_type': 'CYCLE_START_CHECK',
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 })
+
+            # =====================================================================
+            # FIX A (CEO Directive 2025-12-21): EXPOSURE GATE MUST BLOCK
+            # If gate fails, we ONLY allow position monitoring (exits).
+            # NO new trades are permitted. Logging without blocking is forbidden.
+            # =====================================================================
+            # Phase 1: Monitor existing positions (exits only)
+            monitor_result = self.monitor_positions()
+            result['exits_triggered'] = monitor_result['exits_triggered']
+            result['reason'] = f"EXPOSURE GATE BLOCKED: {gate_reason}"
+
+            if monitor_result['exits_triggered'] > 0:
+                for exit in monitor_result['exits']:
+                    pnl = exit.get('realized_pnl', 0)
+                    pnl_str = f"+${pnl:,.2f}" if pnl >= 0 else f"-${abs(pnl):,.2f}"
+                    logger.info(f"EXIT: {exit['symbol']} | {exit['reason']} | P/L: {pnl_str}")
+
+            # CRITICAL: Return early - NO new trades when gate fails
+            return result
 
         # =====================================================================
         # PHASE 1: MONITOR EXISTING POSITIONS (Always runs, even when suppressed)

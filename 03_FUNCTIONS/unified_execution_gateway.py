@@ -13,7 +13,28 @@ Constitutional Authority: ADR-012, ADR-017, ADR-018
 VEGA Attestation Required: Yes
 
 Author: STIG (System for Technical Implementation & Governance)
+
+===============================================================================
+CEO DIRECTIVE 2025-12-21: EXECUTION FREEZE ACTIVE
+===============================================================================
+Status: ALL EXECUTION BLOCKED - CASCADE FAILURE CONTAINMENT
+Incident: 3x over-limit execution (MSTR 1088 shares, 2x leverage)
+Root Cause: Database/Broker desync, exposure gate logged but didn't block
+
+EXECUTION_FREEZE = True blocks ALL execution paths through this gateway.
+This is the MASTER KILL SWITCH for the entire execution subsystem.
+
+Re-enablement requires:
+- STIG confirmation of all fixes (A-E)
+- VEGA attestation
+- CEO explicit approval
+
+DO NOT SET EXECUTION_FREEZE = False WITHOUT CEO AUTHORIZATION.
+===============================================================================
 """
+
+# MASTER KILL SWITCH - CEO DIRECTIVE 2025-12-21
+EXECUTION_FREEZE = True  # DO NOT CHANGE WITHOUT CEO AUTHORIZATION
 
 import os
 import logging
@@ -170,6 +191,23 @@ def validate_execution_permission(
         ExecutionDecision with allowed status and details
     """
     timestamp = datetime.now(timezone.utc).isoformat()
+
+    # =========================================================================
+    # MASTER KILL SWITCH - CEO DIRECTIVE 2025-12-21
+    # This check MUST be first. No execution permitted when freeze is active.
+    # =========================================================================
+    if EXECUTION_FREEZE:
+        logger.critical(
+            f"EXECUTION FREEZE ACTIVE: {symbol} blocked by CEO Directive 2025-12-21"
+        )
+        return ExecutionDecision(
+            allowed=False,
+            reason="CEO DIRECTIVE 2025-12-21: EXECUTION FREEZE - Cascade failure containment",
+            execution_scope='BLOCKED',
+            asset_class='FROZEN',
+            symbol=symbol,
+            timestamp=timestamp
+        )
 
     # Classify the asset
     asset_class = classify_asset(symbol)
