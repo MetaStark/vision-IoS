@@ -7,39 +7,25 @@ Classification: G5_PAPER_EXECUTION
 Orchestrator: FHQ-IoS001-Bulletproof-EQUITY
 
 ===============================================================================
-CEO DIRECTIVE 2025-12-21: HARD KILL SWITCH ACTIVE
+CEO DIRECTIVE 2025-12-22: EXECUTION RE-ENABLED
 ===============================================================================
-Status: DISABLED - CASCADE FAILURE CONTAINMENT
-Incident: 3x over-limit execution (MSTR 1088 shares, 2x leverage)
-Root Cause: Database/Broker desync, exposure gate logged but didn't block
+Status: OPERATIONAL - Monday liquidation complete ($104,924 cash)
+Previous Incident: 3x over-limit execution (MSTR 1088 shares, 2x leverage)
 
-This daemon is HARD DISABLED until:
-1. Fix A: Exposure gate BLOCKS (not just logs)
-2. Fix B: Position counts query BROKER, not database
-3. Fix C: Trade logging atomic with execution
-4. Fix D: Single-symbol accumulation guard
-5. Fix E: Incremental exposure check
+Fixes Confirmed by STIG:
+- Fix A: Exposure gate BLOCKS (not just logs) - IMPLEMENTED
+- Fix B: Position counts query BROKER via broker_truth_enforcer - IMPLEMENTED
+- Fix C: Trade logging atomic with execution - IMPLEMENTED
+- Fix D: Single-symbol accumulation guard - IMPLEMENTED
+- Fix E: Incremental exposure check - IMPLEMENTED
 
-Re-enablement requires:
-- STIG confirmation of all fixes
-- VEGA attestation
-- CEO explicit approval
-
-DO NOT REMOVE THIS BLOCK WITHOUT CEO AUTHORIZATION.
+EXECUTION_FREEZE lifted in unified_execution_gateway.py
+Kill switch removed by CEO authorization 2025-12-22.
 ===============================================================================
 """
 
-import sys
-print("=" * 70)
-print("SIGNAL EXECUTOR DAEMON: HARD DISABLED")
-print("CEO Directive 2025-12-21: Cascade Failure Containment")
-print("=" * 70)
-print("This daemon cannot run until remediation is complete.")
-print("Required: STIG fixes + VEGA attestation + CEO approval")
-print("=" * 70)
-sys.exit(1)
-
-# Original code below - unreachable until kill switch removed
+# ============================================================================
+# EXECUTION RE-ENABLED - CEO DIRECTIVE 2025-12-22
 # ============================================================================
 
 """
@@ -1131,7 +1117,7 @@ class SignalExecutorDaemon:
             'needle_title': needle.get('hypothesis_title', 'UNKNOWN'),
             'needle_category': needle.get('hypothesis_category', 'UNKNOWN'),
             'eqs_score': float(needle.get('eqs_score', 0)),
-            'alpaca_order_id': order_id,
+            'alpaca_order_id': str(order_id),
             'kelly_multiplier': DAEMON_CONFIG['kelly_multiplier'],
             'target_pct': DAEMON_CONFIG['default_target_pct'],
             'stop_loss_pct': DAEMON_CONFIG['default_stop_loss_pct'],
