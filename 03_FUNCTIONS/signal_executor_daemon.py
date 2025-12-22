@@ -638,8 +638,8 @@ class SignalExecutorDaemon:
 
         # Get current price
         current_price = self.get_current_price(symbol)
-        if current_price is None:
-            return False, "Price unavailable", 0
+        if current_price is None or current_price <= 0:
+            return False, "Price unavailable or market closed", 0
 
         # Calculate P/L percentage
         if direction == 'LONG':
