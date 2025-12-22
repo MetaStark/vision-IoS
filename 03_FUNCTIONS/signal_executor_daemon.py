@@ -158,7 +158,7 @@ ALPACA_SECRET = os.getenv('ALPACA_SECRET', os.getenv('ALPACA_SECRET_KEY', ''))
 # Daemon Config
 DAEMON_CONFIG = {
     'cycle_interval_seconds': 60,       # Check every 60 seconds
-    'max_concurrent_positions': 3,       # Max open positions
+    'max_concurrent_positions': 8,       # Max open positions
     'min_eqs_score': 0.80,              # Minimum EQS to consider
     'kelly_multiplier': 0.75,           # 3/4 Kelly (aggressive)
     'max_position_pct': 0.15,           # 15% NAV max per position
