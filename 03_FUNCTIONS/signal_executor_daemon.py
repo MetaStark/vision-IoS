@@ -487,20 +487,27 @@ class SignalExecutorDaemon:
 
     def get_cco_state(self) -> Optional[Dict]:
         """Get current CCO state"""
-        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT
-                    cco_status,
-                    global_permit,
-                    permit_reason,
-                    current_regime,
-                    current_vol_percentile,
-                    defcon_level,
-                    context_timestamp
-                FROM fhq_canonical.g5_cco_state
-                WHERE is_active = TRUE
-            """)
-            return cur.fetchone()
+        try:
+            # Rollback any failed transaction before querying
+            self.conn.rollback()
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT
+                        cco_status,
+                        global_permit,
+                        permit_reason,
+                        current_regime,
+                        current_vol_percentile,
+                        defcon_level,
+                        context_timestamp
+                    FROM fhq_canonical.g5_cco_state
+                    WHERE is_active = TRUE
+                """)
+                return cur.fetchone()
+        except Exception as e:
+            logger.error(f"Failed to get CCO state: {e}")
+            self.conn.rollback()
+            return None
 
     def is_execution_permitted(self) -> Tuple[bool, str]:
         """Check if execution is permitted by CCO"""
