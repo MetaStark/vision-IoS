@@ -76,14 +76,19 @@ class PromotionPipeline:
 
     def _log_event(self, event_type: str, needle_id: str = None,
                    promotion_id: str = None, data: Dict = None,
-                   severity: str = 'INFO', defcon_escalation: bool = False):
+                   severity: str = 'INFO', defcon_escalation: bool = False,
+                   signal_id: str = None):  # Accept signal_id for backwards compatibility
         """Log pipeline event."""
+        # Merge signal_id into data if provided as kwarg
+        event_data = data or {}
+        if signal_id and 'signal_id' not in event_data:
+            event_data['signal_id'] = signal_id
         with self.conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO fhq_canonical.g5_pipeline_events
                 (event_type, needle_id, promotion_id, event_data, severity, defcon_escalation)
                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, (event_type, needle_id, promotion_id, json.dumps(data or {}),
+            """, (event_type, needle_id, promotion_id, json.dumps(event_data),
                   severity, defcon_escalation))
         self.conn.commit()
 
