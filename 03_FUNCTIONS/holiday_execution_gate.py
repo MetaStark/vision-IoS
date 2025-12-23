@@ -147,8 +147,8 @@ def check_holiday_execution_gate(
 
     Holiday Policy:
         - EQUITIES & FX: Signal lifecycle permitted up to EPHEMERAL_PRIMED only
-        - CRYPTO (BTC, ETH, SOL): Full pipeline including ARMED/ACTIVE
-        - CRYPTO_PROXY (MSTR, COIN, etc.): Permitted IF source is approved crypto
+        - CRYPTO (BTC, ETH, SOL): Full pipeline including ARMED/ACTIVE (24/7 markets)
+        - CRYPTO_PROXY (MSTR, COIN, etc.): BLOCKED - equity markets have limited holiday hours
     """
     if not HOLIDAY_MODE_ENABLED:
         return True, "Holiday mode disabled - normal operations", "N/A"
@@ -165,17 +165,14 @@ def check_holiday_execution_gate(
         else:
             return False, f"CRYPTO blocked: {symbol} not in approved list (BTC, ETH, SOL only)", asset_class
 
-    # CRYPTO_PROXY: Permitted if source is approved crypto
+    # CRYPTO_PROXY: BLOCKED during holiday - stock markets have limited hours
+    # CEO Directive 2025-12-23: Only trade actual crypto (24/7 markets), not equity proxies
     if asset_class == 'CRYPTO_PROXY':
-        if source_signal:
-            # Check if the source signal's symbol is approved crypto
-            if is_approved_crypto(source_signal):
-                return True, f"CRYPTO_PROXY permitted: {symbol} proxying approved {source_signal}", asset_class
-            else:
-                return False, f"CRYPTO_PROXY blocked: Source {source_signal} not approved", asset_class
+        if target_state.upper() in EXECUTION_STATES:
+            return False, f"CRYPTO_PROXY BLOCKED: {symbol} is equity (limited hours) - use actual crypto during holiday", asset_class
         else:
-            # No source signal - this is direct equity execution, blocked
-            return False, f"CRYPTO_PROXY blocked: {symbol} requires crypto source signal during holiday", asset_class
+            # Signal observation permitted
+            return True, f"CRYPTO_PROXY signal observation permitted: {symbol}", asset_class
 
     # EQUITIES, ETFs, FX: Signal lifecycle permitted, execution blocked
     if asset_class in {'EQUITY', 'ETF', 'FX'}:
