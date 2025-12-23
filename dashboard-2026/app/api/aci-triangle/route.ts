@@ -216,7 +216,7 @@ export async function GET() {
       console.log(`[ACI-Triangle] Live DeepSeek balance: $${currentBalance}`)
     } else {
       // Fallback to cached database value if API fails
-      const realBalanceResult = await client.query(`
+      const cachedBalanceResult = await client.query(`
         SELECT
           total_balance,
           topped_up_balance,
@@ -226,9 +226,9 @@ export async function GET() {
         ORDER BY fetched_at DESC
         LIMIT 1
       `)
-      const realBalance = realBalanceResult.rows[0] || { total_balance: 0, topped_up_balance: 0 }
-      currentBalance = parseFloat(realBalance.total_balance) || 0
-      fetchedAt = realBalance.fetched_at ? new Date(realBalance.fetched_at) : null
+      const cachedBalance = cachedBalanceResult.rows[0] || { total_balance: 0, topped_up_balance: 0, fetched_at: null }
+      currentBalance = parseFloat(cachedBalance.total_balance) || 0
+      fetchedAt = cachedBalance.fetched_at ? new Date(cachedBalance.fetched_at) : null
       console.log(`[ACI-Triangle] Using cached balance: $${currentBalance}`)
     }
 
