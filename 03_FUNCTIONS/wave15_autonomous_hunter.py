@@ -66,10 +66,49 @@ EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Constitutional Constants
-EQS_THRESHOLD = 0.85  # LOCKED - CEO Directive
+EQS_THRESHOLD_FALLBACK = 0.85  # Fallback if DB unavailable (CEO-DIR-2025-EQS-001)
 BUDGET_CAP_USD = 20.00  # HARD STOP at $20
 DEFCON_GREEN = 5  # Only GREEN allows operation
 FINN_MODEL_VERSION = "WAVE15-DEEPSEEK-2025-12"  # For rejection ledger
+
+# =============================================================================
+# EQS THRESHOLD GOVERNANCE (CEO-DIR-2025-EQS-001)
+# =============================================================================
+# EQS is a RANKING instrument, not a confidence stamp.
+# Threshold is configurable, versioned, and logged.
+# FINN proposes -> VEGA approves -> STIG enforces -> LINE executes
+
+def get_eqs_threshold_from_db(conn) -> float:
+    """
+    Fetch active EQS threshold from governance config.
+    CEO-DIR-2025-EQS-001: Threshold must be configurable, not hardcoded.
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT fhq_canonical.get_active_eqs_threshold()")
+            result = cur.fetchone()
+            return float(result[0]) if result else EQS_THRESHOLD_FALLBACK
+    except Exception as e:
+        logging.warning(f"Failed to fetch EQS threshold from DB, using fallback: {e}")
+        return EQS_THRESHOLD_FALLBACK
+
+# =============================================================================
+# VOLATILITY-GATED DISCOVERY (CEO DIRECTIVE 2025-12-24)
+# =============================================================================
+# Engine idles at red light: ON but throttled. Full throttle only when green.
+#
+# THROTTLED: Vol < 25% → 1 scan / 4-6 hours, budget-capped
+# PRE-HEAT:  Vol 25-30% → Moderate frequency
+# FULL:      Vol >= 30% → Unrestricted discovery
+#
+# Hygiene: Dormant queue > 20 → auto-pause (prevent signal hoarding)
+
+VOL_GATE_THROTTLE_THRESHOLD = 25.0   # Below this = THROTTLED mode
+VOL_GATE_FULL_THRESHOLD = 30.0       # At or above = FULL mode
+THROTTLED_INTERVAL_SECONDS = 4 * 3600  # 4 hours between scans when throttled
+PREHEAT_INTERVAL_SECONDS = 1 * 3600    # 1 hour between scans in pre-heat
+DORMANT_QUEUE_LIMIT = 20              # Max untradeable signals before pause
+THROTTLED_DAILY_BUDGET_CAP = 2.00     # $2/day max during THROTTLED mode
 
 # API Configuration
 BINANCE_BASE_URL = "https://api.binance.com/api/v3"
@@ -298,14 +337,52 @@ class GoldenNeedleAutoPersister:
     def __init__(self, conn):
         self.conn = conn
         self.persisted_count = 0
+        self.duplicates_blocked = 0
+
+    def check_duplicate(self, hypothesis_title: str, target_asset: str,
+                        regime_technical: str) -> Tuple[bool, Optional[str]]:
+        """
+        Check if hypothesis is a duplicate per CEO Directive 2025-12-25.
+        Uses dedup hash: SHA256(title|asset|regime)
+
+        Returns: (is_duplicate, existing_needle_id or None)
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT is_duplicate, existing_needle_id
+                    FROM fhq_canonical.check_hypothesis_duplicate(%s, %s, %s)
+                """, (hypothesis_title, target_asset, regime_technical))
+
+                result = cur.fetchone()
+                if result and result[0]:  # is_duplicate = True
+                    self.duplicates_blocked += 1
+                    logger.info(f"DEDUP BLOCKED: '{hypothesis_title[:50]}...' matches {result[1]}")
+                    return (True, str(result[1]))
+                return (False, None)
+        except Exception as e:
+            logger.warning(f"Dedup check failed (allowing): {e}")
+            return (False, None)
 
     def persist_needle(self, hypothesis: Dict, validation: Dict,
                        context: Dict, session_id: str, price_witness: Dict) -> Optional[str]:
         """
         Persist a Golden Needle to fhq_canonical.golden_needles.
         Returns needle_id on success, None on failure.
+
+        CEO Directive 2025-12-25: Dedup check before persist.
         """
         try:
+            # CEO Directive 2025-12-25: Check for duplicate before persisting
+            hypothesis_title = hypothesis.get('title', 'Untitled')[:200]
+            target_asset = 'BTC-USD'  # Current default
+            regime_technical = context.get('regime', 'NEUTRAL')
+
+            is_dup, existing_id = self.check_duplicate(hypothesis_title, target_asset, regime_technical)
+            if is_dup:
+                logger.info(f"Skipping duplicate hypothesis - existing: {existing_id}")
+                return None  # Don't persist duplicate
+
             # Sanitize hypothesis for WIN1252 database compatibility
             hypothesis = sanitize_dict_for_db(hypothesis)
 
@@ -520,7 +597,7 @@ class VegaEvidencePackGenerator:
 
             'eqs_breakdown': {
                 'eqs_score': validation.get('envelope', {}).get('evidence_quality_score', 0) if isinstance(validation.get('envelope'), dict) else 0,
-                'threshold': EQS_THRESHOLD,
+                'threshold': EQS_THRESHOLD_FALLBACK,  # Evidence pack uses fallback (actual threshold from governance config)
                 'threshold_met': True,
                 'confluence_factors': validation.get('envelope', {}).get('confluence_factors', []) if isinstance(validation.get('envelope'), dict) else [],
                 'eqs_components': validation.get('envelope', {}).get('eqs_components', {}) if isinstance(validation.get('envelope'), dict) else {}
@@ -654,6 +731,9 @@ class AutonomousHunterEngine:
         self.total_cost = 0.0
         self.start_time = None
 
+        # EQS Threshold (CEO-DIR-2025-EQS-001: configurable, not hardcoded)
+        self.eqs_threshold = EQS_THRESHOLD_FALLBACK  # Updated from DB in connect()
+
         # Focus rotation - use crypto-specific during holiday mode
         self.focus_areas = FOCUS_AREAS_CRYPTO if HOLIDAY_MODE_ENABLED else FOCUS_AREAS_STANDARD
         if HOLIDAY_MODE_ENABLED:
@@ -673,12 +753,118 @@ class AutonomousHunterEngine:
         self.conn.autocommit = True
         self.stop_checker = StopConditionChecker(self.conn)
         self.persister = GoldenNeedleAutoPersister(self.conn)
-        logger.info("Database connected")
+
+        # Fetch active EQS threshold from governance config (CEO-DIR-2025-EQS-001)
+        self.eqs_threshold = get_eqs_threshold_from_db(self.conn)
+        logger.info(f"Database connected (EQS threshold: {self.eqs_threshold})")
 
     def close(self):
         """Close database connection."""
         if self.conn:
             self.conn.close()
+
+    # =========================================================================
+    # VOLATILITY-GATED DISCOVERY (CEO DIRECTIVE 2025-12-24)
+    # =========================================================================
+
+    def get_volatility_state(self) -> Tuple[float, str, str]:
+        """
+        Get current volatility and determine discovery mode.
+        Returns: (vol_percentile, mode, permit_status)
+        Modes: THROTTLED, PRE_HEAT, FULL
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT current_vol_percentile, global_permit
+                    FROM fhq_canonical.g5_cco_state
+                    WHERE is_active = TRUE
+                    ORDER BY context_timestamp DESC
+                    LIMIT 1
+                """)
+                row = cur.fetchone()
+                if row:
+                    vol = float(row[0]) if row[0] else 0.0
+                    permit = row[1] or 'UNKNOWN'
+
+                    if vol >= VOL_GATE_FULL_THRESHOLD:
+                        mode = 'FULL'
+                    elif vol >= VOL_GATE_THROTTLE_THRESHOLD:
+                        mode = 'PRE_HEAT'
+                    else:
+                        mode = 'THROTTLED'
+
+                    return vol, mode, permit
+                return 0.0, 'THROTTLED', 'UNKNOWN'
+        except Exception as e:
+            logger.warning(f"Vol state query failed: {e}")
+            return 0.0, 'THROTTLED', 'UNKNOWN'
+
+    def get_dormant_queue_count(self) -> int:
+        """
+        Count untradeable DORMANT signals (queue hygiene check).
+        If queue > DORMANT_QUEUE_LIMIT, discovery should pause.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COUNT(*)
+                    FROM fhq_canonical.g5_signal_state
+                    WHERE current_state = 'DORMANT'
+                """)
+                return cur.fetchone()[0] or 0
+        except Exception as e:
+            logger.warning(f"Dormant queue count failed: {e}")
+            return 0
+
+    def get_throttled_daily_spend(self) -> float:
+        """
+        Get today's discovery spend for throttled budget enforcement.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COALESCE(SUM((metadata->>'cost_usd')::float), 0)
+                    FROM fhq_governance.governance_actions_log
+                    WHERE action_type = 'GOLDEN_NEEDLE_HUNT'
+                    AND logged_at::date = CURRENT_DATE
+                """)
+                return cur.fetchone()[0] or 0.0
+        except Exception as e:
+            logger.warning(f"Throttled spend query failed: {e}")
+            return 0.0
+
+    def check_vol_gate(self) -> Tuple[bool, str, int]:
+        """
+        Main vol-gating check. Returns (proceed, reason, interval_seconds).
+
+        Returns:
+            proceed: True if hunt should run
+            reason: Explanation of decision
+            interval_seconds: Sleep interval before next check
+        """
+        vol, mode, permit = self.get_volatility_state()
+        dormant_count = self.get_dormant_queue_count()
+
+        # Check dormant queue limit (hygiene rule)
+        if dormant_count >= DORMANT_QUEUE_LIMIT:
+            return False, f"QUEUE_FULL: {dormant_count} dormant signals >= {DORMANT_QUEUE_LIMIT} limit", THROTTLED_INTERVAL_SECONDS
+
+        if mode == 'FULL':
+            # Unrestricted discovery
+            return True, f"FULL_MODE: Vol {vol:.1f}% >= {VOL_GATE_FULL_THRESHOLD}%", 30
+
+        elif mode == 'PRE_HEAT':
+            # Moderate frequency
+            return True, f"PRE_HEAT_MODE: Vol {vol:.1f}% (warming up)", PREHEAT_INTERVAL_SECONDS
+
+        else:  # THROTTLED
+            # Check throttled daily budget
+            daily_spend = self.get_throttled_daily_spend()
+            if daily_spend >= THROTTLED_DAILY_BUDGET_CAP:
+                return False, f"THROTTLED_BUDGET_EXCEEDED: ${daily_spend:.2f} >= ${THROTTLED_DAILY_BUDGET_CAP}", THROTTLED_INTERVAL_SECONDS
+
+            return True, f"THROTTLED_MODE: Vol {vol:.1f}% < {VOL_GATE_THROTTLE_THRESHOLD}% (1 scan/4h)", THROTTLED_INTERVAL_SECONDS
 
     def log_rejected_hypothesis(self, hypothesis: Dict, validation: Dict, context: Dict, price_witness: Dict) -> Optional[str]:
         """
@@ -714,7 +900,7 @@ class AutonomousHunterEngine:
             # Determine rejection reason
             if eqs_score < 0.70:
                 rejection_reason = 'EQS_CRITICALLY_LOW'
-            elif eqs_score < EQS_THRESHOLD:
+            elif eqs_score < self.eqs_threshold:
                 rejection_reason = 'EQS_BELOW_THRESHOLD'
             else:
                 rejection_reason = 'UNKNOWN'
@@ -1046,7 +1232,7 @@ OUTPUT FORMAT (JSON array):
         eqs_score = min(1.0, base_eqs + factor_bonus)
 
         # Determine confidence
-        if eqs_score >= EQS_THRESHOLD:
+        if eqs_score >= self.eqs_threshold:
             confidence = 'HIGH'
             action = 'ACCEPT'
         elif eqs_score >= 0.7:
@@ -1074,7 +1260,7 @@ OUTPUT FORMAT (JSON array):
         ).hexdigest()
 
         return {
-            'validated': eqs_score >= EQS_THRESHOLD,
+            'validated': eqs_score >= self.eqs_threshold,
             'action': action,
             'confidence': confidence,
             'envelope': {
@@ -1157,7 +1343,7 @@ OUTPUT FORMAT (JSON array):
             validation = self.validate_with_sitc(hypothesis, context)
 
             eqs_score = validation.get('envelope', {}).get('evidence_quality_score', 0)
-            eqs1_decision = 'ACCEPT' if eqs_score >= EQS_THRESHOLD else 'REJECT'
+            eqs1_decision = 'ACCEPT' if eqs_score >= self.eqs_threshold else 'REJECT'
 
             # CEO Directive: CEO-EQS-2-2025-12-21
             # EQS 2.0 Shadow Evaluation - runs for ALL hypotheses (shadow mode)
@@ -1179,7 +1365,7 @@ OUTPUT FORMAT (JSON array):
                     logger.warning(f"EQS2 shadow evaluation failed (non-blocking): {e}")
 
             # Check if Golden Needle
-            if eqs_score >= EQS_THRESHOLD:
+            if eqs_score >= self.eqs_threshold:
                 # AUTO-PERSIST - NO CONFIRMATION NEEDED
                 needle_id = self.persister.persist_needle(
                     hypothesis, validation, context, session_id, price_witness
@@ -1243,14 +1429,44 @@ OUTPUT FORMAT (JSON array):
         logger.info("WAVE 15 AUTONOMOUS GOLDEN NEEDLE HUNTER STARTING")
         logger.info("="*60)
         logger.info(f"Budget Cap: ${BUDGET_CAP_USD}")
-        logger.info(f"EQS Threshold: {EQS_THRESHOLD}")
+        logger.info(f"EQS Threshold: {self.eqs_threshold} (from governance config)")
         logger.info(f"Stop Condition: DEFCON != GREEN or Budget Exceeded")
         logger.info("="*60)
         logger.info("NO HUMAN INTERVENTION REQUIRED")
         logger.info("="*60)
+        logger.info("VOL-GATING ENABLED (CEO Directive 2025-12-24)")
+        logger.info(f"  THROTTLED: Vol < {VOL_GATE_THROTTLE_THRESHOLD}% (4h intervals, ${THROTTLED_DAILY_BUDGET_CAP}/day)")
+        logger.info(f"  PRE-HEAT:  Vol {VOL_GATE_THROTTLE_THRESHOLD}-{VOL_GATE_FULL_THRESHOLD}% (1h intervals)")
+        logger.info(f"  FULL:      Vol >= {VOL_GATE_FULL_THRESHOLD}% (unrestricted)")
+        logger.info(f"  QUEUE CAP: {DORMANT_QUEUE_LIMIT} dormant signals max")
+        logger.info("DEDUP ENABLED (CEO Directive 2025-12-25)")
+        logger.info(f"  Hash: SHA256(title|asset|regime) - blocks duplicates")
+        logger.info(f"  TTL:  7 days default - auto-expire stale signals")
+        logger.info("="*60)
+
+        last_vol_mode = None
 
         while True:
             try:
+                # CEO DIRECTIVE 2025-12-24: Vol-gating check before each hunt
+                proceed, gate_reason, interval = self.check_vol_gate()
+
+                vol, mode, permit = self.get_volatility_state()
+                dormant_count = self.get_dormant_queue_count()
+
+                # Log mode transitions
+                if mode != last_vol_mode:
+                    logger.info(f"VOL-GATE MODE CHANGE: {last_vol_mode} -> {mode} (Vol: {vol:.1f}%, Queue: {dormant_count})")
+                    last_vol_mode = mode
+
+                if not proceed:
+                    logger.info(f"VOL-GATE BLOCKED: {gate_reason}")
+                    logger.info(f"  Sleeping {interval // 3600}h {(interval % 3600) // 60}m until next check")
+                    time.sleep(interval)
+                    continue
+
+                logger.info(f"VOL-GATE: {gate_reason}")
+
                 # Run hunt
                 result = self.run_single_hunt()
 
@@ -1275,8 +1491,11 @@ OUTPUT FORMAT (JSON array):
                     f"Total Cost: ${result['total_cost']:.6f}"
                 )
 
-                # Brief pause between hunts
-                time.sleep(min_interval_seconds)
+                # Vol-gated interval between hunts (mode-adaptive)
+                sleep_interval = max(interval, min_interval_seconds)
+                if sleep_interval > 60:
+                    logger.info(f"Next hunt in {sleep_interval // 3600}h {(sleep_interval % 3600) // 60}m (mode: {mode})")
+                time.sleep(sleep_interval)
 
             except KeyboardInterrupt:
                 logger.info("Shutdown requested via keyboard interrupt")
@@ -1299,6 +1518,7 @@ OUTPUT FORMAT (JSON array):
             'summary': {
                 'total_hunts': self.hunts_completed,
                 'total_golden_needles': self.needles_found,
+                'duplicates_blocked': self.persister.duplicates_blocked if self.persister else 0,
                 'total_cost_usd': self.total_cost,
                 'cost_per_needle_usd': self.total_cost / max(1, self.needles_found),
                 'run_duration_hours': (datetime.now(timezone.utc) - self.start_time).total_seconds() / 3600 if self.start_time else 0,
