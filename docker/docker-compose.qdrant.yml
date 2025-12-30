@@ -1,0 +1,62 @@
+# Qdrant Vector Database - Docker Compose Configuration
+# CEO-DIR-2025-FINN-001 Phase 0 Infrastructure
+# Date: 2025-12-30
+# Author: STIG (CTO)
+#
+# Purpose: Interim Qdrant deployment via Docker until K8s cluster is available.
+# This is NOT the production architecture (which uses K8s StatefulSet with 3 replicas).
+#
+# CRITICAL RULE: Qdrant is NOT a graph store.
+# It performs SIMILARITY SEARCH ONLY.
+# All authoritative relationships live in Postgres (fhq_graph.*).
+#
+# GraphRAG Retrieval Contract:
+#   Step 1: Qdrant → candidate nodes (semantic proximity)
+#   Step 2: Postgres → relationship expansion (edges, hops, causality)
+#   Step 3: FINN → reasoning + synthesis
+#
+# DEFCON Behavior (ADR-016):
+#   GREEN  → Full operation
+#   YELLOW → Reduced search depth (max 5 results)
+#   ORANGE → Paper mode, validation posture (freeze cognitive)
+#   RED    → HALT (no new retrievals)
+#   BLACK  → Shutdown
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.7.4
+    container_name: fhq-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - ./qdrant-config:/qdrant/config
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      # Performance tuning for dev/interim
+      - QDRANT__STORAGE__ON_DISK_PAYLOAD=true
+      - QDRANT__STORAGE__HNSW_INDEX__ON_DISK=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "fhq.component=qdrant"
+      - "fhq.directive=CEO-DIR-2025-FINN-001"
+      - "fhq.defcon.critical=true"
+    networks:
+      - fhq-network
+
+volumes:
+  qdrant_data:
+    name: fhq-qdrant-data
+
+networks:
+  fhq-network:
+    name: fhq-network
+    driver: bridge

@@ -1,0 +1,78 @@
+{
+  "resolution_id": "G3-2025-001",
+  "resolution_type": "CALIBRATION_FREEZE",
+  "title": "VEGA G3 Resolution - FINN Truth Engine Calibration Freeze v1.0",
+  "authority": "VEGA (Verification & Governance Authority)",
+  "date": "2025-12-30T19:00:12Z",
+  "directive_reference": "CEO-DIR-2025-FINN-001",
+
+  "scope": {
+    "description": "All FINN Truth Engine calibration parameters",
+    "parameter_count": 11,
+    "version": "v1.0",
+    "applies_to": "FINN Truth Engine Phase 3 and onward"
+  },
+
+  "legal_basis": {
+    "rationale": "Parameters have crossed threshold from infrastructure to epistemic output. FINN Truth Engine now generates G0 proposals. Evidence nodes are hash-bound. Calibration parameters affect what lives/dies epistemically. Parameters = decision basis = legally exposed. No freeze = moving goalposts risk.",
+    "compliance": [
+      "CFA GIPS (no retroactive tuning)",
+      "BCBS-239 (traceability)",
+      "ISO-8000 (data lineage)",
+      "ADR-010 (discrepancy governance)",
+      "ADR-012 (economic safety)",
+      "ADR-020 (ACI epistemic discipline)"
+    ]
+  },
+
+  "frozen_parameters": [
+    {"parameter": "TTL_NEUTRAL", "value": 1.0, "description": "TTL multiplier for NEUTRAL regime"},
+    {"parameter": "TTL_VOLATILE", "value": 0.2, "description": "TTL multiplier for VOLATILE regime"},
+    {"parameter": "TTL_BROKEN", "value": 0.2, "description": "TTL multiplier for BROKEN regime"},
+    {"parameter": "DISCREPANCY_SOFT_FLAG", "value": 0.30, "description": "Soft flag threshold for discrepancy scoring"},
+    {"parameter": "DISCREPANCY_HARD_BLOCK", "value": 0.50, "description": "Hard block threshold (50% factual divergence)"},
+    {"parameter": "INFORAGE_DAILY_BUDGET", "value": 5.00, "description": "Daily LLM/API budget per EC-018"},
+    {"parameter": "INFORAGE_SCENT_PULSE", "value": 0.50, "description": "Minimum scent score for Pulse tier"},
+    {"parameter": "INFORAGE_SCENT_SNIPER", "value": 0.90, "description": "Minimum scent score for Sniper tier"},
+    {"parameter": "IKEA_EXTERNAL_REQUIRED", "value": 0.70, "description": "Below this = EXTERNAL_REQUIRED classification"},
+    {"parameter": "IKEA_PARAMETRIC_SAFE", "value": 0.95, "description": "Above this = safe for PARAMETRIC response"},
+    {"parameter": "SITC_CHAIN_INTEGRITY_MIN", "value": 0.80, "description": "Minimum chain integrity score (< 0.80 = CATASTROPHIC)"}
+  ],
+
+  "governance_rules": {
+    "freeze_meaning": [
+      "One set of values is active in production",
+      "All new calibrations go to candidate versions",
+      "Changes require new G3 decision"
+    ],
+    "prohibited_actions": [
+      "Adjust before Phase 3 without new G3",
+      "Temporary overrides without version",
+      "Parameter changes without VEGA reference"
+    ],
+    "rollback_policy": "Previous version auto-reactivates on failure",
+    "next_calibration_window": "Next scheduled Sunday 00:00 UTC"
+  },
+
+  "audit_trail": {
+    "frozen_by": "VEGA",
+    "frozen_at": "2025-12-30T19:00:12Z",
+    "activated_by": "STIG",
+    "activated_at": "2025-12-30T19:00:24Z",
+    "database_table": "fhq_governance.calibration_versions",
+    "audit_log_table": "fhq_governance.calibration_audit_log"
+  },
+
+  "phase_3_gate": {
+    "status": "UNLOCKED",
+    "condition": "Calibration v1.0 frozen and activated",
+    "verified_at": "2025-12-30T19:00:24Z",
+    "verified_by": "STIG"
+  },
+
+  "attestation": {
+    "statement": "This resolution establishes constitutional control over FINN Truth Engine calibration parameters. All values are now frozen, versioned, and subject to VEGA G3 approval for any changes. Phase 3 is now legitimate.",
+    "signatories": ["VEGA", "STIG"],
+    "hash": "d2ae9dfb88a476b721fe5c2e348a8437405c2cd545d2ef1af8c1cc494e2add1e"
+  }
+}
