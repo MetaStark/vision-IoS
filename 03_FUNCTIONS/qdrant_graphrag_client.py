@@ -598,6 +598,78 @@ class QdrantGraphRAGClient:
             )
             return evidence_id  # Postgres insert succeeded
 
+    def upsert_evidence_node(
+        self,
+        content: str,
+        content_type: str,
+        domain: str,
+        entity_type: str,
+        entity_id: str,
+        embedding: List[float],
+        confidence_score: float = 1.0,
+        content_hash: str = None,
+        collection: str = None
+    ) -> Optional[str]:
+        """
+        Simple method to upsert evidence node to Qdrant only.
+
+        Used by G1 Evidence Seeder when Postgres insert is handled separately.
+        CEO-DIR-2025-FINN-003 compliant.
+
+        Args:
+            content: Evidence content
+            content_type: Type (FACT, CLAIM, etc.)
+            domain: Domain (FINANCE, CRYPTO, etc.)
+            entity_type: Entity type
+            entity_id: Entity ID
+            embedding: Embedding vector
+            confidence_score: Confidence score
+            content_hash: SHA-256 content hash for verification
+            collection: Target collection
+
+        Returns:
+            Qdrant point ID if successful, None otherwise
+        """
+        if not self.check_defcon_write():
+            return None
+
+        if not self.qdrant:
+            logger.error("[GraphRAG] Qdrant client not available")
+            return None
+
+        collection = collection or self.COLLECTION_EVIDENCE_NODES
+        point_id = str(uuid.uuid4())
+
+        try:
+            payload = {
+                "content": content,
+                "content_type": content_type,
+                "domain": domain,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "confidence_score": confidence_score,
+                "content_hash": content_hash,
+                "indexed_at": datetime.now(timezone.utc).isoformat()
+            }
+
+            self.qdrant.upsert(
+                collection_name=collection,
+                points=[
+                    PointStruct(
+                        id=point_id,
+                        vector=embedding,
+                        payload=payload
+                    )
+                ]
+            )
+
+            logger.info(f"[GraphRAG] Upserted evidence to Qdrant: {point_id}")
+            return point_id
+
+        except Exception as e:
+            logger.error(f"[GraphRAG] Qdrant upsert_evidence_node failed: {e}")
+            return None
+
     def _log_qdrant_sync(
         self,
         collection: str,
