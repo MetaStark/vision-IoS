@@ -1,0 +1,218 @@
+{
+  "annex_id": "CEO-DIR-2026-FINN-004-ANNEX-C",
+  "title": "Human Override Window (HOW) Authority Charter",
+  "parent_directive": "CEO-DIR-2026-FINN-004",
+  "classification": "CONSTITUTIONAL GOVERNANCE CHARTER",
+  "status": "DRAFT",
+  "date_drafted": "2025-12-30T22:40:00Z",
+  "authority": ["ADR-001", "ADR-004", "ADR-006", "ADR-013"],
+
+  "purpose": {
+    "statement": "This charter establishes the constitutional framework for human override authority over FjordHQ's epistemic systems, ensuring humans retain absolute veto power over the system's perception of reality.",
+    "legal_basis": "Human oversight is a non-negotiable requirement for autonomous AI systems operating in regulated domains. This charter provides the audit trail and accountability framework required for legal defensibility.",
+    "governance_principle": "The system serves human intent; humans do not serve the system."
+  },
+
+  "authority_hierarchy": {
+    "tier_1_absolute": {
+      "role": "Chief Executive Officer (CEO)",
+      "scope": "Absolute and unconditional veto over all system outputs, ontologies, and canonical truths",
+      "constraints": "None - CEO authority is supreme within FjordHQ",
+      "delegation_authority": "May delegate to Tier-2 authority"
+    },
+    "tier_2_delegated": {
+      "role": "Chief Epistemic Officer (CEIO)",
+      "scope": "Delegated authority over epistemic systems when CEO is unavailable",
+      "constraints": [
+        "Must be explicitly designated by CEO in writing",
+        "Authority is time-bounded (default: 72 hours, renewable)",
+        "Cannot modify constitutional documents (ADR-001 through ADR-020)",
+        "Cannot override CEO decisions"
+      ],
+      "designation_mechanism": "Entry in fhq_governance.how_delegation_registry"
+    },
+    "tier_3_emergency": {
+      "role": "VEGA (Verification & Governance Authority)",
+      "scope": "Emergency halt authority when human authority is unreachable",
+      "constraints": [
+        "May only HALT, not OVERRIDE",
+        "Must attempt human contact for 15 minutes before emergency halt",
+        "All emergency halts require post-incident human review within 24 hours"
+      ],
+      "activation_criteria": "DEFCON ORANGE or RED conditions"
+    }
+  },
+
+  "override_capabilities": {
+    "ikea_override": {
+      "capability_id": "HOW-001",
+      "name": "IKEA Classification Override",
+      "description": "Force EXTERNAL_REQUIRED classification on any ontology path, regardless of system's automated classification",
+      "use_cases": [
+        "CEO suspects stale data in critical domain",
+        "Breaking news not yet reflected in system",
+        "Regulatory requirement for external verification"
+      ],
+      "scope": "Any node, edge, or ontology concept in fhq_canonical or fhq_graph",
+      "duration": "Until explicitly lifted or TTL expiry",
+      "logging_requirement": "MANDATORY - logged to fhq_governance.how_override_log"
+    },
+    "ontology_blocking": {
+      "capability_id": "HOW-002",
+      "name": "Causal Path Blocking",
+      "description": "Freeze or block specific causal paths in Alpha Graph (IoS-007) deemed noisy or unreliable",
+      "use_cases": [
+        "Edge has produced false positives",
+        "Causal relationship is under review",
+        "External source compromised or unreliable"
+      ],
+      "scope": "Any edge in fhq_graph.edges or node in fhq_graph.nodes",
+      "duration": "Until explicitly unblocked",
+      "effect": "Blocked paths excluded from FINN reasoning chains",
+      "logging_requirement": "MANDATORY - logged to fhq_governance.how_override_log"
+    },
+    "seed_authority": {
+      "capability_id": "HOW-003",
+      "name": "Golden Seed Authorization",
+      "description": "Sole authority to approve new 'Golden Seed' nodes in the truth base",
+      "definition": "Golden Seeds are foundational truth nodes that other evidence builds upon",
+      "approval_requirement": "Human signature required for ANY Golden Seed creation",
+      "delegation": "CANNOT be delegated to CEIO or any agent",
+      "logging_requirement": "MANDATORY - logged to fhq_governance.golden_seed_approvals"
+    },
+    "g0_override": {
+      "capability_id": "HOW-004",
+      "name": "G0 Gate Override",
+      "description": "Force a G0 proposal through despite failing automated checks",
+      "use_cases": [
+        "Time-critical decision with acceptable risk",
+        "Automated check known to be miscalibrated",
+        "Strategic override for competitive reasons"
+      ],
+      "constraints": [
+        "Must document reason and risk assessment",
+        "Creates HUMAN_OVERRIDE status in MPS",
+        "Subject to post-decision audit"
+      ],
+      "logging_requirement": "MANDATORY - logged with full justification"
+    },
+    "system_halt": {
+      "capability_id": "HOW-005",
+      "name": "Emergency System Halt",
+      "description": "Immediately halt all FINN cognitive operations",
+      "use_cases": [
+        "Suspected system compromise",
+        "Runaway cost accumulation",
+        "Detected hallucination cascade"
+      ],
+      "effect": "DEFCON RED triggered, all cognitive operations suspended",
+      "recovery": "Requires human authorization to resume",
+      "logging_requirement": "MANDATORY - timestamped to the second"
+    }
+  },
+
+  "audit_trail_requirements": {
+    "logging_table": {
+      "name": "fhq_governance.how_override_log",
+      "fields": [
+        {"name": "override_id", "type": "UUID", "description": "Unique identifier"},
+        {"name": "capability_id", "type": "TEXT", "description": "HOW-001 through HOW-005"},
+        {"name": "authority_tier", "type": "INTEGER", "description": "1=CEO, 2=CEIO, 3=VEGA_EMERGENCY"},
+        {"name": "human_identity", "type": "TEXT", "description": "Verified identity of human actor"},
+        {"name": "target_type", "type": "TEXT", "description": "NODE, EDGE, ONTOLOGY_PATH, G0_PROPOSAL, SYSTEM"},
+        {"name": "target_id", "type": "TEXT", "description": "Identifier of affected entity"},
+        {"name": "action", "type": "TEXT", "description": "BLOCK, UNBLOCK, FORCE_EXTERNAL, APPROVE, HALT"},
+        {"name": "justification", "type": "TEXT", "description": "Human-provided reason (MANDATORY)"},
+        {"name": "risk_assessment", "type": "TEXT", "description": "Documented risk if applicable"},
+        {"name": "timestamp_utc", "type": "TIMESTAMPTZ", "description": "When override was issued"},
+        {"name": "expiry_utc", "type": "TIMESTAMPTZ", "description": "When override expires (if applicable)"},
+        {"name": "signature", "type": "TEXT", "description": "Ed25519 signature or acknowledgment"}
+      ],
+      "immutability": "Records CANNOT be modified or deleted",
+      "retention": "Permanent - no expiry"
+    },
+    "audit_principle": "Every override creates an immutable record. There is no 'off the record' override.",
+    "tampering_detection": "Hash chain linking ensures any modification is detectable"
+  },
+
+  "vega_relationship": {
+    "question": "Can VEGA overrule a human?",
+    "answer": "NO",
+    "clarification": {
+      "vega_role": "VEGA enforces governance rules and provides attestations",
+      "human_supremacy": "Human authority supersedes VEGA in all cases",
+      "vega_response_to_override": "VEGA logs the override and continues operation",
+      "vega_cannot": [
+        "Reject a human-approved G0 proposal",
+        "Reverse a human IKEA override",
+        "Unblock a human-blocked ontology path",
+        "Resume operations after human halt without human authorization"
+      ],
+      "vega_must": [
+        "Log all human overrides without modification",
+        "Continue enforcing non-overridden rules",
+        "Alert if override creates governance inconsistency",
+        "Request human review of long-standing overrides (>30 days)"
+      ]
+    }
+  },
+
+  "abuse_prevention": {
+    "detection_mechanisms": [
+      {
+        "name": "Override Frequency Monitoring",
+        "trigger": "> 5 overrides in 24 hours",
+        "action": "Alert to CEO (if CEIO is acting) or Board (if CEO is acting)"
+      },
+      {
+        "name": "Pattern Analysis",
+        "description": "VEGA monitors for override patterns that suggest systematic bypass",
+        "action": "Quarterly report to Board"
+      },
+      {
+        "name": "Justification Quality Review",
+        "description": "Monthly sampling of override justifications for adequacy",
+        "reviewer": "External compliance officer (if engaged)"
+      }
+    ],
+    "accountability": {
+      "principle": "With great power comes great accountability",
+      "override_responsibility": "The human who issues an override assumes personal responsibility for the outcome",
+      "documentation_requirement": "Inadequately documented overrides are flagged for immediate review"
+    }
+  },
+
+  "delegation_registry_schema": {
+    "table_name": "fhq_governance.how_delegation_registry",
+    "fields": [
+      {"name": "delegation_id", "type": "UUID"},
+      {"name": "delegator", "type": "TEXT", "description": "Must be CEO"},
+      {"name": "delegate", "type": "TEXT", "description": "CEIO identity"},
+      {"name": "scope", "type": "TEXT[]", "description": "Array of capability_ids delegated"},
+      {"name": "effective_from", "type": "TIMESTAMPTZ"},
+      {"name": "effective_until", "type": "TIMESTAMPTZ"},
+      {"name": "revoked_at", "type": "TIMESTAMPTZ", "nullable": true},
+      {"name": "revocation_reason", "type": "TEXT", "nullable": true}
+    ],
+    "constraints": [
+      "Only one active delegation per delegate at a time",
+      "Maximum delegation period: 30 days (renewable)",
+      "HOW-003 (Golden Seed Authority) CANNOT be delegated"
+    ]
+  },
+
+  "constitutional_protections": {
+    "human_authority_clause": "This charter may not be modified to reduce human authority without explicit CEO approval documented in a new ADR.",
+    "agent_subordination": "No agent (LARS, FINN, STIG, LINE, VEGA) may claim authority equal to or greater than human override authority.",
+    "audit_inviolability": "The override audit log is constitutionally protected and may not be purged, modified, or made inaccessible."
+  },
+
+  "attestation": {
+    "drafted_by": "STIG (CTO)",
+    "reviewed_by": "VEGA (Governance Authority)",
+    "constitutional_alignment": "ADR-001, ADR-006",
+    "status": "DRAFT - PENDING RATIFICATION",
+    "ratification_deadline": "7 days from parent directive signature",
+    "note": "This charter protects both the human (accountability framework) and the system (clear authority boundaries)."
+  }
+}
