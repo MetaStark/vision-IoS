@@ -1,0 +1,120 @@
+{
+  "directive_id": "CEO-DIR-2026-FINN-004",
+  "title": "Human-in-the-Loop Epistemic Control & Data Provenance Enforcement",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "status": "PENDING_CEO_SIGNATURE",
+  "authority_references": ["ADR-001", "ADR-004", "ADR-013", "ADR-014"],
+  "date_drafted": "2025-12-30T22:00:00Z",
+
+  "strategic_mandate": {
+    "principle": "FjordHQ shall not be a passive recipient of AI-generated narratives",
+    "objective": "Maximize Freedom (Alpha Precision / Time Spent) through extreme Precision over Coverage",
+    "constraint": "We do not accept 'broad exploration' if it dilutes causality",
+    "truth_definition": "Truth in FjordHQ is a human-sanctioned resource, supported by cryptographic proof"
+  },
+
+  "operational_controls": {
+    "section_2_1_mandatory_provenance_snapshot": {
+      "trigger": "Every execution of FINN (CRIO)",
+      "artifact_location": "fhq_research.evidence_snapshot",
+      "required_fields": {
+        "node_lineage": "Exhaustive list of all evidence_node_ids actually used in reasoning chain",
+        "tier_mapping": "Explicit source classification per node (LAKE / PULSE / SNIPER)",
+        "hash_root_binding": "Combined SHA-256 hash of snapshot requiring VEGA attestation or human countersignature before G1 promotion"
+      },
+      "enforcement": "VEGA blocks any G0-proposal missing MPS"
+    },
+
+    "section_2_2_lake_quota_and_epistemic_decay": {
+      "lake_cap": {
+        "threshold": 0.30,
+        "description": "Maximum 30% of used evidence may originate from LAKE (static knowledge)"
+      },
+      "auto_ikea": {
+        "trigger_conditions": [
+          "LAKE quota exceeded",
+          "Evidence age exceeds domain-specific limits (e.g., >24h for market regime)"
+        ],
+        "action": "IKEA status automatically set to EXTERNAL_REQUIRED"
+      },
+      "decay_weighting": {
+        "method": "Linear decrement",
+        "basis": "Time since last verified truth point",
+        "application": "Evidence weight in SitC calculation"
+      }
+    },
+
+    "section_2_3_retrieval_discipline_escalation": {
+      "purpose": "Efficiency firewall to protect CEO's time",
+      "threshold": {
+        "metric": "SitC-Retrieval Discipline",
+        "value": 0.50,
+        "consecutive_failures": 3,
+        "action": "Session escalated to HUMAN_REVIEW_REQUIRED"
+      },
+      "gating": "No output with low discipline score may be used as input in Phase-3 (Execution) without explicit override"
+    }
+  },
+
+  "human_override_window": {
+    "authority": "CEO personally, or via delegated Chief Epistemic Officer",
+    "scope": "Absolute veto over system's perception of reality",
+    "capabilities": {
+      "ikea_override": "Ability to force EXTERNAL_REQUIRED on any ontology path",
+      "ontology_blocking": "Ability to freeze or block specific causal paths in Alpha Graph (IoS-007) deemed noisy or unreliable",
+      "seed_authority": "Human is sole authority who can approve new 'Golden Seed' nodes in truth base"
+    }
+  },
+
+  "acceptance_criteria_2026_production": {
+    "criteria": [
+      "Migration 176 verified in all environments",
+      "VEGA blocks any G0-proposal missing MPS",
+      "SitC-Chain Integrity of 1.00 is a hard requirement for automatic progression"
+    ],
+    "status": "PENDING_VERIFICATION"
+  },
+
+  "signatures": {
+    "strategic_authority": {
+      "role": "Strategic Authority",
+      "agent": "LARS",
+      "status": "APPROVED",
+      "date": "2025-12-30"
+    },
+    "technical_authority": {
+      "role": "Technical Authority",
+      "agent": "STIG",
+      "status": "VERIFIED",
+      "date": "2025-12-30"
+    },
+    "governance_authority": {
+      "role": "Governance Authority",
+      "agent": "VEGA",
+      "status": "ATTESTED",
+      "date": "2025-12-30"
+    },
+    "final_authority": {
+      "role": "Final Authority",
+      "agent": "CEO",
+      "status": "PENDING_SIGNATURE",
+      "date": null
+    }
+  },
+
+  "implementation_dependencies": {
+    "prerequisite_resolutions": [
+      "VEGA G3-2025-002 (SitC Metric Bifurcation)"
+    ],
+    "prerequisite_migrations": [
+      "Migration 176 (InForage Source-Tier Enforcement)"
+    ],
+    "new_migrations_required": [
+      "Migration 177 (evidence_snapshot table)",
+      "Migration 178 (LAKE quota enforcement trigger)",
+      "Migration 179 (epistemic decay function)"
+    ]
+  },
+
+  "mantra": "Eliminate Noise. Generate Signal. Move fast and verify things."
+}
