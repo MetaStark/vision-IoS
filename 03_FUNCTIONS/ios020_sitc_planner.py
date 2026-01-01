@@ -1980,6 +1980,299 @@ class SteeringLeakageAuditor:
 
 
 # =============================================================================
+# CEO-DIR-2026-FINN-018: EXECUTION GATE
+# =============================================================================
+# "No thinking, no trading."
+#
+# This section implements the HARD BLOCKING EXECUTION GATE.
+# Every trade intent MUST have a corresponding SitC event in the database.
+# =============================================================================
+
+@dataclass
+class SitCExecutionGateResult:
+    """Result of SitC execution gate check."""
+    approved: bool
+    sitc_event_id: Optional[str]
+    plan_id: Optional[str]
+    confidence_level: Optional[str]
+    eqs_score: float
+    rejection_reason: Optional[str]
+    reasoning_summary: str
+
+
+class SitCExecutionGate:
+    """
+    CEO-DIR-2026-FINN-018: SitC Execution Gate
+
+    MANDATORY: No execution without active SitC reasoning.
+
+    This gate must be invoked BEFORE every trade execution.
+    If the gate fails, execution is FORBIDDEN.
+    """
+
+    def __init__(self, session_id: Optional[str] = None):
+        self.session_id = session_id or f"GATE-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        self.conn = None
+        self._planner = None
+
+    def connect(self):
+        """Connect to database."""
+        self.conn = psycopg2.connect(**DB_CONFIG)
+        logger.info(f"SitC Execution Gate connected (session: {self.session_id})")
+
+    def close(self):
+        """Close connections."""
+        if self.conn:
+            self.conn.close()
+        if self._planner:
+            self._planner.close()
+
+    def reason_and_gate(
+        self,
+        needle_id: str,
+        asset: str,
+        hypothesis: str,
+        regime_context: str,
+        eqs_score: float = 0.0
+    ) -> SitCExecutionGateResult:
+        """
+        CEO-DIR-2026-FINN-018 Section 4.1: Mandatory Invocation
+
+        For every trade intent:
+        1. Create SitC reasoning plan
+        2. Evaluate confidence
+        3. Write evidence to fhq_cognition.search_in_chain_events
+        4. Return gate approval status
+
+        Args:
+            needle_id: UUID of the golden needle
+            asset: Trading asset (e.g., BTC-USD)
+            hypothesis: The hypothesis/intent to reason about
+            regime_context: Current market regime
+            eqs_score: Pre-calculated EQS score (optional)
+
+        Returns:
+            SitCExecutionGateResult with approval status
+        """
+        logger.info(f"[SITC-GATE] Reasoning for needle {needle_id[:8]}... asset={asset}")
+
+        # Initialize planner if needed
+        if self._planner is None:
+            self._planner = SitCPlannerWithGuardrails(session_id=self.session_id)
+            self._planner.connect()
+
+        try:
+            # Step 1: Create research plan
+            plan = self._planner.create_research_plan(hypothesis)
+
+            # Step 2: Evaluate confidence
+            envelope = self._planner.evaluate_plan_confidence(plan)
+
+            # Step 3: Calculate plan hash for integrity
+            plan_content = f"{plan.plan_id}:{hypothesis}:{asset}:{regime_context}"
+            plan_hash = hashlib.sha256(plan_content.encode()).hexdigest()
+
+            # Step 4: Generate intent summary
+            intent_summary = f"Trade intent for {asset} based on: {hypothesis[:200]}"
+
+            # Step 5: Determine gate approval
+            if envelope.plan_confidence == PlanConfidence.LOW:
+                approved = False
+                rejection_reason = f"LOW_CONFIDENCE: {envelope.failure_reason}"
+                gate_status = 'BLOCKED'
+            elif envelope.blocked_by_defcon:
+                approved = False
+                rejection_reason = f"DEFCON_BLOCKED: {envelope.failure_reason}"
+                gate_status = 'BLOCKED'
+            else:
+                approved = True
+                rejection_reason = None
+                gate_status = 'APPROVED'
+
+            # Step 6: Write to fhq_cognition.search_in_chain_events (MANDATORY)
+            sitc_event_id = str(uuid.uuid4())
+
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_cognition.search_in_chain_events (
+                        sitc_event_id,
+                        protocol_id,
+                        node_index,
+                        node_type,
+                        node_content,
+                        reasoning_step,
+                        verification_status,
+                        search_depth,
+                        source_document,
+                        governance_class,
+                        hash_self,
+                        lineage_hash,
+                        created_at,
+                        ingested_at,
+                        updated_at,
+                        -- CEO-DIR-2026-FINN-018 fields
+                        needle_id,
+                        asset,
+                        regime_context,
+                        intent_summary,
+                        plan_hash,
+                        execution_gate_status,
+                        eqs_score,
+                        confidence_level,
+                        reasoning_complete
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, (
+                    sitc_event_id,
+                    plan.plan_id,  # protocol_id = plan_id
+                    0,  # node_index
+                    'SYNTHESIS',  # node_type
+                    sanitize_unicode(hypothesis[:500]),  # node_content
+                    sanitize_unicode(f"SitC reasoning for {asset}: {envelope.plan_confidence.value}"),
+                    envelope.plan_confidence.value,  # verification_status maps to confidence
+                    len(plan.nodes),  # search_depth = node count
+                    'CEO-DIR-2026-FINN-018',  # source_document
+                    'EXECUTION_GATE',  # governance_class
+                    plan_hash,  # hash_self
+                    self._planner._current_asrp_hash,  # lineage_hash = ASRP hash
+                    datetime.now(timezone.utc),  # created_at
+                    datetime.now(timezone.utc),  # ingested_at
+                    datetime.now(timezone.utc),  # updated_at
+                    # CEO directive fields
+                    needle_id,
+                    asset,
+                    regime_context,
+                    sanitize_unicode(intent_summary),
+                    plan_hash,
+                    gate_status,
+                    envelope.evidence_quality_score if envelope.evidence_quality_score else eqs_score,
+                    envelope.plan_confidence.value,
+                    True  # reasoning_complete
+                ))
+            self.conn.commit()
+
+            logger.info(
+                f"[SITC-GATE] Event created: {sitc_event_id[:8]}... "
+                f"status={gate_status} confidence={envelope.plan_confidence.value} "
+                f"EQS={envelope.evidence_quality_score:.3f}"
+            )
+
+            # Step 7: Log the chain to fhq_meta.chain_of_query as well
+            self._planner.log_chain(plan.nodes)
+
+            return SitCExecutionGateResult(
+                approved=approved,
+                sitc_event_id=sitc_event_id,
+                plan_id=plan.plan_id,
+                confidence_level=envelope.plan_confidence.value,
+                eqs_score=envelope.evidence_quality_score if envelope.evidence_quality_score else eqs_score,
+                rejection_reason=rejection_reason,
+                reasoning_summary=intent_summary
+            )
+
+        except Exception as e:
+            logger.error(f"[SITC-GATE] Reasoning failed: {e}")
+            # On error, BLOCK execution (fail-safe)
+            return SitCExecutionGateResult(
+                approved=False,
+                sitc_event_id=None,
+                plan_id=None,
+                confidence_level='LOW',
+                eqs_score=0.0,
+                rejection_reason=f"SITC_ERROR: {str(e)}",
+                reasoning_summary=f"SitC reasoning failed for {asset}"
+            )
+
+    def verify_existing_gate(self, needle_id: str) -> SitCExecutionGateResult:
+        """
+        Verify if a valid SitC gate exists for a needle.
+
+        Use this when checking if execution is permitted without creating new reasoning.
+
+        Args:
+            needle_id: UUID of the golden needle
+
+        Returns:
+            SitCExecutionGateResult with approval status
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT * FROM fhq_cognition.verify_sitc_execution_gate(%s, %s)
+                """, (needle_id, self.session_id))
+                result = cur.fetchone()
+
+            if result['gate_approved']:
+                return SitCExecutionGateResult(
+                    approved=True,
+                    sitc_event_id=str(result['sitc_event_id']) if result['sitc_event_id'] else None,
+                    plan_id=str(result['plan_id']) if result['plan_id'] else None,
+                    confidence_level=result['confidence_level'],
+                    eqs_score=float(result['eqs_score']) if result['eqs_score'] else 0.0,
+                    rejection_reason=None,
+                    reasoning_summary="Existing SitC gate approved"
+                )
+            else:
+                return SitCExecutionGateResult(
+                    approved=False,
+                    sitc_event_id=str(result['sitc_event_id']) if result['sitc_event_id'] else None,
+                    plan_id=str(result['plan_id']) if result['plan_id'] else None,
+                    confidence_level=result['confidence_level'],
+                    eqs_score=float(result['eqs_score']) if result['eqs_score'] else 0.0,
+                    rejection_reason=result['rejection_reason'],
+                    reasoning_summary="SitC gate rejected"
+                )
+
+        except Exception as e:
+            logger.error(f"[SITC-GATE] Verification failed: {e}")
+            return SitCExecutionGateResult(
+                approved=False,
+                sitc_event_id=None,
+                plan_id=None,
+                confidence_level='LOW',
+                eqs_score=0.0,
+                rejection_reason=f"VERIFICATION_ERROR: {str(e)}",
+                reasoning_summary="SitC gate verification failed"
+            )
+
+    def mark_executed(self, sitc_event_id: str, trade_id: Optional[str] = None) -> bool:
+        """
+        Mark a SitC gate as executed after successful trade.
+
+        Args:
+            sitc_event_id: The SitC event that was approved
+            trade_id: Optional trade ID for linking
+
+        Returns:
+            True if marked successfully
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT fhq_cognition.mark_sitc_executed(%s, %s)
+                """, (sitc_event_id, trade_id))
+                result = cur.fetchone()
+            self.conn.commit()
+            return result[0] if result else False
+        except Exception as e:
+            logger.error(f"[SITC-GATE] Mark executed failed: {e}")
+            return False
+
+
+def get_sitc_execution_gate(session_id: Optional[str] = None) -> SitCExecutionGate:
+    """
+    Factory function to get SitC Execution Gate.
+
+    CEO-DIR-2026-FINN-018: Use this for pre-execution reasoning.
+    """
+    gate = SitCExecutionGate(session_id=session_id)
+    gate.connect()
+    return gate
+
+
+# =============================================================================
 # FACTORY FUNCTION
 # =============================================================================
 

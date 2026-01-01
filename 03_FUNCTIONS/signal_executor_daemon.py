@@ -78,6 +78,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# =============================================================================
+# CEO-DIR-2026-FINN-018: SitC EXECUTION GATE IMPORT
+# =============================================================================
+# "No thinking, no trading."
+# SitC must actively reason before any execution is permitted.
+# =============================================================================
+try:
+    from ios020_sitc_planner import get_sitc_execution_gate, SitCExecutionGateResult
+    SITC_GATE_AVAILABLE = True
+except ImportError:
+    SITC_GATE_AVAILABLE = False
+    logging.warning("[SITC-GATE] ios020_sitc_planner not available - SitC gate DISABLED")
+
 # Holiday Execution Gate (CEO Directive 2025-12-19)
 try:
     from holiday_execution_gate import (
@@ -316,6 +329,13 @@ class SignalExecutorDaemon:
         self.pending_exposure = {}  # {symbol: {'qty': 0.0, 'usd': 0.0, 'last_trade': timestamp}}
         self.pending_exposure_last_sync = None  # Last time we synced with Alpaca
 
+        # =====================================================================
+        # CEO-DIR-2026-FINN-018: SITC EXECUTION GATE
+        # "No thinking, no trading."
+        # Every trade must have active SitC reasoning before execution.
+        # =====================================================================
+        self.sitc_gate = None  # Initialized in connect() after DB is available
+
     def connect(self) -> bool:
         """Connect to database and Alpaca"""
         try:
@@ -341,6 +361,19 @@ class SignalExecutorDaemon:
                 logger.info(f"Alpaca connected - Portfolio: ${float(account.portfolio_value):,.2f}")
             else:
                 logger.warning("Alpaca not available - simulation mode")
+
+            # =====================================================================
+            # CEO-DIR-2026-FINN-018: Initialize SitC Execution Gate
+            # =====================================================================
+            if SITC_GATE_AVAILABLE:
+                try:
+                    self.sitc_gate = get_sitc_execution_gate(session_id=f"DAEMON-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+                    logger.info("[SITC-GATE] Execution gate initialized - no thinking, no trading")
+                except Exception as e:
+                    logger.warning(f"[SITC-GATE] Failed to initialize: {e} - gate DISABLED")
+                    self.sitc_gate = None
+            else:
+                logger.warning("[SITC-GATE] Not available - cognitive reasoning DISABLED")
 
             return True
         except Exception as e:
@@ -1329,6 +1362,52 @@ class SignalExecutorDaemon:
             logger.info(f"BTC-ONLY CONSTRAINT: Blocking {symbol} (source: {source_symbol}) - only BTC authorized")
             return None
 
+        # =====================================================================
+        # CEO-DIR-2026-FINN-018: SITC EXECUTION GATE
+        # "No thinking, no trading."
+        # Every trade must have active SitC reasoning before execution.
+        # =====================================================================
+        sitc_result = None
+        if self.sitc_gate:
+            needle_id = str(needle.get('needle_id', uuid.uuid4()))
+            hypothesis = needle.get('hypothesis_statement', needle.get('executive_summary', f'Trade signal for {symbol}'))
+            regime_context = needle.get('regime_sovereign', 'UNKNOWN')
+            eqs_score = float(needle.get('eqs_score', 0.0))
+
+            logger.info(f"[SITC-GATE] Invoking cognitive reasoning for {symbol}...")
+            sitc_result = self.sitc_gate.reason_and_gate(
+                needle_id=needle_id,
+                asset=symbol,
+                hypothesis=hypothesis,
+                regime_context=regime_context,
+                eqs_score=eqs_score
+            )
+
+            if not sitc_result.approved:
+                logger.critical(f"[SITC-GATE] EXECUTION BLOCKED - {sitc_result.rejection_reason}")
+                logger.info(f"[SITC-GATE] Confidence: {sitc_result.confidence_level}, EQS: {sitc_result.eqs_score:.3f}")
+                # Log the rejection for audit
+                try:
+                    with self.conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO fhq_governance.decision_log (
+                                decision_id, decision_type, decision_rationale, created_at
+                            ) VALUES (
+                                gen_random_uuid(), 'SITC_GATE_REJECTION',
+                                %s, NOW()
+                            )
+                        """, (f"SitC blocked {symbol}: {sitc_result.rejection_reason}",))
+                    self.conn.commit()
+                except Exception as e:
+                    logger.warning(f"Could not log SitC rejection: {e}")
+                return None
+
+            logger.info(f"[SITC-GATE] APPROVED - Confidence: {sitc_result.confidence_level}, EQS: {sitc_result.eqs_score:.3f}")
+        else:
+            # SitC gate not available - log warning but allow execution for backward compatibility
+            # TODO: Make this a HARD BLOCK once SitC is fully deployed
+            logger.warning("[SITC-GATE] Not available - executing without cognitive reasoning (TEMPORARY)")
+
         # WAVE 17D.1 FIX: Check for existing pending orders to prevent duplicates
         try:
             open_orders = self.trading_client.get_orders(
@@ -1409,13 +1488,21 @@ class SignalExecutorDaemon:
                 # Log to database
                 trade_id = self._log_trade(needle, symbol, filled_qty, filled_price, position_value, order.id)
 
+                # =====================================================================
+                # CEO-DIR-2026-FINN-018: Mark SitC gate as EXECUTED
+                # =====================================================================
+                if sitc_result and sitc_result.sitc_event_id and self.sitc_gate:
+                    self.sitc_gate.mark_executed(sitc_result.sitc_event_id, trade_id)
+                    logger.info(f"[SITC-GATE] Marked as EXECUTED: {sitc_result.sitc_event_id[:8]}...")
+
                 return {
                     'trade_id': trade_id,
                     'symbol': symbol,
                     'qty': filled_qty,
                     'price': filled_price,
                     'value': position_value,
-                    'order_id': str(order.id)
+                    'order_id': str(order.id),
+                    'sitc_event_id': sitc_result.sitc_event_id if sitc_result else None
                 }
             else:
                 logger.warning(f"Order not filled: {filled_order.status}")
