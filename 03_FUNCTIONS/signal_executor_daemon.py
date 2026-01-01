@@ -129,8 +129,8 @@ try:
     from alpaca.trading.client import TradingClient
     from alpaca.trading.requests import MarketOrderRequest, GetOrdersRequest
     from alpaca.trading.enums import OrderSide, TimeInForce, QueryOrderStatus
-    from alpaca.data.historical import StockHistoricalDataClient
-    from alpaca.data.requests import StockLatestQuoteRequest
+    from alpaca.data.historical import StockHistoricalDataClient, CryptoHistoricalDataClient
+    from alpaca.data.requests import StockLatestQuoteRequest, CryptoLatestQuoteRequest
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -166,6 +166,29 @@ DAEMON_CONFIG = {
     'default_target_pct': 0.05,         # 5% target
     'default_stop_loss_pct': 0.03,      # 3% stop loss
 }
+
+# =============================================================================
+# REGIME-CONDITIONED EXIT PARAMETERS (CEO DIRECTIVE 2025-12-24)
+# =============================================================================
+# Phase 2 validated (p < 0.05) regime-based exits for Shadow Ledger deployment.
+# Wider exits in BULL to let winners run, tighter in BEAR to limit losses.
+# These values are FROZEN per CEO directive - NO modifications permitted.
+
+REGIME_EXIT_PARAMS = {
+    'BULL': {'target_pct': 0.08, 'stop_loss_pct': 0.05},        # Wider +8%/-5%
+    'STRONG_BULL': {'target_pct': 0.08, 'stop_loss_pct': 0.05}, # Wider +8%/-5%
+    'BEAR': {'target_pct': 0.03, 'stop_loss_pct': 0.02},        # Tighter +3%/-2%
+    'STRONG_BEAR': {'target_pct': 0.03, 'stop_loss_pct': 0.02}, # Tighter +3%/-2%
+    'STRESS': {'target_pct': 0.03, 'stop_loss_pct': 0.02},      # Tighter +3%/-2%
+    'BROKEN': {'target_pct': 0.03, 'stop_loss_pct': 0.02},      # Tighter +3%/-2%
+    'NEUTRAL': {'target_pct': 0.05, 'stop_loss_pct': 0.03},     # Baseline +5%/-3%
+    'VOLATILE_NON_DIRECTIONAL': {'target_pct': 0.05, 'stop_loss_pct': 0.03},
+}
+
+# BTC-ONLY CONSTRAINT (CEO DIRECTIVE 2025-12-24)
+# Shadow Ledger deployment is ONLY authorized for BTC until skill verification passes.
+# All other assets are BLOCKED from new entries during this phase.
+SHADOW_LEDGER_AUTHORIZED_ASSETS = ['BTC/USD', 'BTC-USD', 'BTCUSDT']
 
 # =============================================================================
 # HARD EXPOSURE GATES (CEO DIRECTIVE: CRITICAL RISK CONTROL)
@@ -222,12 +245,52 @@ SYMBOL_MAPPING = {
     'QQQ': 'QQQ',
 }
 
-# Proxy mapping for symbols not directly tradeable
+# Direct crypto trading - CEO Directive: Trade crypto directly, not through proxies
+# Alpaca supports 62 crypto pairs - use them directly
+DIRECT_CRYPTO_SYMBOLS = {
+    'BTC/USD', 'BTC/USDC', 'BTC/USDT',
+    'ETH/USD', 'ETH/USDC', 'ETH/USDT', 'ETH/BTC',
+    'SOL/USD', 'SOL/USDC', 'SOL/USDT',
+    'DOGE/USD', 'DOGE/USDC', 'DOGE/USDT',
+    'AVAX/USD', 'AVAX/USDC', 'AVAX/USDT',
+    'LINK/USD', 'LINK/USDC', 'LINK/USDT', 'LINK/BTC',
+    'LTC/USD', 'LTC/USDC', 'LTC/USDT', 'LTC/BTC',
+    'UNI/USD', 'UNI/USDC', 'UNI/USDT', 'UNI/BTC',
+    'AAVE/USD', 'AAVE/USDC', 'AAVE/USDT',
+    'DOT/USD', 'DOT/USDC',
+    'XRP/USD', 'XTZ/USD', 'XTZ/USDC',
+    'SHIB/USD', 'SHIB/USDC', 'SHIB/USDT',
+    'PEPE/USD', 'TRUMP/USD',
+    'CRV/USD', 'CRV/USDC',
+    'GRT/USD', 'GRT/USDC',
+    'BAT/USD', 'BAT/USDC',
+    'BCH/USD', 'BCH/USDC', 'BCH/USDT', 'BCH/BTC',
+    'SUSHI/USD', 'SUSHI/USDC', 'SUSHI/USDT',
+    'YFI/USD', 'YFI/USDC', 'YFI/USDT',
+    'SKY/USD',
+}
+
+# Map signal symbols to Alpaca trading symbols (Alpaca uses BTC/USD format with slash)
+# Alpaca maintains backward compatibility with BTCUSD but prefers BTC/USD
+CRYPTO_SYMBOL_MAP = {
+    'BTC-USD': 'BTC/USD', 'BTC/USD': 'BTC/USD', 'BTCUSD': 'BTC/USD', 'BTCUSDT': 'BTC/USD',
+    'ETH-USD': 'ETH/USD', 'ETH/USD': 'ETH/USD', 'ETHUSD': 'ETH/USD', 'ETHUSDT': 'ETH/USD',
+    'SOL-USD': 'SOL/USD', 'SOL/USD': 'SOL/USD', 'SOLUSD': 'SOL/USD',
+    'DOGE-USD': 'DOGE/USD', 'DOGE/USD': 'DOGE/USD', 'DOGEUSD': 'DOGE/USD',
+    'AVAX-USD': 'AVAX/USD', 'AVAX/USD': 'AVAX/USD', 'AVAXUSD': 'AVAX/USD',
+    'LINK-USD': 'LINK/USD', 'LINK/USD': 'LINK/USD', 'LINKUSD': 'LINK/USD',
+    'LTC-USD': 'LTC/USD', 'LTC/USD': 'LTC/USD', 'LTCUSD': 'LTC/USD',
+    'XRP-USD': 'XRP/USD', 'XRP/USD': 'XRP/USD', 'XRPUSD': 'XRP/USD',
+    'SHIB-USD': 'SHIB/USD', 'SHIB/USD': 'SHIB/USD', 'SHIBUSD': 'SHIB/USD',
+    'PEPE-USD': 'PEPE/USD', 'PEPE/USD': 'PEPE/USD', 'PEPEUSD': 'PEPE/USD',
+    'TRUMP-USD': 'TRUMP/USD', 'TRUMP/USD': 'TRUMP/USD', 'TRUMPUSD': 'TRUMP/USD',
+    'UNI-USD': 'UNI/USD', 'UNI/USD': 'UNI/USD', 'UNIUSD': 'UNI/USD',
+    'AAVE-USD': 'AAVE/USD', 'AAVE/USD': 'AAVE/USD', 'AAVEUSD': 'AAVE/USD',
+    'DOT-USD': 'DOT/USD', 'DOT/USD': 'DOT/USD', 'DOTUSD': 'DOT/USD',
+}
+
+# Proxy mapping ONLY for non-crypto assets that need proxying
 PROXY_SYMBOLS = {
-    'BTCUSDT': ['MSTR', 'COIN', 'MARA'],
-    'BTC-USD': ['MSTR', 'COIN', 'MARA'],
-    'ETHUSDT': ['COIN', 'MSTR'],
-    'ETH-USD': ['COIN', 'MSTR'],
     'default': ['SPY', 'QQQ', 'NVDA']
 }
 
@@ -239,10 +302,19 @@ class SignalExecutorDaemon:
         self.conn = None
         self.trading_client = None
         self.data_client = None
+        self.crypto_data_client = None  # CEO Directive: Direct crypto trading
         self.running = False
         self.cycle_count = 0
         self.last_permit_status = None
         self.suppressed_cycles = 0
+
+        # =====================================================================
+        # LOCAL POSITION TRACKING (CEO DIRECTIVE 2026-01-01)
+        # Prevents race condition where daemon executes faster than Alpaca
+        # updates positions. Tracks pending exposure until Alpaca catches up.
+        # =====================================================================
+        self.pending_exposure = {}  # {symbol: {'qty': 0.0, 'usd': 0.0, 'last_trade': timestamp}}
+        self.pending_exposure_last_sync = None  # Last time we synced with Alpaca
 
     def connect(self) -> bool:
         """Connect to database and Alpaca"""
@@ -259,6 +331,10 @@ class SignalExecutorDaemon:
                     paper=True  # ALWAYS paper mode
                 )
                 self.data_client = StockHistoricalDataClient(
+                    ALPACA_API_KEY, ALPACA_SECRET
+                )
+                # Crypto data client for direct crypto trading (CEO Directive: No proxies)
+                self.crypto_data_client = CryptoHistoricalDataClient(
                     ALPACA_API_KEY, ALPACA_SECRET
                 )
                 account = self.trading_client.get_account()
@@ -370,6 +446,42 @@ class SignalExecutorDaemon:
             if proposed_symbol and proposed_symbol in open_symbols:
                 logger.critical(f"SAME-SYMBOL BLOCKED: Already have position in {proposed_symbol}")
                 return False, f"SAME-SYMBOL VIOLATION: Already have position in {proposed_symbol}"
+
+            # =====================================================================
+            # GATE 5.5: LOCAL PENDING EXPOSURE GUARD (CEO DIRECTIVE 2026-01-01)
+            # Prevents race condition where daemon executes faster than Alpaca
+            # updates positions. Checks LOCAL tracking of pending trades.
+            # This was the ROOT CAUSE of 4x BTC accumulation in 10 seconds.
+            # =====================================================================
+            if proposed_symbol:
+                # Normalize symbol for comparison (BTC/USD, BTCUSD, BTC-USD all match)
+                normalized_proposed = self._normalize_symbol_for_tracking(proposed_symbol)
+
+                # Check if we have pending exposure in this symbol
+                if normalized_proposed in self.pending_exposure:
+                    pending = self.pending_exposure[normalized_proposed]
+                    pending_usd = pending.get('usd', 0)
+                    pending_qty = pending.get('qty', 0)
+
+                    if pending_usd > 0:
+                        # Calculate what total exposure would be with pending + proposed
+                        total_with_pending = total_exposure + pending_usd + proposed_trade_usd
+                        total_with_pending_pct = total_with_pending / portfolio_value if portfolio_value > 0 else 0
+
+                        # Check single-position limit with pending exposure
+                        pending_plus_alpaca = pending_usd + largest_position if largest_symbol == proposed_symbol else pending_usd
+                        pending_position_pct = pending_plus_alpaca / portfolio_value if portfolio_value > 0 else 0
+
+                        if pending_position_pct > HARD_LIMITS['max_single_position_pct']:
+                            logger.critical(f"LOCAL PENDING BLOCKED: {proposed_symbol} pending ${pending_usd:,.0f} = {pending_position_pct:.1%} exceeds {HARD_LIMITS['max_single_position_pct']:.0%}")
+                            return False, f"LOCAL PENDING VIOLATION: {proposed_symbol} has ${pending_usd:,.0f} pending ({pending_position_pct:.1%})"
+
+                        # Check total exposure with pending
+                        if total_with_pending_pct > HARD_LIMITS['max_total_exposure_pct']:
+                            logger.critical(f"LOCAL PENDING BLOCKED: Total with pending ${total_with_pending:,.0f} = {total_with_pending_pct:.1%}")
+                            return False, f"LOCAL PENDING TOTAL VIOLATION: Would be {total_with_pending_pct:.1%} with pending trades"
+
+                        logger.info(f"LOCAL PENDING CHECK: {proposed_symbol} has ${pending_usd:,.0f} pending, within limits")
 
             # =====================================================================
             # GATE 6: INCREMENTAL EXPOSURE CHECK (Fix E - CEO Directive 2025-12-21)
@@ -604,20 +716,126 @@ class SignalExecutorDaemon:
             return cur.fetchall()
 
     def get_current_price(self, symbol: str) -> Optional[float]:
-        """Get current market price for a symbol"""
-        if not self.data_client:
-            return None
+        """Get current market price for a symbol (stock or crypto)"""
+        # Check if this is a crypto symbol
+        # Alpaca crypto data API uses "BTC/USD" format for quotes
+        is_crypto = self._is_crypto_symbol(symbol)
+
+        if is_crypto:
+            if not self.crypto_data_client:
+                return None
+            try:
+                # Convert to Alpaca crypto quote format (e.g., BTCUSD -> BTC/USD)
+                crypto_quote_symbol = self._to_crypto_quote_format(symbol)
+                quote = self.crypto_data_client.get_crypto_latest_quote(
+                    CryptoLatestQuoteRequest(symbol_or_symbols=[crypto_quote_symbol])
+                )
+                # Use mid price for more accurate valuation
+                bid = float(quote[crypto_quote_symbol].bid_price)
+                ask = float(quote[crypto_quote_symbol].ask_price)
+                return (bid + ask) / 2 if bid > 0 and ask > 0 else float(quote[crypto_quote_symbol].ask_price)
+            except Exception as e:
+                logger.warning(f"Could not get crypto price for {symbol}: {e}")
+                return None
+        else:
+            if not self.data_client:
+                return None
+            try:
+                quote = self.data_client.get_stock_latest_quote(
+                    StockLatestQuoteRequest(symbol_or_symbols=[symbol])
+                )
+                # Use mid price for more accurate valuation
+                bid = float(quote[symbol].bid_price)
+                ask = float(quote[symbol].ask_price)
+                return (bid + ask) / 2 if bid > 0 and ask > 0 else float(quote[symbol].ask_price)
+            except Exception as e:
+                logger.warning(f"Could not get stock price for {symbol}: {e}")
+                return None
+
+    def _is_crypto_symbol(self, symbol: str) -> bool:
+        """Check if symbol is a crypto asset"""
+        # Check CRYPTO_SYMBOL_MAP keys and values
+        if symbol in CRYPTO_SYMBOL_MAP:
+            return True
+        # Check if it matches crypto format (ends with USD, USDC, USDT, or contains /)
+        symbol_upper = symbol.upper()
+        crypto_patterns = ['BTC', 'ETH', 'SOL', 'DOGE', 'AVAX', 'LINK', 'LTC', 'XRP',
+                          'SHIB', 'PEPE', 'TRUMP', 'UNI', 'AAVE', 'DOT', 'ADA', 'MATIC',
+                          'ATOM', 'XLM', 'ALGO', 'FIL', 'NEAR', 'APT', 'ARB', 'OP']
+        return any(pattern in symbol_upper for pattern in crypto_patterns)
+
+    def _to_crypto_quote_format(self, symbol: str) -> str:
+        """Convert symbol to Alpaca crypto quote format (BTC/USD)"""
+        # If already has slash, return as-is
+        if '/' in symbol:
+            return symbol
+        # Convert BTCUSD -> BTC/USD
+        symbol_upper = symbol.upper()
+        for suffix in ['USDC', 'USDT', 'USD', 'BTC']:
+            if symbol_upper.endswith(suffix):
+                base = symbol_upper[:-len(suffix)]
+                return f"{base}/{suffix}"
+        return symbol  # Return as-is if no conversion needed
+
+    def _normalize_symbol_for_tracking(self, symbol: str) -> str:
+        """
+        Normalize symbol for local pending exposure tracking.
+        CEO DIRECTIVE 2026-01-01: Ensures BTC/USD, BTCUSD, BTC-USD all map to same key.
+        """
+        symbol_upper = symbol.upper().replace('-', '').replace('/', '')
+        # Remove common suffixes to get base asset
+        for suffix in ['USDT', 'USDC', 'USD']:
+            if symbol_upper.endswith(suffix):
+                return symbol_upper[:-len(suffix)]
+        return symbol_upper
+
+    def _add_pending_exposure(self, symbol: str, qty: float, usd_value: float):
+        """
+        Track pending exposure for a symbol after trade execution.
+        CEO DIRECTIVE 2026-01-01: Prevents race condition with Alpaca position updates.
+        """
+        normalized = self._normalize_symbol_for_tracking(symbol)
+        if normalized not in self.pending_exposure:
+            self.pending_exposure[normalized] = {'qty': 0.0, 'usd': 0.0, 'trades': 0, 'last_trade': None}
+
+        self.pending_exposure[normalized]['qty'] += qty
+        self.pending_exposure[normalized]['usd'] += usd_value
+        self.pending_exposure[normalized]['trades'] += 1
+        self.pending_exposure[normalized]['last_trade'] = datetime.now(timezone.utc)
+
+        logger.info(f"LOCAL PENDING TRACKED: {symbol} +${usd_value:,.2f} → Total pending: ${self.pending_exposure[normalized]['usd']:,.2f}")
+
+    def _sync_pending_exposure_with_alpaca(self):
+        """
+        Sync pending exposure with actual Alpaca positions.
+        Called at start of each cycle to reconcile local tracking with broker truth.
+        """
+        if not self.trading_client:
+            return
+
         try:
-            quote = self.data_client.get_stock_latest_quote(
-                StockLatestQuoteRequest(symbol_or_symbols=[symbol])
-            )
-            # Use mid price for more accurate valuation
-            bid = float(quote[symbol].bid_price)
-            ask = float(quote[symbol].ask_price)
-            return (bid + ask) / 2 if bid > 0 and ask > 0 else float(quote[symbol].ask_price)
+            positions = self.trading_client.get_all_positions()
+            alpaca_symbols = {}
+
+            for p in positions:
+                normalized = self._normalize_symbol_for_tracking(p.symbol)
+                alpaca_symbols[normalized] = float(p.market_value)
+
+            # Clear pending exposure for symbols that are now in Alpaca
+            cleared = []
+            for symbol in list(self.pending_exposure.keys()):
+                if symbol in alpaca_symbols:
+                    # Alpaca has caught up - clear pending
+                    cleared.append(f"{symbol} (${self.pending_exposure[symbol]['usd']:,.0f})")
+                    del self.pending_exposure[symbol]
+
+            if cleared:
+                logger.info(f"PENDING EXPOSURE SYNC: Cleared {len(cleared)} symbols now in Alpaca: {', '.join(cleared)}")
+
+            self.pending_exposure_last_sync = datetime.now(timezone.utc)
+
         except Exception as e:
-            logger.warning(f"Could not get price for {symbol}: {e}")
-            return None
+            logger.warning(f"Failed to sync pending exposure: {e}")
 
     # =========================================================================
     # STOP LOSS / TAKE PROFIT EXIT LOGIC
@@ -880,40 +1098,115 @@ class SignalExecutorDaemon:
         Per CD-IOS-001-PRICE-ARCH-001: Multi-asset execution support.
 
         Priority:
-        1. Direct mapping if symbol is directly tradeable
-        2. Crypto via Alpaca if crypto symbol
-        3. Proxy equity if no direct mapping
+        1. Crypto - convert to Alpaca format (BTCUSD) and trade directly
+        2. Direct mapping for equities
+        3. Direct equity symbol
+
+        CEO Directive: No crypto proxies - trade crypto directly on Alpaca.
         """
         witness = needle.get('price_witness_symbol', '')
         open_symbols = self.get_open_symbols()
 
-        # 1. Check direct mapping
+        # 1. Check if it's a crypto symbol - trade directly (CEO Directive: No proxies)
+        # MUST convert to Alpaca format (e.g., BTC/USD -> BTCUSD)
+        if witness in CRYPTO_SYMBOL_MAP:
+            alpaca_symbol = CRYPTO_SYMBOL_MAP[witness]
+            if alpaca_symbol not in open_symbols:
+                return alpaca_symbol  # Trade crypto directly on Alpaca
+            else:
+                # Already have position in this crypto - don't try other symbols
+                return None
+
+        # 2. Check if it's in DIRECT_CRYPTO_SYMBOLS - keep BTC/USD format for Alpaca
+        if witness in DIRECT_CRYPTO_SYMBOLS:
+            # Alpaca uses BTC/USD format (with slash) for crypto
+            if witness not in open_symbols:
+                return witness  # Already in correct format
+            else:
+                return None  # Already have position
+
+        # 3. Check direct mapping for equities
         if witness in SYMBOL_MAPPING:
             mapped = SYMBOL_MAPPING[witness]
             if mapped not in open_symbols:
-                # Check if it's a crypto symbol (contains /)
-                if '/' in mapped:
-                    # For crypto, use proxy equities for now (Alpaca crypto needs different client)
-                    candidates = PROXY_SYMBOLS.get(witness, PROXY_SYMBOLS['default'])
-                    available = [s for s in candidates if s not in open_symbols]
-                    if available:
-                        return available[0]
-                else:
-                    return mapped
+                return mapped
 
-        # 2. Check if witness is a direct equity symbol
+        # 4. Check if witness is a direct equity symbol
         if witness in DIRECT_EQUITY_SYMBOLS:
             if witness not in open_symbols:
                 return witness
 
-        # 3. Fall back to proxy symbols
-        candidates = PROXY_SYMBOLS.get(witness, PROXY_SYMBOLS['default'])
-        available = [s for s in candidates if s not in open_symbols]
+        # 5. No valid symbol found
+        return None
 
-        if not available:
-            return None
+    # =========================================================================
+    # SKILL DAMPER (CEO DIRECTIVE 2025-12-24)
+    # =========================================================================
 
-        return available[0]
+    def get_skill_damper(self) -> Tuple[float, float, str]:
+        """
+        Calculate FSS (FINN Skill Score) and return appropriate damper.
+        Returns: (damper_value, fss_score, threshold_type)
+
+        FSS is calculated from paper trade outcomes:
+        - Win rate weighted by profit magnitude
+        - Normalized to 0.0-1.0 scale
+        """
+        try:
+            with self.conn.cursor() as cur:
+                # Get paper trade statistics (excluding test/invalid trades)
+                cur.execute("""
+                    SELECT
+                        COUNT(*) as total_trades,
+                        COUNT(*) FILTER (WHERE pnl_absolute > 0) as winning_trades,
+                        COALESCE(SUM(pnl_absolute), 0) as total_pnl,
+                        COALESCE(AVG(pnl_percent), 0) as avg_pnl_pct
+                    FROM fhq_canonical.g5_paper_trades
+                    WHERE exit_price IS NOT NULL
+                    AND (exclude_from_fss IS NULL OR exclude_from_fss = FALSE)
+                """)
+                stats = cur.fetchone()
+
+                total_trades = int(stats[0]) if stats[0] else 0
+                winning_trades = int(stats[1]) if stats[1] else 0
+                total_pnl = float(stats[2]) if stats[2] else 0
+                avg_pnl_pct = float(stats[3]) if stats[3] else 0
+
+                # Calculate FSS (simple version: weighted win rate + profit factor)
+                if total_trades < 3:
+                    # Insufficient data - use conservative default
+                    fss = 0.45  # REDUCED zone
+                    logger.info(f"SKILL_DAMPER: Insufficient trades ({total_trades}), using FSS={fss}")
+                else:
+                    win_rate = winning_trades / total_trades
+                    # Profit bonus: positive avg PnL adds to FSS
+                    profit_bonus = min(avg_pnl_pct / 10, 0.2)  # Max 0.2 bonus
+                    fss = min(1.0, max(0.0, win_rate * 0.8 + profit_bonus + 0.1))
+
+                # Look up damper from config
+                cur.execute("""
+                    SELECT threshold_type, damper_value
+                    FROM fhq_governance.skill_damper_config
+                    WHERE is_active = TRUE
+                    AND %s >= fss_min AND %s < fss_max
+                    LIMIT 1
+                """, (fss, fss))
+
+                config = cur.fetchone()
+                if config:
+                    threshold_type = config[0]
+                    damper_value = float(config[1])
+                else:
+                    # Default to REDUCED if no config found
+                    threshold_type = 'REDUCED'
+                    damper_value = 0.25
+
+                logger.info(f"SKILL_DAMPER: FSS={fss:.3f}, threshold={threshold_type}, damper={damper_value}")
+                return damper_value, fss, threshold_type
+
+        except Exception as e:
+            logger.warning(f"SKILL_DAMPER: Error calculating FSS: {e}, using conservative default")
+            return 0.25, 0.45, 'REDUCED'
 
     # =========================================================================
     # POSITION SIZING (KELLY)
@@ -933,14 +1226,10 @@ class SignalExecutorDaemon:
         account = self.trading_client.get_account()
         portfolio_value = float(account.portfolio_value)
 
-        # Get current price
-        try:
-            quote = self.data_client.get_stock_latest_quote(
-                StockLatestQuoteRequest(symbol_or_symbols=[symbol])
-            )
-            current_price = float(quote[symbol].ask_price)
-        except Exception as e:
-            logger.warning(f"Could not get price for {symbol}: {e}")
+        # Get current price (handles both stock and crypto)
+        current_price = self.get_current_price(symbol)
+        if current_price is None or current_price <= 0:
+            logger.warning(f"Could not get price for {symbol} - skipping")
             return 0, 0, 0
 
         # Map EQS to Sharpe estimate (EQS 1.0 ~ Sharpe 0.5)
@@ -958,6 +1247,13 @@ class SignalExecutorDaemon:
         # Apply multipliers
         adjusted_kelly = raw_kelly * DAEMON_CONFIG['kelly_multiplier'] * conf_mult
 
+        # CEO DIRECTIVE 2025-12-24: Apply SkillDamper
+        damper_value, fss_score, threshold_type = self.get_skill_damper()
+        if damper_value == 0.0:
+            logger.warning(f"SKILL_DAMPER: FREEZE active (FSS={fss_score:.3f}) - blocking position")
+            return 0, 0, 0
+        adjusted_kelly = adjusted_kelly * damper_value
+
         # Cap at max position
         position_pct = min(adjusted_kelly, DAEMON_CONFIG['max_position_pct'])
 
@@ -965,10 +1261,17 @@ class SignalExecutorDaemon:
         dollar_amount = portfolio_value * position_pct
         dollar_amount = max(dollar_amount, DAEMON_CONFIG['min_position_dollars'])
 
-        # Calculate shares
-        shares = int(dollar_amount / current_price)
+        # Calculate quantity (fractional for crypto, integer for stocks)
+        is_crypto = self._is_crypto_symbol(symbol)
+        if is_crypto:
+            # Crypto supports fractional quantities - round to 8 decimal places
+            qty = round(dollar_amount / current_price, 8)
+        else:
+            # Stocks use whole shares
+            qty = int(dollar_amount / current_price)
 
-        return shares, dollar_amount, current_price
+        logger.info(f"POSITION_SIZE: {symbol} ${dollar_amount:.0f} ({position_pct*100:.1f}% NAV, damper={damper_value}, qty={qty})")
+        return qty, dollar_amount, current_price
 
     # =========================================================================
     # TRADE EXECUTION
@@ -1016,6 +1319,16 @@ class SignalExecutorDaemon:
             else:
                 logger.info(f"HOLIDAY GATE PASSED: {symbol} ({asset_class}) - {holiday_reason}")
 
+        # =====================================================================
+        # BTC-ONLY CONSTRAINT (CEO DIRECTIVE 2025-12-24)
+        # Shadow Ledger deployment authorized ONLY for BTC until skill verified.
+        # =====================================================================
+        source_symbol = needle.get('price_witness_symbol', needle.get('target_asset', symbol))
+        is_btc_signal = any(btc in str(source_symbol).upper() for btc in ['BTC', 'BITCOIN'])
+        if not is_btc_signal:
+            logger.info(f"BTC-ONLY CONSTRAINT: Blocking {symbol} (source: {source_symbol}) - only BTC authorized")
+            return None
+
         # WAVE 17D.1 FIX: Check for existing pending orders to prevent duplicates
         try:
             open_orders = self.trading_client.get_orders(
@@ -1046,20 +1359,32 @@ class SignalExecutorDaemon:
             logger.warning(f"Proposed trade blocked: {gate_reason}")
             return None
 
-        if shares < 1:
-            logger.warning(f"Position too small for {symbol} - skipping")
-            return None
+        # Validate minimum position size
+        is_crypto = self._is_crypto_symbol(symbol)
+        if is_crypto:
+            # Crypto minimum: $10 or 0.0001 units (Alpaca's minimum for most crypto)
+            if shares < 0.0001 or dollar_amount < 10:
+                logger.warning(f"Position too small for {symbol} (qty={shares:.8f}, ${dollar_amount:.2f}) - skipping")
+                return None
+        else:
+            # Stocks require at least 1 share
+            if shares < 1:
+                logger.warning(f"Position too small for {symbol} - skipping")
+                return None
 
-        logger.info(f"Executing: BUY {shares} {symbol} @ ${entry_price:.2f} (~${dollar_amount:,.2f})")
+        qty_str = f"{shares:.8f}" if is_crypto else str(int(shares))
+        logger.info(f"Executing: BUY {qty_str} {symbol} @ ${entry_price:.2f} (~${dollar_amount:,.2f})")
 
         try:
             # Submit market order
+            # Crypto requires GTC (good till canceled), stocks use DAY
+            tif = TimeInForce.GTC if is_crypto else TimeInForce.DAY
             order = self.trading_client.submit_order(
                 MarketOrderRequest(
                     symbol=symbol,
                     qty=shares,
                     side=OrderSide.BUY,
-                    time_in_force=TimeInForce.DAY
+                    time_in_force=tif
                 )
             )
 
@@ -1072,7 +1397,14 @@ class SignalExecutorDaemon:
                 filled_price = float(filled_order.filled_avg_price)
                 position_value = filled_qty * filled_price
 
-                logger.info(f"FILLED: {int(filled_qty)} {symbol} @ ${filled_price:.2f} = ${position_value:,.2f}")
+                qty_display = f"{filled_qty:.8f}" if is_crypto else f"{int(filled_qty)}"
+                logger.info(f"FILLED: {qty_display} {symbol} @ ${filled_price:.2f} = ${position_value:,.2f}")
+
+                # =====================================================================
+                # LOCAL PENDING EXPOSURE TRACKING (CEO DIRECTIVE 2026-01-01)
+                # Track this trade immediately to prevent race condition
+                # =====================================================================
+                self._add_pending_exposure(symbol, filled_qty, position_value)
 
                 # Log to database
                 trade_id = self._log_trade(needle, symbol, filled_qty, filled_price, position_value, order.id)
@@ -1116,18 +1448,32 @@ class SignalExecutorDaemon:
         execution_time = datetime.now(timezone.utc)
         cco_state = self.get_cco_state()
 
+        # CEO DIRECTIVE 2025-12-24: Regime-conditioned exit parameters
+        # Phase 2 validated (p < 0.05). Parameters are FROZEN - no modifications.
+        current_regime = cco_state['current_regime'] if cco_state else 'NEUTRAL'
+        regime_params = REGIME_EXIT_PARAMS.get(current_regime, REGIME_EXIT_PARAMS['NEUTRAL'])
+        regime_target_pct = regime_params['target_pct']
+        regime_stop_loss_pct = regime_params['stop_loss_pct']
+
+        # CEO DIRECTIVE 2025-12-24: IoS-005 Skill Score tracking
+        damper_value, fss_score, threshold_type = self.get_skill_damper()
+
         entry_context = json.dumps({
             'cco_status': cco_state['cco_status'] if cco_state else 'UNKNOWN',
             'global_permit': cco_state['global_permit'] if cco_state else 'UNKNOWN',
-            'regime': cco_state['current_regime'] if cco_state else 'UNKNOWN',
+            'regime': current_regime,
             'vol_percentile': float(cco_state['current_vol_percentile']) if cco_state else 0,
             'needle_title': needle.get('hypothesis_title', 'UNKNOWN'),
             'needle_category': needle.get('hypothesis_category', 'UNKNOWN'),
             'eqs_score': float(needle.get('eqs_score', 0)),
             'alpaca_order_id': str(order_id),
             'kelly_multiplier': DAEMON_CONFIG['kelly_multiplier'],
-            'target_pct': DAEMON_CONFIG['default_target_pct'],
-            'stop_loss_pct': DAEMON_CONFIG['default_stop_loss_pct'],
+            'target_pct': regime_target_pct,
+            'stop_loss_pct': regime_stop_loss_pct,
+            'exit_model': 'REGIME_CONDITIONED_V1',
+            'fss_score': fss_score,
+            'skill_damper': damper_value,
+            'skill_threshold': threshold_type,
             'executed_by': 'SIGNAL_EXECUTOR_DAEMON',
             'execution_timestamp': execution_time.isoformat()
         })
@@ -1246,6 +1592,136 @@ class SignalExecutorDaemon:
 
             # Return trade_id even on failure - the trade DID execute
             return trade_id
+
+    # =========================================================================
+    # IoS-005 SKILL SCORE TRACKING (CEO DIRECTIVE 2025-12-24)
+    # =========================================================================
+
+    def check_rolling_summary_trigger(self):
+        """
+        CEO Directive 2025-12-24: Produce rolling summary after 10 completed Shadow trades.
+        Checks trade count and generates summary when threshold is reached.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                # Count completed trades (excluding test/invalid trades)
+                cur.execute("""
+                    SELECT COUNT(*) FROM fhq_canonical.g5_paper_trades
+                    WHERE exit_price IS NOT NULL
+                    AND (exclude_from_fss IS NULL OR exclude_from_fss = FALSE)
+                """)
+                completed_count = cur.fetchone()[0]
+
+                # Check if we hit a multiple of 10
+                if completed_count > 0 and completed_count % 10 == 0:
+                    # Check if we already generated a summary for this count
+                    cur.execute("""
+                        SELECT COUNT(*) FROM fhq_governance.governance_actions_log
+                        WHERE action_type = 'IOS005_ROLLING_SUMMARY'
+                        AND metadata->>'trade_count' = %s
+                    """, (str(completed_count),))
+                    already_generated = cur.fetchone()[0] > 0
+
+                    if not already_generated:
+                        self.generate_ios005_rolling_summary(completed_count)
+
+        except Exception as e:
+            logger.warning(f"IoS-005 rolling summary check failed: {e}")
+
+    def generate_ios005_rolling_summary(self, trade_count: int):
+        """
+        Generate IoS-005 Skill Score rolling summary for CEO review.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                # Get comprehensive metrics (excluding test/invalid trades)
+                cur.execute("""
+                    SELECT
+                        COUNT(*) as total_trades,
+                        COUNT(*) FILTER (WHERE pnl_absolute > 0) as wins,
+                        COUNT(*) FILTER (WHERE pnl_absolute <= 0) as losses,
+                        COALESCE(SUM(pnl_absolute), 0) as total_pnl,
+                        COALESCE(AVG(pnl_percent), 0) as avg_pnl_pct,
+                        COALESCE(MAX(pnl_percent), 0) as best_trade_pct,
+                        COALESCE(MIN(pnl_percent), 0) as worst_trade_pct,
+                        COUNT(DISTINCT entry_regime) as regimes_traded
+                    FROM fhq_canonical.g5_paper_trades
+                    WHERE exit_price IS NOT NULL
+                    AND (exclude_from_fss IS NULL OR exclude_from_fss = FALSE)
+                """)
+                stats = cur.fetchone()
+
+                # Get regime breakdown (excluding test/invalid trades)
+                cur.execute("""
+                    SELECT
+                        entry_regime,
+                        COUNT(*) as trades,
+                        COUNT(*) FILTER (WHERE pnl_absolute > 0) as wins,
+                        COALESCE(AVG(pnl_percent), 0) as avg_pnl
+                    FROM fhq_canonical.g5_paper_trades
+                    WHERE exit_price IS NOT NULL
+                    AND (exclude_from_fss IS NULL OR exclude_from_fss = FALSE)
+                    GROUP BY entry_regime
+                    ORDER BY trades DESC
+                """)
+                regime_breakdown = cur.fetchall()
+
+                # Calculate FSS
+                damper_value, fss_score, threshold_type = self.get_skill_damper()
+
+                # Build summary
+                summary = {
+                    'trade_count': trade_count,
+                    'total_pnl_usd': float(stats[3]),
+                    'win_rate': float(stats[1]) / float(stats[0]) * 100 if stats[0] > 0 else 0,
+                    'avg_pnl_pct': float(stats[4]),
+                    'best_trade_pct': float(stats[5]),
+                    'worst_trade_pct': float(stats[6]),
+                    'fss_score': fss_score,
+                    'skill_threshold': threshold_type,
+                    'damper_active': damper_value,
+                    'regime_breakdown': [
+                        {'regime': r[0], 'trades': r[1], 'wins': r[2], 'avg_pnl': float(r[3])}
+                        for r in regime_breakdown
+                    ],
+                    'exit_model': 'REGIME_CONDITIONED_V1',
+                    'generated_at': datetime.now(timezone.utc).isoformat()
+                }
+
+                # Log to governance
+                cur.execute("""
+                    INSERT INTO fhq_governance.governance_actions_log (
+                        action_type,
+                        action_target,
+                        action_target_type,
+                        initiated_by,
+                        decision,
+                        decision_rationale,
+                        agent_id,
+                        metadata
+                    ) VALUES (
+                        'IOS005_ROLLING_SUMMARY',
+                        'SHADOW_LEDGER',
+                        'SKILL_VERIFICATION',
+                        'SIGNAL_EXECUTOR_DAEMON',
+                        %s,
+                        %s,
+                        'STIG',
+                        %s::jsonb
+                    )
+                """, (
+                    'DIRECTIONAL_SKILL' if fss_score >= 0.5 else 'SKILL_INSUFFICIENT',
+                    f"IoS-005 Rolling Summary: {trade_count} trades, FSS={fss_score:.3f}, Win Rate={summary['win_rate']:.1f}%, Total PnL=${summary['total_pnl_usd']:.2f}",
+                    json.dumps(summary)
+                ))
+                self.conn.commit()
+
+                logger.info(f"IoS-005 ROLLING SUMMARY GENERATED: {trade_count} trades, FSS={fss_score:.3f}")
+                logger.info(f"  Win Rate: {summary['win_rate']:.1f}%, Total PnL: ${summary['total_pnl_usd']:.2f}")
+                logger.info(f"  Skill Assessment: {threshold_type}")
+
+        except Exception as e:
+            logger.error(f"IoS-005 rolling summary generation failed: {e}")
 
     # =========================================================================
     # IoS-003-B: FLASH-CONTEXT CONSUMPTION (Intraday Regime-Delta)
@@ -1478,6 +1954,12 @@ class SignalExecutorDaemon:
 
                 logger.info(f"EPHEMERAL FILLED: {int(filled_qty)} {symbol} @ ${filled_price:.2f}")
 
+                # =====================================================================
+                # LOCAL PENDING EXPOSURE TRACKING (CEO DIRECTIVE 2026-01-01)
+                # Track ephemeral trade immediately to prevent race condition
+                # =====================================================================
+                self._add_pending_exposure(symbol, filled_qty, position_value)
+
                 # Log to database with ephemeral context
                 trade_id = self._log_ephemeral_trade(
                     needle, symbol, filled_qty, filled_price, position_value,
@@ -1661,12 +2143,12 @@ class SignalExecutorDaemon:
                 witness = signal.get('price_witness_symbol', '')
                 symbol = SYMBOL_MAPPING.get(witness)
 
-                if not symbol or '/' in symbol:
-                    # Use proxy for crypto
-                    candidates = PROXY_SYMBOLS.get(witness, PROXY_SYMBOLS['default'])
-                    open_symbols = self.get_open_symbols()
-                    available = [s for s in candidates if s not in open_symbols]
-                    symbol = available[0] if available else None
+                if not symbol:
+                    # Check if it's crypto - trade directly (CEO Directive: No proxies)
+                    if witness in CRYPTO_SYMBOL_MAP:
+                        symbol = CRYPTO_SYMBOL_MAP[witness]
+                    else:
+                        continue  # Skip if no valid symbol
 
                 if not symbol:
                     continue
@@ -1707,6 +2189,13 @@ class SignalExecutorDaemon:
             'exposure_gate_status': 'UNKNOWN',
             'reason': ''
         }
+
+        # =====================================================================
+        # PHASE -1: SYNC PENDING EXPOSURE WITH ALPACA (CEO DIRECTIVE 2026-01-01)
+        # Reconcile local pending exposure tracking with actual Alpaca positions.
+        # This clears pending entries once Alpaca has caught up.
+        # =====================================================================
+        self._sync_pending_exposure_with_alpaca()
 
         # =====================================================================
         # PHASE 0: HARD EXPOSURE GATE CHECK (CEO Directive: Critical Risk Control)
@@ -1759,6 +2248,8 @@ class SignalExecutorDaemon:
                 pnl = exit.get('realized_pnl', 0)
                 pnl_str = f"+${pnl:,.2f}" if pnl >= 0 else f"-${abs(pnl):,.2f}"
                 logger.info(f"EXIT: {exit['symbol']} | {exit['reason']} | P/L: {pnl_str}")
+            # CEO DIRECTIVE 2025-12-24: Check if rolling summary should be generated
+            self.check_rolling_summary_trigger()
 
         # =====================================================================
         # PHASE 2: CHECK CCO PERMIT FOR NEW ENTRIES
