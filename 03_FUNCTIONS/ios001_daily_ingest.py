@@ -460,7 +460,8 @@ def run_daily_ingest(
         logger.info("Triggering IoS-003 Regime Update...")
         try:
             import subprocess
-            regime_script = Path(__file__).parent / "ios003_daily_regime_update.py"
+            # CEO-DIR-2025-RC-004: Switch to v4 regime classifier
+            regime_script = Path(__file__).parent / "ios003_daily_regime_update_v4.py"
             if regime_script.exists():
                 subprocess.run([sys.executable, str(regime_script)], check=True)
                 results['regime_update'] = 'TRIGGERED'

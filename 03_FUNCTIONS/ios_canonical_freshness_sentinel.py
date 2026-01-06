@@ -42,7 +42,7 @@ DB_CONFIG = {
     'password': os.environ.get('PGPASSWORD', 'postgres')
 }
 
-CANONICAL_ASSETS = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'EURUSD']
+CANONICAL_ASSETS = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'EURUSD=X']
 
 # =============================================================================
 # ASSET-TYPE-AWARE THRESHOLDS (ADR-010 Compliant)
@@ -80,7 +80,7 @@ ASSET_TYPE_MAP = {
     'BTC-USD': 'CRYPTO',
     'ETH-USD': 'CRYPTO',
     'SOL-USD': 'CRYPTO',
-    'EURUSD': 'FX',
+    'EURUSD=X': 'FX',
     'SPY': 'EQUITY',
     'QQQ': 'EQUITY',
     # FRED series

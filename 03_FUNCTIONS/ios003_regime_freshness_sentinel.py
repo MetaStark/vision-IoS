@@ -45,9 +45,10 @@ STALENESS_THRESHOLD_DAYS = 1
 FUNCTIONS_DIR = Path(__file__).parent
 
 # Modules to trigger for self-repair
+# CEO-DIR-2025-RC-004: Updated to v4 regime classifier
 REPAIR_MODULES = [
-    'daily_ingest_worker.py',      # IoS-006: Price ingest
-    'ios003_daily_regime_update.py' # IoS-003: Regime update
+    'daily_ingest_worker.py',          # IoS-006: Price ingest
+    'ios003_daily_regime_update_v4.py' # IoS-003: Regime update v4
 ]
 
 
