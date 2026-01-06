@@ -1,0 +1,164 @@
+{
+  "directive_id": "CEO-DIR-2026-TIME-TRUTH-VERIFICATION-001",
+  "verification_timestamp": "2026-01-06T14:15:00Z",
+  "verifying_agent": "STIG",
+  "status": "COMPLETED_WITH_FINDINGS",
+
+  "section_2_temporal_integrity": {
+    "status": "FINDING_REQUIRES_REMEDIATION",
+    "summary": "Future-dated timestamp detected in EURUSD=X causing negative staleness",
+    "findings": {
+      "affected_asset": "EURUSD=X",
+      "future_dated_records": 1,
+      "future_timestamp": "2026-01-06T22:59:59.000Z",
+      "current_time_at_check": "2026-01-06T14:05:17.934Z",
+      "hours_in_future": 8.91,
+      "root_cause": "FX data provider uses bar close_time (22:59:59) as timestamp, not open_time",
+      "other_assets_affected": 0
+    },
+    "remediation_required": {
+      "action": "CREATE_SAFE_STALENESS_FUNCTION",
+      "description": "Create fhq_market.safe_staleness_hours() function that guarantees staleness >= 0 by using GREATEST(0, staleness)",
+      "migration_needed": true,
+      "migration_blocked_by": "MCP read-only connection"
+    },
+    "staleness_contract": {
+      "definition": "staleness_hours = GREATEST(0, (NOW() - bar_timestamp) / 3600)",
+      "guarantee": "staleness >= 0 by construction",
+      "edge_case": "Future-dated timestamps (close_time semantics) return 0 staleness"
+    }
+  },
+
+  "section_3_regime_state_consistency": {
+    "status": "SPLIT_BRAIN_DETECTED",
+    "summary": "3-way regime state divergence between global, sovereign, and technical sources",
+    "findings": {
+      "global_regime": {
+        "source": "fhq_meta.regime_state",
+        "regime": "BULL",
+        "confidence": 0.75,
+        "updated_at": "2026-01-06T11:24:54.285Z",
+        "updated_by": "STIG.manual_fix"
+      },
+      "btc_sovereign_regime": {
+        "source": "fhq_perception.sovereign_regime_state_v4",
+        "regime": "NEUTRAL",
+        "confidence": 0.0052,
+        "effective_date": "2026-01-05",
+        "crio_dominant_driver": "UNKNOWN"
+      },
+      "btc_technical_regime": {
+        "source": "fhq_perception.sovereign_regime_state_v4 (technical)",
+        "regime": "STRESS",
+        "confidence": 0.8499,
+        "note": "This is the actual HMM model output"
+      }
+    },
+    "authority_hierarchy": {
+      "authoritative_source": "fhq_perception.sovereign_regime_state_v4",
+      "engine_version": "v4.0.0",
+      "observation": "Global regime (BULL) was manually overridden, diverging from v4 model output (STRESS @ 85%)"
+    },
+    "remediation_recommendation": "Sync fhq_meta.regime_state from sovereign_regime_state_v4 or deprecate global table"
+  },
+
+  "section_4_qdrant_health": {
+    "status": "OBSERVABILITY_DISCREPANCY_EXPLAINED",
+    "summary": "Docker reports 'unhealthy' but Qdrant API is functional",
+    "findings": {
+      "docker_status": "Up 2 days (unhealthy)",
+      "api_status": "ok",
+      "collections": [
+        {
+          "name": "evidence_nodes",
+          "status": "green",
+          "vectors_count": 1019,
+          "points_count": 1019
+        },
+        {
+          "name": "finn_embeddings",
+          "status": "green",
+          "vectors_count": 0,
+          "points_count": 0,
+          "note": "EMPTY - no embeddings synced"
+        },
+        {
+          "name": "causal_claims",
+          "status": "green",
+          "vectors_count": 0,
+          "points_count": 0,
+          "note": "EMPTY - no claims synced"
+        }
+      ],
+      "sync_log_status": "EMPTY - no records in fhq_operational.qdrant_sync_log"
+    },
+    "root_cause": "Docker healthcheck timeout vs actual Qdrant responsiveness",
+    "remediation": "Update docker-compose healthcheck timeout or ignore docker status in favor of API health"
+  },
+
+  "section_5_orchestrator_task_classification": {
+    "status": "VERIFIED",
+    "summary": "29 active tasks registered, all classified as VISION_FUNCTION",
+    "findings": {
+      "total_active_tasks": 29,
+      "task_types": {
+        "VISION_FUNCTION": 29
+      },
+      "domains": {
+        "VISION_FUNCTION": 11,
+        "GOVERNANCE": 5,
+        "EXECUTION": 2,
+        "INTELLIGENCE": 2,
+        "RESEARCH": 2,
+        "COGNITIVE": 1,
+        "DATA_QUALITY": 1,
+        "PERCEPTION": 1
+      },
+      "agents": {
+        "STIG": 8,
+        "FINN": 7,
+        "LINE": 5,
+        "VEGA": 4,
+        "CEIO": 2,
+        "LARS": 1
+      },
+      "daemon_classification": "Not explicitly stored in task_config - determined by orchestrator at runtime based on script behavior"
+    },
+    "semantic_observation": "Task classification (batch vs daemon) is implicit based on script execution pattern, not explicit metadata"
+  },
+
+  "executive_summary": {
+    "critical_issues": 1,
+    "warnings": 2,
+    "info": 1,
+    "details": [
+      {
+        "severity": "WARNING",
+        "issue": "REGIME_SPLIT_BRAIN",
+        "description": "Global regime (BULL) diverges from v4 model output (STRESS @ 85%)"
+      },
+      {
+        "severity": "WARNING",
+        "issue": "NEGATIVE_STALENESS",
+        "description": "EURUSD=X has future-dated timestamp causing -8.9h staleness"
+      },
+      {
+        "severity": "INFO",
+        "issue": "QDRANT_OBSERVABILITY",
+        "description": "Docker healthcheck shows unhealthy but API is functional"
+      },
+      {
+        "severity": "INFO",
+        "issue": "EMPTY_COLLECTIONS",
+        "description": "finn_embeddings and causal_claims collections are empty (0 vectors)"
+      }
+    ]
+  },
+
+  "attestation": {
+    "verified_by": "STIG",
+    "verification_complete": true,
+    "timestamp": "2026-01-06T14:15:00Z",
+    "signature_note": "MCP read-only - migration for staleness function pending manual execution"
+  }
+}

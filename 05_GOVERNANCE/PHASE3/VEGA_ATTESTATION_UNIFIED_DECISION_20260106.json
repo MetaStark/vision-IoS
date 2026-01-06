@@ -1,0 +1,60 @@
+{
+  "attestation_id": "VEGA-ATT-2026-0106-001",
+  "attestation_type": "CONSTITUTIONAL_COMPLIANCE",
+  "timestamp": "2026-01-06T16:10:00Z",
+  "attesting_agent": "VEGA",
+
+  "directive_reference": "CEO-DIR-2026-UNIFIED-DECISION-001",
+  "compliance_status": "COMPLIANT",
+
+  "verification_summary": {
+    "split_brain_eliminated": true,
+    "one_source_of_truth": "fhq_perception.sovereign_regime_state_v4",
+    "global_regime_synced": true,
+    "shadow_observation_active": true,
+    "airlock_quarantine_active": true
+  },
+
+  "regime_state_verification": {
+    "table": "fhq_meta.regime_state",
+    "current_regime": "SIDEWAYS",
+    "regime_confidence": 0.0052,
+    "updated_by": "STIG.UNIFIED_v4",
+    "source_mapping": "v4 NEUTRAL -> v2 SIDEWAYS",
+    "derivation": "BTC-USD sovereign_regime from sovereign_regime_state_v4"
+  },
+
+  "airlock_verification": {
+    "table": "fhq_research.regime_airlock",
+    "quarantined_signal": "BULL",
+    "original_source": "fhq_meta.regime_state",
+    "airlock_status": "QUARANTINED",
+    "release_requires": "ADR-004 G4"
+  },
+
+  "infrastructure_created": {
+    "tables": [
+      "fhq_research.shadow_observation_ledger",
+      "fhq_research.regime_airlock"
+    ],
+    "functions": [
+      "fhq_market.safe_staleness_hours()"
+    ],
+    "migration": "207_unified_decision_shadow_observation.sql"
+  },
+
+  "constitutional_compliance": {
+    "ADR-002": "COMPLIANT - All changes logged to governance_actions_log",
+    "ADR-011": "COMPLIANT - System now supports Replay Mode (decision hashing ready)",
+    "ADR-013": "COMPLIANT - One-Source-of-Truth established (v4)",
+    "ADR-014": "COMPLIANT - Sub-executive delegation executed (STIG technical implementation)"
+  },
+
+  "risk_mitigation": {
+    "class_a_violation_eliminated": true,
+    "description": "Manual regime override (BULL) removed from decision path. v4 model output is now authoritative."
+  },
+
+  "attestation_hash": "SHA256_PENDING_SIGNATURE",
+  "vega_signature": "VEGA_ATTESTATION_VALID"
+}
