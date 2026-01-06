@@ -130,10 +130,60 @@ class OrchestratorDatabase:
                 FROM fhq_governance.task_registry
                 WHERE task_type = 'VISION_FUNCTION'
                   AND enabled = TRUE
-                ORDER BY task_id
+                ORDER BY (task_config->>'priority')::int NULLS LAST, task_name
             """)
             tasks = cur.fetchall()
             return [dict(task) for task in tasks]
+
+    def read_cognitive_queries(self) -> List[Dict[str, Any]]:
+        """
+        Read governed cognitive queries from cognitive_query_set.
+        CEO-DIR-2026-PLANMODE-COGNITIVE-INTEGRATION-001 Section 8.5
+
+        No hardcoded queries in code - all queries live in governance table.
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Check if table exists first
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables
+                    WHERE table_schema = 'fhq_governance'
+                      AND table_name = 'cognitive_query_set'
+                )
+            """)
+            if not cur.fetchone()['exists']:
+                self.logger.info("cognitive_query_set table not found - skipping cognitive queries")
+                return []
+
+            cur.execute("""
+                SELECT
+                    query_id,
+                    query_template,
+                    query_type,
+                    asset_scope
+                FROM fhq_governance.cognitive_query_set
+                WHERE enabled = TRUE
+                ORDER BY query_type
+            """)
+            queries = cur.fetchall()
+            return [dict(q) for q in queries]
+
+    def get_current_regime(self) -> str:
+        """Get current market regime from regime_state."""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT current_regime
+                FROM fhq_meta.regime_state
+                ORDER BY last_updated_at DESC
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+            return row['current_regime'] if row else 'UNKNOWN'
+
+    def get_current_defcon(self) -> str:
+        """Get current DEFCON level (placeholder - actual logic TBD)."""
+        # For now, default to YELLOW for cognitive operations
+        return 'YELLOW'
 
     def read_orchestrator_state(self) -> Dict[str, Any]:
         """Read orchestrator execution state"""
@@ -392,6 +442,119 @@ class VisionIoSOrchestrator:
         """Generate cycle ID"""
         return datetime.now(timezone.utc).strftime("CYCLE_%Y%m%d_%H%M%S")
 
+    def run_cognitive_queries(self) -> List[Dict[str, Any]]:
+        """
+        Execute governed cognitive queries via FINN Cognitive Gateway.
+        CEO-DIR-2026-PLANMODE-COGNITIVE-INTEGRATION-001 Section 8.5
+
+        Pull-based orchestration: queries come from database, not code.
+        """
+        results = []
+
+        try:
+            # Read governed queries
+            queries = self.db.read_cognitive_queries()
+
+            if not queries:
+                self.logger.info("No cognitive queries to execute")
+                return results
+
+            # Get current context
+            current_regime = self.db.get_current_regime()
+            current_defcon = self.db.get_current_defcon()
+
+            self.logger.info(f"Running {len(queries)} cognitive queries (Regime: {current_regime}, DEFCON: {current_defcon})")
+
+            # Import gateway
+            import sys
+            sys.path.insert(0, str(Config.get_functions_dir()))
+
+            try:
+                from finn_cognitive_gateway import run_cognitive_cycle
+                from schemas.signal_envelope import DEFCONLevel, NoSignal, SignalEnvelope
+            except ImportError as e:
+                self.logger.error(f"Failed to import cognitive gateway: {e}")
+                return results
+
+            # Map DEFCON string to enum
+            defcon_map = {
+                'GREEN': DEFCONLevel.GREEN,
+                'YELLOW': DEFCONLevel.YELLOW,
+                'ORANGE': DEFCONLevel.ORANGE,
+                'RED': DEFCONLevel.RED,
+                'BLACK': DEFCONLevel.BLACK
+            }
+            defcon_level = defcon_map.get(current_defcon, DEFCONLevel.YELLOW)
+
+            # Execute each query
+            for query in queries:
+                query_template = query['query_template']
+                query_type = query['query_type']
+                asset_scope = query.get('asset_scope', 'ALL')
+
+                # Expand template with current context
+                expanded_query = query_template.format(
+                    regime=current_regime,
+                    asset=asset_scope if asset_scope != 'ALL' else 'portfolio'
+                )
+
+                self.logger.info(f"  Executing {query_type}: {expanded_query[:50]}...")
+
+                try:
+                    if self.dry_run:
+                        self.logger.info(f"  [DRY RUN] Would execute cognitive query")
+                        result = {
+                            'query_type': query_type,
+                            'query': expanded_query[:100],
+                            'success': True,
+                            'dry_run': True
+                        }
+                    else:
+                        # Run cognitive cycle
+                        signal_result = run_cognitive_cycle(
+                            query=expanded_query,
+                            defcon_level=defcon_level,
+                            regime=current_regime,
+                            asset=asset_scope if asset_scope not in ('ALL', 'PORTFOLIO', 'MACRO') else None
+                        )
+
+                        if isinstance(signal_result, NoSignal):
+                            result = {
+                                'query_type': query_type,
+                                'query': expanded_query[:100],
+                                'success': True,
+                                'signal_type': 'NO_SIGNAL',
+                                'reason': signal_result.reason
+                            }
+                            self.logger.info(f"    -> NO_SIGNAL: {signal_result.reason}")
+                        else:
+                            result = {
+                                'query_type': query_type,
+                                'query': expanded_query[:100],
+                                'success': True,
+                                'signal_type': 'SIGNAL',
+                                'action': signal_result.action.value if hasattr(signal_result.action, 'value') else str(signal_result.action),
+                                'confidence': signal_result.confidence,
+                                'bundle_id': signal_result.bundle_id
+                            }
+                            self.logger.info(f"    -> SIGNAL: {signal_result.action}, confidence={signal_result.confidence:.2f}")
+
+                except Exception as e:
+                    result = {
+                        'query_type': query_type,
+                        'query': expanded_query[:100],
+                        'success': False,
+                        'error': str(e)
+                    }
+                    self.logger.error(f"    -> ERROR: {e}")
+
+                results.append(result)
+
+        except Exception as e:
+            self.logger.error(f"Cognitive query execution failed: {e}")
+
+        return results
+
     def generate_hash_chain_id(self, cycle_id: str) -> str:
         """Generate hash chain ID"""
         return f"HC-{Config.AGENT_ID}-ORCHESTRATOR-{cycle_id}"
@@ -456,6 +619,24 @@ class VisionIoSOrchestrator:
                     self.logger.error(f"❌ FAILED: {task['task_name']}")
                     if 'error' in result:
                         self.logger.error(f"   Error: {result['error']}")
+
+            # CEO-DIR-2026-PLANMODE-COGNITIVE-INTEGRATION-001: Execute cognitive queries
+            self.logger.info("")
+            self.logger.info("-" * 40)
+            self.logger.info("COGNITIVE ENGINE QUERIES")
+            self.logger.info("-" * 40)
+            cognitive_results = self.run_cognitive_queries()
+
+            if cognitive_results:
+                self.logger.info(f"Cognitive queries executed: {len(cognitive_results)}")
+                # Add to results for logging
+                for cr in cognitive_results:
+                    results.append({
+                        'task_name': f"COGNITIVE_{cr.get('query_type', 'QUERY')}",
+                        'agent_id': 'FINN',
+                        'success': cr.get('success', False),
+                        'cognitive_result': cr
+                    })
 
             # Determine overall cycle status
             all_success = all(r['success'] for r in results)
