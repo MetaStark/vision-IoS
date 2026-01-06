@@ -409,11 +409,22 @@ class DailyRegimeUpdaterV4:
         changepoints = 0
         modifiers = 0
 
+        # CEO-DIR-2025-DATA-001: Normalize index for date comparison
+        # Convert features_df index to date objects for proper matching
+        features_dates = {idx.date() if hasattr(idx, 'date') else idx: idx for idx in features_df.index}
+
         for date in missing_dates:
-            if date not in features_df.index:
+            # Normalize date to match features index
+            if hasattr(date, 'date'):
+                lookup_date = date.date()
+            else:
+                lookup_date = date
+
+            if lookup_date not in features_dates:
                 continue
 
-            row = features_df.loc[date]
+            original_idx = features_dates[lookup_date]
+            row = features_df.loc[original_idx]
 
             # Build feature and covariate vectors
             feature_cols = ['return_z', 'volatility_z', 'drawdown_z', 'macd_diff_z',
@@ -708,7 +719,54 @@ class DailyRegimeUpdaterV4:
         logger.info(f"Dry Run: {self.dry_run}")
         logger.info("=" * 60)
 
+        # CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Sync fhq_meta.regime_state
+        # This ensures cognitive gateway staleness checks pass
+        if not self.dry_run:
+            self._sync_meta_regime_state()
+
         return self.results
+
+    def _sync_meta_regime_state(self):
+        """
+        Sync fhq_meta.regime_state from sovereign_regime_state_v4.
+
+        CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001:
+        The cognitive gateway checks fhq_meta.regime_state for staleness.
+        This was not being updated, causing 20h+ staleness and query aborts.
+        """
+        try:
+            # Get dominant regime from BTC (market leader)
+            self.cur.execute("""
+                SELECT sovereign_regime, state_probabilities
+                FROM fhq_perception.sovereign_regime_state_v4
+                WHERE asset_id = 'BTC-USD'
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """)
+            row = self.cur.fetchone()
+
+            if row:
+                regime = row['sovereign_regime']
+                probs = row['state_probabilities'] or {}
+                confidence = probs.get(regime, 0.75)
+
+                self.cur.execute("""
+                    UPDATE fhq_meta.regime_state
+                    SET current_regime = %s,
+                        regime_confidence = %s,
+                        last_updated_at = NOW(),
+                        updated_by = 'ios003_v4.regime_sync'
+                """, (regime, confidence))
+                self.conn.commit()
+
+                logger.info(f"[SYNC] fhq_meta.regime_state <- {regime} ({confidence:.0%})")
+            else:
+                logger.warning("[SYNC] No BTC regime found - skipping meta sync")
+
+        except Exception as e:
+            logger.error(f"[SYNC] Failed to sync regime_state: {e}")
+            # Don't fail the whole run for sync issues
+            self.conn.rollback()
 
     def close(self):
         """Close database connections."""
