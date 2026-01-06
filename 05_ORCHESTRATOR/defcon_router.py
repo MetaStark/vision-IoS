@@ -43,9 +43,10 @@ class DEFCONLevel(Enum):
 
 class ExecutionMode(Enum):
     """Execution modes per IoS-014 spec"""
-    LOCAL_DEV = "LOCAL_DEV"      # Development mode
-    PAPER_PROD = "PAPER_PROD"    # Paper trading
-    LIVE_PROD = "LIVE_PROD"      # Live trading
+    LOCAL_DEV = "LOCAL_DEV"          # Development mode
+    PAPER_PROD = "PAPER_PROD"        # Paper trading
+    LIVE_PROD = "LIVE_PROD"          # Live trading
+    SHADOW_PAPER = "SHADOW_PAPER"    # Shadow trading (paper signals, no execution)
 
 
 class TaskCriticality(Enum):

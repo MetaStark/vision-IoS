@@ -350,18 +350,29 @@ class FunctionExecutor:
 
         task_name = task['task_name']
         agent_id = task['agent_id']
-        function_path = task['task_config'].get('function_path')
+        task_config = task['task_config']
+
+        # Support both function_path and script fields (CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001)
+        function_path = task_config.get('function_path')
+        if not function_path:
+            # Fall back to script field (legacy task configs)
+            script = task_config.get('script')
+            if script:
+                function_path = f"03_FUNCTIONS/{script}"
 
         if not function_path:
             return {
                 'task_name': task_name,
                 'agent_id': agent_id,
                 'success': False,
-                'error': 'Missing function_path in task_config'
+                'error': 'Missing function_path or script in task_config'
             }
 
-        # Resolve full path
-        full_path = self.functions_dir.parent / function_path
+        # Resolve full path - handle both absolute and relative paths
+        if os.path.isabs(function_path):
+            full_path = Path(function_path)
+        else:
+            full_path = self.functions_dir.parent / function_path
 
         if not full_path.exists():
             return {
