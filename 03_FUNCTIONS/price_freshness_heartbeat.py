@@ -57,9 +57,9 @@ PRICE_STALENESS_CRYPTO = {
 }
 
 PRICE_STALENESS_EQUITY = {
-    'max_ok_hours': 2,       # Trading hours only
-    'warn_hours': 4,
-    'blackout_hours': 8
+    'max_ok_hours': 18,      # Daily bars: OK up to 18h (overnight + morning)
+    'warn_hours': 24,        # Warn if > 24h (missed a full day)
+    'blackout_hours': 30     # Blackout if > 30h (definitely missed data)
 }
 
 # Assets to monitor

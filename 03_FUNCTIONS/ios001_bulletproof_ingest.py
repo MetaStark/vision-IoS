@@ -211,8 +211,10 @@ def get_last_price_timestamp(conn, canonical_id: str) -> Optional[datetime]:
         return result
 
 
-# CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Crypto intraday staleness threshold
-CRYPTO_STALENESS_HOURS = 6  # Fetch new data if last update > 6 hours ago
+# CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Timestamp-based staleness thresholds
+CRYPTO_STALENESS_HOURS = 6   # Crypto: 24/7 markets, fetch if > 6 hours stale
+EQUITY_STALENESS_HOURS = 18  # Equity: Daily bars, fetch if > 18 hours (covers overnight + next day)
+FX_STALENESS_HOURS = 18      # FX: Similar to equity for daily data
 
 
 def insert_prices_canonical(
@@ -433,18 +435,29 @@ def try_alpaca_ingest(
                 start_time = datetime.now(timezone.utc) - timedelta(days=30)
                 end_time = datetime.now(timezone.utc)
         else:
-            # EQUITY/FX: Use date-based logic (markets have close times)
-            last_date = get_last_price_date(conn, canonical_id)
-            if last_date:
-                start_date = last_date + timedelta(days=1)
+            # CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Use timestamp-based logic for EQUITY/FX
+            # This fixes the date boundary bug where date-based skip caused missed data
+            staleness_threshold = FX_STALENESS_HOURS if asset_class == 'FX' else EQUITY_STALENESS_HOURS
+            last_ts = get_last_price_timestamp(conn, canonical_id)
+
+            if last_ts:
+                if last_ts.tzinfo is None:
+                    last_ts = last_ts.replace(tzinfo=timezone.utc)
+                now = datetime.now(timezone.utc)
+                staleness_hours = (now - last_ts).total_seconds() / 3600
+
+                if staleness_hours < staleness_threshold:
+                    logger.debug(f"  [{canonical_id}] Fresh ({staleness_hours:.1f}h < {staleness_threshold}h)")
+                    continue
+                else:
+                    logger.info(f"  [{canonical_id}] Stale ({staleness_hours:.1f}h > {staleness_threshold}h) - fetching")
+                    # Fetch last 7 days to ensure we get any missed data
+                    start_date = (now - timedelta(days=7)).date()
+                    end_date = now.date()
             else:
+                # No data - fetch 30 days
                 start_date = date.today() - timedelta(days=30)
-
-            end_date = date.today()
-
-            if start_date > end_date:
-                logger.debug(f"  [{canonical_id}] Up to date")
-                continue
+                end_date = date.today()
 
         try:
             if asset_class == 'CRYPTO':
