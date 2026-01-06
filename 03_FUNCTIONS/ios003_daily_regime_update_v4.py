@@ -500,8 +500,200 @@ class DailyRegimeUpdaterV4:
             hash_self = compute_hash(data_str)
             formula_hash = compute_hash(f"IOHMM_v4|{asset_class}|student_t|online_em|bocd")
 
+            # CEO-DIR-2026-004: Compute entropy and lineage hash
+            entropy_val = -sum(p * np.log2(p) if p > 0 else 0 for p in state_probs.values())
+            stability_score = 1 - (entropy_val / 2.0)  # Normalized 0-1
+
+            # Feature hash for replay
+            feature_hash = compute_hash(str(feature_vec))
+
             # Step 9: Store results
             if not self.dry_run:
+                # ============================================================
+                # CEO-DIR-2026-004: EPISTEMIC WRITES (belief first, then policy)
+                # ============================================================
+
+                # Step 9.1: Write BELIEF to model_belief_state (IMMUTABLE)
+                belief_id = None
+                self.cur.execute("""
+                    INSERT INTO fhq_perception.model_belief_state (
+                        asset_id,
+                        belief_timestamp,
+                        technical_regime,
+                        belief_distribution,
+                        belief_confidence,
+                        dominant_regime,
+                        model_version,
+                        inference_engine,
+                        feature_hash,
+                        is_changepoint,
+                        changepoint_probability,
+                        run_length,
+                        entropy,
+                        regime_stability_score,
+                        lineage_hash
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        fhq_perception.compute_lineage_hash(%s, %s, %s, %s, %s, 'GENESIS')
+                    )
+                    RETURNING belief_id
+                """, (
+                    asset_id,
+                    date,
+                    technical_regime,
+                    json.dumps(state_probs),
+                    max_prob,
+                    technical_regime,
+                    PERCEPTION_MODEL_VERSION,
+                    ENGINE_VERSION,
+                    feature_hash,
+                    is_changepoint,
+                    changepoint_prob,
+                    run_length,
+                    round(entropy_val, 4),
+                    round(stability_score, 4),
+                    # Args for compute_lineage_hash
+                    asset_id,
+                    date,
+                    technical_regime,
+                    max_prob,
+                    json.dumps(state_probs)
+                ))
+                belief_row = self.cur.fetchone()
+                belief_id = belief_row['belief_id'] if belief_row else None
+
+                # Step 9.2: Write POLICY to sovereign_policy_state
+                is_suppressed = (technical_regime != sovereign_regime)
+                hysteresis_active = (consecutive_confirms < hysteresis_days)
+                hysteresis_days_remaining = max(0, hysteresis_days - consecutive_confirms)
+
+                if hysteresis_active:
+                    suppression_reason_full = f"HYSTERESIS: {consecutive_confirms}/{hysteresis_days} confirms - awaiting confirmation"
+                    transition_state = 'PENDING_CONFIRMATION'
+                    pending_regime_val = technical_regime
+                elif modifier_applied:
+                    suppression_reason_full = modifier_reason
+                    transition_state = 'TRANSITIONING'
+                    pending_regime_val = None
+                else:
+                    suppression_reason_full = None
+                    transition_state = 'STABLE'
+                    pending_regime_val = None
+
+                policy_id = None
+                if belief_id:
+                    self.cur.execute("""
+                        INSERT INTO fhq_perception.sovereign_policy_state (
+                            belief_id,
+                            asset_id,
+                            policy_timestamp,
+                            policy_regime,
+                            policy_confidence,
+                            belief_regime,
+                            belief_confidence,
+                            is_suppressed,
+                            suppression_reason,
+                            hysteresis_active,
+                            hysteresis_days_remaining,
+                            consecutive_confirms,
+                            confirms_required,
+                            transition_state,
+                            pending_regime,
+                            policy_version,
+                            policy_hash
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                        RETURNING policy_id
+                    """, (
+                        belief_id,
+                        asset_id,
+                        date,
+                        sovereign_regime,
+                        confidence,
+                        technical_regime,
+                        max_prob,
+                        is_suppressed,
+                        suppression_reason_full if is_suppressed else None,
+                        hysteresis_active,
+                        hysteresis_days_remaining,
+                        consecutive_confirms,
+                        hysteresis_days,
+                        transition_state,
+                        pending_regime_val,
+                        'ios003_v4_epistemic_v1',
+                        hash_self
+                    ))
+                    policy_row = self.cur.fetchone()
+                    policy_id = policy_row['policy_id'] if policy_row else None
+
+                # Step 9.3: Write SUPPRESSION to ledger if divergent
+                if is_suppressed and belief_id and policy_id:
+                    # Determine suppression category
+                    if hysteresis_active:
+                        supp_category = 'HYSTERESIS'
+                        constraint_type = 'consecutive_confirms'
+                        constraint_val = str(consecutive_confirms)
+                        constraint_thresh = str(hysteresis_days)
+                    elif modifier_applied:
+                        if crio_fragility > 0.80:
+                            supp_category = 'RISK_LIMIT'
+                            constraint_type = 'fragility_score'
+                        elif crio_driver == 'VIX_SPIKE':
+                            supp_category = 'DEFCON'
+                            constraint_type = 'vix_fragility_combo'
+                        elif crio_driver == 'LIQUIDITY_CONTRACTION':
+                            supp_category = 'LIQUIDITY'
+                            constraint_type = 'liquidity_contraction'
+                        else:
+                            supp_category = 'OTHER'
+                            constraint_type = 'crio_modifier'
+                        constraint_val = f"{crio_driver}:{crio_fragility:.2f}"
+                        constraint_thresh = modifier_reason
+                    else:
+                        supp_category = 'OTHER'
+                        constraint_type = 'unknown'
+                        constraint_val = None
+                        constraint_thresh = None
+
+                    self.cur.execute("""
+                        INSERT INTO fhq_governance.epistemic_suppression_ledger (
+                            belief_id,
+                            policy_id,
+                            asset_id,
+                            suppression_timestamp,
+                            suppressed_regime,
+                            suppressed_confidence,
+                            chosen_regime,
+                            chosen_confidence,
+                            suppression_reason,
+                            suppression_category,
+                            constraint_type,
+                            constraint_value,
+                            constraint_threshold
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                    """, (
+                        belief_id,
+                        policy_id,
+                        asset_id,
+                        date,
+                        technical_regime,
+                        max_prob,
+                        sovereign_regime,
+                        confidence,
+                        suppression_reason_full,
+                        supp_category,
+                        constraint_type,
+                        constraint_val,
+                        constraint_thresh
+                    ))
+
+                # ============================================================
+                # BACKWARD COMPATIBILITY: Keep existing writes
+                # ============================================================
+
                 # Insert/update regime_daily
                 self.cur.execute("""
                     INSERT INTO fhq_perception.regime_daily (

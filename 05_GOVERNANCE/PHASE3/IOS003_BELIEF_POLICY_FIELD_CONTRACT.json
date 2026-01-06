@@ -1,0 +1,369 @@
+{
+  "document_id": "IOS003-BELIEF-POLICY-FIELD-CONTRACT",
+  "document_type": "GOVERNANCE_SPECIFICATION",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-004",
+  "timestamp": "2026-01-06T22:20:00Z",
+  "author": "STIG",
+
+  "section_1_belief_fields": {
+    "target_table": "fhq_perception.model_belief_state",
+    "immutability": "APPEND-ONLY (CEO-DIR-2026-003)",
+    "producer": "IoS-003 (IOHMM inference)",
+
+    "fields": {
+      "belief_id": {
+        "type": "UUID",
+        "source": "gen_random_uuid()",
+        "semantics": "Unique identifier for this belief record - used as FK in policy_state"
+      },
+      "asset_id": {
+        "type": "TEXT",
+        "source": "asset['canonical_id']",
+        "semantics": "Canonical asset identifier from fhq_meta.assets"
+      },
+      "belief_timestamp": {
+        "type": "TIMESTAMPTZ",
+        "source": "date (inference date)",
+        "semantics": "The point in time at which the model formed this belief"
+      },
+      "technical_regime": {
+        "type": "TEXT",
+        "source": "inference_result['technical_regime']",
+        "semantics": "The regime the model believes is most probable (argmax of posteriors)",
+        "valid_values": ["BULL", "BEAR", "NEUTRAL", "STRESS"],
+        "ios003_variable": "technical_regime"
+      },
+      "belief_distribution": {
+        "type": "JSONB",
+        "source": "state_probs dict",
+        "semantics": "Full probability distribution over regimes - captures epistemic uncertainty",
+        "schema": {"BULL": "float[0-1]", "BEAR": "float[0-1]", "NEUTRAL": "float[0-1]", "STRESS": "float[0-1]"},
+        "constraint": "Sum must equal 1.0 (±0.0001)",
+        "ios003_variable": "state_probs"
+      },
+      "belief_confidence": {
+        "type": "NUMERIC",
+        "source": "max(state_probs.values())",
+        "semantics": "Model's confidence in dominant regime = max posterior probability",
+        "range": [0.0, 1.0],
+        "interpretation": {
+          "0.25": "Maximum uncertainty (4 regimes equally probable)",
+          "0.50": "Moderate confidence",
+          "0.80": "High confidence",
+          "0.95": "Very high confidence"
+        },
+        "ios003_variable": "max_prob"
+      },
+      "dominant_regime": {
+        "type": "TEXT",
+        "source": "argmax(belief_distribution)",
+        "semantics": "Same as technical_regime - included for query convenience",
+        "constraint": "Must match technical_regime"
+      },
+      "model_version": {
+        "type": "TEXT",
+        "source": "PERCEPTION_MODEL_VERSION",
+        "semantics": "Version of the perception model that produced this belief",
+        "ios003_value": "2026.PROD.4"
+      },
+      "inference_engine": {
+        "type": "TEXT",
+        "source": "ENGINE_VERSION",
+        "semantics": "Version of the inference engine (IOHMM)",
+        "ios003_value": "v4.0.0"
+      },
+      "feature_hash": {
+        "type": "TEXT",
+        "source": "compute_hash(feature_arr)",
+        "semantics": "Hash of input features - enables replay verification"
+      },
+      "is_changepoint": {
+        "type": "BOOLEAN",
+        "source": "inference_result['is_changepoint']",
+        "semantics": "BOCD detected a regime shift",
+        "ios003_variable": "is_changepoint"
+      },
+      "changepoint_probability": {
+        "type": "NUMERIC",
+        "source": "inference_result['changepoint_probability']",
+        "semantics": "Probability that a changepoint occurred",
+        "ios003_variable": "changepoint_prob"
+      },
+      "run_length": {
+        "type": "INTEGER",
+        "source": "inference_result['run_length']",
+        "semantics": "BOCD run length since last changepoint",
+        "ios003_variable": "run_length"
+      },
+      "entropy": {
+        "type": "NUMERIC",
+        "source": "fhq_perception.compute_entropy(belief_distribution)",
+        "semantics": "Shannon entropy of belief distribution - measures uncertainty",
+        "range": [0.0, 2.0],
+        "interpretation": {
+          "0.0": "Perfect certainty (one regime has p=1.0)",
+          "2.0": "Maximum uncertainty (all 4 regimes at p=0.25)"
+        }
+      },
+      "regime_stability_score": {
+        "type": "NUMERIC",
+        "source": "1 - entropy/2",
+        "semantics": "Normalized stability score (higher = more stable belief)"
+      },
+      "lineage_hash": {
+        "type": "TEXT",
+        "source": "fhq_perception.compute_lineage_hash(...)",
+        "semantics": "SHA-256 chain hash linking to previous belief record",
+        "contract": "PREFLIGHT_208_LINEAGE_HASH_CONTRACT.json"
+      }
+    }
+  },
+
+  "section_2_policy_fields": {
+    "target_table": "fhq_perception.sovereign_policy_state",
+    "immutability": "MUTABLE (policy can be revised)",
+    "producer": "IoS-003 (after hysteresis + CRIO)",
+
+    "fields": {
+      "policy_id": {
+        "type": "UUID",
+        "source": "gen_random_uuid()",
+        "semantics": "Unique identifier for this policy decision"
+      },
+      "belief_id": {
+        "type": "UUID",
+        "source": "belief_id from Step 1",
+        "semantics": "FK reference to the belief that informed this policy decision",
+        "constraint": "MUST reference a valid belief record (lineage traceability)"
+      },
+      "asset_id": {
+        "type": "TEXT",
+        "source": "asset['canonical_id']",
+        "semantics": "Canonical asset identifier"
+      },
+      "policy_timestamp": {
+        "type": "TIMESTAMPTZ",
+        "source": "date (policy decision time)",
+        "semantics": "When the policy decision was made"
+      },
+      "policy_regime": {
+        "type": "TEXT",
+        "source": "sovereign_regime",
+        "semantics": "The regime the POLICY chose to act on (after all filters)",
+        "valid_values": ["BULL", "BEAR", "NEUTRAL", "STRESS"],
+        "ios003_variable": "sovereign_regime"
+      },
+      "policy_confidence": {
+        "type": "NUMERIC",
+        "source": "confidence (adjusted)",
+        "semantics": "Policy-adjusted confidence including hysteresis bonus",
+        "formula": "min(max_prob + (consecutive_confirms * 0.05), 0.98)",
+        "ios003_variable": "confidence"
+      },
+      "belief_regime": {
+        "type": "TEXT",
+        "source": "technical_regime",
+        "semantics": "Copy of what model believed - for quick divergence check",
+        "constraint": "Must match model_belief_state.technical_regime for belief_id"
+      },
+      "belief_confidence": {
+        "type": "NUMERIC",
+        "source": "max_prob",
+        "semantics": "Copy of model's raw confidence"
+      },
+      "is_suppressed": {
+        "type": "BOOLEAN",
+        "source": "belief_regime != policy_regime",
+        "semantics": "TRUE when policy diverges from belief"
+      },
+      "suppression_reason": {
+        "type": "TEXT",
+        "source": "hysteresis reason OR crio modifier_reason",
+        "semantics": "Human-readable explanation of why policy diverges",
+        "examples": [
+          "HYSTERESIS: 2/5 confirms - awaiting confirmation",
+          "EXTREME_FRAGILITY: 0.85 > 0.80 -> STRESS",
+          "VIX_SPIKE: fragility 0.65 + VIX_SPIKE -> BEAR"
+        ]
+      },
+      "hysteresis_active": {
+        "type": "BOOLEAN",
+        "source": "consecutive_confirms < hysteresis_days",
+        "semantics": "TRUE when hysteresis filter is actively suppressing"
+      },
+      "hysteresis_days_remaining": {
+        "type": "INTEGER",
+        "source": "hysteresis_days - consecutive_confirms",
+        "semantics": "Days remaining until regime transition confirmed"
+      },
+      "consecutive_confirms": {
+        "type": "INTEGER",
+        "source": "consecutive_confirms",
+        "semantics": "Number of consecutive days model has agreed on this regime"
+      },
+      "confirms_required": {
+        "type": "INTEGER",
+        "source": "hysteresis_days",
+        "semantics": "Total days required for confirmation (typically 5)"
+      },
+      "transition_state": {
+        "type": "TEXT",
+        "source": "derived",
+        "semantics": "STABLE | PENDING_CONFIRMATION | TRANSITIONING",
+        "values": {
+          "STABLE": "consecutive_confirms >= confirms_required",
+          "PENDING_CONFIRMATION": "belief changed but not yet confirmed",
+          "TRANSITIONING": "in process of regime change"
+        }
+      },
+      "pending_regime": {
+        "type": "TEXT",
+        "source": "technical_regime when PENDING_CONFIRMATION",
+        "semantics": "The regime awaiting confirmation"
+      },
+      "policy_version": {
+        "type": "TEXT",
+        "source": "'ios003_v4_epistemic_v1'",
+        "semantics": "Version of the policy logic"
+      },
+      "policy_hash": {
+        "type": "TEXT",
+        "source": "compute_hash(policy decision data)",
+        "semantics": "Hash for policy verification"
+      }
+    }
+  },
+
+  "section_3_suppression_fields": {
+    "target_table": "fhq_governance.epistemic_suppression_ledger",
+    "trigger": "is_suppressed = TRUE",
+    "producer": "IoS-003 (when policy diverges from belief)",
+
+    "category_mapping": {
+      "HYSTERESIS": {
+        "trigger": "consecutive_confirms < hysteresis_days AND belief_regime != prior_policy_regime",
+        "constraint_type": "consecutive_confirms",
+        "constraint_value": "consecutive_confirms (e.g., 2)",
+        "constraint_threshold": "hysteresis_days (e.g., 5)",
+        "ios003_source": "Lines 471-481"
+      },
+      "RISK_LIMIT": {
+        "trigger": "CRIO fragility_score > 0.80",
+        "constraint_type": "fragility_score",
+        "constraint_value": "crio_fragility",
+        "constraint_threshold": "0.80",
+        "ios003_source": "apply_crio_modifier_v4() Rule 1"
+      },
+      "DEFCON": {
+        "trigger": "VIX_SPIKE + fragility > 0.50",
+        "constraint_type": "vix_fragility_combo",
+        "constraint_value": "dominant_driver + fragility",
+        "constraint_threshold": "VIX_SPIKE + 0.50",
+        "ios003_source": "apply_crio_modifier_v4() Rule 2"
+      },
+      "LIQUIDITY": {
+        "trigger": "LIQUIDITY_CONTRACTION + fragility > 0.60",
+        "constraint_type": "liquidity_contraction",
+        "constraint_value": "dominant_driver + fragility",
+        "constraint_threshold": "LIQUIDITY_CONTRACTION + 0.60",
+        "ios003_source": "apply_crio_modifier_v4() Rule 3"
+      }
+    },
+
+    "fields_required": {
+      "suppression_id": "gen_random_uuid()",
+      "belief_id": "FK to model_belief_state",
+      "policy_id": "FK to sovereign_policy_state",
+      "asset_id": "asset['canonical_id']",
+      "suppression_timestamp": "NOW()",
+      "suppressed_regime": "belief_regime (what model wanted)",
+      "suppressed_confidence": "belief_confidence",
+      "chosen_regime": "policy_regime (what policy chose)",
+      "chosen_confidence": "policy_confidence",
+      "suppression_reason": "Human-readable reason",
+      "suppression_category": "HYSTERESIS | RISK_LIMIT | DEFCON | LIQUIDITY",
+      "constraint_type": "Per category mapping above",
+      "constraint_value": "Actual value that triggered suppression",
+      "constraint_threshold": "Threshold that was exceeded"
+    }
+  },
+
+  "section_4_divergence_rules": {
+    "description": "When and how policy diverges from belief",
+
+    "rules": [
+      {
+        "id": "D1",
+        "name": "Hysteresis Divergence",
+        "condition": "technical_regime != prior_sovereign_regime AND consecutive_confirms < hysteresis_days",
+        "result": "policy_regime = prior_sovereign_regime (maintain status quo)",
+        "suppression_category": "HYSTERESIS",
+        "learning_value": "Normal operation - model may be correct but policy waits for confirmation"
+      },
+      {
+        "id": "D2",
+        "name": "Extreme Fragility Override",
+        "condition": "fragility_score > 0.80",
+        "result": "policy_regime = STRESS or BEAR",
+        "suppression_category": "RISK_LIMIT",
+        "learning_value": "Critical - model may have been optimistic but risk too high"
+      },
+      {
+        "id": "D3",
+        "name": "VIX Spike Override",
+        "condition": "dominant_driver = 'VIX_SPIKE' AND fragility_score > 0.50",
+        "result": "policy_regime = STRESS or BEAR",
+        "suppression_category": "DEFCON",
+        "learning_value": "Critical - market stress detected via volatility"
+      },
+      {
+        "id": "D4",
+        "name": "Liquidity Contraction Cap",
+        "condition": "dominant_driver = 'LIQUIDITY_CONTRACTION' AND fragility_score > 0.60 AND belief_regime = 'BULL'",
+        "result": "policy_regime = NEUTRAL (capped)",
+        "suppression_category": "LIQUIDITY",
+        "learning_value": "Medium - model saw BULL but liquidity insufficient"
+      }
+    ],
+
+    "no_divergence_conditions": [
+      "consecutive_confirms >= hysteresis_days AND no CRIO override triggered",
+      "policy_regime = belief_regime"
+    ]
+  },
+
+  "section_5_field_alignment_proof": {
+    "description": "Proof that IoS-003 fields align with Migration 208/209 tables",
+
+    "model_belief_state_alignment": {
+      "technical_regime": "ios003.technical_regime -> model_belief_state.technical_regime",
+      "belief_distribution": "ios003.state_probs -> model_belief_state.belief_distribution",
+      "belief_confidence": "ios003.max_prob -> model_belief_state.belief_confidence",
+      "dominant_regime": "ios003.technical_regime -> model_belief_state.dominant_regime",
+      "is_changepoint": "ios003.is_changepoint -> model_belief_state.is_changepoint",
+      "changepoint_probability": "ios003.changepoint_prob -> model_belief_state.changepoint_probability",
+      "run_length": "ios003.run_length -> model_belief_state.run_length",
+      "alignment_status": "COMPLETE"
+    },
+
+    "sovereign_policy_state_alignment": {
+      "policy_regime": "ios003.sovereign_regime -> sovereign_policy_state.policy_regime",
+      "policy_confidence": "ios003.confidence -> sovereign_policy_state.policy_confidence",
+      "is_suppressed": "(belief_regime != policy_regime) -> sovereign_policy_state.is_suppressed",
+      "suppression_reason": "ios003.modifier_reason -> sovereign_policy_state.suppression_reason",
+      "hysteresis_active": "(consecutive_confirms < hysteresis_days) -> sovereign_policy_state.hysteresis_active",
+      "consecutive_confirms": "ios003.consecutive_confirms -> sovereign_policy_state.consecutive_confirms",
+      "alignment_status": "COMPLETE"
+    }
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T22:20:00Z",
+    "status": "CONTRACT_COMPLETE",
+    "statement": "Belief/Policy field contract complete per CEO-DIR-2026-004 Section 3.2. IoS-003 fields are semantically aligned with Migration 208/209 tables."
+  }
+}

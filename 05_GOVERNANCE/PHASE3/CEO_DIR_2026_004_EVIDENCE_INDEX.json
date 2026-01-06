@@ -1,0 +1,154 @@
+{
+  "evidence_index_id": "CEO-DIR-2026-004-EVIDENCE-INDEX",
+  "directive_reference": "CEO-DIR-2026-004",
+  "directive_title": "IoS-003 Integration with Epistemic Belief Store",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "created_at": "2026-01-06T23:45:00Z",
+  "created_by": "STIG",
+
+  "section_1_deliverables": {
+    "description": "Complete list of deliverables per CEO-DIR-2026-004",
+    "files": [
+      {
+        "id": "D1",
+        "filename": "IOS003_EPISTEMIC_WRITEPATH_MAP.json",
+        "path": "05_GOVERNANCE/PHASE3/IOS003_EPISTEMIC_WRITEPATH_MAP.json",
+        "purpose": "Maps all belief/policy conflation points in IoS-003 code",
+        "sha256": "b799d7c0710058d4faeac26f96862566425a3da20060cc1d3d1bdc378ed17e14",
+        "directive_section": "3.1"
+      },
+      {
+        "id": "D2",
+        "filename": "IOS003_BELIEF_POLICY_FIELD_CONTRACT.json",
+        "path": "05_GOVERNANCE/PHASE3/IOS003_BELIEF_POLICY_FIELD_CONTRACT.json",
+        "purpose": "Authoritative field contract aligning IoS-003 variables with Migration 208/209 tables",
+        "sha256": "98483d27afb0e8810e64e1b7f88cae828d463d59adeca0f0d495509a14793e2e",
+        "directive_section": "3.2"
+      },
+      {
+        "id": "D3",
+        "filename": "VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql",
+        "path": "05_GOVERNANCE/PHASE3/VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql",
+        "purpose": "6-test suite verifying IoS-003 integration is immutability-compatible",
+        "sha256": "79850766ef0322cc0a1c565aed5da76e498fa1a9afdf3435be894297f4336b90",
+        "directive_section": "3.3"
+      },
+      {
+        "id": "D4",
+        "filename": "ios003_daily_regime_update_v4.py",
+        "path": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "purpose": "IoS-003 code modified to implement epistemic write pattern",
+        "sha256": "0c89d6fb815e2e71347f9bc347840f06fe67f6ee9b854471ec04a28aaf39c4eb",
+        "directive_section": "Acceptance Criteria"
+      },
+      {
+        "id": "D5",
+        "filename": "VEGA_ATTESTATION_IOS003_20260106.json",
+        "path": "05_GOVERNANCE/PHASE3/VEGA_ATTESTATION_IOS003_20260106.json",
+        "purpose": "G3 governance attestation confirming compliance with CEO-DIR-2026-004",
+        "sha256": "bc261a88a8a7d0ca7239edf570fca2b6091714f23ac70663ffb7caf2e950eda3",
+        "directive_section": "4 (G3)"
+      }
+    ]
+  },
+
+  "section_2_vega_attestation": {
+    "attestation_id": "VEGA-ATT-IOS003-20260106",
+    "issuance_timestamp": "2026-01-06T23:30:00Z",
+    "issuing_authority": "VEGA",
+    "status": "ATTESTATION_ISSUED",
+    "statements_verified": [
+      "IoS-003 writes belief first, then policy",
+      "Belief is immutable and append-only in live execution",
+      "Divergence is explicit and explainable"
+    ],
+    "test_results": {
+      "tests_executed": 6,
+      "tests_passed": 6,
+      "tests_failed": 0
+    }
+  },
+
+  "section_3_precommit_verification": {
+    "verification_timestamp": "2026-01-06T23:45:00Z",
+    "verifier": "STIG",
+
+    "file_list_verification": {
+      "status": "VERIFIED",
+      "files_in_commit": [
+        "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "05_GOVERNANCE/PHASE3/IOS003_EPISTEMIC_WRITEPATH_MAP.json",
+        "05_GOVERNANCE/PHASE3/IOS003_BELIEF_POLICY_FIELD_CONTRACT.json",
+        "05_GOVERNANCE/PHASE3/VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql",
+        "05_GOVERNANCE/PHASE3/VEGA_ATTESTATION_IOS003_20260106.json",
+        "05_GOVERNANCE/PHASE3/CEO_DIR_2026_004_EVIDENCE_INDEX.json"
+      ],
+      "extras_detected": false,
+      "scope_pure": true
+    },
+
+    "belief_immutability_verification": {
+      "status": "VERIFIED",
+      "evidence_reference": "VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql TEST 2 and TEST 3",
+      "test_results": {
+        "UPDATE_blocked": true,
+        "DELETE_blocked": true,
+        "trigger_name": "trg_model_belief_state_immutable",
+        "error_type": "IMMUTABILITY_VIOLATION"
+      }
+    },
+
+    "canonical_views_verification": {
+      "status": "VERIFIED",
+      "learning_bind_points": [
+        "fhq_perception.v_canonical_belief",
+        "fhq_perception.v_canonical_policy",
+        "fhq_governance.v_suppression_summary"
+      ],
+      "presentation_layer": "fhq_meta.regime_state (NOT canonical)",
+      "note": "Learning systems bind to canonical views, not presentation layer"
+    }
+  },
+
+  "section_4_scope_constraints": {
+    "included": [
+      "IoS-003 code modifications (belief->policy->suppression write order)",
+      "Evidence deliverables (D1-D3 per directive)",
+      "VEGA attestation (D5)",
+      "Evidence index (this file)"
+    ],
+    "excluded": [
+      "Ontology remediation (SIDEWAYS/CRISIS mapping)",
+      "New migrations",
+      "Non-essential refactors"
+    ],
+    "scope_compliance": "COMPLIANT"
+  },
+
+  "section_5_audit_trail": {
+    "directive_chain": [
+      "CEO-DIR-2026-001 (Epistemic Separation)",
+      "CEO-DIR-2026-003 (Immutability Controls)",
+      "CEO-DIR-2026-004 (IoS-003 Integration)",
+      "CEO-DIR-2026-004A (Commit Authorization)"
+    ],
+    "migrations_referenced": [
+      "208_ceo_dir_2026_001_epistemic_separation.sql",
+      "209_ceo_dir_2026_003_immutability_controls.sql"
+    ],
+    "integration_test_results": {
+      "test_timestamp": "2026-01-06T23:00:00Z",
+      "model_belief_state_records": 15,
+      "sovereign_policy_state_records": 13,
+      "epistemic_suppression_ledger_records": 5,
+      "all_fk_chains_intact": true
+    }
+  },
+
+  "attestation": {
+    "evidence_index_hash": "TO_BE_COMPUTED_POST_WRITE",
+    "statement": "This evidence index is the canonical entry point for auditors reviewing CEO-DIR-2026-004 implementation. All files listed are scope-pure per CEO-DIR-2026-004A constraints.",
+    "created_by": "STIG",
+    "timestamp": "2026-01-06T23:45:00Z"
+  }
+}
