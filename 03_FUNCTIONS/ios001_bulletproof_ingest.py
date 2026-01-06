@@ -84,6 +84,15 @@ BATCH_COOLDOWN = 30     # Cooldown between batches
 # Staleness threshold
 STALE_THRESHOLD_DAYS = 2
 
+# =============================================================================
+# VOLUME SANITY ENFORCEMENT - CEO-DIR-2025-DATA-001 Section B
+# =============================================================================
+# CRYPTO volume must be in USD notional (billions), not native token units
+# This prevents Alpaca's native unit volumes (0.007 BTC) from corrupting data
+CRYPTO_VOLUME_MIN_THRESHOLD = 1000  # Reject volumes below this for CRYPTO
+EQUITY_VOLUME_MIN_THRESHOLD = 100   # Reject volumes below this for EQUITY
+FX_VOLUME_MIN_THRESHOLD = 0         # FX often has no volume data
+
 # Paths
 EVIDENCE_DIR = Path(__file__).parent / "evidence"
 EVIDENCE_DIR.mkdir(exist_ok=True)
@@ -190,22 +199,63 @@ def get_last_price_date(conn, canonical_id: str) -> Optional[date]:
         return result
 
 
+def get_last_price_timestamp(conn, canonical_id: str) -> Optional[datetime]:
+    """Get most recent price timestamp for asset (for intraday checks)."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT MAX(timestamp)
+            FROM fhq_market.prices
+            WHERE canonical_id = %s
+        """, (canonical_id,))
+        result = cur.fetchone()[0]
+        return result
+
+
+# CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Crypto intraday staleness threshold
+CRYPTO_STALENESS_HOURS = 6  # Fetch new data if last update > 6 hours ago
+
+
 def insert_prices_canonical(
     conn,
     canonical_id: str,
     df: pd.DataFrame,
     batch_id: str,
-    source: str
+    source: str,
+    asset_class: str = None
 ) -> int:
     """
     Insert price data to CANONICAL source: fhq_market.prices
 
     THIS IS THE ONLY PLACE PRICE DATA SHOULD BE WRITTEN.
+
+    CEO-DIR-2025-DATA-001 Section B: Volume Sanity Enforcement
+    - Rejects CRYPTO volumes < 1000 (prevents native unit corruption)
+    - Rejects EQUITY volumes < 100
+    - Logs all rejections
     """
     if df is None or df.empty:
         return 0
 
+    # Infer asset class if not provided
+    if asset_class is None:
+        if canonical_id.endswith('-USD'):
+            asset_class = 'CRYPTO'
+        elif canonical_id.endswith('=X'):
+            asset_class = 'FX'
+        else:
+            asset_class = 'EQUITY'
+
+    # Get volume threshold based on asset class
+    if asset_class == 'CRYPTO':
+        volume_threshold = CRYPTO_VOLUME_MIN_THRESHOLD
+    elif asset_class == 'EQUITY':
+        volume_threshold = EQUITY_VOLUME_MIN_THRESHOLD
+    else:
+        volume_threshold = FX_VOLUME_MIN_THRESHOLD
+
     rows = []
+    rejected_count = 0
+
     for idx, row in df.iterrows():
         # Handle timezone
         try:
@@ -226,6 +276,13 @@ def insert_prices_canonical(
             continue
 
         if close_val is None or close_val <= 0:
+            continue
+
+        # CEO-DIR-2025-DATA-001 Section B: VOLUME SANITY ENFORCEMENT
+        # Reject writes when volume is below threshold (prevents native unit corruption)
+        if volume_threshold > 0 and volume_val < volume_threshold:
+            logger.warning(f"  VOLUME SANITY REJECT: {canonical_id} {timestamp} volume={volume_val:.2f} < threshold={volume_threshold} (source={source})")
+            rejected_count += 1
             continue
 
         # OHLC validation - ensure constraints are met
@@ -266,6 +323,8 @@ def insert_prices_canonical(
         ))
 
     if not rows:
+        if rejected_count > 0:
+            logger.warning(f"  [{canonical_id}] ALL {rejected_count} rows REJECTED by volume sanity check (source={source})")
         return 0
 
     try:
@@ -285,6 +344,11 @@ def insert_prices_canonical(
             """
             execute_values(cur, insert_sql, rows)
             conn.commit()
+
+        # Log summary if rejections occurred
+        if rejected_count > 0:
+            logger.warning(f"  [{canonical_id}] {rejected_count} rows REJECTED by volume sanity, {len(rows)} rows INSERTED (source={source})")
+
         return len(rows)
     except Exception as e:
         conn.rollback()
@@ -346,28 +410,52 @@ def try_alpaca_ingest(
         canonical_id = asset['canonical_id']
         asset_class = asset['asset_class']
 
-        # Get last price date
-        last_date = get_last_price_date(conn, canonical_id)
-        if last_date:
-            start_date = last_date + timedelta(days=1)
+        # CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001: Use timestamp for crypto (24/7 markets)
+        if asset_class == 'CRYPTO':
+            last_ts = get_last_price_timestamp(conn, canonical_id)
+            if last_ts:
+                # Make timezone-aware if needed
+                if last_ts.tzinfo is None:
+                    last_ts = last_ts.replace(tzinfo=timezone.utc)
+                now = datetime.now(timezone.utc)
+                staleness_hours = (now - last_ts).total_seconds() / 3600
+
+                if staleness_hours < CRYPTO_STALENESS_HOURS:
+                    logger.debug(f"  [{canonical_id}] Fresh ({staleness_hours:.1f}h < {CRYPTO_STALENESS_HOURS}h)")
+                    continue
+                else:
+                    logger.info(f"  [{canonical_id}] Stale ({staleness_hours:.1f}h > {CRYPTO_STALENESS_HOURS}h) - fetching")
+                    # Use last 24h window for intraday crypto
+                    start_time = now - timedelta(hours=24)
+                    end_time = now
+            else:
+                # No data - fetch 30 days
+                start_time = datetime.now(timezone.utc) - timedelta(days=30)
+                end_time = datetime.now(timezone.utc)
         else:
-            start_date = date.today() - timedelta(days=30)
+            # EQUITY/FX: Use date-based logic (markets have close times)
+            last_date = get_last_price_date(conn, canonical_id)
+            if last_date:
+                start_date = last_date + timedelta(days=1)
+            else:
+                start_date = date.today() - timedelta(days=30)
 
-        end_date = date.today()
+            end_date = date.today()
 
-        if start_date > end_date:
-            logger.debug(f"  [{canonical_id}] Up to date")
-            continue
+            if start_date > end_date:
+                logger.debug(f"  [{canonical_id}] Up to date")
+                continue
 
         try:
             if asset_class == 'CRYPTO':
                 # Alpaca crypto symbols don't have -USD suffix
                 symbol = canonical_id.replace('-USD', '/USD')
+                # Use hourly timeframe for intraday freshness
                 request = CryptoBarsRequest(
                     symbol_or_symbols=symbol,
-                    timeframe=TimeFrame.Day,
-                    start=datetime.combine(start_date, datetime.min.time()),
-                    end=datetime.combine(end_date, datetime.max.time())
+                    timeframe=TimeFrame.Hour,
+                    start=start_time,
+                    end=end_time
                 )
                 bars = crypto_client.get_crypto_bars(request)
             elif asset_class == 'EQUITY':
@@ -396,25 +484,33 @@ def try_alpaca_ingest(
 
             if symbol_key in bars.data and len(bars.data[symbol_key]) > 0:
                 bar_list = bars.data[symbol_key]
+                # CEO-DIR-2026-SITC: Fix OHLC to satisfy DB constraint
+                def fix_ohlc(o, h, l, c):
+                    return o, max(o, h, l, c), min(o, h, l, c), c
+
                 df = pd.DataFrame([{
                     'timestamp': bar.timestamp,
                     'open': bar.open,
-                    'high': bar.high,
-                    'low': bar.low,
+                    'high': fix_ohlc(bar.open, bar.high, bar.low, bar.close)[1],
+                    'low': fix_ohlc(bar.open, bar.high, bar.low, bar.close)[2],
                     'close': bar.close,
                     'volume': bar.volume
                 } for bar in bar_list])
                 df.set_index('timestamp', inplace=True)
                 df['adj_close'] = df['close']  # Alpaca doesn't have adj_close
 
-                rows = insert_prices_canonical(conn, canonical_id, df, batch_id, 'ALPACA')
+                rows = insert_prices_canonical(conn, canonical_id, df, batch_id, 'ALPACA', asset_class)
                 if rows > 0:
                     results['updated'] += 1
                     results['rows'] += rows
-                    logger.info(f"  [{canonical_id}] +{rows} rows via ALPACA")
+                    # CEO-DIR-2026-SITC: Log latest timestamp for audit
+                    latest_ts = df.index.max() if not df.empty else None
+                    logger.info(f"  [{canonical_id}] +{rows} rows via ALPACA (latest: {latest_ts})")
                     consecutive_sip_errors = 0  # Reset on success
+                else:
+                    logger.warning(f"  [{canonical_id}] 0 rows written despite {len(bar_list)} bars received")
             else:
-                logger.debug(f"  [{canonical_id}] No data from Alpaca")
+                logger.warning(f"  [{canonical_id}] No data from Alpaca (STALE)")
                 failed_assets.append(canonical_id)
 
         except Exception as e:
@@ -654,7 +750,7 @@ def try_yahoo_ingest(
                     if ticker_df.empty:
                         continue  # Up to date, not a failure
 
-                    rows = insert_prices_canonical(conn, canonical_id, ticker_df, batch_id, 'YAHOO')
+                    rows = insert_prices_canonical(conn, canonical_id, ticker_df, batch_id, 'YAHOO', asset.get('asset_class'))
                     if rows > 0:
                         results['updated'] += 1
                         results['rows'] += rows
@@ -802,7 +898,7 @@ def try_ecb_fx_ingest(
             if rows:
                 df = pd.DataFrame(rows)
                 df.set_index('timestamp', inplace=True)
-                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'ECB')
+                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'ECB', 'FX')
                 if inserted > 0:
                     results['updated'] += 1
                     results['rows'] += inserted
@@ -957,7 +1053,7 @@ def try_twelvedata_fx_ingest(
             if rows:
                 df = pd.DataFrame(rows)
                 df.set_index('timestamp', inplace=True)
-                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'TWELVEDATA_FX')
+                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'TWELVEDATA_FX', 'FX')
                 if inserted > 0:
                     results['updated'] += 1
                     results['rows'] += inserted
@@ -1128,7 +1224,7 @@ def try_twelvedata_equity_ingest(
             if rows:
                 df = pd.DataFrame(rows)
                 df.set_index('timestamp', inplace=True)
-                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'TWELVEDATA')
+                inserted = insert_prices_canonical(conn, canonical_id, df, batch_id, 'TWELVEDATA', 'EQUITY')
                 if inserted > 0:
                     results['updated'] += 1
                     results['rows'] += inserted
