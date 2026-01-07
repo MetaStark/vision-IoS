@@ -135,7 +135,58 @@ try:
     BROKER_TRUTH_AVAILABLE = True
 except ImportError:
     BROKER_TRUTH_AVAILABLE = False
-    logger.warning("BROKER TRUTH ENFORCER NOT AVAILABLE - EXECUTION BLOCKED")
+    logging.warning("BROKER TRUTH ENFORCER NOT AVAILABLE - EXECUTION BLOCKED")
+
+# =============================================================================
+# CEO-DIR-2026-FINN-019: NEURAL BRIDGE IMPORTS
+# =============================================================================
+# Decision Engine, Attempt Logger, IKEA Truth Boundary
+# Stage A: Shadow Mode (audit_only=True) - logs without blocking
+# Stage B: Hard Gate (audit_only=False) - enforces gates
+# =============================================================================
+try:
+    from decision_engine import (
+        DecisionEngine,
+        IntentDraft,
+        DecisionPlan,
+        create_intent_draft,
+        validate_snapshot_ttl,
+        validate_plan_ttl
+    )
+    from attempt_logger import AttemptLogger, AttemptRecord
+    from ikea_truth_boundary import IKEATruthBoundary
+    from inforage_cost_controller import InForageTradeController, calculate_trade_roi
+    NEURAL_BRIDGE_AVAILABLE = True
+except ImportError as e:
+    NEURAL_BRIDGE_AVAILABLE = False
+    logging.warning(f"[NEURAL-BRIDGE] Modules not available: {e}")
+
+# Neural Bridge Feature Flag (CEO-DIR-2026-FINN-019)
+# Stage A: Shadow logging (audit_only_mode=True)
+# Stage B: Hard gate enforcement (audit_only_mode=False)
+# CEO-DIR-2026-01-02: Switched to Stage B to populate execution_attempts
+# SAFE: Exposure gate (31% > 25%) still blocks all execution
+NEURAL_BRIDGE_ENABLED = os.getenv('NEURAL_BRIDGE_ENABLED', 'true').lower() == 'true'
+NEURAL_BRIDGE_AUDIT_ONLY = os.getenv('NEURAL_BRIDGE_AUDIT_ONLY', 'false').lower() == 'true'
+
+# =============================================================================
+# TELEGRAM NOTIFIER (CEO Alert System)
+# =============================================================================
+try:
+    from telegram_notifier import (
+        FjordHQNotifier,
+        send_position_exit,
+        send_exposure_clear,
+        send_trade_executed,
+        send_neural_bridge_block,
+        send_daemon_error
+    )
+    TELEGRAM_AVAILABLE = True
+    telegram_notifier = FjordHQNotifier()
+except ImportError as e:
+    TELEGRAM_AVAILABLE = False
+    telegram_notifier = None
+    logging.warning(f"[TELEGRAM] Notifier not available: {e}")
 
 # Alpaca SDK
 try:
@@ -336,6 +387,17 @@ class SignalExecutorDaemon:
         # =====================================================================
         self.sitc_gate = None  # Initialized in connect() after DB is available
 
+        # =====================================================================
+        # CEO-DIR-2026-FINN-019: NEURAL BRIDGE COMPONENTS
+        # Decision Engine, Attempt Logger, IKEA Truth Boundary
+        # Stage A: Shadow Mode (audit_only=True) - logs without blocking
+        # Stage B: Hard Gate (audit_only=False) - enforces gates
+        # =====================================================================
+        self.attempt_logger = None
+        self.ikea_boundary = None
+        self.inforage_controller = None
+        self.decision_engine = None
+
     def connect(self) -> bool:
         """Connect to database and Alpaca"""
         try:
@@ -374,6 +436,26 @@ class SignalExecutorDaemon:
                     self.sitc_gate = None
             else:
                 logger.warning("[SITC-GATE] Not available - cognitive reasoning DISABLED")
+
+            # =====================================================================
+            # CEO-DIR-2026-FINN-019: Initialize Neural Bridge Components
+            # =====================================================================
+            if NEURAL_BRIDGE_AVAILABLE and NEURAL_BRIDGE_ENABLED:
+                try:
+                    self.attempt_logger = AttemptLogger(self.conn)
+                    self.ikea_boundary = IKEATruthBoundary(self.conn)
+                    self.inforage_controller = InForageTradeController(self.conn)
+                    logger.info(f"[NEURAL-BRIDGE] Initialized - audit_only={NEURAL_BRIDGE_AUDIT_ONLY}")
+                except Exception as e:
+                    logger.warning(f"[NEURAL-BRIDGE] Failed to initialize: {e}")
+                    self.attempt_logger = None
+                    self.ikea_boundary = None
+                    self.inforage_controller = None
+            else:
+                if not NEURAL_BRIDGE_AVAILABLE:
+                    logger.warning("[NEURAL-BRIDGE] Modules not available")
+                elif not NEURAL_BRIDGE_ENABLED:
+                    logger.info("[NEURAL-BRIDGE] Disabled via feature flag")
 
             return True
         except Exception as e:
@@ -584,6 +666,27 @@ class SignalExecutorDaemon:
                 self.conn.commit()
         except Exception as e:
             logger.error(f"Failed to log exposure violation: {e}")
+
+    def _calculate_current_exposure(self) -> float:
+        """Calculate current total exposure as percentage of portfolio."""
+        try:
+            if not self.trading_client:
+                return 0.0
+
+            account = self.trading_client.get_account()
+            portfolio_value = float(account.portfolio_value)
+
+            if portfolio_value <= 0:
+                return 0.0
+
+            positions = self.trading_client.get_all_positions()
+            total_exposure = sum(float(p.market_value) for p in positions)
+
+            return (total_exposure / portfolio_value) * 100
+
+        except Exception as e:
+            logger.error(f"Failed to calculate exposure: {e}")
+            return 0.0
 
     def log_holiday_gate_block(self, symbol: str, asset_class: str, reason: str, needle: Dict):
         """Log holiday gate block to governance table (for observability)"""
@@ -986,6 +1089,34 @@ class SignalExecutorDaemon:
                 # Log to database
                 self._log_exit(position, filled_price, realized_pnl, reason, str(order.id))
 
+                # TELEGRAM NOTIFICATION: Position Exit
+                if TELEGRAM_AVAILABLE and telegram_notifier:
+                    try:
+                        # Calculate new exposure after exit
+                        new_exposure = self._calculate_current_exposure()
+                        pnl_pct = ((filled_price - entry_price) / entry_price) * 100 if direction == 'LONG' else ((entry_price - filled_price) / entry_price) * 100
+
+                        telegram_notifier.position_exit(
+                            symbol=symbol,
+                            direction=direction,
+                            entry_price=entry_price,
+                            exit_price=filled_price,
+                            pnl_pct=pnl_pct,
+                            pnl_usd=realized_pnl,
+                            exit_reason=reason.split('(')[0].strip(),  # TAKE_PROFIT or STOP_LOSS
+                            new_exposure_pct=new_exposure
+                        )
+
+                        # Check if exposure gate cleared
+                        if new_exposure < 25.0:
+                            telegram_notifier.exposure_gate_clear(
+                                old_exposure_pct=new_exposure + (abs(realized_pnl) / 100000 * 100),  # Approximate
+                                new_exposure_pct=new_exposure,
+                                trigger_event=f"{symbol} exit ({reason})"
+                            )
+                    except Exception as te:
+                        logger.warning(f"Telegram notification failed: {te}")
+
                 return {
                     'symbol': symbol,
                     'exit_price': filled_price,
@@ -1317,11 +1448,120 @@ class SignalExecutorDaemon:
             return None
 
         # =====================================================================
+        # CEO-DIR-2026-FINN-019: NEURAL BRIDGE - INTENT DRAFT + ATTEMPT LOGGER
+        # Phase 1: Create IntentDraft BEFORE any gate (CEO Issue #1)
+        # Phase 2: Log ALL gates to attempt (even if blocked)
+        # Stage A: Shadow mode - logs but doesn't block on IKEA/InForage
+        # =====================================================================
+        attempt = None
+        intent_draft = None
+        needle_id = needle.get('needle_id')
+        if needle_id and isinstance(needle_id, str):
+            try:
+                needle_id = uuid.UUID(needle_id)
+            except ValueError:
+                needle_id = uuid.uuid4()
+        elif not needle_id:
+            needle_id = uuid.uuid4()
+
+        if self.attempt_logger and NEURAL_BRIDGE_ENABLED:
+            try:
+                # Get current market snapshot for IntentDraft
+                eqs_score = float(needle.get('eqs_score', 0.0))
+                regime = needle.get('regime_sovereign', 'UNKNOWN')
+                regime_stability = float(needle.get('regime_stability', 0.5))
+                entry_price_estimate = float(needle.get('entry_price', 0.0))
+                direction = needle.get('signal_direction', 'LONG')
+
+                # Create IntentDraft with market snapshot (CEO Issue #8: 60s TTL)
+                intent_draft = create_intent_draft(
+                    needle_id=needle_id,
+                    asset=symbol,
+                    direction=direction,
+                    eqs_score=eqs_score,
+                    snapshot_price=entry_price_estimate,
+                    snapshot_regime=regime,
+                    snapshot_regime_stability=regime_stability
+                )
+
+                # Start Attempt record (ADR-011 Fortress hash chain)
+                attempt = self.attempt_logger.start_attempt(
+                    needle_id=needle_id,
+                    intent_draft_id=intent_draft.draft_id,
+                    audit_only=NEURAL_BRIDGE_AUDIT_ONLY
+                )
+                logger.info(f"[NEURAL-BRIDGE] IntentDraft created: {intent_draft.draft_id}")
+                logger.info(f"[NEURAL-BRIDGE] Attempt started: {attempt.attempt_id} (seq={attempt.chain_sequence})")
+
+            except Exception as e:
+                logger.warning(f"[NEURAL-BRIDGE] Failed to create IntentDraft/Attempt: {e}")
+                attempt = None
+                intent_draft = None
+
+        # =====================================================================
+        # LIDS CONFIDENCE HARD GATE (CEO-DIR-2026-019)
+        # ACI 1.0 Learning Activation: belief_confidence < 0.70 → NO EXECUTION
+        # =====================================================================
+        lids_confidence = needle.get('confidence', needle.get('belief_confidence', 0.0))
+        if isinstance(lids_confidence, str):
+            lids_confidence = {'HIGH': 0.85, 'MEDIUM': 0.70, 'LOW': 0.50}.get(lids_confidence.upper(), 0.5)
+
+        LIDS_MIN_CONFIDENCE = 0.70  # CEO-DIR-2026-019 hard requirement
+
+        if lids_confidence < LIDS_MIN_CONFIDENCE:
+            lids_reason = f"LIDS_BLOCKED: confidence={lids_confidence:.2f} < {LIDS_MIN_CONFIDENCE} threshold"
+            logger.critical(f"[LIDS-GATE] {lids_reason}")
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'lids_confidence', False, lids_reason)
+                self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='LIDS_CONFIDENCE')
+            return None
+        else:
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'lids_confidence', True, f'confidence={lids_confidence:.2f}')
+            logger.info(f"[LIDS-GATE] Confidence PASSED: {lids_confidence:.2f} >= {LIDS_MIN_CONFIDENCE}")
+
+        # =====================================================================
+        # LIDS FRESHNESS HARD GATE (CEO-DIR-2026-019)
+        # ACI 1.0 Learning Activation: data_freshness > 12h → NO EXECUTION
+        # =====================================================================
+        data_timestamp = needle.get('data_timestamp', needle.get('created_at'))
+        lids_freshness_hours = 999  # Default to stale if unknown
+
+        if data_timestamp:
+            try:
+                if isinstance(data_timestamp, str):
+                    from dateutil import parser
+                    data_timestamp = parser.parse(data_timestamp)
+                age_seconds = (datetime.now(timezone.utc) - data_timestamp.replace(tzinfo=timezone.utc)).total_seconds()
+                lids_freshness_hours = age_seconds / 3600
+            except Exception as e:
+                logger.warning(f"[LIDS-GATE] Could not parse data_timestamp: {e}")
+
+        LIDS_MAX_FRESHNESS_HOURS = 12  # CEO-DIR-2026-019 hard requirement
+
+        if lids_freshness_hours > LIDS_MAX_FRESHNESS_HOURS:
+            freshness_reason = f"LIDS_BLOCKED: data_freshness={lids_freshness_hours:.1f}h > {LIDS_MAX_FRESHNESS_HOURS}h threshold"
+            logger.critical(f"[LIDS-GATE] {freshness_reason}")
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'lids_freshness', False, freshness_reason)
+                self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='LIDS_FRESHNESS')
+            return None
+        else:
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'lids_freshness', True, f'freshness={lids_freshness_hours:.1f}h')
+            logger.info(f"[LIDS-GATE] Freshness PASSED: {lids_freshness_hours:.1f}h <= {LIDS_MAX_FRESHNESS_HOURS}h")
+
+        # =====================================================================
         # HARD EXPOSURE GATE - MANDATORY PRE-EXECUTION CHECK
         # CEO Directive 2025-12-21: Validates ACTUAL Alpaca state before any trade.
         # Fix D: Same-symbol accumulation guard via proposed_symbol
         # =====================================================================
         gate_ok, gate_reason = self.validate_exposure_gate(proposed_symbol=symbol)
+
+        # Log gate result to Neural Bridge attempt
+        if attempt and self.attempt_logger:
+            self.attempt_logger.log_gate_result(attempt, 'exposure', gate_ok, gate_reason or 'PASSED')
+
         if not gate_ok:
             logger.critical(f"EXECUTION BLOCKED by HARD EXPOSURE GATE: {gate_reason}")
             self.log_exposure_violation(gate_reason, {
@@ -1330,12 +1570,17 @@ class SignalExecutorDaemon:
                 'attempted_action': 'TRADE_EXECUTION',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
+            # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+            if attempt and self.attempt_logger:
+                self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='EXPOSURE')
             return None
 
         # =====================================================================
         # HOLIDAY EXECUTION GATE (CEO Directive 2025-12-19)
         # Crypto-First Execution: Equities/FX suspended, Crypto (BTC,ETH,SOL) active
         # =====================================================================
+        holiday_ok = True
+        holiday_reason = 'NOT_CHECKED'
         if HOLIDAY_GATE_AVAILABLE and HOLIDAY_MODE_ENABLED:
             # Get source signal for proxy resolution
             source_symbol = needle.get('price_witness_symbol', symbol)
@@ -1344,13 +1589,25 @@ class SignalExecutorDaemon:
                 target_state='ACTIVE',
                 source_signal=source_symbol
             )
+
+            # Log gate result to Neural Bridge attempt
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'holiday', holiday_ok, holiday_reason)
+
             if not holiday_ok:
                 logger.warning(f"HOLIDAY GATE BLOCKED: {symbol} ({asset_class}) - {holiday_reason}")
                 # Log for observability (signal lifecycle continues, execution blocked)
                 self.log_holiday_gate_block(symbol, asset_class, holiday_reason, needle)
+                # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='HOLIDAY')
                 return None
             else:
                 logger.info(f"HOLIDAY GATE PASSED: {symbol} ({asset_class}) - {holiday_reason}")
+        else:
+            # Log gate as skipped
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'holiday', True, 'SKIPPED')
 
         # =====================================================================
         # BTC-ONLY CONSTRAINT (CEO DIRECTIVE 2025-12-24)
@@ -1358,8 +1615,17 @@ class SignalExecutorDaemon:
         # =====================================================================
         source_symbol = needle.get('price_witness_symbol', needle.get('target_asset', symbol))
         is_btc_signal = any(btc in str(source_symbol).upper() for btc in ['BTC', 'BITCOIN'])
+
+        # Log gate result to Neural Bridge attempt
+        if attempt and self.attempt_logger:
+            btc_reason = 'BTC_SIGNAL' if is_btc_signal else f'NON_BTC: {source_symbol}'
+            self.attempt_logger.log_gate_result(attempt, 'btc_only', is_btc_signal, btc_reason)
+
         if not is_btc_signal:
             logger.info(f"BTC-ONLY CONSTRAINT: Blocking {symbol} (source: {source_symbol}) - only BTC authorized")
+            # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+            if attempt and self.attempt_logger:
+                self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='BTC_ONLY')
             return None
 
         # =====================================================================
@@ -1368,20 +1634,32 @@ class SignalExecutorDaemon:
         # Every trade must have active SitC reasoning before execution.
         # =====================================================================
         sitc_result = None
+        sitc_event_id = None
         if self.sitc_gate:
-            needle_id = str(needle.get('needle_id', uuid.uuid4()))
+            needle_id_str = str(needle.get('needle_id', uuid.uuid4()))
             hypothesis = needle.get('hypothesis_statement', needle.get('executive_summary', f'Trade signal for {symbol}'))
             regime_context = needle.get('regime_sovereign', 'UNKNOWN')
             eqs_score = float(needle.get('eqs_score', 0.0))
 
             logger.info(f"[SITC-GATE] Invoking cognitive reasoning for {symbol}...")
             sitc_result = self.sitc_gate.reason_and_gate(
-                needle_id=needle_id,
+                needle_id=needle_id_str,
                 asset=symbol,
                 hypothesis=hypothesis,
                 regime_context=regime_context,
                 eqs_score=eqs_score
             )
+
+            # Link SitC event to Neural Bridge attempt
+            sitc_event_id = getattr(sitc_result, 'sitc_event_id', None)
+            if attempt and self.attempt_logger and sitc_event_id:
+                attempt.sitc_event_id = sitc_event_id
+
+            # Log gate result to Neural Bridge attempt
+            sitc_passed = sitc_result.approved
+            sitc_reason = 'APPROVED' if sitc_passed else sitc_result.rejection_reason
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'sitc', sitc_passed, sitc_reason)
 
             if not sitc_result.approved:
                 logger.critical(f"[SITC-GATE] EXECUTION BLOCKED - {sitc_result.rejection_reason}")
@@ -1400,12 +1678,16 @@ class SignalExecutorDaemon:
                     self.conn.commit()
                 except Exception as e:
                     logger.warning(f"Could not log SitC rejection: {e}")
+                # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='SITC')
                 return None
 
             logger.info(f"[SITC-GATE] APPROVED - Confidence: {sitc_result.confidence_level}, EQS: {sitc_result.eqs_score:.3f}")
         else:
-            # SitC gate not available - log warning but allow execution for backward compatibility
-            # TODO: Make this a HARD BLOCK once SitC is fully deployed
+            # SitC gate not available - log as skipped
+            if attempt and self.attempt_logger:
+                self.attempt_logger.log_gate_result(attempt, 'sitc', True, 'NOT_AVAILABLE')
             logger.warning("[SITC-GATE] Not available - executing without cognitive reasoning (TEMPORARY)")
 
         # WAVE 17D.1 FIX: Check for existing pending orders to prevent duplicates
@@ -1415,6 +1697,10 @@ class SignalExecutorDaemon:
             )
             if open_orders:
                 logger.info(f"Pending order exists for {symbol} - skipping duplicate")
+                # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.log_gate_result(attempt, 'pending_orders', False, 'DUPLICATE_ORDER')
+                    self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='PENDING_ORDERS')
                 return None
         except Exception as e:
             logger.warning(f"Could not check pending orders: {e}")
@@ -1434,9 +1720,140 @@ class SignalExecutorDaemon:
             proposed_trade_usd=dollar_amount,
             proposed_symbol=symbol
         )
+
+        # Log secondary exposure gate to Neural Bridge attempt
+        if attempt and self.attempt_logger:
+            self.attempt_logger.log_gate_result(attempt, 'exposure_secondary', gate_ok, gate_reason or 'PASSED')
+
         if not gate_ok:
             logger.warning(f"Proposed trade blocked: {gate_reason}")
+            # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+            if attempt and self.attempt_logger:
+                self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='EXPOSURE_SECONDARY')
             return None
+
+        # =====================================================================
+        # CEO-DIR-2026-FINN-019: IKEA TRUTH BOUNDARY (Stage A Shadow Mode)
+        # 6 deterministic rules. In Shadow mode: logs but doesn't block.
+        # =====================================================================
+        ikea_validation_id = None
+        if self.ikea_boundary and intent_draft and NEURAL_BRIDGE_ENABLED:
+            try:
+                # Calculate position percentage for IKEA-003 check
+                try:
+                    account = self.trading_client.get_account()
+                    nav = float(account.portfolio_value)
+                    position_pct = (dollar_amount / nav * 100) if nav > 0 else 0.0
+                except Exception as e:
+                    logger.warning(f"Could not get NAV for IKEA: {e}")
+                    position_pct = 10.0  # Conservative default
+
+                ikea_result = self.ikea_boundary.validate(
+                    needle_id=needle_id,
+                    asset=symbol,
+                    direction=intent_draft.direction,
+                    eqs_score=intent_draft.eqs_score,
+                    snapshot_timestamp=intent_draft.snapshot_timestamp,
+                    snapshot_regime=intent_draft.snapshot_regime,
+                    position_pct=position_pct
+                )
+                ikea_validation_id = ikea_result.validation_id
+
+                # Log gate result to Neural Bridge attempt
+                if attempt and self.attempt_logger:
+                    ikea_reason = 'PASSED' if ikea_result.passed else f'{ikea_result.rule_violated}: {ikea_result.violation_details}'
+                    self.attempt_logger.log_gate_result(attempt, 'ikea', ikea_result.passed, ikea_reason)
+                    attempt.ikea_validation_id = ikea_validation_id
+
+                if not ikea_result.passed:
+                    logger.warning(f"[IKEA] Rule violated: {ikea_result.rule_violated} - {ikea_result.violation_details}")
+                    # Stage A (Shadow Mode): Log but don't block
+                    if not NEURAL_BRIDGE_AUDIT_ONLY:
+                        # Stage B (Hard Gate): Block execution
+                        if attempt and self.attempt_logger:
+                            self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate=f'IKEA_{ikea_result.rule_violated}')
+
+                        # TELEGRAM NOTIFICATION: Neural Bridge Block
+                        if TELEGRAM_AVAILABLE and telegram_notifier:
+                            try:
+                                telegram_notifier.neural_bridge_block(
+                                    symbol=symbol,
+                                    direction='LONG',
+                                    blocked_by=f'IKEA_{ikea_result.rule_violated}',
+                                    block_reason=str(ikea_result.violation_details.get('reason', 'Unknown')),
+                                    needle_title=needle.get('hypothesis_title', 'Unknown'),
+                                    eqs_score=float(needle.get('eqs_score', 0))
+                                )
+                            except Exception as te:
+                                logger.warning(f"Telegram notification failed: {te}")
+
+                        return None
+                    else:
+                        logger.info(f"[IKEA] Shadow mode - would block but continuing for audit")
+                else:
+                    logger.info(f"[IKEA] All 6 rules passed - validation_id={ikea_validation_id}")
+
+            except Exception as e:
+                logger.warning(f"[IKEA] Validation error: {e}")
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.log_gate_result(attempt, 'ikea', True, f'ERROR: {e}')
+
+        # =====================================================================
+        # CEO-DIR-2026-FINN-019: INFORAGE ROI CHECK (Stage A Shadow Mode)
+        # ROI < 1.2 = ABORT in Hard Gate mode. Shadow mode just logs.
+        # =====================================================================
+        inforage_session_id = None
+        inforage_roi = None
+        if self.inforage_controller and intent_draft and NEURAL_BRIDGE_ENABLED:
+            try:
+                inforage_result = self.inforage_controller.check_trade_decision(
+                    needle_id=needle_id,
+                    eqs_score=intent_draft.eqs_score,
+                    position_usd=dollar_amount,
+                    spread_bps=5.0,  # Default spread
+                    slippage_bps=15.0  # CEO Issue #17
+                )
+                inforage_session_id = inforage_result.session_id
+                inforage_roi = inforage_result.roi
+
+                # Log gate result to Neural Bridge attempt
+                if attempt and self.attempt_logger:
+                    inforage_reason = f'ROI={inforage_roi:.2f}' if inforage_roi else 'UNKNOWN'
+                    self.attempt_logger.log_gate_result(attempt, 'inforage', not inforage_result.should_abort, inforage_reason)
+                    attempt.inforage_session_id = inforage_session_id
+
+                if inforage_result.should_abort:
+                    logger.warning(f"[INFORAGE] Low ROI: {inforage_roi:.2f} < 1.2 threshold")
+                    # Stage A (Shadow Mode): Log but don't block
+                    if not NEURAL_BRIDGE_AUDIT_ONLY:
+                        # Stage B (Hard Gate): Block execution
+                        if attempt and self.attempt_logger:
+                            self.attempt_logger.complete_attempt(attempt, 'ABORTED', blocked_at_gate='INFORAGE_LOW_ROI')
+
+                        # TELEGRAM NOTIFICATION: Neural Bridge Block (InForage)
+                        if TELEGRAM_AVAILABLE and telegram_notifier:
+                            try:
+                                telegram_notifier.neural_bridge_block(
+                                    symbol=symbol,
+                                    direction='LONG',
+                                    blocked_by='INFORAGE_LOW_ROI',
+                                    block_reason=f'ROI {inforage_roi:.2f} below 1.2 threshold',
+                                    needle_title=needle.get('hypothesis_title', 'Unknown'),
+                                    eqs_score=float(needle.get('eqs_score', 0))
+                                )
+                            except Exception as te:
+                                logger.warning(f"Telegram notification failed: {te}")
+
+                        return None
+                    else:
+                        logger.info(f"[INFORAGE] Shadow mode - would abort but continuing for audit")
+                else:
+                    logger.info(f"[INFORAGE] ROI acceptable: {inforage_roi:.2f}")
+
+            except Exception as e:
+                logger.warning(f"[INFORAGE] Check error: {e}")
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.log_gate_result(attempt, 'inforage', True, f'ERROR: {e}')
 
         # Validate minimum position size
         is_crypto = self._is_crypto_symbol(symbol)
@@ -1444,11 +1861,19 @@ class SignalExecutorDaemon:
             # Crypto minimum: $10 or 0.0001 units (Alpaca's minimum for most crypto)
             if shares < 0.0001 or dollar_amount < 10:
                 logger.warning(f"Position too small for {symbol} (qty={shares:.8f}, ${dollar_amount:.2f}) - skipping")
+                # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.log_gate_result(attempt, 'position_size', False, f'TOO_SMALL: qty={shares:.8f}, ${dollar_amount:.2f}')
+                    self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='POSITION_SIZE')
                 return None
         else:
             # Stocks require at least 1 share
             if shares < 1:
                 logger.warning(f"Position too small for {symbol} - skipping")
+                # Complete attempt as BLOCKED (CEO-DIR-2026-FINN-019)
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.log_gate_result(attempt, 'position_size', False, f'TOO_SMALL: shares={shares}')
+                    self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='POSITION_SIZE')
                 return None
 
         qty_str = f"{shares:.8f}" if is_crypto else str(int(shares))
@@ -1495,6 +1920,32 @@ class SignalExecutorDaemon:
                     self.sitc_gate.mark_executed(sitc_result.sitc_event_id, trade_id)
                     logger.info(f"[SITC-GATE] Marked as EXECUTED: {sitc_result.sitc_event_id[:8]}...")
 
+                # =====================================================================
+                # CEO-DIR-2026-FINN-019: Complete attempt as EXECUTED
+                # =====================================================================
+                if attempt and self.attempt_logger:
+                    attempt.decision_plan_id = None  # Phase II: Seal DecisionPlan
+                    self.attempt_logger.complete_attempt(attempt, 'EXECUTED')
+                    logger.info(f"[NEURAL-BRIDGE] Attempt EXECUTED: {attempt.attempt_id}")
+
+                # =====================================================================
+                # TELEGRAM NOTIFICATION: Trade Executed
+                # =====================================================================
+                if TELEGRAM_AVAILABLE and telegram_notifier:
+                    try:
+                        telegram_notifier.trade_executed(
+                            symbol=symbol,
+                            direction='LONG',  # Daemon only does LONG currently
+                            entry_price=filled_price,
+                            position_usd=position_value,
+                            needle_title=needle.get('hypothesis_title', 'Unknown'),
+                            eqs_score=float(needle.get('eqs_score', 0)),
+                            regime=cco_state['current_regime'] if cco_state else 'UNKNOWN',
+                            decision_plan_id=str(attempt.attempt_id) if attempt else None
+                        )
+                    except Exception as te:
+                        logger.warning(f"Telegram notification failed: {te}")
+
                 return {
                     'trade_id': trade_id,
                     'symbol': symbol,
@@ -1502,14 +1953,24 @@ class SignalExecutorDaemon:
                     'price': filled_price,
                     'value': position_value,
                     'order_id': str(order.id),
-                    'sitc_event_id': sitc_result.sitc_event_id if sitc_result else None
+                    'sitc_event_id': sitc_result.sitc_event_id if sitc_result else None,
+                    'attempt_id': str(attempt.attempt_id) if attempt else None
                 }
             else:
                 logger.warning(f"Order not filled: {filled_order.status}")
+                # Complete attempt as ABORTED due to order not filling
+                if attempt and self.attempt_logger:
+                    self.attempt_logger.complete_attempt(attempt, 'ABORTED', blocked_at_gate='ORDER_NOT_FILLED')
                 return None
 
         except Exception as e:
             logger.error(f"Trade execution failed: {e}")
+            # Complete attempt as ABORTED due to exception
+            if attempt and self.attempt_logger:
+                try:
+                    self.attempt_logger.complete_attempt(attempt, 'ABORTED', blocked_at_gate=f'EXCEPTION: {type(e).__name__}')
+                except:
+                    pass
             return None
 
     def _log_trade(
@@ -2428,21 +2889,65 @@ class SignalExecutorDaemon:
 
         self.running = True
 
+        # TELEGRAM: Daemon startup notification
+        if TELEGRAM_AVAILABLE and telegram_notifier:
+            try:
+                telegram_notifier.system_status({
+                    'Event': 'DAEMON STARTED',
+                    'Mode': 'PAPER ONLY',
+                    'Cycle Interval': f"{DAEMON_CONFIG['cycle_interval_seconds']}s",
+                    'Neural Bridge': 'ENABLED' if NEURAL_BRIDGE_ENABLED else 'DISABLED',
+                    'IKEA/InForage': 'SHADOW' if NEURAL_BRIDGE_AUDIT_ONLY else 'HARD GATE'
+                })
+            except:
+                pass
+
         try:
             while self.running:
-                result = self.run_cycle()
+                try:
+                    result = self.run_cycle()
 
-                if result['trades_executed'] > 0:
-                    logger.info(f"Cycle {result['cycle']}: {result['trades_executed']} trade(s) executed")
+                    if result['trades_executed'] > 0:
+                        logger.info(f"Cycle {result['cycle']}: {result['trades_executed']} trade(s) executed")
 
-                if max_cycles and self.cycle_count >= max_cycles:
-                    logger.info(f"Reached max cycles ({max_cycles})")
-                    break
+                    if max_cycles and self.cycle_count >= max_cycles:
+                        logger.info(f"Reached max cycles ({max_cycles})")
+                        break
 
-                time.sleep(DAEMON_CONFIG['cycle_interval_seconds'])
+                    time.sleep(DAEMON_CONFIG['cycle_interval_seconds'])
+
+                except Exception as cycle_error:
+                    logger.error(f"Cycle error: {cycle_error}")
+                    # TELEGRAM: Daemon error notification
+                    if TELEGRAM_AVAILABLE and telegram_notifier:
+                        try:
+                            telegram_notifier.daemon_error(
+                                error_type=type(cycle_error).__name__,
+                                error_message=str(cycle_error),
+                                component='run_cycle',
+                                is_fatal=False
+                            )
+                        except:
+                            pass
+                    # Continue running after non-fatal errors
+                    time.sleep(DAEMON_CONFIG['cycle_interval_seconds'])
 
         except KeyboardInterrupt:
             logger.info("\nShutdown requested...")
+        except Exception as fatal_error:
+            logger.critical(f"FATAL ERROR: {fatal_error}")
+            # TELEGRAM: Fatal daemon error
+            if TELEGRAM_AVAILABLE and telegram_notifier:
+                try:
+                    telegram_notifier.daemon_error(
+                        error_type=type(fatal_error).__name__,
+                        error_message=str(fatal_error),
+                        component='main_loop',
+                        is_fatal=True
+                    )
+                except:
+                    pass
+            raise
         finally:
             self.running = False
             logger.info("Signal Executor Daemon stopped")

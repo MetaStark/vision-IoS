@@ -56,7 +56,8 @@ class LIDSBindingConfig:
     """LIDS Truth Binding Configuration per CEO Directive"""
 
     # Deterministic certification threshold
-    MIN_CONFIDENCE = 0.40
+    # CEO-DIR-2026-019: Updated from 0.40 to 0.70 for ACI 1.0 Learning Activation
+    MIN_CONFIDENCE = 0.70
 
     # Database
     PGHOST = os.getenv("PGHOST", "127.0.0.1")
