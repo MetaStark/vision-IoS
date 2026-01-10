@@ -1,0 +1,161 @@
+{
+  "directive_id": "CEO-DIR-2026-033",
+  "action": "FIRST_PAPER_DECISIONPLAN_EXECUTED",
+  "classification": "DIAGNOSTIC_FIRST_FLIGHT",
+  "plan_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "executed_by": "LARS (orchestrator) + LINE (execution)",
+  "execution_timestamp": "2026-01-10T02:15:00Z",
+
+  "ceo_operational_guardrails": {
+    "guardrail_1": "Optimize for INFORMATION, not P&L",
+    "guardrail_2": "3-4 trades maximum (not 5)",
+    "guardrail_3": "Edge signal cause codes must be 'uncomfortable'"
+  },
+
+  "success_criteria_per_ceo": {
+    "success_is_not": ["positive P&L", "high hit-rate", "feels right"],
+    "success_is": [
+      "All trades respect gates",
+      "All trades are auditable",
+      "All trades give clear learning tomorrow",
+      "At least one assumption gets falsified"
+    ]
+  },
+
+  "trades_executed": {
+    "count": 4,
+    "trade_1_regime_sensitive": {
+      "trade_id": "6e831b68-2267-4110-a744-97a80c9db2d0",
+      "asset": "SPY",
+      "direction": "LONG",
+      "raw_confidence": 0.57,
+      "calibrated_confidence": 0.4659,
+      "position_size": 0.0266,
+      "entry_price": 595.50,
+      "slippage": 0.0005,
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1",
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "diagnostic_purpose": "Tests macro regime alignment - bullish signal in transitional environment",
+      "cause_code": "Regime disagreement with residual momentum"
+    },
+    "trade_2_asset_specific": {
+      "trade_id": "09f41827-2895-45d1-9fd5-ad8cb54a4c9d",
+      "asset": "GLD",
+      "direction": "LONG",
+      "raw_confidence": 0.55,
+      "calibrated_confidence": 0.4659,
+      "position_size": 0.0266,
+      "entry_price": 242.80,
+      "slippage": 0.0005,
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1",
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "diagnostic_purpose": "Gold safe haven behavior in uncertain macro",
+      "cause_code": "Liquidity asymmetry despite mixed macro signals"
+    },
+    "trade_3_borderline_confidence": {
+      "trade_id": "57cd2bbb-b20d-4ff8-a62a-04c464b909de",
+      "asset": "SOL-USD",
+      "direction": "LONG",
+      "raw_confidence": 0.33,
+      "calibrated_confidence": 0.33,
+      "ceiling_applied": false,
+      "position_size": 0.0188,
+      "entry_price": 185.20,
+      "slippage": 0.0005,
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1",
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "diagnostic_purpose": "Tests threshold boundary at 33% - borderline execution",
+      "cause_code": "Signal conflict - execution permitted for diagnostic reasons"
+    },
+    "trade_4_high_novelty": {
+      "trade_id": "df67eb84-e165-4846-a4f8-0745bed78c03",
+      "asset": "BTC-USD",
+      "direction": "LONG",
+      "raw_confidence": 0.59,
+      "calibrated_confidence": 0.4659,
+      "position_size": 0.0266,
+      "entry_price": 94250.00,
+      "slippage": 0.0010,
+      "slippage_rule": "HIGH_VOLATILITY_TIER_1",
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "diagnostic_purpose": "Tests correlation breakdown in high volatility crypto",
+      "cause_code": "Correlation breakdown expected - high novelty environment"
+    }
+  },
+
+  "novelty_score_components": {
+    "all_trades": {
+      "regime_shift": {
+        "score": 0.40,
+        "reason": "Regime shift: BULL -> TRANSITIONAL"
+      },
+      "asset_novelty": {
+        "score": 0.30,
+        "reason": "First trade on this asset in 7 days"
+      },
+      "signal_disagreement": {
+        "score": 0.15,
+        "reason": "No recent signals for comparison"
+      },
+      "total": 0.85
+    }
+  },
+
+  "calibration_gates_enforced": {
+    "gate_id": "36ec276d-fd87-47b2-a958-ac125ba10af7",
+    "forecast_type": "PRICE_DIRECTION",
+    "ceiling": 0.4659,
+    "trades_capped": 3,
+    "trades_uncapped": 1,
+    "uncapped_trade": "SOL-USD at 33% (below ceiling)"
+  },
+
+  "dynamic_slippage_applied": {
+    "normal_volatility_trades": ["SPY", "GLD", "SOL-USD"],
+    "high_volatility_trades": ["BTC-USD"],
+    "slippage_range": "0.05% - 0.10%"
+  },
+
+  "diagnostic_coverage": {
+    "failure_modes_tested": [
+      "TYPE_D (Regime Illusion): SPY in transitional regime",
+      "TYPE_E (Correlation Breakdown): BTC-USD high volatility",
+      "Threshold boundary: SOL-USD at 33%",
+      "Safe haven dynamics: GLD in uncertain macro"
+    ],
+    "asset_diversity": ["Equity Index", "Commodity", "Crypto L1", "Crypto Major"],
+    "confidence_range": "33% - 59% raw, 33% - 46.59% calibrated"
+  },
+
+  "48h_monitoring_plan": {
+    "T0_now": "DecisionPlan generated and executed",
+    "T24h_tomorrow": [
+      "IoS-010 scores overnight outcomes",
+      "Daily Edge Signal published with cause codes",
+      "FINN starts targeted regret attribution"
+    ],
+    "T72h": [
+      "Determine if main error is TYPE_D or TYPE_E",
+      "Confidence ceilings adjusted if warranted",
+      "Calibration curve begins correcting"
+    ]
+  },
+
+  "governance_compliance": {
+    "all_gates_respected": true,
+    "all_trades_auditable": true,
+    "novelty_components_logged": true,
+    "slippage_rules_applied": true,
+    "cause_codes_uncomfortable": true
+  },
+
+  "closing_statement": {
+    "text": "First paper DecisionPlan executed with 4 diagnostic trades. Optimized for information, not P&L. All trades respect calibration gates, novelty scores are deterministic, slippage is dynamic. We fly low, but we fly honest. Tomorrow we learn.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

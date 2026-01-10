@@ -1,0 +1,102 @@
+{
+  "directive_id": "CEO-DIR-2026-033",
+  "action": "PAPER_TRADING_INFRASTRUCTURE_ACTIVATED",
+  "classification": "PHASE_1_PAPER_ALPHA",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T13:00:00Z",
+  "authority": "CEO-DIR-2026-033 - First Paper Capital Deployment Under Calibration Gates",
+
+  "optimizations_implemented": {
+    "min_trade_cadence": {
+      "description": "Dynamic threshold lowering when daily trades below target",
+      "target_trades_per_day": 5,
+      "base_threshold": 0.25,
+      "min_threshold": 0.20,
+      "adjustment_formula": "threshold = max(0.20, base - 0.05 × (target - actual))"
+    },
+    "information_weighted_risk": {
+      "description": "Position size weighted by confidence and novelty",
+      "formula": "size = base_size × calibrated_confidence × novelty_factor",
+      "novelty_factor_range": "0.8 to 1.2",
+      "max_position_cap": 0.10
+    },
+    "epistemic_stop_loss": {
+      "description": "Stop trading on epistemic degradation, not just PnL loss",
+      "triggers": [
+        "Hit rate decline for 3 consecutive days",
+        "Brier score worsening for 3 consecutive days",
+        "TYPE_D (Regime Illusion) repeated 3+ times in a day",
+        "TYPE_E (Correlation Breakdown) repeated 3+ times in a day"
+      ]
+    },
+    "daily_edge_signal": {
+      "description": "Single executive signal summarizing daily calibration trend",
+      "values": {
+        "+1": "Improving (hit rate up OR brier down)",
+        "0": "Stable (no significant change)",
+        "-1": "Degrading (hit rate down AND brier up)"
+      }
+    }
+  },
+
+  "tables_created": [
+    "fhq_governance.paper_ledger",
+    "fhq_governance.paper_decision_plan",
+    "fhq_governance.epistemic_health_daily"
+  ],
+
+  "functions_created": [
+    "fhq_governance.get_effective_confidence_threshold()",
+    "fhq_governance.calculate_info_weighted_size()",
+    "fhq_governance.compute_daily_edge_signal()",
+    "fhq_governance.check_epistemic_stop_loss()",
+    "fhq_governance.execute_paper_trade()"
+  ],
+
+  "integration_with_calibration_gates": {
+    "gate_linkage": "Every paper trade references calibration_gate_id",
+    "confidence_capping": "Raw confidence capped by active ceiling before execution",
+    "violation_tracking": "Gate violations logged separately for audit"
+  },
+
+  "verification_tests": {
+    "test_1_high_confidence": {
+      "input": {"asset": "AAPL", "direction": "LONG", "raw_confidence": 0.85},
+      "output": {"calibrated_confidence": 0.4659, "position_size": 0.0252, "executed": true}
+    },
+    "test_2_low_confidence_with_cadence": {
+      "input": {"asset": "TSLA", "direction": "SHORT", "raw_confidence": 0.20},
+      "output": {"calibrated_confidence": 0.20, "position_size": 0.01, "executed": true},
+      "note": "Threshold lowered from 0.25 to 0.20 due to low cadence"
+    }
+  },
+
+  "operational_parameters": {
+    "allocation_model": "RISK_PARITY_INFO_WEIGHTED",
+    "leverage": 1.0,
+    "simulated_slippage": 0.0005,
+    "min_confidence_threshold": 0.25,
+    "threshold_floor": 0.20
+  },
+
+  "timeline": {
+    "this_week": "Stable paper cadence + identify dominant error type",
+    "14_days": "Hit rate >50% in lowest confidence band",
+    "february": "First live micro-allocation",
+    "april": "Break-even systemic",
+    "2026_07_10": "Full self-financing"
+  },
+
+  "next_steps": {
+    "LARS": "Generate first DecisionPlan using execute_paper_trade()",
+    "LINE": "Monitor paper execution with slippage simulation",
+    "VEGA": "Watch epistemic_health_daily for stop-loss triggers",
+    "STIG": "Daily edge signal monitoring"
+  },
+
+  "closing_statement": {
+    "text": "Paper trading infrastructure activated with all CEO-mandated optimizations. System now trades with calibrated humility while maximizing learning velocity. We fly low, but we fly honest.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

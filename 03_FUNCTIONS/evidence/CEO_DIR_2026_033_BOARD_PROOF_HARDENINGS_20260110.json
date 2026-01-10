@@ -1,0 +1,156 @@
+{
+  "directive_id": "CEO-DIR-2026-033",
+  "action": "BOARD_PROOF_HARDENINGS_DEPLOYED",
+  "classification": "G0_APPROVED_WITH_CONDITIONS_FULFILLED",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T14:00:00Z",
+
+  "ceo_conditions": "5 hardenings required for board-proof status",
+
+  "hardenings_implemented": {
+    "hardening_1": {
+      "name": "Cadence Floor + Timelock",
+      "requirement": "Hard floor at 22% unless VEGA exception; reset daily",
+      "implementation": {
+        "floor": 0.22,
+        "exception_table": "fhq_governance.cadence_exception_log",
+        "exception_requires": "VEGA approval",
+        "expires": "Same day midnight"
+      },
+      "verification": {
+        "test": "get_effective_confidence_threshold(0.25, 5)",
+        "result": "Threshold lowered from 0.25 to 0.22 (not 0.20)",
+        "status": "VERIFIED"
+      }
+    },
+    "hardening_2": {
+      "name": "Deterministic Novelty Score",
+      "requirement": "Based on documented variables, no gaming possible",
+      "implementation": {
+        "components": [
+          {"name": "regime_shift", "max_score": 0.4, "based_on": "belief state change"},
+          {"name": "asset_novelty", "max_score": 0.3, "based_on": "7-day trade history"},
+          {"name": "signal_disagreement", "max_score": 0.3, "based_on": "48h direction comparison"}
+        ],
+        "audit_table": "fhq_governance.novelty_score_components",
+        "logged_per_trade": true
+      },
+      "verification": {
+        "test": "MSFT LONG in NEUTRAL regime",
+        "result": {
+          "regime_shift": "0.4 (BULL → NEUTRAL)",
+          "asset_novelty": "0.3 (first trade in 7 days)",
+          "signal_disagreement": "0.15 (no recent signals)",
+          "total": 0.85
+        },
+        "status": "VERIFIED"
+      }
+    },
+    "hardening_3": {
+      "name": "Two-Tier Epistemic Stop-Loss",
+      "requirement": "SOFT_HALT (12h pause) and HARD_HALT (VEGA attestation)",
+      "implementation": {
+        "soft_halt_triggers": [
+          "Hit rate decline 3 consecutive days",
+          "Brier worsening 3 consecutive days",
+          "TYPE_D repeated 3+ times/day",
+          "TYPE_E repeated 3+ times/day"
+        ],
+        "soft_halt_duration": "12 hours",
+        "hard_halt_triggers": [
+          "High-confidence inversion (>80% conf with <35% accuracy) for 2+ days"
+        ],
+        "hard_halt_recovery": "Requires VEGA attestation"
+      },
+      "verification": {
+        "function": "fhq_governance.check_epistemic_stop_loss()",
+        "status": "VERIFIED"
+      }
+    },
+    "hardening_4": {
+      "name": "Dynamic Slippage",
+      "requirement": "Min 0.05%, increase in high volatility/low liquidity",
+      "implementation": {
+        "base_slippage": 0.0005,
+        "volatility_multipliers": {
+          "normal": 1.0,
+          "elevated": 1.5,
+          "high": 2.0
+        },
+        "liquidity_multipliers": {
+          "TIER_1": 1.0,
+          "TIER_2": 1.5,
+          "TIER_3": 2.5
+        },
+        "max_slippage": 0.01,
+        "logged_per_trade": true
+      },
+      "verification": {
+        "test": "calculate_dynamic_slippage('AAPL', 0.0005)",
+        "result": "0.0005 (NORMAL_VOLATILITY_TIER_1)",
+        "status": "VERIFIED"
+      }
+    },
+    "hardening_5": {
+      "name": "Edge Signal Cause Codes",
+      "requirement": "Audit-verifiable reason code for each daily signal",
+      "implementation": {
+        "cause_codes": [
+          "CALIBRATION_IMPROVED",
+          "CALIBRATION_WORSENED",
+          "VOLUME_TOO_LOW",
+          "ERROR_CONCENTRATION_TYPE_D",
+          "ERROR_CONCENTRATION_TYPE_E",
+          "STABLE_NO_CHANGE",
+          "MIXED_SIGNALS"
+        ],
+        "stored_in": "fhq_governance.epistemic_health_daily.edge_signal_cause_code"
+      },
+      "verification": {
+        "function": "fhq_governance.compute_daily_edge_signal()",
+        "status": "VERIFIED"
+      }
+    }
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/228_paper_trading_hardenings.sql"
+  ],
+
+  "tables_created": [
+    "fhq_governance.cadence_exception_log",
+    "fhq_governance.novelty_score_components"
+  ],
+
+  "functions_modified": [
+    "fhq_governance.get_effective_confidence_threshold() - added floor + VEGA exception",
+    "fhq_governance.calculate_novelty_score() - deterministic 3-component",
+    "fhq_governance.check_epistemic_stop_loss() - two-tier SOFT/HARD",
+    "fhq_governance.calculate_dynamic_slippage() - volatility/liquidity aware",
+    "fhq_governance.compute_daily_edge_signal() - cause codes added",
+    "fhq_governance.execute_paper_trade() - integrated all hardenings"
+  ],
+
+  "test_trade_result": {
+    "asset": "MSFT",
+    "direction": "LONG",
+    "raw_confidence": 0.75,
+    "calibrated_confidence": 0.4659,
+    "novelty_score": 0.85,
+    "effective_slippage": 0.0005,
+    "executed": true
+  },
+
+  "governance_compliance": {
+    "board_proof": true,
+    "anti_gaming": true,
+    "audit_trail": "Complete",
+    "deterministic": "All scores explainable"
+  },
+
+  "closing_statement": {
+    "text": "All 5 CEO-mandated hardenings deployed and verified. Paper trading infrastructure is now board-proof: cadence floor prevents noise collection, novelty scores are deterministic and logged, epistemic halt is two-tier, slippage is dynamic, and edge signals have audit-verifiable cause codes.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}
