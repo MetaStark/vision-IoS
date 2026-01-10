@@ -1,0 +1,106 @@
+{
+  "directive_id": "CEO-DIR-2026-035",
+  "title": "Systemic Blackout Response & Epistemic Protection Protocol",
+  "classification": "CLASS_A_GOVERNANCE_EVENT",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T10:30:00Z",
+
+  "formal_violations_acknowledged": {
+    "ADR-012": "Operating paper trading on stale data breaches Economic Safety",
+    "ADR-013": "One-True-Source freshness invariant not enforced",
+    "process_failure": "execute_paper_trade() allowed epistemic poisoning"
+  },
+
+  "implementation_summary": {
+    "tables_created": [
+      "fhq_governance.data_blackout_state",
+      "fhq_governance.freshness_thresholds",
+      "fhq_governance.blackout_log"
+    ],
+    "functions_created": [
+      "fhq_governance.check_price_freshness(canonical_id, gate_type)",
+      "fhq_governance.is_data_blackout_active()",
+      "fhq_governance.trigger_data_blackout(reason, triggered_by, stale_assets)",
+      "fhq_governance.clear_data_blackout(cleared_by, vega_attestation_id)"
+    ],
+    "functions_modified": [
+      "fhq_governance.execute_paper_trade() - now checks DATA_BLACKOUT and FRESHNESS gates"
+    ]
+  },
+
+  "dual_gate_freshness_protocol": {
+    "execution_gate": {
+      "EQUITY": {"max_staleness_minutes": 240, "purpose": "Trade placement"},
+      "CRYPTO": {"max_staleness_minutes": 15, "purpose": "Trade placement"},
+      "COMMODITY": {"max_staleness_minutes": 240, "purpose": "Trade placement"},
+      "FX": {"max_staleness_minutes": 60, "purpose": "Trade placement"},
+      "BOND": {"max_staleness_minutes": 240, "purpose": "Trade placement"}
+    },
+    "learning_gate": {
+      "EQUITY": {"max_staleness_minutes": 60, "purpose": "Model updates, learning_weight=0 if stale"},
+      "CRYPTO": {"max_staleness_minutes": 15, "purpose": "Model updates, learning_weight=0 if stale"},
+      "COMMODITY": {"max_staleness_minutes": 60, "purpose": "Model updates"},
+      "FX": {"max_staleness_minutes": 30, "purpose": "Model updates"},
+      "BOND": {"max_staleness_minutes": 60, "purpose": "Model updates"}
+    }
+  },
+
+  "current_blackout_status": {
+    "is_active": true,
+    "trigger_reason": "CEO-DIR-2026-035: Systemic staleness detected. SPY/GLD prices >24h old.",
+    "triggered_by": "STIG",
+    "stale_assets": ["SPY", "GLD", "MSFT", "TSLA", "AAPL"]
+  },
+
+  "freshness_check_results": {
+    "SPY": {"fresh": false, "staleness_minutes": 2115, "max_allowed": 240, "asset_class": "EQUITY"},
+    "GLD": {"fresh": false, "staleness_minutes": 2115, "max_allowed": 240, "asset_class": "COMMODITY"},
+    "BTC-USD": {"fresh": false, "staleness_minutes": 675, "max_allowed": 15, "asset_class": "CRYPTO"},
+    "SOL-USD": {"fresh": false, "staleness_minutes": 675, "max_allowed": 15, "asset_class": "CRYPTO"}
+  },
+
+  "trade_blocking_verification": {
+    "test": "execute_paper_trade('SPY', 'LONG', 0.50, 595.00, 0.05)",
+    "result": "BLOCKED",
+    "blocked_reason": "BLOCKED: DATA_BLACKOUT active. CEO-DIR-2026-035: Systemic staleness detected."
+  },
+
+  "system_state_during_blackout": {
+    "IoS-010": "Read-Only",
+    "FINN": "Diagnostic mode only, no attribution",
+    "LARS": "DecisionPlan generation BLOCKED",
+    "VEGA": "Only authority to clear blackout"
+  },
+
+  "recovery_requirements": {
+    "who_can_clear": "VEGA only",
+    "preconditions": [
+      "All primary assets (SPY, GLD, BTC-USD, ETH-USD, SOL-USD) must pass freshness check",
+      "VEGA attestation required"
+    ]
+  },
+
+  "ceio_mandate": {
+    "action_required": "Submit Post-Mortem Report within 2 hours",
+    "classify_root_cause": ["Scheduler", "API Rate-limit", "Credential Expiry", "Silent Exception"],
+    "preventive_control": "Document technical guardrail added",
+    "evidence_location": "governance_actions_log"
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/229_data_blackout_protocol.sql",
+    "03_FUNCTIONS/finn_outcome_analyzer.py"
+  ],
+
+  "governance_compliance": {
+    "ADR-012": "Economic Safety now enforced via freshness gates",
+    "ADR-013": "One-True-Source freshness invariant now code-enforced",
+    "CEO-DIR-2026-035": "Full implementation complete"
+  },
+
+  "closing_statement": {
+    "text": "DATA_BLACKOUT protocol implemented. System now has the conscience to stop itself when data fails. Learning velocity = 0 without fresh prices, and that is the correct epistemic response. We choose discipline over false progress.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

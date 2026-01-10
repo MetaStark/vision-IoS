@@ -1,0 +1,194 @@
+{
+  "report_type": "FINN_7H_LEARNING_REPORT",
+  "generated_at": "2026-01-10T10:05:49.581053",
+  "hours_elapsed": 7,
+  "trades_analyzed": 7,
+  "positions": [
+    {
+      "trade_id": "df67eb84-e165-4846-a4f8-0745bed78c03",
+      "asset": "BTC-USD",
+      "direction": "LONG",
+      "entry_price": 94250.0,
+      "current_price": 90503.4765625,
+      "price_age_hours": 10.1,
+      "unrealized_pnl_pct": -4.071,
+      "is_winning": false,
+      "calibrated_confidence": 0.4659,
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "slippage_rule": "HIGH_VOLATILITY_TIER_1"
+    },
+    {
+      "trade_id": "57cd2bbb-b20d-4ff8-a62a-04c464b909de",
+      "asset": "SOL-USD",
+      "direction": "LONG",
+      "entry_price": 185.2,
+      "current_price": 135.9756317138672,
+      "price_age_hours": 10.1,
+      "unrealized_pnl_pct": -26.6157,
+      "is_winning": false,
+      "calibrated_confidence": 0.33,
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1"
+    },
+    {
+      "trade_id": "09f41827-2895-45d1-9fd5-ad8cb54a4c9d",
+      "asset": "GLD",
+      "direction": "LONG",
+      "entry_price": 242.8,
+      "current_price": 414.4700012207031,
+      "price_age_hours": 34.1,
+      "unrealized_pnl_pct": 70.619,
+      "is_winning": true,
+      "calibrated_confidence": 0.4659,
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1"
+    },
+    {
+      "trade_id": "6e831b68-2267-4110-a744-97a80c9db2d0",
+      "asset": "SPY",
+      "direction": "LONG",
+      "entry_price": 595.5,
+      "current_price": 693.98999,
+      "price_age_hours": 34.1,
+      "unrealized_pnl_pct": 16.4808,
+      "is_winning": true,
+      "calibrated_confidence": 0.4659,
+      "novelty_score": 0.85,
+      "regime_at_entry": "TRANSITIONAL",
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1"
+    },
+    {
+      "trade_id": "e40677ca-bcdc-4fec-af51-54cfad5a1084",
+      "asset": "MSFT",
+      "direction": "LONG",
+      "entry_price": 400.0,
+      "current_price": 479.20001,
+      "price_age_hours": 34.1,
+      "unrealized_pnl_pct": 19.7401,
+      "is_winning": true,
+      "calibrated_confidence": 0.4659,
+      "novelty_score": 0.85,
+      "regime_at_entry": "NEUTRAL",
+      "slippage_rule": "NORMAL_VOLATILITY_TIER_1"
+    },
+    {
+      "trade_id": "291249e2-9e33-4b86-bec5-b9fadc956200",
+      "asset": "TSLA",
+      "direction": "SHORT",
+      "entry_price": 200.0,
+      "current_price": 444.98999,
+      "price_age_hours": 34.1,
+      "unrealized_pnl_pct": -122.6063,
+      "is_winning": false,
+      "calibrated_confidence": 0.2,
+      "novelty_score": 0.5,
+      "regime_at_entry": "BEAR",
+      "slippage_rule": null
+    },
+    {
+      "trade_id": "5ea1efb6-e984-43bd-9c0f-d23ab30a7955",
+      "asset": "AAPL",
+      "direction": "LONG",
+      "entry_price": 150.0,
+      "current_price": 259.35001,
+      "price_age_hours": 34.1,
+      "unrealized_pnl_pct": 72.8136,
+      "is_winning": true,
+      "calibrated_confidence": 0.4659,
+      "novelty_score": 0.7,
+      "regime_at_entry": "BULL",
+      "slippage_rule": null
+    }
+  ],
+  "aggregate_metrics": {
+    "total_unrealized_pnl_pct": 26.3605,
+    "avg_unrealized_pnl_pct": 3.7658,
+    "winning_positions": 4,
+    "losing_positions": 3,
+    "win_rate": 57.1
+  },
+  "preliminary_learnings": [
+    {
+      "learning_id": "L001_DATA_FRESHNESS",
+      "type": "INFRASTRUCTURE",
+      "severity": "HIGH",
+      "observation": "5 assets have stale price data (>24h old)",
+      "implication": "Paper P&L calculations are unreliable until price feeds are current",
+      "action_required": "CEIO must ensure price ingestion is running for paper trading assets"
+    },
+    {
+      "learning_id": "L002_VOLATILITY_DETECTION",
+      "type": "EXECUTION",
+      "severity": "INFO",
+      "observation": "1 positions triggered HIGH_VOLATILITY slippage",
+      "assets": [
+        "BTC-USD"
+      ],
+      "implication": "Dynamic slippage is correctly identifying volatile assets",
+      "action_required": null
+    },
+    {
+      "learning_id": "L003_CALIBRATION_GATE_ACTIVE",
+      "type": "EPISTEMIC",
+      "severity": "INFO",
+      "observation": "5 positions hit the 46.59% confidence ceiling",
+      "implication": "Calibration gates are preventing overconfidence as designed",
+      "action_required": null
+    },
+    {
+      "learning_id": "L004_BORDERLINE_TEST",
+      "type": "DIAGNOSTIC",
+      "severity": "INFO",
+      "observation": "1 borderline confidence trades in flight",
+      "assets": [
+        "SOL-USD"
+      ],
+      "implication": "Testing threshold boundary for learning purposes",
+      "action_required": "Monitor outcome to calibrate minimum threshold"
+    },
+    {
+      "learning_id": "L005_EARLY_SIGNAL",
+      "type": "PERFORMANCE",
+      "severity": "INFO",
+      "observation": "Unrealized win rate: 57.1% (4/7)",
+      "implication": "PRELIMINARY - based on potentially stale prices",
+      "action_required": "Wait for fresh price data before drawing conclusions"
+    }
+  ],
+  "data_quality_issues": [
+    {
+      "asset": "GLD",
+      "issue": "STALE_PRICE_DATA",
+      "price_age_hours": 34.1,
+      "severity": "MEDIUM"
+    },
+    {
+      "asset": "SPY",
+      "issue": "STALE_PRICE_DATA",
+      "price_age_hours": 34.1,
+      "severity": "MEDIUM"
+    },
+    {
+      "asset": "MSFT",
+      "issue": "STALE_PRICE_DATA",
+      "price_age_hours": 34.1,
+      "severity": "MEDIUM"
+    },
+    {
+      "asset": "TSLA",
+      "issue": "STALE_PRICE_DATA",
+      "price_age_hours": 34.1,
+      "severity": "MEDIUM"
+    },
+    {
+      "asset": "AAPL",
+      "issue": "STALE_PRICE_DATA",
+      "price_age_hours": 34.1,
+      "severity": "MEDIUM"
+    }
+  ],
+  "content_hash": "e01c513c0a6aea93"
+}

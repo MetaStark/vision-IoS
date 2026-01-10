@@ -1,0 +1,118 @@
+{
+  "directive_id": "CEO-DIR-2026-036",
+  "title": "ACI Reactivation Protocol - From Blackout to Verified Perception",
+  "classification": "CRITICAL_CONTROLLED_REACTIVATION",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T11:40:00Z",
+
+  "executive_intent": "Reality before learning. Learning before capital.",
+
+  "three_gated_layers": {
+    "layer_1": "Data",
+    "layer_2": "Perception",
+    "layer_3": "Learning",
+    "rule": "No layer may advance without verified integrity of the previous"
+  },
+
+  "reactivation_cycle": {
+    "cycle_id": "691730e2-d577-407e-b77b-ae6fa1016c9d",
+    "status": "INITIATED",
+    "blackout_still_active": true
+  },
+
+  "phase_a_data_reality": {
+    "status": "PENDING",
+    "owner": "CEIO",
+    "requirements": {
+      "canonical_universe": ["SPY", "GLD", "BTC-USD", "SOL-USD"],
+      "crypto_max_staleness": "15 minutes",
+      "equity_commodity_max_staleness": "60 minutes",
+      "continuous_ingestion_required": "120 minutes"
+    },
+    "current_freshness": {
+      "SPY": {"fresh": false, "staleness_minutes": 2138, "max_allowed": 60},
+      "GLD": {"fresh": false, "staleness_minutes": 2138, "max_allowed": 60},
+      "BTC-USD": {"fresh": false, "staleness_minutes": 698, "max_allowed": 15},
+      "SOL-USD": {"fresh": false, "staleness_minutes": 698, "max_allowed": 15}
+    },
+    "deliverables_required": [
+      "CEIO Root Cause Post-Mortem",
+      "Failure class classification",
+      "Why alerting failed explanation",
+      "Preventive control added"
+    ],
+    "sql_evidence_query": "SELECT canonical_id, MAX(timestamp) AS last_price, NOW() - MAX(timestamp) AS staleness FROM fhq_market.prices WHERE canonical_id IN ('SPY','GLD','BTC-USD','SOL-USD') GROUP BY canonical_id"
+  },
+
+  "phase_b_perception_sanity": {
+    "status": "PENDING",
+    "owners": ["STIG", "FINN"],
+    "actions": [
+      "Run IoS-010 scoring WITHOUT updating model weights",
+      "Recompute hit-rate (paper only)",
+      "Recompute Brier score",
+      "TYPE_D vs TYPE_E preliminary classification",
+      "Compare against pre-blackout metrics"
+    ],
+    "objective": "Confirm that observations are real, not that performance is good",
+    "rollback_rule": "Any unexpected discontinuity -> automatic rollback to DATA_BLACKOUT"
+  },
+
+  "phase_c_learning_reenablement": {
+    "status": "PENDING",
+    "owner": "VEGA",
+    "clearance_requirements": [
+      "Price freshness invariant holds for >= 2 hours",
+      "No epistemic anomalies in Phase B",
+      "CEIO preventive control is live and verifiable"
+    ],
+    "upon_clearance": [
+      "Learning weight re-enabled",
+      "FINN allowed to resume regret attribution",
+      "Calibration gates remain enforced (unchanged)"
+    ]
+  },
+
+  "explicit_prohibitions": [
+    "No paper trading during Phase A or B",
+    "No calibration gate adjustment during reactivation",
+    "No confidence ceiling changes",
+    "No temporary overrides"
+  ],
+
+  "tables_created": [
+    "fhq_governance.aci_reactivation_phases",
+    "fhq_governance.aci_reactivation_cycles",
+    "fhq_governance.ceio_postmortem"
+  ],
+
+  "functions_created": [
+    "fhq_governance.check_phase_a_requirements()",
+    "fhq_governance.run_phase_b_sanity_check()",
+    "fhq_governance.initiate_reactivation_cycle()",
+    "fhq_governance.verify_phase_a(cycle_id, verified_by)",
+    "fhq_governance.verify_phase_b(cycle_id, verified_by)",
+    "fhq_governance.complete_phase_c_and_clear_blackout(cycle_id, vega_attestation_id)"
+  ],
+
+  "views_created": [
+    "fhq_governance.aci_reactivation_status"
+  ],
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/230_aci_reactivation_protocol.sql"
+  ],
+
+  "strategic_note": {
+    "observation": "This blackout was not a failure. It was the first successful self-detection of epistemic blindness.",
+    "value": "That capability is rarer - and more valuable - than short-term alpha."
+  },
+
+  "standing_order": "Reality before learning. Learning before capital.",
+
+  "closing_statement": {
+    "text": "ACI Reactivation Protocol implemented. System awaiting CEIO price restoration and post-mortem. Three-phase gated reactivation ready. No layer advances without verified integrity of the previous.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}
