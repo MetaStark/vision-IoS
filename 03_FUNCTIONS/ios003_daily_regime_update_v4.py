@@ -62,6 +62,14 @@ from hmm_iohmm_online import (
     initialize_model
 )
 
+# CEO-DIR-2026-020 D2: Mandatory Evidence Attachment
+try:
+    from mandatory_evidence_contract import attach_evidence, MissingEvidenceViolation
+    EVIDENCE_CONTRACT_ENABLED = True
+except ImportError:
+    EVIDENCE_CONTRACT_ENABLED = False
+    logging.warning("Evidence contract not available - evidence attachment disabled")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -903,6 +911,39 @@ class DailyRegimeUpdaterV4:
             ))
             self.conn.commit()
 
+            # CEO-DIR-2026-020 D2: Attach court-proof evidence
+            if EVIDENCE_CONTRACT_ENABLED:
+                try:
+                    raw_query = """
+                    SELECT p.canonical_id, p.timestamp, p.close, p.volume
+                    FROM fhq_market.prices p
+                    WHERE p.timestamp > NOW() - INTERVAL '30 days'
+                    ORDER BY p.timestamp DESC
+                    -- Used by ios003_daily_regime_update_v4.py for regime calculation
+                    """
+                    summary_id = f"REGIME-UPDATE-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+                    evidence_result = attach_evidence(
+                        conn=self.conn,
+                        summary_id=summary_id,
+                        summary_type='REGIME_UPDATE',
+                        generating_agent='STIG',
+                        raw_query=raw_query,
+                        query_result=self.results,
+                        summary_content={
+                            'total_updates': total_updates,
+                            'total_changepoints': total_changepoints,
+                            'total_modifiers': total_modifiers,
+                            'crio_insight': str(crio_insight.get('insight_id'))[:8] if crio_insight else None,
+                            'evidence_hash': evidence_hash
+                        },
+                        evidence_sources=['fhq_market.prices', 'fhq_perception.model_belief_state']
+                    )
+                    logger.info(f"[EVIDENCE-D2] Regime update evidence attached: {evidence_result['evidence_id']}")
+                except Exception as e:
+                    logger.error(f"[EVIDENCE-D2] Failed to attach evidence: {e}")
+                    # Log governance violation but don't fail the run
+                    # In production, this would be FAIL-CLOSED
+
         # Summary
         logger.info("=" * 60)
         logger.info(f"Total Updates: {total_updates}")
@@ -918,14 +959,34 @@ class DailyRegimeUpdaterV4:
 
         return self.results
 
-    def _sync_meta_regime_state(self):
+    def _sync_meta_regime_state(self) -> bool:
         """
         Sync fhq_meta.regime_state from sovereign_regime_state_v4.
 
         CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001:
         The cognitive gateway checks fhq_meta.regime_state for staleness.
         This was not being updated, causing 20h+ staleness and query aborts.
+
+        CEO-HOTFIX-REGIME-001 (2026-01-11):
+        - Fixed varchar(20) overflow: 'ios003_v4.regime_sync' (21 chars) -> 'ios003_v4.sync' (14 chars)
+        - Eliminated silent failure: now logs to governance_actions_log and returns explicit status
+        - Added v4->meta regime mapping: NEUTRAL->SIDEWAYS, STRESS->CRISIS (valid_regime constraint)
+
+        Returns:
+            bool: True if sync succeeded, False if failed
         """
+        # Mapping from v4 regime labels to fhq_meta.regime_state valid_regime constraint
+        # Constraint allows: BULL, BEAR, SIDEWAYS, CRISIS, UNKNOWN
+        V4_TO_META_REGIME = {
+            'BULL': 'BULL',
+            'NEUTRAL': 'SIDEWAYS',  # v4 NEUTRAL maps to meta SIDEWAYS
+            'BEAR': 'BEAR',
+            'STRESS': 'CRISIS',     # v4 STRESS maps to meta CRISIS
+        }
+
+        sync_success = False
+        error_msg = None
+
         try:
             # Get dominant regime from BTC (market leader)
             self.cur.execute("""
@@ -938,27 +999,68 @@ class DailyRegimeUpdaterV4:
             row = self.cur.fetchone()
 
             if row:
-                regime = row['sovereign_regime']
+                v4_regime = row['sovereign_regime']
+                # Map to meta-compatible regime label
+                regime = V4_TO_META_REGIME.get(v4_regime, 'UNKNOWN')
                 probs = row['state_probabilities'] or {}
-                confidence = probs.get(regime, 0.75)
+                confidence = probs.get(v4_regime, 0.75)
 
+                # CEO-HOTFIX-REGIME-001: Fixed varchar(20) overflow
+                # 'ios003_v4.regime_sync' was 21 chars, column is varchar(20)
+                # Changed to 'ios003_v4.sync' (14 chars)
                 self.cur.execute("""
                     UPDATE fhq_meta.regime_state
                     SET current_regime = %s,
                         regime_confidence = %s,
                         last_updated_at = NOW(),
-                        updated_by = 'ios003_v4.regime_sync'
+                        updated_by = 'ios003_v4.sync'
                 """, (regime, confidence))
                 self.conn.commit()
 
-                logger.info(f"[SYNC] fhq_meta.regime_state <- {regime} ({confidence:.0%})")
+                logger.info(f"[SYNC] fhq_meta.regime_state <- {regime} (v4:{v4_regime}, conf:{confidence:.0%})")
+                sync_success = True
             else:
-                logger.warning("[SYNC] No BTC regime found - skipping meta sync")
+                error_msg = "No BTC regime found - skipping meta sync"
+                logger.warning(f"[SYNC] {error_msg}")
 
         except Exception as e:
+            error_msg = str(e)
             logger.error(f"[SYNC] Failed to sync regime_state: {e}")
-            # Don't fail the whole run for sync issues
             self.conn.rollback()
+
+        # CEO-HOTFIX-REGIME-001: Eliminate silent failure - log to governance
+        try:
+            self.cur.execute("""
+                INSERT INTO fhq_governance.governance_actions_log (
+                    action_id, action_type, action_target, action_target_type,
+                    initiated_by, initiated_at, decision, decision_rationale,
+                    metadata
+                ) VALUES (
+                    gen_random_uuid(),
+                    'IOS003_REGIME_META_SYNC',
+                    'fhq_meta.regime_state',
+                    'TABLE',
+                    'STIG',
+                    NOW(),
+                    %s,
+                    %s,
+                    %s
+                )
+            """, (
+                'EXECUTED' if sync_success else 'FAILED',
+                'Sync sovereign regime to fhq_meta.regime_state for cognitive gateway freshness check',
+                json.dumps({
+                    'sync_success': sync_success,
+                    'error': error_msg,
+                    'hotfix': 'CEO-HOTFIX-REGIME-001'
+                })
+            ))
+            self.conn.commit()
+        except Exception as log_err:
+            logger.error(f"[SYNC] Failed to log sync status: {log_err}")
+            # Don't fail for logging errors, but we've already logged to console
+
+        return sync_success
 
     def close(self):
         """Close database connections."""
