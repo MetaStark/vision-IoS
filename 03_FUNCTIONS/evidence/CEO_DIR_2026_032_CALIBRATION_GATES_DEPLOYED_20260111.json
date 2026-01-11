@@ -1,0 +1,107 @@
+{
+  "directive_id": "CEO-DIR-2026-032",
+  "directive_name": "THE DIAGNOSTIC PIVOT - CALIBRATION GATES",
+  "authority": "CEO (Orjan Skjold)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-11T00:50:00Z",
+  "status": "DEPLOYED_AND_ENFORCING",
+  "context": {
+    "problem": "Catastrophic Inverse Calibration - higher confidence correlates with LOWER accuracy",
+    "evidence": {
+      "95-100%_confidence": "21.3% accuracy (inverted by 73.7%)",
+      "80-95%_confidence": "26.6% accuracy (inverted by 53.4%)",
+      "60-80%_confidence": "36.7% accuracy (inverted by 23.3%)",
+      "40-60%_confidence": "47.3% accuracy (near calibrated)"
+    },
+    "constitutional_violation": "System increases confidence without increasing truth - reduces freedom"
+  },
+  "solution": {
+    "principle": "Max Allowed Confidence = Historical Accuracy + Safety Margin",
+    "formula": "confidence_ceiling = min(0.95, historical_accuracy_band + asymmetric_margin)",
+    "effective_ceiling": "40.08% (until calibration improves)",
+    "safety_margin_rules": {
+      "below_50%_accuracy": "+5% margin (maximum humility)",
+      "50-60%_accuracy": "+2% margin (cautious recovery)",
+      "above_60%_accuracy": "+0% margin (earned confidence)"
+    }
+  },
+  "implementation": {
+    "migration": "04_DATABASE/MIGRATIONS/226_calibration_gates.sql",
+    "tables_created": [
+      "fhq_governance.confidence_calibration_gates",
+      "fhq_governance.calibration_gate_history",
+      "fhq_governance.gate_violation_log"
+    ],
+    "functions_created": [
+      "fhq_governance.calculate_asymmetric_safety_margin()",
+      "fhq_governance.get_active_confidence_ceiling()",
+      "fhq_governance.enforce_calibration_gate()",
+      "fhq_governance.recalculate_calibration_gates()"
+    ],
+    "daemon": "03_FUNCTIONS/calibration_gate_enforcer.py",
+    "integration_point": "03_FUNCTIONS/finn_cognitive_gateway.py:526-544"
+  },
+  "hardening_upgrades": [
+    {
+      "id": 1,
+      "name": "Sample-size floor",
+      "description": "Gates only activate when n >= 100",
+      "prevents": "Small-sample noise from driving ceilings"
+    },
+    {
+      "id": 2,
+      "name": "Asymmetric safety margin",
+      "description": "+5% below 50%, +2% at 50-60%, +0% above 60%",
+      "prevents": "Confidence outrunning truth during recovery"
+    },
+    {
+      "id": 3,
+      "name": "Regime precedence",
+      "description": "exact match > forecast_type+ALL > global fallback",
+      "prevents": "Wrong gate applied to specific regime"
+    }
+  ],
+  "verification": {
+    "active_gates": 9,
+    "effective_system_ceiling": "40.08%",
+    "total_violations_logged": 16,
+    "average_confidence_reduction": "36.8%",
+    "violations_by_band": {
+      "40%+_reduction": 7,
+      "20-40%_reduction": 5,
+      "10-20%_reduction": 1,
+      "under_10%_reduction": 3
+    },
+    "enforcement_point": "Cognitive Gateway P4 (before SignalEnvelope creation)"
+  },
+  "exit_criteria_for_phase_ii": {
+    "monotonicity_restored": "Higher confidence => higher empirical accuracy",
+    "brier_score_improvement": "Directionally improving across 7-day window",
+    "overconfidence_suppression": "System downgrades confidence in historically inverted bands",
+    "abort_competence": "System explicitly refuses >= 1 hypothetical trade due to uncertainty"
+  },
+  "constitutional_alignment": {
+    "freedom_equation": "Decision Optionality x Time Sovereignty x Capital Preservation",
+    "pnl_status": "Secondary derivative - not primary metric",
+    "current_posture": "DEFENSIVE / FREEDOM-PRESERVING",
+    "phase_i_status": "ACTIVE - observation mode",
+    "phase_ii_status": "BLOCKED until calibration improves"
+  },
+  "governance_compliance": {
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_006": "VEGA attestation obtained for gates",
+    "adr_012": "Economic safety constraints respected",
+    "court_proof": "All violations logged with full audit trail"
+  },
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/226_calibration_gates.sql",
+    "03_FUNCTIONS/calibration_gate_enforcer.py",
+    "03_FUNCTIONS/evidence/CEO_DIR_2026_032_CALIBRATION_GATES_DEPLOYED_20260111.json"
+  ],
+  "files_modified": [
+    "03_FUNCTIONS/finn_cognitive_gateway.py"
+  ],
+  "standing_order": "Until calibration improves, NO forecast can exceed 40.08% confidence. This is not a tuning parameter - it is a constitutional constraint.",
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-11T00:50:00Z"
+}

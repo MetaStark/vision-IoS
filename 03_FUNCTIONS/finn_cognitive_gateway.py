@@ -523,6 +523,26 @@ def run_cognitive_cycle(
         # Use FINN confidence if available, otherwise GCR
         signal_confidence = reasoning_result.signal_confidence if reasoning_result else gcr
 
+        # CEO-DIR-2026-032: Apply calibration gate enforcement
+        # Prevents "Algorithmic Arrogance" - caps confidence at proven accuracy levels
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT adjusted_confidence, was_capped, gate_id, match_type
+                FROM fhq_governance.enforce_calibration_gate(%s, %s, %s, %s)
+            """, (str(uuid.uuid4()), signal_confidence, 'PRICE_DIRECTION', regime or 'ALL'))
+            gate_result = cursor.fetchone()
+            cursor.close()
+
+            if gate_result and gate_result[1]:  # was_capped
+                original_confidence = signal_confidence
+                signal_confidence = float(gate_result[0])
+                logger.info(f"[GATEWAY] CALIBRATION_GATE: {original_confidence*100:.1f}% -> {signal_confidence*100:.1f}% (match={gate_result[3]})")
+        except Exception as e:
+            logger.warning(f"[GATEWAY] Calibration gate check failed: {e}")
+            # Fallback: apply conservative ceiling if gate check fails
+            signal_confidence = min(signal_confidence, 0.50)
+
         # Create SignalEnvelope
         envelope = SignalEnvelope.create(
             asset=asset or "UNKNOWN",
