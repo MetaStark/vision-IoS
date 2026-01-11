@@ -1,0 +1,85 @@
+name: Tier 1-2 Database Backup
+
+# CEO Decision: 2026-01-11
+# Reference: STIG-VERIFY-2026-011
+# Scope: Tier 1 (Governance/Evidence/Audit) + Tier 2 (Canonical/Configs)
+# Tier 3 (Market/Research - 9.1GB) excluded; recovery via re-ingestion
+
+on:
+  schedule:
+    # Daily at 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Backup scope'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - tier1-only
+          - schema-only
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify database connectivity
+        env:
+          PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
+          PGPORT: ${{ secrets.SUPABASE_DB_PORT }}
+          PGDATABASE: ${{ secrets.SUPABASE_DB_NAME }}
+          PGUSER: ${{ secrets.SUPABASE_DB_USER }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          echo "Testing database connectivity..."
+          psql -c "SELECT 'Connection OK' as status, current_timestamp as time;"
+
+      - name: Execute Tier 1-2 backup
+        env:
+          PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
+          PGPORT: ${{ secrets.SUPABASE_DB_PORT }}
+          PGDATABASE: ${{ secrets.SUPABASE_DB_NAME }}
+          PGUSER: ${{ secrets.SUPABASE_DB_USER }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: python backups/scripts/backup_to_github.py
+
+      - name: Commit and push backup
+        run: |
+          git config user.name "STIG Backup Agent"
+          git config user.email "stig@fjordhq.io"
+
+          # Add backup files
+          git add backups/schema/*.sql
+          git add backups/governance/*.json
+          git add backups/evidence/*.json
+          git add backups/*_manifest.json
+
+          # Commit with date
+          DATE=$(date +'%Y-%m-%d')
+          git commit -m "backup(tier1-2): Automated backup ${DATE}
+
+          Classification: Tier 1 (Governance) + Tier 2 (Canonical)
+          CEO Decision: 2026-01-11
+          Ref: STIG-VERIFY-2026-011
+
+          Co-Authored-By: STIG <stig@fjordhq.io>" || echo "No changes to commit"
+
+          git push
