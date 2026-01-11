@@ -2,17 +2,22 @@
 """
 PRICE FRESHNESS HEARTBEAT
 =========================
-CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P2
+CEO-DIR-2026-0YC: Heartbeat Policy Alignment (2026-01-11)
+(Supersedes CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P2)
 
-Scheduled heartbeat task that monitors crypto price staleness.
+Scheduled heartbeat task that monitors price staleness for CRYPTO, EQUITY, FX.
 Runs every 30 minutes via orchestrator.
 
-Thresholds (per P1 market-aware semantics):
-- CRYPTO: max_ok=6h, warn=6-12h, blackout=12h+
-- Alerts CEO via Telegram if any asset exceeds warn threshold
+Thresholds aligned to DAILY BAR granularity (yfinance ~1 bar/day):
+- CRYPTO: max_ok=24h, warn=36h, blackout=48h
+- EQUITY: max_ok=36h, warn=48h, blackout=72h (weekend gaps)
+- FX:     max_ok=36h, warn=48h, blackout=72h (weekend closure)
+
+Previous thresholds (6h/12h) were too aggressive for daily bars and caused
+false alerts every Sunday when same-day bars weren't available yet.
 
 Author: STIG (CTO)
-Date: 2026-01-06
+Date: 2026-01-06 (original), 2026-01-11 (CEO-DIR-2026-0YC update)
 """
 
 import os
@@ -49,17 +54,25 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CEO_TELEGRAM_CHAT_ID = os.getenv('CEO_TELEGRAM_CHAT_ID')
 CEO_GATEWAY_ENABLED = os.getenv('CEO_GATEWAY_ENABLED', '0') == '1'
 
-# Market-aware price staleness thresholds (CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P1)
+# Market-aware price staleness thresholds
+# CEO-DIR-2026-0YC: Aligned to DAILY BAR granularity (yfinance provides ~1 bar/day)
+# Previous thresholds (6h/12h) triggered false alerts because daily bars arrive once/day
 PRICE_STALENESS_CRYPTO = {
-    'max_ok_hours': 6,       # Full confidence
-    'warn_hours': 12,        # Graded confidence penalty
-    'blackout_hours': 12     # Abort threshold
+    'max_ok_hours': 24,      # Full confidence: within 24h of last daily bar
+    'warn_hours': 36,        # Warn: 1.5x daily cadence
+    'blackout_hours': 48     # Blackout: missed 2 daily bars
 }
 
 PRICE_STALENESS_EQUITY = {
-    'max_ok_hours': 18,      # Daily bars: OK up to 18h (overnight + morning)
-    'warn_hours': 24,        # Warn if > 24h (missed a full day)
-    'blackout_hours': 30     # Blackout if > 30h (definitely missed data)
+    'max_ok_hours': 36,      # Full confidence: accounts for overnight + weekend start
+    'warn_hours': 48,        # Warn: approaching weekend gap
+    'blackout_hours': 72     # Blackout: missed full weekend (Fri close -> Mon open)
+}
+
+PRICE_STALENESS_FX = {
+    'max_ok_hours': 36,      # FX closes Fri 17:00 ET -> Sun 17:00 ET
+    'warn_hours': 48,        # Warn: weekend gap starting
+    'blackout_hours': 72     # Blackout: missed full weekend
 }
 
 # Assets to monitor
@@ -133,11 +146,13 @@ def get_asset_type(asset_id: str) -> str:
 
 
 def get_thresholds(asset_type: str) -> Dict[str, float]:
-    """Get staleness thresholds for asset type."""
+    """Get staleness thresholds for asset type (CEO-DIR-2026-0YC aligned to daily bars)."""
     if asset_type == 'CRYPTO':
         return PRICE_STALENESS_CRYPTO
-    elif asset_type in ('EQUITY', 'FX'):
+    elif asset_type == 'EQUITY':
         return PRICE_STALENESS_EQUITY
+    elif asset_type == 'FX':
+        return PRICE_STALENESS_FX
     else:
         return PRICE_STALENESS_CRYPTO  # Default to crypto thresholds
 

@@ -1,0 +1,88 @@
+{
+  "directive_id": "CEO-DIR-2026-0YC",
+  "directive_name": "HEARTBEAT POLICY ALIGNMENT",
+  "authority": "CEO",
+  "priority": "CONFIG_ONLY",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-11T19:45:00Z",
+
+  "problem_statement": {
+    "symptom": "Telegram alerts triggered 'PRICE FRESHNESS ALERT' for CRYPTO with staleness 19.7h",
+    "root_cause": "Thresholds (12h) were calibrated for intraday data, but yfinance provides DAILY bars (~1 row/day)",
+    "false_positive_trigger": "On Sunday, daily bar for Jan 11 not available yet; Jan 10 bar shows 19.7h stale - exceeds 12h threshold"
+  },
+
+  "investigation": {
+    "source_map": {
+      "table": "fhq_market.prices",
+      "query": "MAX(timestamp) per canonical_id",
+      "assets_monitored": ["BTC-USD", "ETH-USD", "SOL-USD", "SPY", "QQQ", "EURUSD=X"]
+    },
+    "granularity_proof": {
+      "query": "SELECT DATE(timestamp), COUNT(*) FROM fhq_market.prices WHERE canonical_id = 'BTC-USD' GROUP BY 1 ORDER BY 1 DESC LIMIT 7",
+      "result": "1-2 rows per day = DAILY BARS",
+      "expected_cadence_hours": 24
+    },
+    "previous_thresholds": {
+      "CRYPTO": {"max_ok_hours": 6, "warn_hours": 12, "blackout_hours": 12},
+      "EQUITY": {"max_ok_hours": 18, "warn_hours": 24, "blackout_hours": 30},
+      "FX": "Used EQUITY thresholds"
+    }
+  },
+
+  "policy_change": {
+    "file_modified": "03_FUNCTIONS/price_freshness_heartbeat.py",
+    "lines_changed": "52-71 (threshold constants), 143-152 (get_thresholds function)",
+    "new_thresholds": {
+      "CRYPTO": {
+        "max_ok_hours": 24,
+        "warn_hours": 36,
+        "blackout_hours": 48,
+        "rationale": "Daily bars arrive ~1/day; 24h allows full daily cycle"
+      },
+      "EQUITY": {
+        "max_ok_hours": 36,
+        "warn_hours": 48,
+        "blackout_hours": 72,
+        "rationale": "Weekend gaps (Fri close -> Mon open = ~63h); 72h allows full weekend"
+      },
+      "FX": {
+        "max_ok_hours": 36,
+        "warn_hours": 48,
+        "blackout_hours": 72,
+        "rationale": "FX closes Fri 17:00 ET -> Sun 17:00 ET (~48h gap)"
+      }
+    }
+  },
+
+  "pass_criteria": {
+    "criterion": "On a Sunday, CRYPTO should NOT trigger 'stale' if daily bar not expected yet",
+    "validation": {
+      "current_staleness_hours": 19.7,
+      "new_warn_threshold_hours": 36,
+      "alert_triggered": false,
+      "pass": true
+    }
+  },
+
+  "verification": {
+    "before_change": {
+      "CRYPTO_warn_threshold": 12,
+      "staleness_19h_triggers_alert": true
+    },
+    "after_change": {
+      "CRYPTO_warn_threshold": 36,
+      "staleness_19h_triggers_alert": false
+    },
+    "weekend_safe": true
+  },
+
+  "governance_compliance": {
+    "adr_002": "Change logged via evidence file",
+    "adr_004": "CONFIG_ONLY change, no architectural impact",
+    "blast_radius": "LOW - only affects alert thresholds, no execution impact"
+  },
+
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-11T19:45:00Z"
+}
