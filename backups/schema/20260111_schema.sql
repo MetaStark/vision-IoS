@@ -1,15 +1,15 @@
 -- FjordHQ Schema Backup
 -- Date: 20260111
--- Timestamp: 2026-01-11T12:50:49.053414+00:00
+-- Timestamp: 2026-01-11T13:32:14.412424+00:00
 -- Tier 1+2 Schemas (Governance, Canonical, Configs)
--- Hash: 827e9eaee1c41b4a
+-- Hash: bb5a6530a451d079
 --
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict OOwQVYmxb9qARz4GovJ8OMYiefsVvxLbYucCEs1JXuEgUTRbJ6OiYjIAKv79pdr
+\restrict SUchEt2LMDOTDWMettgEoZtUPbOdaOmY5C7gVclPB7wCu1RUazt7e7mYW4AzqXU
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -44058,5 +44058,5 @@ ALTER TABLE vision_verification.operation_signatures ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict OOwQVYmxb9qARz4GovJ8OMYiefsVvxLbYucCEs1JXuEgUTRbJ6OiYjIAKv79pdr
+\unrestrict SUchEt2LMDOTDWMettgEoZtUPbOdaOmY5C7gVclPB7wCu1RUazt7e7mYW4AzqXU
 

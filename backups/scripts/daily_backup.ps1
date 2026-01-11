@@ -31,8 +31,8 @@ try {
     # Git operations
     Log "Staging backup files..."
     git add backups/schema/*.sql
-    git add backups/governance/*.json
-    git add backups/evidence/*.json
+    git add backups/governance/*.json.gz
+    git add backups/evidence/*.json.gz
     git add backups/*_manifest.json
 
     # Commit (will skip if no changes)

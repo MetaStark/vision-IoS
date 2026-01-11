@@ -14,6 +14,7 @@ recovery model is re-ingestion only.
 
 import os
 import json
+import gzip
 import hashlib
 import subprocess
 from datetime import datetime, timezone
@@ -213,9 +214,9 @@ def backup_tier1():
         json.dumps(backup_data, sort_keys=True, default=str).encode()
     ).hexdigest()[:16]
 
-    # Write to file
-    output_file = GOVERNANCE_DIR / f"{BACKUP_DATE}_tier1_governance.json"
-    with open(output_file, "w", encoding="utf-8") as f:
+    # Write to compressed file
+    output_file = GOVERNANCE_DIR / f"{BACKUP_DATE}_tier1_governance.json.gz"
+    with gzip.open(output_file, "wt", encoding="utf-8") as f:
         json.dump(backup_data, f, indent=2, default=str)
 
     file_size = output_file.stat().st_size / (1024 * 1024)
@@ -265,9 +266,9 @@ def backup_tier2():
         json.dumps(backup_data, sort_keys=True, default=str).encode()
     ).hexdigest()[:16]
 
-    # Write to file
-    output_file = EVIDENCE_DIR / f"{BACKUP_DATE}_tier2_canonical.json"
-    with open(output_file, "w", encoding="utf-8") as f:
+    # Write to compressed file
+    output_file = EVIDENCE_DIR / f"{BACKUP_DATE}_tier2_canonical.json.gz"
+    with gzip.open(output_file, "wt", encoding="utf-8") as f:
         json.dump(backup_data, f, indent=2, default=str)
 
     file_size = output_file.stat().st_size / (1024 * 1024)
