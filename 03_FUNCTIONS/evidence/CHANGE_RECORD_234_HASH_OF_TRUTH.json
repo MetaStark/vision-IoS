@@ -1,0 +1,165 @@
+{
+  "change_record_id": "CR-234-HASH-OF-TRUTH",
+  "change_type": "DATABASE_MIGRATION",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "phase": "PHASE1_TASK_1_3",
+
+  "scope_boundary": {
+    "affected_schemas": ["vision_verification", "fhq_governance"],
+    "affected_objects": {
+      "tables_created": [
+        "vision_verification.dashboard_truth_attestation",
+        "fhq_governance.split_brain_events"
+      ],
+      "functions_created": [
+        "vision_verification.compute_truth_hash()",
+        "vision_verification.create_truth_attestation()",
+        "vision_verification.verify_truth_attestation()"
+      ],
+      "indexes_created": [
+        "idx_attestation_route_listing_date",
+        "idx_attestation_created_at",
+        "idx_attestation_truth_hash",
+        "idx_split_brain_detected_at"
+      ]
+    },
+    "files_affected": [
+      "04_DATABASE/MIGRATIONS/234_hash_of_truth_attestation.sql"
+    ],
+    "no_existing_data_modified": true,
+    "no_existing_schema_altered": true
+  },
+
+  "before_state": {
+    "dashboard_truth_attestation_exists": false,
+    "split_brain_events_exists": false,
+    "compute_truth_hash_exists": false
+  },
+
+  "after_state": {
+    "dashboard_truth_attestation_exists": true,
+    "split_brain_events_exists": true,
+    "compute_truth_hash_exists": true
+  },
+
+  "rollback_criteria": {
+    "automatic_rollback_triggers": [
+      "Migration script syntax error",
+      "Table creation failure",
+      "Function creation failure",
+      "Permission grant failure"
+    ],
+    "manual_rollback_triggers": [
+      "CEO gate rejection",
+      "VEGA audit failure",
+      "Integrity concern raised"
+    ]
+  },
+
+  "rollback_procedure": {
+    "script": [
+      "DROP FUNCTION IF EXISTS vision_verification.verify_truth_attestation();",
+      "DROP FUNCTION IF EXISTS vision_verification.create_truth_attestation();",
+      "DROP FUNCTION IF EXISTS vision_verification.compute_truth_hash();",
+      "DROP TABLE IF EXISTS fhq_governance.split_brain_events;",
+      "DROP TABLE IF EXISTS vision_verification.dashboard_truth_attestation;"
+    ],
+    "execution_notes": "Execute in order. No data loss risk as tables are newly created.",
+    "estimated_downtime": "< 1 minute"
+  },
+
+  "test_evidence": {
+    "pre_execution_checks": [
+      {
+        "check": "Verify vision_verification schema exists",
+        "sql": "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'vision_verification'",
+        "expected": "1 row returned"
+      },
+      {
+        "check": "Verify fhq_governance schema exists",
+        "sql": "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'fhq_governance'",
+        "expected": "1 row returned"
+      },
+      {
+        "check": "Verify table does not already exist",
+        "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'vision_verification' AND table_name = 'dashboard_truth_attestation'",
+        "expected": "0 rows returned"
+      }
+    ],
+    "post_execution_checks": [
+      {
+        "check": "Verify table created",
+        "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'vision_verification' AND table_name = 'dashboard_truth_attestation'",
+        "expected": "1 row returned"
+      },
+      {
+        "check": "Verify function created",
+        "sql": "SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'vision_verification' AND routine_name = 'compute_truth_hash'",
+        "expected": "1 row returned"
+      },
+      {
+        "check": "Verify hash computation is deterministic",
+        "sql": "SELECT (SELECT truth_hash FROM vision_verification.compute_truth_hash('NEUTRAL', '2026-01-12', 0.0, 0.5, 'BTC-USD')) = (SELECT truth_hash FROM vision_verification.compute_truth_hash('NEUTRAL', '2026-01-12', 0.0, 0.5, 'BTC-USD'))",
+        "expected": "TRUE"
+      },
+      {
+        "check": "Verify governance log entry created",
+        "sql": "SELECT action_id FROM fhq_governance.governance_actions_log WHERE action_type = 'MIGRATION_EXECUTED' AND action_target = 'vision_verification.dashboard_truth_attestation' ORDER BY created_at DESC LIMIT 1",
+        "expected": "1 row returned"
+      }
+    ],
+    "functional_tests": [
+      {
+        "test": "Create attestation and verify",
+        "steps": [
+          "Call vision_verification.create_truth_attestation() with test data",
+          "Call vision_verification.verify_truth_attestation() with returned ID",
+          "Verify is_valid = TRUE"
+        ]
+      },
+      {
+        "test": "Verify hash changes with different inputs",
+        "steps": [
+          "Compute hash for BULL regime",
+          "Compute hash for BEAR regime",
+          "Verify hashes are different"
+        ]
+      }
+    ]
+  },
+
+  "approval_checkpoint": {
+    "requires_ceo_approval": true,
+    "approval_status": "APPROVED",
+    "approval_date": "2026-01-12T23:00:00Z",
+    "approved_by": "CEO via CEO-DIR-2026-TRUTH-SYNC-P1"
+  },
+
+  "execution_log": {
+    "created_by": "STIG",
+    "created_at": "2026-01-13T00:45:00Z",
+    "status": "EXECUTED_SUCCESS",
+    "execution_date": "2026-01-12T23:16:03Z",
+    "execution_result": {
+      "tables_created": ["vision_verification.dashboard_truth_attestation", "fhq_governance.split_brain_events"],
+      "functions_created": ["vision_verification.compute_truth_hash", "vision_verification.create_truth_attestation", "vision_verification.verify_truth_attestation"],
+      "indexes_created": 4,
+      "governance_log_entry": "4f49139e-bc24-4b2b-9dda-e1d85efe31ee",
+      "post_execution_checks": {
+        "table_existence": "PASS",
+        "function_existence": "PASS",
+        "hash_determinism": "PASS",
+        "governance_logging": "PASS"
+      },
+      "functional_tests": {
+        "create_and_verify_attestation": "PASS",
+        "hash_changes_with_different_inputs": "PASS"
+      },
+      "hotfix_applied": {
+        "issue": "Numeric precision mismatch causing hash verification failure",
+        "fix": "Added ROUND(..., 2) to normalize numeric values in compute_truth_hash",
+        "verified": true
+      }
+    }
+  }
+}

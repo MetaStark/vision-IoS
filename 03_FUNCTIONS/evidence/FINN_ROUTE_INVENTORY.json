@@ -1,0 +1,297 @@
+{
+  "artifact_id": "FINN_ROUTE_INVENTORY",
+  "artifact_type": "PHASE1_TASK_1_1",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T00:00:00Z",
+  "purpose": "Map all /finn API routes to their exact database sources for Truth Sync re-wiring",
+
+  "routes": [
+    {
+      "route_path": "/api/finn/meta-signal",
+      "source_file": "dashboard-2026/app/api/finn/meta-signal/route.ts",
+      "http_methods": ["GET"],
+      "description": "Returns today's meta allocation with FINN narrative",
+      "data_sources": [
+        {
+          "table": "fhq_ace.meta_allocations",
+          "sql_location": "lines 46-67",
+          "fields_used": ["meta_id", "signal_date", "listing_id", "allocation_pct", "signal_strength", "confidence_score", "risk_gates_passed", "risk_block_reason", "created_at"],
+          "current_status": "STALE",
+          "row_count": 1,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": null,
+          "notes": "No live process populates this table. ACE pipeline inactive."
+        },
+        {
+          "table": "fhq_hmm.regime_predictions",
+          "sql_location": "lines 68-77",
+          "fields_used": ["regime_label", "confidence"],
+          "current_status": "STALE",
+          "row_count": 1,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": "fhq_perception.sovereign_regime_state_v4",
+          "notes": "Regime is computed daily but writes to sovereign_regime_state_v4, not this table."
+        },
+        {
+          "table": "fhq_ace.family_consensus",
+          "sql_location": "lines 78-85 (subquery)",
+          "fields_used": ["family_name", "signal_direction"],
+          "current_status": "STALE",
+          "row_count": 4,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": null,
+          "notes": "No live process populates this table. ACE pipeline inactive."
+        }
+      ],
+      "critical_outputs": [
+        {"field": "regime_label", "source": "fhq_hmm.regime_predictions", "status": "STALE"},
+        {"field": "allocation_pct", "source": "fhq_ace.meta_allocations", "status": "STALE"},
+        {"field": "signal_strength", "source": "fhq_ace.meta_allocations", "status": "STALE"},
+        {"field": "finn_narrative", "source": "computed from above", "status": "STALE"}
+      ],
+      "truth_sync_priority": "CRITICAL",
+      "truth_sync_action": "Re-wire regime_context CTE to fhq_perception.sovereign_regime_state_v4"
+    },
+    {
+      "route_path": "/api/finn/drift-status",
+      "source_file": "dashboard-2026/app/api/finn/drift-status/route.ts",
+      "http_methods": ["GET"],
+      "description": "Returns alpha drift monitoring alerts",
+      "data_sources": [
+        {
+          "table": "fhq_monitoring.alpha_drift_log",
+          "sql_location": "lines 54-109, 143-154",
+          "fields_used": ["check_date", "listing_id", "drift_alert_level", "drift_alert_reason", "low_activity_flag", "direction_changed", "previous_meta_direction", "current_meta_direction", "allocation_delta", "consecutive_zero_days"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Independent monitoring table. Verify if alpha_drift_monitor daemon is running."
+        }
+      ],
+      "critical_outputs": [
+        {"field": "drift_alert_level", "source": "fhq_monitoring.alpha_drift_log", "status": "UNKNOWN"},
+        {"field": "finn_interpretation", "source": "computed from above", "status": "UNKNOWN"}
+      ],
+      "truth_sync_priority": "LOW",
+      "truth_sync_action": "Verify table freshness; no re-wire needed if daemon active"
+    },
+    {
+      "route_path": "/api/finn/families",
+      "source_file": "dashboard-2026/app/api/finn/families/route.ts",
+      "http_methods": ["GET"],
+      "description": "Returns all 4 ACE family signals with drivers and confidence",
+      "data_sources": [
+        {
+          "table": "fhq_ace.family_consensus",
+          "sql_location": "lines 43-65",
+          "fields_used": ["family_id", "signal_date", "listing_id", "family_name", "signal_direction", "allocation_pct", "confidence_score", "conviction_strength", "meta_weight"],
+          "current_status": "STALE",
+          "row_count": 4,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": null,
+          "notes": "No live process populates this table. ACE pipeline inactive."
+        },
+        {
+          "table": "fhq_ace.strategy_signals",
+          "sql_location": "lines 66-85",
+          "fields_used": ["strategy_family", "signal_direction", "strategy_name", "allocation_pct", "confidence_score"],
+          "current_status": "STALE",
+          "row_count": 12,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": null,
+          "notes": "No live process populates this table. ACE pipeline inactive."
+        }
+      ],
+      "critical_outputs": [
+        {"field": "family_name", "source": "fhq_ace.family_consensus", "status": "STALE"},
+        {"field": "signal_direction", "source": "fhq_ace.family_consensus", "status": "STALE"},
+        {"field": "allocation_pct", "source": "fhq_ace.family_consensus", "status": "STALE"}
+      ],
+      "truth_sync_priority": "MEDIUM",
+      "truth_sync_action": "Requires ACE pipeline activation or alternative family signal source"
+    },
+    {
+      "route_path": "/api/finn/indicator/[id]",
+      "source_file": "dashboard-2026/app/api/finn/indicator/[id]/route.ts",
+      "http_methods": ["GET"],
+      "description": "Returns detailed FINN narrative for specific indicator",
+      "data_sources": [
+        {
+          "table": "fhq_indicators.momentum",
+          "sql_location": "lines 71-76",
+          "fields_used": ["signal_date", "rsi_14", "macd_line", "macd_signal", "stoch_k", "stoch_d"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators table. Verify freshness."
+        },
+        {
+          "table": "fhq_hmm.regime_predictions",
+          "sql_location": "lines 88-92",
+          "fields_used": ["regime_label", "confidence"],
+          "current_status": "STALE",
+          "row_count": 1,
+          "last_updated": "2025-11-17",
+          "remediation_required": true,
+          "canonical_replacement": "fhq_perception.sovereign_regime_state_v4",
+          "notes": "Same issue as meta-signal route. Re-wire to canonical regime source."
+        },
+        {
+          "table": "fhq_meta.indicator_definitions",
+          "sql_location": "lines 93-98",
+          "fields_used": ["indicator_id", "name_display", "name_subtitle", "description_short", "category", "ace_family", "bearish_threshold", "bullish_threshold", "meta_allocation_relevance"],
+          "current_status": "STATIC",
+          "row_count": "configuration data",
+          "last_updated": "N/A",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Static configuration table. No re-wire needed."
+        }
+      ],
+      "critical_outputs": [
+        {"field": "regime_label", "source": "fhq_hmm.regime_predictions", "status": "STALE"},
+        {"field": "finn_narrative", "source": "computed from regime + indicator", "status": "PARTIALLY_STALE"}
+      ],
+      "truth_sync_priority": "HIGH",
+      "truth_sync_action": "Re-wire regime CTE to fhq_perception.sovereign_regime_state_v4"
+    },
+    {
+      "route_path": "/api/finn/indicators",
+      "source_file": "dashboard-2026/app/api/finn/indicators/route.ts",
+      "http_methods": ["GET"],
+      "description": "Returns all 18 technical indicators with metadata and current values",
+      "data_sources": [
+        {
+          "table": "fhq_indicators.price_data",
+          "sql_location": "lines 49-53, 152-172",
+          "fields_used": ["signal_date", "listing_id", "price_close", "price_high", "price_low", "volume"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators. Verify freshness."
+        },
+        {
+          "table": "fhq_indicators.momentum",
+          "sql_location": "lines 56-88",
+          "fields_used": ["rsi_14", "macd_line", "macd_signal", "stoch_k", "stoch_d"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators. Verify freshness."
+        },
+        {
+          "table": "fhq_indicators.trend",
+          "sql_location": "lines 92-114",
+          "fields_used": ["ema_12", "ema_26", "sma_50", "sma_200"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators. Verify freshness."
+        },
+        {
+          "table": "fhq_indicators.volatility",
+          "sql_location": "lines 118-140",
+          "fields_used": ["bb_upper", "bb_middle", "bb_lower", "atr_14"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators. Verify freshness."
+        },
+        {
+          "table": "fhq_indicators.volume",
+          "sql_location": "lines 144-148",
+          "fields_used": ["obv"],
+          "current_status": "UNKNOWN",
+          "row_count": "not verified",
+          "last_updated": "not verified",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Technical indicators. Verify freshness."
+        },
+        {
+          "table": "fhq_meta.indicator_definitions",
+          "sql_location": "lines 248-252",
+          "fields_used": ["indicator_id", "name_display", "name_subtitle", "category", "ace_family", "bullish_threshold", "bearish_threshold", "meta_allocation_relevance", "display_priority", "is_active"],
+          "current_status": "STATIC",
+          "row_count": "configuration data",
+          "last_updated": "N/A",
+          "remediation_required": false,
+          "canonical_replacement": null,
+          "notes": "Static configuration table. No re-wire needed."
+        }
+      ],
+      "critical_outputs": [
+        {"field": "current_value", "source": "fhq_indicators.*", "status": "UNKNOWN"},
+        {"field": "status", "source": "computed from indicator values", "status": "UNKNOWN"}
+      ],
+      "truth_sync_priority": "LOW",
+      "truth_sync_action": "Verify indicator table freshness; no regime dependency"
+    }
+  ],
+
+  "summary": {
+    "total_routes": 5,
+    "routes_requiring_rewire": 3,
+    "critical_stale_tables": [
+      "fhq_hmm.regime_predictions",
+      "fhq_ace.meta_allocations",
+      "fhq_ace.family_consensus",
+      "fhq_ace.strategy_signals"
+    ],
+    "canonical_regime_source": "fhq_perception.sovereign_regime_state_v4",
+    "canonical_regime_row_count": 1713,
+    "canonical_regime_last_updated": "2026-01-12T03:21:00Z"
+  },
+
+  "rewire_plan": {
+    "phase1_critical": [
+      {
+        "route": "/api/finn/meta-signal",
+        "change": "Replace fhq_hmm.regime_predictions with fhq_perception.sovereign_regime_state_v4",
+        "fields_to_map": {
+          "regime_label": "technical_regime or sovereign_regime",
+          "confidence": "compute from conviction fields"
+        }
+      },
+      {
+        "route": "/api/finn/indicator/[id]",
+        "change": "Replace fhq_hmm.regime_predictions with fhq_perception.sovereign_regime_state_v4",
+        "fields_to_map": {
+          "regime_label": "technical_regime or sovereign_regime",
+          "confidence": "compute from conviction fields"
+        }
+      }
+    ],
+    "phase1_deferred": [
+      {
+        "route": "/api/finn/families",
+        "reason": "No canonical replacement for ACE family consensus. Requires ACE pipeline activation.",
+        "interim_solution": "Display warning banner indicating family signals are not available"
+      }
+    ]
+  },
+
+  "verification": {
+    "artifact_hash": "pending_computation",
+    "verified_by": "STIG",
+    "verification_method": "Direct file read and SQL source extraction"
+  }
+}

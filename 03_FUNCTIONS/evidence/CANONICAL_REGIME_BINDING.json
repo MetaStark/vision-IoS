@@ -1,0 +1,159 @@
+{
+  "artifact_id": "CANONICAL_REGIME_BINDING",
+  "artifact_type": "PHASE1_TASK_1_2",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T00:30:00Z",
+  "purpose": "Define explicit binding between legacy regime sources and canonical regime truth",
+
+  "binding_declaration": {
+    "single_source_of_truth": "fhq_perception.sovereign_regime_state_v4",
+    "authority": "This table is the ONLY authoritative source for regime state across FjordHQ",
+    "governed_by": [
+      "ADR-017 (MIT Quad Protocol)",
+      "ADR-019 (Human Interaction - Dumb Glass)",
+      "CEO-DIR-2026-TRUTH-SYNC-P1"
+    ]
+  },
+
+  "schema_comparison": {
+    "legacy_source": {
+      "schema": "fhq_hmm",
+      "table": "regime_predictions",
+      "status": "DEPRECATED - DO NOT USE AS TRUTH SOURCE",
+      "row_count": 1,
+      "last_updated": "2025-11-17",
+      "columns": {
+        "prediction_id": {"type": "integer", "maps_to": "id (UUID in canonical)"},
+        "prediction_date": {"type": "date", "maps_to": "timestamp"},
+        "listing_id": {"type": "varchar", "maps_to": "asset_id (requires normalization)"},
+        "regime_label": {"type": "varchar", "maps_to": "sovereign_regime (primary) or technical_regime"},
+        "confidence": {"type": "numeric", "maps_to": "computed from state_probabilities"},
+        "prob_bull": {"type": "numeric", "maps_to": "state_probabilities.BULL"},
+        "prob_neutral": {"type": "numeric", "maps_to": "state_probabilities.NEUTRAL"},
+        "prob_bear": {"type": "numeric", "maps_to": "state_probabilities.BEAR"},
+        "model_version": {"type": "varchar", "maps_to": "engine_version"},
+        "created_at": {"type": "timestamp", "maps_to": "created_at"}
+      }
+    },
+    "canonical_source": {
+      "schema": "fhq_perception",
+      "table": "sovereign_regime_state_v4",
+      "status": "ACTIVE - SINGLE SOURCE OF TRUTH",
+      "row_count": 1713,
+      "last_updated": "2026-01-12T03:21:00Z",
+      "columns": {
+        "id": {"type": "uuid", "purpose": "Primary key"},
+        "asset_id": {"type": "text", "purpose": "Asset identifier (e.g., BTC-USD)"},
+        "timestamp": {"type": "date", "purpose": "Regime date"},
+        "technical_regime": {"type": "text", "purpose": "HMM-computed regime (BULL/NEUTRAL/BEAR/STRESS)"},
+        "sovereign_regime": {"type": "text", "purpose": "CRIO-adjusted authoritative regime"},
+        "state_probabilities": {"type": "jsonb", "purpose": "Probability distribution: {BULL, NEUTRAL, BEAR, STRESS}"},
+        "crio_dominant_driver": {"type": "text", "purpose": "CRIO factor driving sovereign regime"},
+        "crio_override_reason": {"type": "text", "purpose": "Reason if CRIO overrode technical regime"},
+        "engine_version": {"type": "text", "purpose": "Version of regime engine"},
+        "created_at": {"type": "timestamptz", "purpose": "Record creation timestamp"},
+        "driver_claim": {"type": "varchar", "purpose": "DDATP driver claim"},
+        "driver_basis": {"type": "varchar", "purpose": "DDATP driver basis"},
+        "input_coverage": {"type": "jsonb", "purpose": "Input data coverage metrics"},
+        "fallback_reason": {"type": "text", "purpose": "Reason if fallback was used"},
+        "technical_feature_set": {"type": "varchar", "purpose": "Feature set used for technical regime"},
+        "ddatp_version": {"type": "varchar", "purpose": "DDATP version"}
+      }
+    }
+  },
+
+  "field_mapping": {
+    "regime_label": {
+      "legacy_field": "regime_label",
+      "canonical_field": "sovereign_regime",
+      "rationale": "sovereign_regime is the CRIO-adjusted authoritative regime that incorporates macro intelligence. technical_regime is the raw HMM output. For dashboard display, sovereign_regime is the truth.",
+      "alternative": "technical_regime (if CRIO intelligence should be bypassed, which is NOT recommended)"
+    },
+    "confidence": {
+      "legacy_field": "confidence",
+      "canonical_computation": "MAX(state_probabilities.BULL, state_probabilities.NEUTRAL, state_probabilities.BEAR, state_probabilities.STRESS)",
+      "rationale": "Confidence is the probability of the dominant state",
+      "sql_expression": "GREATEST(state_probabilities->>'BULL', state_probabilities->>'NEUTRAL', state_probabilities->>'BEAR', state_probabilities->>'STRESS')::numeric"
+    },
+    "prediction_date": {
+      "legacy_field": "prediction_date",
+      "canonical_field": "timestamp",
+      "note": "Both are date types; direct mapping"
+    },
+    "listing_id_to_asset_id": {
+      "legacy_format": "LST_{TICKER}_{EXCHANGE}",
+      "canonical_format": "{TICKER}",
+      "examples": [
+        {"legacy": "LST_BTC_XCRYPTO", "canonical": "BTC-USD"},
+        {"legacy": "LST_ETH_XCRYPTO", "canonical": "ETH-USD"},
+        {"legacy": "LST_SPY_XNAS", "canonical": "SPY"},
+        {"legacy": "LST_QQQ_XNAS", "canonical": "QQQ"}
+      ],
+      "normalization_function": "CASE WHEN listing_id LIKE 'LST_%_XCRYPTO' THEN REPLACE(SPLIT_PART(listing_id, '_', 2), '', '') || '-USD' WHEN listing_id LIKE 'LST_%' THEN SPLIT_PART(listing_id, '_', 2) ELSE listing_id END",
+      "recommendation": "API should accept both formats and normalize internally"
+    },
+    "probabilities": {
+      "legacy_fields": ["prob_bull", "prob_neutral", "prob_bear"],
+      "canonical_field": "state_probabilities",
+      "canonical_structure": {"BULL": "number", "NEUTRAL": "number", "BEAR": "number", "STRESS": "number"},
+      "note": "Canonical includes STRESS state which legacy does not have"
+    }
+  },
+
+  "api_binding_specification": {
+    "target_route": "/api/finn/meta-signal",
+    "current_sql_cte": {
+      "name": "regime_context",
+      "current_query": "SELECT regime_label, confidence FROM fhq_hmm.regime_predictions WHERE listing_id = $1 ORDER BY prediction_date DESC, created_at DESC LIMIT 1"
+    },
+    "canonical_sql_cte": {
+      "name": "regime_context",
+      "new_query": "SELECT sovereign_regime AS regime_label, GREATEST((state_probabilities->>'BULL')::numeric, (state_probabilities->>'NEUTRAL')::numeric, (state_probabilities->>'BEAR')::numeric, (state_probabilities->>'STRESS')::numeric) AS confidence, technical_regime, crio_dominant_driver, timestamp AS regime_date FROM fhq_perception.sovereign_regime_state_v4 WHERE asset_id = (CASE WHEN $1 LIKE 'LST_%_XCRYPTO' THEN SPLIT_PART($1, '_', 2) || '-USD' WHEN $1 LIKE 'LST_%' THEN SPLIT_PART($1, '_', 2) ELSE $1 END) ORDER BY timestamp DESC, created_at DESC LIMIT 1"
+    },
+    "additional_fields_available": [
+      "technical_regime (raw HMM output, for transparency)",
+      "crio_dominant_driver (which macro factor drove the regime)",
+      "regime_date (explicit date of regime computation)"
+    ]
+  },
+
+  "integrity_requirements": {
+    "freshness_sla": {
+      "live_threshold_hours": 48,
+      "stale_threshold_hours": 168,
+      "status_computation": "CASE WHEN timestamp >= CURRENT_DATE - INTERVAL '2 days' THEN 'LIVE' WHEN timestamp >= CURRENT_DATE - INTERVAL '7 days' THEN 'STALE' ELSE 'EXPIRED' END"
+    },
+    "split_brain_detection": {
+      "enabled": true,
+      "check": "If legacy fhq_hmm.regime_predictions returns different regime than canonical, log to fhq_governance.split_brain_events",
+      "action": "Display canonical value with warning indicator"
+    }
+  },
+
+  "sample_data_verification": {
+    "asset": "BTC-USD",
+    "canonical_recent_regimes": [
+      {"regime_date": "2026-01-11", "sovereign_regime": "NEUTRAL", "technical_regime": "NEUTRAL", "confidence": 0.961},
+      {"regime_date": "2026-01-10", "sovereign_regime": "NEUTRAL", "technical_regime": "NEUTRAL", "confidence": 0.991},
+      {"regime_date": "2026-01-09", "sovereign_regime": "NEUTRAL", "technical_regime": "NEUTRAL", "confidence": 0.983},
+      {"regime_date": "2026-01-08", "sovereign_regime": "NEUTRAL", "technical_regime": "NEUTRAL", "confidence": 0.950},
+      {"regime_date": "2026-01-07", "sovereign_regime": "BULL", "technical_regime": "NEUTRAL", "confidence": 0.756},
+      {"regime_date": "2026-01-06", "sovereign_regime": "STRESS", "technical_regime": "BULL", "confidence": 0.901},
+      {"regime_date": "2026-01-05", "sovereign_regime": "NEUTRAL", "technical_regime": "STRESS", "confidence": 0.850}
+    ],
+    "legacy_stale_regime": {
+      "regime_date": "2025-11-17",
+      "regime_label": "NEUTRAL",
+      "confidence": 0.65,
+      "status": "STALE - 57 days old"
+    }
+  },
+
+  "verification": {
+    "binding_hash": "pending_computation",
+    "verified_by": "STIG",
+    "verification_date": "2026-01-13",
+    "verification_method": "Direct SQL interrogation of both schemas"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "change_record_id": "CR-HASH-OF-TRUTH-API",
+  "change_type": "API_ENHANCEMENT",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "phase": "PHASE1_TASK_1_5",
+
+  "scope_boundary": {
+    "affected_files": [
+      "dashboard-2026/app/api/finn/meta-signal/route.ts",
+      "dashboard-2026/app/api/finn/verify-attestation/route.ts"
+    ],
+    "changes": [
+      "Added Hash-of-Truth attestation creation to meta-signal response",
+      "Created new verify-attestation endpoint for hash verification",
+      "Added _truth_attestation field to API response"
+    ],
+    "database_dependencies": [
+      "vision_verification.create_truth_attestation()",
+      "vision_verification.verify_truth_attestation()",
+      "vision_verification.dashboard_truth_attestation"
+    ]
+  },
+
+  "api_contract": {
+    "meta_signal_response_additions": {
+      "_truth_attestation": {
+        "attestation_id": "UUID - unique identifier for this attestation",
+        "truth_hash": "SHA-256 hash of canonical JSON",
+        "canonical_json": "Exact JSON that was hashed (sorted keys, no whitespace)",
+        "attestation_date": "Date of attestation",
+        "source_table": "Database table that provided the data",
+        "verification_url": "URL to verify this attestation"
+      }
+    },
+    "verification_endpoint": {
+      "path": "/api/finn/verify-attestation",
+      "method": "GET",
+      "params": {
+        "id": "Attestation UUID"
+      },
+      "response": {
+        "verification_status": "VALID | INVALID",
+        "is_valid": "boolean",
+        "computed_hash": "Hash recomputed during verification",
+        "stored_hash": "Original hash stored with attestation",
+        "mismatch_reason": "Explanation if invalid",
+        "attestation_details": "Full attestation record"
+      }
+    }
+  },
+
+  "dumb_glass_compliance": {
+    "adr": "ADR-019",
+    "principle": "Dashboard is display-only, all computation server-side",
+    "implementation": [
+      "Hash computed by PostgreSQL function, not JavaScript",
+      "Attestation stored in database with audit trail",
+      "Verification performed by database function",
+      "Dashboard cannot modify or forge attestations"
+    ]
+  },
+
+  "approval_checkpoint": {
+    "requires_ceo_approval": true,
+    "approval_status": "APPROVED",
+    "approval_date": "2026-01-12T23:00:00Z",
+    "approved_by": "CEO via CEO-DIR-2026-TRUTH-SYNC-P1"
+  },
+
+  "execution_log": {
+    "created_by": "STIG",
+    "created_at": "2026-01-13T00:00:00Z",
+    "status": "EXECUTED_SUCCESS",
+    "execution_date": "2026-01-12T23:45:00Z",
+    "execution_result": {
+      "meta_signal_enhanced": true,
+      "verification_endpoint_created": true,
+      "attestation_integration_tested": "Pending Task 1.6 acceptance tests"
+    }
+  }
+}

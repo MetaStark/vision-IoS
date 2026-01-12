@@ -4,10 +4,14 @@
  *
  * Authority: ADR-042 (FINN Intelligence), ADR-045 (Dashboard Integration)
  * Data Source: fhq_ace.meta_allocations + FINN narrative generator
+ *
+ * CEO-DIR-2026-TRUTH-SYNC-P1: Re-wired regime source from fhq_hmm.regime_predictions
+ * to fhq_perception.sovereign_regime_state_v4 (canonical truth source)
+ * Change Record: CHANGE_RECORD_META_SIGNAL_REWIRE.json
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { queryOne } from '@/lib/db'
+import { queryOne, query } from '@/lib/db'
 
 export const dynamic = 'force-dynamic' // Disable caching for real-time data
 
@@ -20,9 +24,12 @@ interface MetaSignalResponse {
   direction: 'LONG' | 'SHORT' | 'NEUTRAL'
   signal_strength: number
 
-  // Regime context
-  regime_label: 'BULL' | 'NEUTRAL' | 'BEAR' | null
+  // Regime context (CEO-DIR-2026-TRUTH-SYNC-P1: from fhq_perception.sovereign_regime_state_v4)
+  regime_label: 'BULL' | 'NEUTRAL' | 'BEAR' | 'STRESS' | null
   regime_confidence: number | null
+  technical_regime: 'BULL' | 'NEUTRAL' | 'BEAR' | 'STRESS' | null
+  crio_dominant_driver: string | null
+  regime_date: string | null
 
   // Risk gates
   risk_gates_passed: boolean
@@ -31,8 +38,18 @@ interface MetaSignalResponse {
   // FINN narrative (3-layer framework)
   finn_narrative: string
 
-  // Integrity
-  integrity_status: 'VERIFIED' | 'UNVERIFIED' | 'STALE'
+  // Integrity (REGIME_LIVE_SIGNAL_STALE = regime is fresh but ACE signal is stale)
+  integrity_status: 'VERIFIED' | 'UNVERIFIED' | 'STALE' | 'REGIME_LIVE_SIGNAL_STALE'
+
+  // Hash-of-Truth attestation (CEO-DIR-2026-TRUTH-SYNC-P1, ADR-019 Dumb Glass)
+  _truth_attestation?: {
+    attestation_id: string
+    truth_hash: string
+    canonical_json: string
+    attestation_date: string
+    source_table: string
+    verification_url: string
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -42,7 +59,7 @@ export async function GET(request: NextRequest) {
     const signalDate = searchParams.get('signal_date') // Optional, defaults to latest
 
     // Query meta allocation with regime context
-    const query = `
+    const metaSignalQuery = `
       WITH latest_meta AS (
         SELECT
           meta_id,
@@ -65,14 +82,29 @@ export async function GET(request: NextRequest) {
         ORDER BY signal_date DESC, created_at DESC
         LIMIT 1
       ),
+      -- CEO-DIR-2026-TRUTH-SYNC-P1: Canonical regime source (was fhq_hmm.regime_predictions)
       regime_context AS (
         SELECT
-          regime_label,
-          confidence
-        FROM fhq_hmm.regime_predictions
-        WHERE listing_id = $1
-          ${signalDate ? 'AND prediction_date = $2' : ''}
-        ORDER BY prediction_date DESC, created_at DESC
+          sovereign_regime AS regime_label,
+          GREATEST(
+            COALESCE((state_probabilities->>'BULL')::numeric, 0),
+            COALESCE((state_probabilities->>'NEUTRAL')::numeric, 0),
+            COALESCE((state_probabilities->>'BEAR')::numeric, 0),
+            COALESCE((state_probabilities->>'STRESS')::numeric, 0)
+          ) AS confidence,
+          technical_regime,
+          crio_dominant_driver,
+          timestamp AS regime_date
+        FROM fhq_perception.sovereign_regime_state_v4
+        WHERE asset_id = (
+          CASE
+            WHEN $1 LIKE 'LST_%_XCRYPTO' THEN SPLIT_PART($1, '_', 2) || '-USD'
+            WHEN $1 LIKE 'LST_%' THEN SPLIT_PART($1, '_', 2)
+            ELSE $1
+          END
+        )
+          ${signalDate ? 'AND timestamp = $2::date' : ''}
+        ORDER BY timestamp DESC, created_at DESC
         LIMIT 1
       ),
       family_signals AS (
@@ -133,19 +165,27 @@ export async function GET(request: NextRequest) {
             )
         END AS finn_narrative,
 
-        -- Integrity check (data freshness)
+        -- Integrity check (data freshness) - considers both signal and regime
         CASE
-          WHEN m.signal_date >= CURRENT_DATE - INTERVAL '2 days' THEN 'VERIFIED'
-          WHEN m.signal_date >= CURRENT_DATE - INTERVAL '7 days' THEN 'STALE'
+          WHEN m.signal_date >= CURRENT_DATE - INTERVAL '2 days'
+               AND r.regime_date >= CURRENT_DATE - INTERVAL '2 days' THEN 'VERIFIED'
+          WHEN m.signal_date >= CURRENT_DATE - INTERVAL '7 days'
+               AND r.regime_date >= CURRENT_DATE - INTERVAL '7 days' THEN 'STALE'
+          WHEN r.regime_date >= CURRENT_DATE - INTERVAL '2 days' THEN 'REGIME_LIVE_SIGNAL_STALE'
           ELSE 'UNVERIFIED'
-        END AS integrity_status
+        END AS integrity_status,
+
+        -- Additional regime context (CEO-DIR-2026-TRUTH-SYNC-P1)
+        r.technical_regime,
+        r.crio_dominant_driver,
+        r.regime_date
 
       FROM latest_meta m
       LEFT JOIN regime_context r ON TRUE
     `
 
     const params = signalDate ? [listingId, signalDate] : [listingId]
-    const result = await queryOne<MetaSignalResponse>(query, params)
+    const result = await queryOne<MetaSignalResponse>(metaSignalQuery, params)
 
     if (!result) {
       return NextResponse.json(
@@ -158,7 +198,77 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(result)
+    // CEO-DIR-2026-TRUTH-SYNC-P1: Create Hash-of-Truth attestation (ADR-019 Dumb Glass)
+    // This provides cryptographic proof that displayed data was computed server-side
+    let truthAttestation = null
+    try {
+      // Normalize listing_id to asset_id for attestation
+      const assetId = listingId.startsWith('LST_') && listingId.includes('_XCRYPTO')
+        ? listingId.split('_')[1] + '-USD'
+        : listingId.startsWith('LST_')
+        ? listingId.split('_')[1]
+        : listingId
+
+      // Create attestation using the database function (two-step for visibility)
+      // Step 1: Create attestation and get ID
+      const createQuery = `
+        SELECT vision_verification.create_truth_attestation(
+          '/api/finn/meta-signal',
+          $1,
+          $2,
+          $3::date,
+          $4::numeric,
+          $5::numeric,
+          'fhq_perception.sovereign_regime_state_v4',
+          'SELECT * FROM fhq_perception.sovereign_regime_state_v4 WHERE asset_id = ''' || $1 || ''' ORDER BY timestamp DESC LIMIT 1',
+          NULL
+        ) AS attestation_id
+      `
+      const createResult = await queryOne<{ attestation_id: string }>(createQuery, [
+        assetId,
+        result.regime_label,
+        result.regime_date,
+        result.allocation_pct || 0,
+        result.signal_strength || 0
+      ])
+
+      // Step 2: Fetch attestation details
+      let attestationResult = null
+      if (createResult?.attestation_id) {
+        const fetchQuery = `
+          SELECT
+            attestation_id::text,
+            truth_hash,
+            canonical_json,
+            attestation_date::text,
+            source_table
+          FROM vision_verification.dashboard_truth_attestation
+          WHERE attestation_id = $1::uuid
+        `
+        attestationResult = await queryOne<{
+          attestation_id: string
+          truth_hash: string
+          canonical_json: string
+          attestation_date: string
+          source_table: string
+        }>(fetchQuery, [createResult.attestation_id])
+      }
+
+      if (attestationResult) {
+        truthAttestation = {
+          ...attestationResult,
+          verification_url: `/api/finn/verify-attestation?id=${attestationResult.attestation_id}`
+        }
+      }
+    } catch (attestationError) {
+      // Log but don't fail the request if attestation creation fails
+      console.warn('[FINN API] Attestation creation warning:', attestationError)
+    }
+
+    return NextResponse.json({
+      ...result,
+      _truth_attestation: truthAttestation
+    })
 
   } catch (error) {
     console.error('[FINN API] Meta signal error:', error)
