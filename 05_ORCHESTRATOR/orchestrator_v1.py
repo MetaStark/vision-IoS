@@ -1,22 +1,35 @@
 #!/usr/bin/env python3
 """
-VISION-IOS ORCHESTRATOR v1.0
+VISION-IOS ORCHESTRATOR v1.1
 Agent: LARS (Strategy/Orchestration)
 Purpose: Execute Vision-IoS functions in coordinated cycles
-Compliance: ADR-007, ADR-010, ADR-002
+Compliance: ADR-007, ADR-010, ADR-002, ADR-017, CEO-DIR-2026-009-B
 
 Architecture:
 - Reads tasks from fhq_governance.task_registry
-- Executes Vision-IoS functions (FINN → STIG → LARS)
+- Executes Vision-IoS functions (FINN -> STIG -> LARS)
 - Logs to fhq_governance.governance_actions_log
 - Implements ADR-010 reconciliation
 - Produces evidence bundles
+- CNRP-001: Cognitive Node Refresh Protocol (CEO-DIR-2026-009-B)
+
+CNRP Integration (v1.1):
+- 4-hour CNRP cycles: R1 -> R2 -> R3 -> R4 causal chain
+- 15-minute R4 standalone integrity monitoring
+- Orchestrator-native execution (ADR-017 compliant)
+- Windows Scheduler is watchdog only, not executor
+
+CEO Position: "Clocks trigger. Brainstems decide."
 
 Usage:
     python orchestrator_v1.py                    # Run one cycle
     python orchestrator_v1.py --continuous       # Run continuously
     python orchestrator_v1.py --dry-run          # Show plan without execution
     python orchestrator_v1.py --function=FUNC    # Run specific function only
+    python orchestrator_v1.py --cnrp-cycle       # Run CNRP R1-R4 chain
+    python orchestrator_v1.py --cnrp-r4          # Run R4 integrity monitor only
+    python orchestrator_v1.py --cnrp-continuous  # Run with CNRP scheduling
+    python orchestrator_v1.py --healthcheck      # Health check for watchdog
 """
 
 import os
@@ -45,7 +58,7 @@ class Config:
 
     # Agent identity
     AGENT_ID = "LARS"
-    ORCHESTRATOR_VERSION = "1.0.0"
+    ORCHESTRATOR_VERSION = "1.1.0"
 
     # Database connection
     @staticmethod
@@ -60,6 +73,58 @@ class Config:
     # Execution settings
     CONTINUOUS_INTERVAL_SECONDS = 3600  # 1 hour
     FUNCTION_TIMEOUT_SECONDS = 300      # 5 minutes per function
+
+    # CEO-DIR-2026-042: Tasks that are long-running daemons (should run as services, not scheduled)
+    # These have while True loops and are designed to run continuously
+    CONTINUOUS_DAEMON_TASKS = {
+        'g2c_continuous_forecast_engine',   # Continuous forecasting daemon
+        'ios003b_intraday_regime_delta',    # Intraday regime monitoring (15-min intervals)
+        'wave15_autonomous_hunter',         # Autonomous hunting daemon
+        'wave17c_promotion_daemon',         # Promotion evaluation daemon
+    }
+
+    # CEO-DIR-2026-046: Critical tasks that MUST NEVER be skipped or classified as daemon
+    # These maintain system reality awareness - skipping them = EPISTEMICALLY_BLIND state
+    PROTECTED_REGIME_TASKS = {
+        'ios003_daily_regime_update_v4',    # Primary regime belief state update
+        'ios003_regime_freshness_sentinel', # Regime staleness monitor
+    }
+
+    # CEO-DIR-2026-047: REGIME AS A MANDATORY SYSTEM CLOCK
+    # Regime is the system clock - ACI may not exist in time without fresh regime
+    REGIME_CLOCK_INTERVAL_HOURS = 3       # Regime must refresh every 3 hours
+    REGIME_CLOCK_GRACE_HOURS = 1          # 1 hour grace period
+    REGIME_CLOCK_MAX_HOURS = 4            # 3h interval + 1h grace = 4h max
+    REGIME_CLOCK_RETRY_ATTEMPTS = 3       # Self-healing: 3 retry attempts
+    REGIME_CLOCK_RETRY_BACKOFF = [30, 60, 120]  # Exponential backoff (seconds)
+    REGIME_FIRST_TASK = 'ios003_daily_regime_update_v4'  # Must run FIRST in every cycle
+
+    # CEO-DIR-2026-043: Orchestrator Stability & Regression Lock
+    # SLA Guard: If no cycles in 2× interval → automatic DATA_BLACKOUT
+    CYCLE_SLA_MULTIPLIER = 2  # Trigger blackout if no cycles in 2× CONTINUOUS_INTERVAL_SECONDS
+
+    # CNRP-001 Configuration (CEO-DIR-2026-009-B)
+    # CEO-DIR-2026-024: 10-minute probe cycle for continuous perception
+    CNRP_CYCLE_INTERVAL_SECONDS = 14400  # 4 hours
+    CNRP_R4_INTERVAL_SECONDS = 600       # 10 minutes (CEO-DIR-2026-024)
+    CNRP_CHAIN_DELAY_SECONDS = {
+        'R1_TO_R2': 300,   # 5 minutes
+        'R2_TO_R3': 120,   # 2 minutes
+        'R3_TO_R4': 60     # 1 minute
+    }
+
+    # CNRP Daemon Paths (relative to functions dir)
+    CNRP_DAEMONS = {
+        'R1': 'ceio_evidence_refresh_daemon.py',
+        'R2': 'crio_alpha_graph_rebuild.py',
+        'R3': 'cdmo_data_hygiene_attestation.py',
+        'R4': 'vega_epistemic_integrity_monitor.py'
+    }
+
+    # CEO-DIR-2026-040: IOS-TRUTH-LOOP Cadence Configuration
+    # Default: 2-hour baseline cadence (can be escalated to 1h or 30m)
+    TRUTH_LOOP_INTERVAL_SECONDS = 7200  # 2 hours baseline
+    TRUTH_LOOP_TASK_PATH = 'tasks/ios_truth_snapshot_engine.py'
 
     # Vision-IoS functions directory
     @staticmethod
@@ -329,6 +394,198 @@ class OrchestratorDatabase:
         signature_data = f"{agent_id}:{hash_chain_id}:{datetime.now(timezone.utc).isoformat()}"
         return hashlib.sha256(signature_data.encode()).hexdigest()
 
+    # =========================================================================
+    # CEO-DIR-2026-043: Orchestrator Stability & Regression Lock
+    # =========================================================================
+
+    def check_cycle_sla(self) -> tuple:
+        """
+        Check if orchestrator cycle SLA is met.
+        If no cycles in 2× CONTINUOUS_INTERVAL_SECONDS, trigger DATA_BLACKOUT.
+
+        Returns (sla_met: bool, cycles_found: int, max_allowed_gap_seconds: int)
+
+        Special case: If NO cycles exist at all (bootstrap), SLA is considered met
+        to allow initial startup. SLA violation only applies when cycles existed
+        but then stopped.
+        """
+        max_gap_seconds = Config.CONTINUOUS_INTERVAL_SECONDS * Config.CYCLE_SLA_MULTIPLIER
+
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Check governance_actions_log for VISION_ORCHESTRATOR_CYCLE entries
+            # (this is where orchestrator actually logs cycles)
+            cur.execute("""
+                SELECT COUNT(*) as total_cycles
+                FROM fhq_governance.governance_actions_log
+                WHERE action_type = 'VISION_ORCHESTRATOR_CYCLE'
+            """)
+            total_result = cur.fetchone()
+            total_cycles = total_result['total_cycles'] if total_result else 0
+
+            # Bootstrap case: no cycles ever = allow startup
+            if total_cycles == 0:
+                return (True, 0, max_gap_seconds)
+
+            # Check recent cycles within SLA window
+            cur.execute("""
+                SELECT COUNT(*) as cycle_count
+                FROM fhq_governance.governance_actions_log
+                WHERE action_type = 'VISION_ORCHESTRATOR_CYCLE'
+                  AND timestamp > NOW() - INTERVAL '%s seconds'
+            """, (max_gap_seconds,))
+            result = cur.fetchone()
+            cycles_found = result['cycle_count'] if result else 0
+
+        sla_met = cycles_found > 0
+        return (sla_met, cycles_found, max_gap_seconds)
+
+    def trigger_data_blackout(self, reason: str) -> str:
+        """
+        Trigger DATA_BLACKOUT state per CEO-DIR-2026-043.
+        Returns blackout_id.
+        """
+        with self.conn.cursor() as cur:
+            # Use correct column names per actual schema
+            cur.execute("""
+                INSERT INTO fhq_governance.data_blackout_state (
+                    trigger_reason,
+                    triggered_by,
+                    triggered_at,
+                    is_active
+                ) VALUES (%s, %s, NOW(), TRUE)
+                RETURNING blackout_id
+            """, (
+                f"ORCHESTRATOR_SLA_VIOLATION: {reason}",
+                Config.AGENT_ID
+            ))
+            result = cur.fetchone()
+            self.conn.commit()
+            return str(result[0]) if result else None
+
+    def check_daemon_task_violations(self) -> list:
+        """
+        CEO-DIR-2026-043 Section 2.2: Task Classification Invariant
+        Check if any CONTINUOUS_DAEMON_TASKS appeared in execution logs.
+        Any appearance = P0 incident.
+
+        Returns list of violations found.
+        """
+        daemon_tasks = list(Config.CONTINUOUS_DAEMON_TASKS)
+        if not daemon_tasks:
+            return []
+
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Check for daemon tasks in recent execution logs
+            cur.execute("""
+                SELECT DISTINCT
+                    metadata->>'task_name' as task_name,
+                    timestamp,
+                    action_id
+                FROM fhq_governance.governance_actions_log
+                WHERE action_type IN ('VISION_FUNCTION_EXECUTION', 'VISION_ORCHESTRATOR_CYCLE')
+                  AND metadata->>'task_name' = ANY(%s)
+                  AND timestamp > NOW() - INTERVAL '24 hours'
+                  AND (metadata->>'skipped')::boolean IS NOT TRUE
+                ORDER BY timestamp DESC
+            """, (daemon_tasks,))
+            violations = [dict(row) for row in cur.fetchall()]
+
+        return violations
+
+    def log_p0_incident(self, incident_type: str, details: dict) -> str:
+        """Log a P0 incident for governance violations."""
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_governance.governance_actions_log (
+                    action_type,
+                    agent_id,
+                    decision,
+                    metadata,
+                    timestamp
+                ) VALUES (%s, %s, %s, %s, NOW())
+                RETURNING action_id
+            """, (
+                'P0_INCIDENT',
+                Config.AGENT_ID,
+                'VIOLATION_DETECTED',
+                json.dumps({
+                    'incident_type': incident_type,
+                    'severity': 'P0',
+                    'directive': 'CEO-DIR-2026-043',
+                    'details': details
+                })
+            ))
+            result = cur.fetchone()
+            self.conn.commit()
+            return str(result[0]) if result else None
+
+    def check_regime_freshness(self, max_age_hours: int = 6) -> tuple:
+        """
+        CEO-DIR-2026-046: Regime Continuity Invariant (RCI)
+        Check if regime belief state is within freshness SLA.
+
+        Returns (is_fresh: bool, regime_state: str, staleness_hours: float)
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT * FROM fhq_governance.check_regime_freshness(%s)
+            """, (max_age_hours,))
+            result = cur.fetchone()
+
+            if result:
+                return (
+                    result['is_fresh'],
+                    result['regime_state'],
+                    float(result['staleness_hours']) if result['staleness_hours'] else 0.0
+                )
+            # No regime data at all - not fresh
+            return (False, 'NO_REGIME_DATA', 9999.0)
+
+    def trigger_regime_blackout(self, staleness_hours: float) -> str:
+        """
+        CEO-DIR-2026-046: Trigger DATA_BLACKOUT for regime staleness.
+        Returns blackout_id.
+        """
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT fhq_governance.trigger_regime_blackout(%s, %s)
+            """, (staleness_hours, Config.AGENT_ID))
+            result = cur.fetchone()
+            self.conn.commit()
+            return str(result[0]) if result else None
+
+    def check_regime_clock(self) -> tuple:
+        """
+        CEO-DIR-2026-047: Check regime clock status.
+        Regime must refresh every 3h (+1h grace = 4h max).
+
+        Returns (clock_running: bool, last_refresh: datetime, hours_since: float, status: str)
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM fhq_governance.check_regime_clock()")
+            result = cur.fetchone()
+
+            if result:
+                return (
+                    result['clock_running'],
+                    result['last_refresh'],
+                    float(result['hours_since_refresh']) if result['hours_since_refresh'] else 9999.0,
+                    result['status']
+                )
+            return (False, None, 9999.0, 'NO_REGIME_DATA')
+
+    def trigger_regime_clock_blackout(self, hours_since_refresh: float) -> str:
+        """
+        CEO-DIR-2026-047: Trigger REGIME_CLOCK_STOPPED blackout.
+        """
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT fhq_governance.trigger_regime_clock_blackout(%s, %s)
+            """, (hours_since_refresh, Config.AGENT_ID))
+            result = cur.fetchone()
+            self.conn.commit()
+            return str(result[0]) if result else None
+
 
 # =============================================================================
 # FUNCTION EXECUTOR
@@ -352,13 +609,41 @@ class FunctionExecutor:
         agent_id = task['agent_id']
         task_config = task['task_config']
 
+        # CEO-DIR-2026-046: Protected regime tasks MUST NEVER be skipped
+        # These maintain system reality awareness
+        if task_name in Config.PROTECTED_REGIME_TASKS:
+            self.logger.info(f"[PROTECTED] {task_name} is a protected regime task - MUST execute")
+            # Fall through to execution - never skip
+
+        # CEO-DIR-2026-042: Skip continuous/daemon tasks - they should run as persistent services
+        # Not suitable for orchestrator's timeout-limited execution model
+        # CEO-DIR-2026-046: But never skip protected regime tasks
+        is_continuous = (
+            (task_config.get('continuous', False) or task_name in Config.CONTINUOUS_DAEMON_TASKS)
+            and task_name not in Config.PROTECTED_REGIME_TASKS
+        )
+        if is_continuous:
+            self.logger.info(f"[SKIP] {task_name} is a continuous daemon - requires service mode")
+            return {
+                'task_name': task_name,
+                'agent_id': agent_id,
+                'success': True,
+                'skipped': True,
+                'reason': 'Continuous daemon task - requires service mode (systemd/pm2)'
+            }
+
         # Support both function_path and script fields (CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001)
+        # CEO-DIR-2026-041: Fixed double path bug - normalize all path patterns
         function_path = task_config.get('function_path')
         if not function_path:
             # Fall back to script field (legacy task configs)
             script = task_config.get('script')
             if script:
-                function_path = f"03_FUNCTIONS/{script}"
+                # CEO-DIR-2026-041: Only prepend 03_FUNCTIONS if not already present
+                if script.startswith('03_FUNCTIONS/') or script.startswith('03_FUNCTIONS\\'):
+                    function_path = script
+                else:
+                    function_path = f"03_FUNCTIONS/{script}"
 
         if not function_path:
             return {
@@ -369,10 +654,15 @@ class FunctionExecutor:
             }
 
         # Resolve full path - handle both absolute and relative paths
+        # CEO-DIR-2026-041: Normalize path handling to prevent double path segments
         if os.path.isabs(function_path):
             full_path = Path(function_path)
         else:
-            full_path = self.functions_dir.parent / function_path
+            # Strip leading 03_FUNCTIONS if present, then use functions_dir directly
+            normalized_path = function_path
+            if normalized_path.startswith('03_FUNCTIONS/') or normalized_path.startswith('03_FUNCTIONS\\'):
+                normalized_path = normalized_path.replace('03_FUNCTIONS/', '').replace('03_FUNCTIONS\\', '')
+            full_path = self.functions_dir / normalized_path
 
         if not full_path.exists():
             return {
@@ -436,11 +726,268 @@ class FunctionExecutor:
 
 
 # =============================================================================
+# CNRP EXECUTOR (CEO-DIR-2026-009-B)
+# =============================================================================
+
+class CNRPExecutor:
+    """
+    CNRP-001 Chain Executor
+    CEO Directive: CEO-DIR-2026-009-B
+
+    Executes CNRP causal chain: R1 -> R2 -> R3 -> R4
+    ADR-017 Compliant: All cognition through orchestrator
+    """
+
+    # Gate levels for authorization
+    GATE_LEVELS = {
+        'R1': 'G2',
+        'R2': 'G3',
+        'R3': 'G3',
+        'R4': 'G1'
+    }
+
+    # Authorities per phase
+    AUTHORITIES = {
+        'R1': 'CEIO',
+        'R2': 'CRIO',
+        'R3': 'CDMO',
+        'R4': 'VEGA'
+    }
+
+    def __init__(self, db: 'OrchestratorDatabase', logger: logging.Logger):
+        self.db = db
+        self.logger = logger
+        self.functions_dir = Config.get_functions_dir()
+
+    def check_gate_authorization(self, phase: str) -> tuple:
+        """Check if phase is authorized to execute based on gate level"""
+        gate = self.GATE_LEVELS.get(phase, 'G4')
+
+        with self.db.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Check DEFCON level
+            try:
+                cur.execute("""
+                    SELECT current_level
+                    FROM fhq_governance.defcon_status
+                    ORDER BY changed_at DESC
+                    LIMIT 1
+                """)
+                defcon = cur.fetchone()
+                if defcon and defcon['current_level'] in ('RED', 'BLACK'):
+                    return False, f"DEFCON {defcon['current_level']} blocks execution"
+            except Exception:
+                pass  # Table may not exist
+
+        return True, "Authorized"
+
+    def execute_daemon(self, phase: str, dry_run: bool = False) -> Dict[str, Any]:
+        """Execute a CNRP daemon"""
+        daemon_name = Config.CNRP_DAEMONS.get(phase)
+        if not daemon_name:
+            return {'success': False, 'error': f'Unknown phase: {phase}'}
+
+        daemon_path = self.functions_dir / daemon_name
+
+        if not daemon_path.exists():
+            return {'success': False, 'error': f'Daemon not found: {daemon_path}'}
+
+        if dry_run:
+            self.logger.info(f"[DRY RUN] Would execute {phase}: {daemon_name}")
+            return {'success': True, 'dry_run': True, 'phase': phase}
+
+        self.logger.info(f"Executing {phase}: {daemon_name}")
+
+        try:
+            start_time = time.time()
+
+            result = subprocess.run(
+                [sys.executable, str(daemon_path)],
+                capture_output=True,
+                text=True,
+                timeout=Config.FUNCTION_TIMEOUT_SECONDS,
+                cwd=str(daemon_path.parent)
+            )
+
+            execution_time = time.time() - start_time
+
+            # Parse JSON output if possible
+            try:
+                output_data = json.loads(result.stdout) if result.stdout.strip() else {}
+            except json.JSONDecodeError:
+                output_data = {'raw_output': result.stdout[-500:]}
+
+            success = result.returncode == 0 or result.returncode == 2  # 2 = violations detected but monitored
+
+            return {
+                'success': success,
+                'phase': phase,
+                'daemon': daemon_name,
+                'exit_code': result.returncode,
+                'execution_time': round(execution_time, 2),
+                'output': output_data,
+                'stderr': result.stderr[-300:] if result.stderr else None
+            }
+
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'phase': phase, 'error': 'Timeout'}
+        except Exception as e:
+            return {'success': False, 'phase': phase, 'error': str(e)}
+
+    def log_cnrp_execution(self, cycle_id: str, phase: str, status: str,
+                           result: Dict, authority: str, schedule_source: str = None):
+        """Log CNRP execution to governance"""
+        try:
+            # Rollback any aborted transaction before logging
+            try:
+                self.db.conn.rollback()
+            except Exception:
+                pass  # Connection might be in autocommit mode
+
+            with self.db.conn.cursor() as cur:
+                metadata = {
+                    'cycle_id': cycle_id,
+                    'phase': phase,
+                    'result_status': result.get('output', {}).get('status', 'UNKNOWN'),
+                    'execution_time': result.get('execution_time'),
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }
+
+                # CEO-DIR-2026-024: Log R4 schedule source for metronome verification
+                if phase == 'R4' and schedule_source:
+                    metadata['r4_schedule_source'] = schedule_source
+
+                cur.execute("""
+                    INSERT INTO fhq_governance.governance_actions_log (
+                        action_type,
+                        action_target,
+                        action_target_type,
+                        initiated_by,
+                        decision,
+                        decision_rationale,
+                        metadata
+                    ) VALUES (
+                        'CNRP_ORCHESTRATOR_EXECUTION',
+                        %s,
+                        'DAEMON_EXECUTION',
+                        %s,
+                        %s,
+                        'CEO-DIR-2026-009-B: Orchestrator-native CNRP execution',
+                        %s
+                    )
+                """, (
+                    f"CNRP-{phase}",
+                    authority,
+                    status,
+                    json.dumps(metadata, default=str)
+                ))
+                self.db.conn.commit()
+        except Exception as e:
+            self.logger.error(f"Failed to log CNRP execution: {e}")
+            # Try to rollback to clean up transaction state for next operation
+            try:
+                self.db.conn.rollback()
+            except Exception:
+                pass
+
+    def run_chain(self, dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Execute full CNRP causal chain: R1 -> R2 -> R3
+        CEO-DIR-2026-024: R4 removed from chain (timer-only, 600s metronome)
+
+        CEO Position: "Clocks trigger. Brainstems decide."
+        This is the ONLY authorized way to run CNRP daemons.
+        """
+        cycle_id = f"CNRP-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+
+        self.logger.info("=" * 70)
+        self.logger.info("CNRP-001 CAUSAL CHAIN EXECUTION")
+        self.logger.info("Directive: CEO-DIR-2026-009-B")
+        self.logger.info(f"Cycle: {cycle_id}")
+        self.logger.info("=" * 70)
+
+        chain_result = {
+            'cycle_id': cycle_id,
+            'started_at': datetime.now(timezone.utc).isoformat(),
+            'phases': {},
+            'chain_status': 'SUCCESS'
+        }
+
+        # CEO-DIR-2026-024: R4 removed from chain, runs timer-only (600s metronome)
+        phases = ['R1', 'R2', 'R3']
+        delays = [0, Config.CNRP_CHAIN_DELAY_SECONDS['R1_TO_R2'],
+                  Config.CNRP_CHAIN_DELAY_SECONDS['R2_TO_R3']]
+
+        for i, phase in enumerate(phases):
+            self.logger.info(f"\n--- Phase {phase} ({self.AUTHORITIES[phase]}) ---")
+
+            # Check authorization
+            authorized, reason = self.check_gate_authorization(phase)
+            if not authorized:
+                self.logger.error(f"Authorization failed: {reason}")
+                chain_result['phases'][phase] = {'status': 'BLOCKED', 'reason': reason}
+                chain_result['chain_status'] = 'HALTED'
+                break
+
+            # Apply delay (except for first phase)
+            if i > 0 and delays[i] > 0 and not dry_run:
+                self.logger.info(f"Waiting {delays[i]}s before {phase}...")
+                time.sleep(delays[i])
+
+            # Execute daemon
+            result = self.execute_daemon(phase, dry_run=dry_run)
+            chain_result['phases'][phase] = result
+
+            # Log execution
+            if not dry_run:
+                status = 'SUCCESS' if result['success'] else 'FAILED'
+                self.log_cnrp_execution(cycle_id, phase, status,
+                                        result, self.AUTHORITIES[phase])
+
+            if result['success']:
+                self.logger.info(f"Phase {phase}: SUCCESS")
+            else:
+                self.logger.error(f"Phase {phase}: FAILED - {result.get('error', 'Unknown')}")
+                chain_result['chain_status'] = 'HALTED'
+                break
+
+        chain_result['completed_at'] = datetime.now(timezone.utc).isoformat()
+
+        self.logger.info("\n" + "=" * 70)
+        self.logger.info(f"Chain Status: {chain_result['chain_status']}")
+        self.logger.info("=" * 70)
+
+        return chain_result
+
+    def run_r4_standalone(self, dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Execute R4 integrity monitor standalone.
+        CEO-DIR-2026-024: Timer-only R4 (600s metronome, not in chain).
+        """
+        self.logger.info("R4 Standalone Integrity Monitor")
+
+        # Check authorization
+        authorized, reason = self.check_gate_authorization('R4')
+        if not authorized:
+            return {'success': False, 'error': reason}
+
+        result = self.execute_daemon('R4', dry_run=dry_run)
+
+        if not dry_run:
+            status = 'SUCCESS' if result['success'] else 'FAILED'
+            self.log_cnrp_execution(
+                f"R4-MONITOR-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}",
+                'R4', status, result, 'VEGA', schedule_source='timer'
+            )
+
+        return result
+
+
+# =============================================================================
 # ORCHESTRATOR
 # =============================================================================
 
 class VisionIoSOrchestrator:
-    """Vision-IoS Orchestrator v1.0"""
+    """Vision-IoS Orchestrator v1.1 (with CNRP Integration)"""
 
     def __init__(self, logger: logging.Logger, dry_run: bool = False):
         self.logger = logger
@@ -448,6 +995,7 @@ class VisionIoSOrchestrator:
         self.config = Config()
         self.db = OrchestratorDatabase(self.config.get_db_connection_string(), logger)
         self.executor = FunctionExecutor(logger)
+        self.cnrp_executor = None  # Initialized when DB connected
 
     def generate_cycle_id(self) -> str:
         """Generate cycle ID"""
@@ -589,6 +1137,48 @@ class VisionIoSOrchestrator:
             self.logger.info("Connecting to database...")
             self.db.connect()
 
+            # CEO-DIR-2026-043: Orchestrator Cycle SLA Guard
+            # Check that cycles are running within SLA (2× interval)
+            if not self.dry_run:
+                sla_met, cycles_found, max_gap = self.db.check_cycle_sla()
+                self.logger.info(f"Cycle SLA Check: {cycles_found} cycles in last {max_gap}s (SLA: {'MET' if sla_met else 'VIOLATED'})")
+
+                if not sla_met:
+                    self.logger.critical("ORCHESTRATOR SLA VIOLATION: No cycles in 2× interval")
+                    self.logger.critical("Triggering DATA_BLACKOUT per CEO-DIR-2026-043")
+                    blackout_id = self.db.trigger_data_blackout(
+                        f"No orchestrator cycles found in {max_gap} seconds (2× standard interval)"
+                    )
+                    self.logger.critical(f"DATA_BLACKOUT triggered: {blackout_id}")
+                    # Continue execution but log the violation
+
+            # CEO-DIR-2026-043: Task Classification Invariant Check
+            if not self.dry_run:
+                violations = self.db.check_daemon_task_violations()
+                if violations:
+                    self.logger.critical(f"P0 INCIDENT: {len(violations)} daemon task violations detected")
+                    for v in violations:
+                        self.logger.critical(f"  - {v['task_name']} executed at {v['timestamp']}")
+                    incident_id = self.db.log_p0_incident(
+                        'DAEMON_TASK_EXECUTION',
+                        {'violations': violations, 'count': len(violations)}
+                    )
+                    self.logger.critical(f"P0 Incident logged: {incident_id}")
+
+            # CEO-DIR-2026-046: Regime Continuity Invariant (RCI)
+            # Regime must be fresh (<=6h) for cognitive operations to be valid
+            if not self.dry_run:
+                regime_fresh, regime_state, staleness_hours = self.db.check_regime_freshness(max_age_hours=6)
+                self.logger.info(f"Regime Freshness Check: {regime_state} (staleness={staleness_hours:.2f}h, SLA: {'MET' if regime_fresh else 'VIOLATED'})")
+
+                if not regime_fresh:
+                    self.logger.critical(f"REGIME REALITY VIOLATION: Regime is {staleness_hours:.2f}h stale (max 6h)")
+                    self.logger.critical("Triggering DATA_BLACKOUT per CEO-DIR-2026-046")
+                    blackout_id = self.db.trigger_regime_blackout(staleness_hours)
+                    self.logger.critical(f"DATA_BLACKOUT triggered: {blackout_id}")
+                    self.logger.critical("System is EPISTEMICALLY_BLIND until regime refresh completes")
+                    # Continue execution but cognitive queries will be blocked
+
             # Read Vision-IoS tasks
             self.logger.info("Reading Vision-IoS tasks from registry...")
             tasks = self.db.read_vision_tasks()
@@ -615,17 +1205,74 @@ class VisionIoSOrchestrator:
                 )
                 self.logger.info(f"Cycle start logged: action_id={start_action_id}")
 
-            # Execute functions in order
+            # CEO-DIR-2026-047: REGIME-FIRST EXECUTION ORDER
+            # Regime refresh must run FIRST - if it fails, abort all subsequent tasks
             results = []
-            for i, task in enumerate(tasks, 1):
+            regime_task = None
+            other_tasks = []
+
+            # Separate regime task from others
+            for task in tasks:
+                if task['task_name'] == Config.REGIME_FIRST_TASK:
+                    regime_task = task
+                else:
+                    other_tasks.append(task)
+
+            # STEP 1: Execute regime task FIRST with retry logic
+            regime_success = False
+            if regime_task:
                 self.logger.info("")
-                self.logger.info(f"[{i}/{len(tasks)}] Executing: {task['task_name']} (Agent: {task['agent_id']})")
+                self.logger.info("=" * 50)
+                self.logger.info("CEO-DIR-2026-047: REGIME CLOCK - MANDATORY FIRST")
+                self.logger.info("=" * 50)
+
+                for attempt in range(Config.REGIME_CLOCK_RETRY_ATTEMPTS):
+                    self.logger.info(f"[REGIME] Attempt {attempt + 1}/{Config.REGIME_CLOCK_RETRY_ATTEMPTS}: {regime_task['task_name']}")
+
+                    result = self.executor.execute_function(regime_task, dry_run=self.dry_run)
+                    results.append(result)
+
+                    if result['success'] and not result.get('skipped', False):
+                        self.logger.info(f"[REGIME] SUCCESS - System clock refreshed")
+                        regime_success = True
+                        break
+                    else:
+                        if attempt < Config.REGIME_CLOCK_RETRY_ATTEMPTS - 1:
+                            backoff = Config.REGIME_CLOCK_RETRY_BACKOFF[attempt]
+                            self.logger.warning(f"[REGIME] FAILED - Retrying in {backoff}s...")
+                            import time
+                            time.sleep(backoff)
+                        else:
+                            self.logger.critical("[REGIME] ALL RETRIES EXHAUSTED - REGIME CLOCK STOPPED")
+
+                if not regime_success and not self.dry_run:
+                    # Trigger REGIME_CLOCK_STOPPED blackout
+                    clock_running, last_refresh, hours_since, status = self.db.check_regime_clock()
+                    self.logger.critical(f"REGIME_CLOCK_STOPPED: No refresh in {hours_since:.2f}h")
+                    self.logger.critical("Aborting all subsequent tasks per CEO-DIR-2026-047")
+                    blackout_id = self.db.trigger_regime_clock_blackout(hours_since)
+                    self.logger.critical(f"DATA_BLACKOUT triggered: {blackout_id}")
+                    # Return early - do not execute any other tasks
+                    return {
+                        'success': False,
+                        'cycle_id': cycle_id,
+                        'tasks_executed': len(results),
+                        'successes': 0,
+                        'failures': len(results),
+                        'message': 'REGIME_CLOCK_STOPPED - All tasks aborted',
+                        'status': 'ABORTED'
+                    }
+
+            # STEP 2: Execute remaining tasks in order (only if regime succeeded)
+            for i, task in enumerate(other_tasks, 1):
+                self.logger.info("")
+                self.logger.info(f"[{i}/{len(other_tasks)}] Executing: {task['task_name']} (Agent: {task['agent_id']})")
 
                 result = self.executor.execute_function(task, dry_run=self.dry_run)
                 results.append(result)
 
                 if result['success']:
-                    self.logger.info(f"✅ SUCCESS: {task['task_name']}")
+                    self.logger.info(f"SUCCESS: {task['task_name']}")
                 else:
                     self.logger.error(f"❌ FAILED: {task['task_name']}")
                     if 'error' in result:
@@ -741,6 +1388,277 @@ class VisionIoSOrchestrator:
             self.logger.info("Received interrupt signal, stopping orchestrator...")
             self.logger.info(f"Total cycles executed: {cycle_number}")
 
+    # =========================================================================
+    # CNRP-001 METHODS (CEO-DIR-2026-009-B)
+    # =========================================================================
+
+    def run_cnrp_chain(self) -> Dict[str, Any]:
+        """Run CNRP R1->R2->R3->R4 causal chain"""
+        try:
+            self.db.connect()
+            self.cnrp_executor = CNRPExecutor(self.db, self.logger)
+            return self.cnrp_executor.run_chain(dry_run=self.dry_run)
+        finally:
+            self.db.close()
+
+    def run_cnrp_r4(self) -> Dict[str, Any]:
+        """Run R4 integrity monitor standalone"""
+        try:
+            self.db.connect()
+            self.cnrp_executor = CNRPExecutor(self.db, self.logger)
+            return self.cnrp_executor.run_r4_standalone(dry_run=self.dry_run)
+        finally:
+            self.db.close()
+
+    def run_truth_loop(self) -> Dict[str, Any]:
+        """
+        Run IOS-TRUTH-LOOP snapshot (CEO-DIR-2026-039B, CEO-DIR-2026-040).
+
+        Generates database-verified learning snapshots with ACI bindings.
+        Cadence: 2-hour baseline (can be dynamically adjusted by snapshot engine).
+        """
+        self.logger.info("-" * 50)
+        self.logger.info("IOS-TRUTH-LOOP v2 (CEO-DIR-2026-039B/040)")
+        self.logger.info("-" * 50)
+
+        result = {
+            'success': False,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'snapshot_id': None,
+            'status': None,
+            'cadence_mode': None,
+        }
+
+        if self.dry_run:
+            self.logger.info("[DRY RUN] Would execute ios_truth_snapshot_engine.py")
+            result['success'] = True
+            result['dry_run'] = True
+            return result
+
+        try:
+            task_path = Path(__file__).parent / Config.TRUTH_LOOP_TASK_PATH
+            if not task_path.exists():
+                self.logger.error(f"Truth Loop task not found: {task_path}")
+                result['error'] = f"Task not found: {task_path}"
+                return result
+
+            # Execute the truth loop engine
+            process = subprocess.run(
+                ['python', str(task_path)],
+                capture_output=True,
+                text=True,
+                timeout=Config.FUNCTION_TIMEOUT_SECONDS,
+                cwd=str(task_path.parent.parent)
+            )
+
+            if process.returncode == 0:
+                self.logger.info("Truth Loop snapshot completed successfully")
+                result['success'] = True
+                result['stdout'] = process.stdout[-1000:] if process.stdout else None
+            else:
+                self.logger.error(f"Truth Loop failed with exit code {process.returncode}")
+                result['error'] = process.stderr[-500:] if process.stderr else "Unknown error"
+
+            # Try to read the latest snapshot for status
+            try:
+                latest_path = Path(__file__).parent.parent / "12_DAILY_REPORTS" / "TRUTH_SNAPSHOT" / "LATEST.json"
+                if latest_path.exists():
+                    import json
+                    with open(latest_path, 'r') as f:
+                        snapshot = json.load(f)
+                    result['snapshot_id'] = snapshot.get('snapshot_id')
+                    result['status'] = snapshot.get('status')
+                    result['cadence_mode'] = snapshot.get('cadence', {}).get('mode')
+            except Exception as e:
+                self.logger.warning(f"Could not read latest snapshot: {e}")
+
+        except subprocess.TimeoutExpired:
+            self.logger.error("Truth Loop timed out")
+            result['error'] = "Execution timeout"
+        except Exception as e:
+            self.logger.error(f"Truth Loop error: {e}")
+            result['error'] = str(e)
+
+        return result
+
+    def run_cnrp_continuous(self):
+        """
+        Run orchestrator with integrated CNRP and Truth Loop scheduling.
+
+        Schedule:
+        - Every 4 hours: Full CNRP chain (R1->R2->R3) (CEO-DIR-2026-009-B)
+        - Every 10 minutes: R4 standalone monitor (CEO-DIR-2026-024)
+        - Every 2 hours: IOS-TRUTH-LOOP snapshot (CEO-DIR-2026-040)
+
+        CEO Position: "Clocks trigger. Brainstems decide."
+        """
+        self.logger.info("=" * 70)
+        self.logger.info("CNRP-INTEGRATED CONTINUOUS MODE + IOS-TRUTH-LOOP")
+        self.logger.info("CEO-DIR-2026-009-B, CEO-DIR-2026-040: Orchestrator-Native Execution")
+        self.logger.info("=" * 70)
+        self.logger.info(f"CNRP Cycle Interval: {Config.CNRP_CYCLE_INTERVAL_SECONDS}s (4 hours)")
+        self.logger.info(f"R4 Monitor Interval: {Config.CNRP_R4_INTERVAL_SECONDS}s (10 minutes)")
+        self.logger.info(f"Truth Loop Interval: {Config.TRUTH_LOOP_INTERVAL_SECONDS}s (2 hours)")
+
+        last_cnrp_cycle = 0    # Epoch time of last full CNRP cycle
+        last_r4_monitor = 0    # Epoch time of last R4 monitor
+        last_truth_loop = 0    # Epoch time of last Truth Loop snapshot
+        cycle_number = 0
+        truth_loop_count = 0
+
+        try:
+            while True:
+                now = time.time()
+
+                # Check if full CNRP cycle is due (every 4 hours)
+                time_since_cnrp = now - last_cnrp_cycle
+                if time_since_cnrp >= Config.CNRP_CYCLE_INTERVAL_SECONDS:
+                    cycle_number += 1
+                    self.logger.info("")
+                    self.logger.info(f"╔{'═' * 68}╗")
+                    self.logger.info(f"║ CNRP FULL CYCLE #{cycle_number:04d} {' ' * 46}║")
+                    self.logger.info(f"╚{'═' * 68}╝")
+
+                    result = self.run_cnrp_chain()
+                    last_cnrp_cycle = now
+                    # CEO-DIR-2026-024: R4 timer-only, do NOT reset last_r4_monitor here
+
+                    if result.get('chain_status') != 'SUCCESS':
+                        self.logger.error("CNRP chain failed, but continuing...")
+
+                # Check if IOS-TRUTH-LOOP is due (every 2 hours - CEO-DIR-2026-040)
+                time_since_truth = now - last_truth_loop
+                if time_since_truth >= Config.TRUTH_LOOP_INTERVAL_SECONDS:
+                    truth_loop_count += 1
+                    self.logger.info("")
+                    self.logger.info(f"╔{'═' * 68}╗")
+                    self.logger.info(f"║ IOS-TRUTH-LOOP #{truth_loop_count:04d} (CEO-DIR-2026-040) {' ' * 29}║")
+                    self.logger.info(f"╚{'═' * 68}╝")
+
+                    result = self.run_truth_loop()
+                    last_truth_loop = now
+
+                    if result.get('success'):
+                        self.logger.info(f"Snapshot: {result.get('snapshot_id')} | Status: {result.get('status')} | Cadence: {result.get('cadence_mode')}")
+                    else:
+                        self.logger.error("Truth Loop failed, but continuing...")
+
+                # Check if R4 monitor is due (timer-only: every 600s metronome)
+                time_since_r4 = now - last_r4_monitor
+                if time_since_r4 >= Config.CNRP_R4_INTERVAL_SECONDS:
+                    self.logger.info("")
+                    self.logger.info("-" * 40)
+                    self.logger.info("R4 INTEGRITY MONITOR (standalone)")
+                    self.logger.info("-" * 40)
+
+                    result = self.run_cnrp_r4()
+                    last_r4_monitor = now
+
+                    if not result.get('success'):
+                        self.logger.error("R4 monitor failed, but continuing...")
+
+                # Calculate sleep time until next action
+                time_to_cnrp = max(0, Config.CNRP_CYCLE_INTERVAL_SECONDS - (time.time() - last_cnrp_cycle))
+                time_to_r4 = max(0, Config.CNRP_R4_INTERVAL_SECONDS - (time.time() - last_r4_monitor))
+                time_to_truth = max(0, Config.TRUTH_LOOP_INTERVAL_SECONDS - (time.time() - last_truth_loop))
+                sleep_time = min(time_to_cnrp, time_to_r4, time_to_truth, 60)  # Check at least every minute
+
+                if sleep_time > 0:
+                    next_times = [
+                        ("CNRP chain", time_to_cnrp),
+                        ("R4 monitor", time_to_r4),
+                        ("Truth Loop", time_to_truth)
+                    ]
+                    next_action, next_time = min(next_times, key=lambda x: x[1])
+                    self.logger.info(f"Next {next_action} in {next_time:.0f}s. Sleeping {sleep_time:.0f}s...")
+                    time.sleep(sleep_time)
+
+        except KeyboardInterrupt:
+            self.logger.info("")
+            self.logger.info("Received interrupt signal, stopping orchestrator...")
+            self.logger.info(f"Total CNRP cycles: {cycle_number}, Truth Loop snapshots: {truth_loop_count}")
+
+    def run_healthcheck(self) -> Dict[str, Any]:
+        """
+        Health check for Windows Scheduler watchdog.
+
+        Returns orchestrator and CNRP health status.
+        Does NOT execute any daemons - monitoring only.
+        """
+        self.logger.info("Orchestrator Health Check")
+
+        health = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'orchestrator_version': Config.ORCHESTRATOR_VERSION,
+            'status': 'HEALTHY',
+            'checks': {}
+        }
+
+        try:
+            self.db.connect()
+
+            # Check database connection
+            health['checks']['database'] = {'status': 'OK'}
+
+            # Check last CNRP execution
+            with self.db.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT phase, status, completed_at
+                    FROM fhq_governance.cnrp_execution_log
+                    ORDER BY completed_at DESC
+                    LIMIT 1
+                """)
+                last_cnrp = cur.fetchone()
+
+                if last_cnrp:
+                    age_hours = (datetime.now(timezone.utc) -
+                                 last_cnrp['completed_at'].replace(tzinfo=timezone.utc)).total_seconds() / 3600
+                    health['checks']['cnrp_last_execution'] = {
+                        'phase': last_cnrp['phase'],
+                        'status': last_cnrp['status'],
+                        'hours_ago': round(age_hours, 2)
+                    }
+
+                    # Alert if no CNRP execution in 5+ hours
+                    if age_hours > 5:
+                        health['checks']['cnrp_last_execution']['warning'] = 'Stale - no execution in 5+ hours'
+                        health['status'] = 'WARNING'
+                else:
+                    health['checks']['cnrp_last_execution'] = {'status': 'NO_DATA'}
+
+                # Check evidence staleness
+                cur.execute("""
+                    SELECT
+                        EXTRACT(EPOCH FROM (NOW() - MAX(updated_at)))/3600 as hours_stale
+                    FROM fhq_canonical.evidence_nodes
+                """)
+                staleness = cur.fetchone()
+
+                if staleness and staleness['hours_stale']:
+                    hours = round(staleness['hours_stale'], 2)
+                    health['checks']['evidence_staleness'] = {
+                        'hours': hours,
+                        'threshold': 24,
+                        'status': 'OK' if hours < 24 else 'CRITICAL'
+                    }
+
+                    if hours >= 20:
+                        health['status'] = 'CRITICAL'
+                        health['alert'] = f'Evidence staleness critical: {hours}h (threshold: 24h)'
+
+        except Exception as e:
+            health['status'] = 'ERROR'
+            health['error'] = str(e)
+        finally:
+            self.db.close()
+
+        # Output health status
+        self.logger.info(f"Health Status: {health['status']}")
+        if health.get('alert'):
+            self.logger.critical(f"ALERT: {health['alert']}")
+
+        return health
+
 
 # =============================================================================
 # MAIN
@@ -750,8 +1668,10 @@ def main():
     """Main entry point"""
 
     parser = argparse.ArgumentParser(
-        description='Vision-IoS Orchestrator v1.0 - Execute Vision-IoS functions in coordinated cycles'
+        description='Vision-IoS Orchestrator v1.1 - Execute Vision-IoS functions in coordinated cycles (CEO-DIR-2026-009-B)'
     )
+
+    # Standard orchestrator arguments
     parser.add_argument(
         '--continuous',
         action='store_true',
@@ -773,6 +1693,39 @@ def main():
         help=f'Interval in seconds for continuous mode (default: {Config.CONTINUOUS_INTERVAL_SECONDS})'
     )
 
+    # CNRP-001 arguments (CEO-DIR-2026-009-B)
+    cnrp_group = parser.add_argument_group('CNRP-001 Options',
+        'Cognitive Node Refresh Protocol (CEO-DIR-2026-009-B)')
+    cnrp_group.add_argument(
+        '--cnrp-cycle',
+        action='store_true',
+        help='Run CNRP R1->R2->R3->R4 causal chain once'
+    )
+    cnrp_group.add_argument(
+        '--cnrp-r4',
+        action='store_true',
+        help='Run R4 (VEGA) integrity monitor only (standalone)'
+    )
+    cnrp_group.add_argument(
+        '--cnrp-continuous',
+        action='store_true',
+        help='Run with full scheduling (4h CNRP + 2h Truth Loop + 10m R4)'
+    )
+    cnrp_group.add_argument(
+        '--healthcheck',
+        action='store_true',
+        help='Health check for Windows watchdog (no execution)'
+    )
+
+    # IOS-TRUTH-LOOP arguments (CEO-DIR-2026-039B/040)
+    truth_group = parser.add_argument_group('IOS-TRUTH-LOOP Options',
+        'Learning Velocity Engine (CEO-DIR-2026-039B, CEO-DIR-2026-040)')
+    truth_group.add_argument(
+        '--truth-loop',
+        action='store_true',
+        help='Run IOS-TRUTH-LOOP snapshot once'
+    )
+
     args = parser.parse_args()
 
     # Override interval if specified
@@ -785,10 +1738,37 @@ def main():
     # Create orchestrator
     orchestrator = VisionIoSOrchestrator(logger, dry_run=args.dry_run)
 
-    # Run
-    if args.continuous:
+    # CNRP-001 execution modes (CEO-DIR-2026-009-B)
+    if args.healthcheck:
+        # Windows watchdog mode - health check only
+        result = orchestrator.run_healthcheck()
+        sys.exit(0 if result.get('status') in ('HEALTHY', 'WARNING') else 1)
+
+    elif args.cnrp_cycle:
+        # Single CNRP chain execution
+        result = orchestrator.run_cnrp_chain()
+        sys.exit(0 if result.get('chain_status') == 'SUCCESS' else 1)
+
+    elif args.cnrp_r4:
+        # R4 standalone integrity monitor
+        result = orchestrator.run_cnrp_r4()
+        sys.exit(0 if result.get('success') else 1)
+
+    elif args.truth_loop:
+        # IOS-TRUTH-LOOP standalone execution (CEO-DIR-2026-039B/040)
+        result = orchestrator.run_truth_loop()
+        sys.exit(0 if result.get('success') else 1)
+
+    elif args.cnrp_continuous:
+        # Full scheduling mode (4h CNRP + 2h Truth Loop + 10m R4)
+        orchestrator.run_cnrp_continuous()
+
+    elif args.continuous:
+        # Standard Vision-IoS continuous mode
         orchestrator.run_continuous(function_filter=args.function)
+
     else:
+        # Single cycle execution
         result = orchestrator.run_cycle(function_filter=args.function)
         sys.exit(0 if result['success'] else 1)
 
