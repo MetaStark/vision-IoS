@@ -1,0 +1,220 @@
+{
+  "evidence_id": "CEO_DIR_2026_TRUTH_SYNC_P2_POSTMORTEM",
+  "evidence_type": "CRASH_POSTMORTEM",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P2",
+  "phase": "PHASE2_PREPARATION",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T01:00:00Z",
+
+  "executive_summary": {
+    "status": "ROOT_CAUSE_IDENTIFIED",
+    "headline": "Signal Executor Daemon crashed 2025-12-22 due to TWO independent failures",
+    "crash_date": "2025-12-22T22:34:27Z",
+    "days_offline": 22,
+    "root_causes": [
+      "RC-001: Alpaca API error 40310000 - shares locked by pending orders",
+      "RC-002: Schema mismatch - code references columns that don't exist"
+    ],
+    "last_successful_trade": "2025-12-07T21:17:20Z",
+    "total_trades_executed": 5,
+    "all_trades_status": "BUY only - no SELL trades ever executed"
+  },
+
+  "root_cause_1_alpaca_order_lock": {
+    "error_code": 40310000,
+    "error_message": "insufficient qty available for order",
+    "affected_symbols": ["MSTR", "MARA", "COIN"],
+    "trigger_event": "Exit execution for stop-loss triggered positions",
+    "technical_explanation": "Shares were locked by existing pending orders at Alpaca broker. The daemon attempted to sell shares that were already committed to other (possibly stale) orders.",
+    "log_evidence": [
+      {
+        "timestamp": "2025-12-22T22:32:21",
+        "message": "Exiting: SELL 90 MSTR @ ~$0.00 (STOP_LOSS (-100.00%))"
+      },
+      {
+        "timestamp": "2025-12-22T22:32:23",
+        "message": "WARNING: Exit order not filled: OrderStatus.ACCEPTED"
+      },
+      {
+        "timestamp": "2025-12-22T22:34:27",
+        "message": "ERROR: Exit execution failed for MSTR: {\"available\":\"0\",\"code\":40310000,\"message\":\"insufficient qty available for order\"}"
+      }
+    ],
+    "remediation_required": [
+      "Cancel all pending orders at Alpaca before restart",
+      "Implement order state reconciliation on daemon startup",
+      "Add retry logic with pending order cancellation"
+    ]
+  },
+
+  "root_cause_2_schema_mismatch": {
+    "file": "03_FUNCTIONS/signal_executor_daemon.py",
+    "affected_queries": [
+      {
+        "lines": "1274-1282",
+        "table": "fhq_canonical.g5_paper_trades",
+        "code_uses": "exit_reason",
+        "table_has": "exit_trigger",
+        "status": "MISMATCH"
+      },
+      {
+        "lines": "1286-1297",
+        "table": "fhq_canonical.g5_signal_state",
+        "code_uses": "position_exit_price",
+        "table_has": "exit_price",
+        "status": "MISMATCH"
+      },
+      {
+        "lines": "1286-1297",
+        "table": "fhq_canonical.g5_signal_state",
+        "code_uses": "realized_pnl",
+        "table_has": "exit_pnl",
+        "status": "MISMATCH"
+      }
+    ],
+    "remediation_required": [
+      "Update signal_executor_daemon.py line 1279: exit_reason -> exit_trigger",
+      "Update signal_executor_daemon.py line 1290: position_exit_price -> exit_price",
+      "Update signal_executor_daemon.py line 1291: realized_pnl -> exit_pnl"
+    ]
+  },
+
+  "database_state_audit": {
+    "trades_table": {
+      "total_rows": 5,
+      "all_trades": [
+        {"date": "2025-12-01", "symbol": "BTC/USD", "side": "BUY", "qty": "0.00015", "price": 86327.92},
+        {"date": "2025-12-07", "symbol": "BTC/USD", "side": "BUY", "qty": "0.00015", "price": 91509.17},
+        {"date": "2025-12-07", "symbol": "BTC/USD", "side": "BUY", "qty": "0.00015", "price": 91316.94},
+        {"date": "2025-12-07", "symbol": "BTC/USD", "side": "BUY", "qty": "0.00015", "price": 91318.93},
+        {"date": "2025-12-07", "symbol": "BTC/USD", "side": "BUY", "qty": "0.00015", "price": 91303.44}
+      ],
+      "observation": "All trades are BUY - no SELL trades were ever executed"
+    },
+    "paper_orders_table": {
+      "total_rows": 0,
+      "observation": "Empty - orders not being persisted to database"
+    },
+    "paper_positions_table": {
+      "total_rows": 0,
+      "observation": "Empty - positions not synced from broker"
+    },
+    "g5_signal_state": {
+      "active_positions": 0,
+      "dormant_signals": 20,
+      "observation": "All signals in DORMANT state - none executing"
+    },
+    "g5_paper_trades": {
+      "total_rows": 0,
+      "observation": "Empty - no paper trades recorded via Golden Needle framework"
+    }
+  },
+
+  "schema_verification": {
+    "g5_paper_trades_columns": {
+      "exit_price": "EXISTS",
+      "exit_trigger": "EXISTS (code uses exit_reason - MISMATCH)",
+      "realized_pnl": "EXISTS"
+    },
+    "g5_signal_state_columns": {
+      "exit_price": "EXISTS (code uses position_exit_price - MISMATCH)",
+      "exit_reason": "EXISTS",
+      "exit_pnl": "EXISTS (code uses realized_pnl - MISMATCH)"
+    }
+  },
+
+  "code_fix_specification": {
+    "file": "03_FUNCTIONS/signal_executor_daemon.py",
+    "changes": [
+      {
+        "line": 1279,
+        "current": "exit_reason = %s,",
+        "fixed": "exit_trigger = %s,",
+        "reason": "g5_paper_trades table uses exit_trigger not exit_reason"
+      },
+      {
+        "line": 1290,
+        "current": "position_exit_price = %s,",
+        "fixed": "exit_price = %s,",
+        "reason": "g5_signal_state table uses exit_price not position_exit_price"
+      },
+      {
+        "line": 1291,
+        "current": "realized_pnl = %s,",
+        "fixed": "exit_pnl = %s,",
+        "reason": "g5_signal_state table uses exit_pnl not realized_pnl"
+      }
+    ]
+  },
+
+  "phase2_remediation_plan": {
+    "task_2_1_alpaca_cleanup": {
+      "description": "Cancel all pending orders and reconcile broker state",
+      "steps": [
+        "Connect to Alpaca API",
+        "List all pending orders",
+        "Cancel all pending orders",
+        "Verify account positions match database"
+      ],
+      "requires_ceo_approval": true
+    },
+    "task_2_2_schema_fix": {
+      "description": "Fix column name mismatches in signal_executor_daemon.py",
+      "steps": [
+        "Update exit_reason -> exit_trigger (line 1279)",
+        "Update position_exit_price -> exit_price (line 1290)",
+        "Update realized_pnl -> exit_pnl (line 1291)"
+      ],
+      "requires_ceo_approval": true
+    },
+    "task_2_3_startup_reconciliation": {
+      "description": "Add broker state reconciliation on daemon startup",
+      "steps": [
+        "Query broker for all positions",
+        "Compare with database state",
+        "Log discrepancies",
+        "Optionally auto-close orphaned positions"
+      ],
+      "requires_ceo_approval": true
+    },
+    "task_2_4_restart_daemon": {
+      "description": "Restart signal executor daemon with safety gates",
+      "prerequisites": [
+        "Tasks 2.1-2.3 complete",
+        "CEO approval for paper trading restart"
+      ],
+      "safety_gates": [
+        "Paper trading mode only",
+        "Maximum position size limits",
+        "Circuit breaker integration"
+      ]
+    }
+  },
+
+  "risk_assessment": {
+    "alpaca_account_state": "UNKNOWN - requires API check",
+    "pending_orders_likely": true,
+    "orphaned_positions_likely": true,
+    "recommendation": "Query Alpaca API before any restart attempt"
+  },
+
+  "evidence_chain": {
+    "log_file": "03_FUNCTIONS/signal_executor.log",
+    "last_log_entry": "2025-12-22T22:34:27",
+    "database_queries_executed": [
+      "SELECT * FROM fhq_execution.trades",
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'g5_paper_trades'",
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'g5_signal_state'"
+    ]
+  },
+
+  "ceo_gate_status": {
+    "phase1_status": "COMPLETE",
+    "phase2_status": "AWAITING_CEO_APPROVAL",
+    "blocking_items": [
+      "CEO approval for schema fix deployment",
+      "CEO approval for Alpaca order cleanup",
+      "CEO approval for daemon restart"
+    ]
+  }
+}

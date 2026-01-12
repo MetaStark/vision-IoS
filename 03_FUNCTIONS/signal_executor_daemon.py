@@ -729,6 +729,126 @@ class SignalExecutorDaemon:
         except Exception as e:
             logger.error(f"Failed to log holiday gate block: {e}")
 
+    def log_lids_gate_block(
+        self,
+        block_type: str,  # 'CONFIDENCE' or 'FRESHNESS'
+        signal_id: str,
+        asset: str,
+        confidence: float,
+        freshness_hours: float,
+        threshold: float,
+        needle: Dict
+    ):
+        """
+        CEO-DIR-2026-020 D3: Log LIDS gate block to governance table.
+
+        Every LIDS block MUST leave a DB trail with:
+        - action_type: LIDS_CONFIDENCE_BLOCK or LIDS_FRESHNESS_BLOCK
+        - action_target_type: SIGNAL
+        - decision: BLOCKED
+        - metadata with full context
+        """
+        action_type = f"LIDS_{block_type}_BLOCK"
+        try:
+            with self.conn.cursor() as cur:
+                # 1. Log to governance_actions_log
+                cur.execute("""
+                    INSERT INTO fhq_governance.governance_actions_log (
+                        action_type,
+                        action_target,
+                        action_target_type,
+                        initiated_by,
+                        decision,
+                        decision_rationale,
+                        agent_id,
+                        metadata
+                    ) VALUES (
+                        %s,
+                        %s,
+                        'SIGNAL',
+                        'SIGNAL_EXECUTOR_DAEMON',
+                        'BLOCKED',
+                        %s,
+                        'STIG',
+                        %s::jsonb
+                    )
+                """, (
+                    action_type,
+                    signal_id,
+                    f"CEO-DIR-2026-020 D3: {block_type} gate blocked signal. "
+                    f"{'confidence' if block_type == 'CONFIDENCE' else 'freshness'}="
+                    f"{confidence if block_type == 'CONFIDENCE' else freshness_hours:.1f} "
+                    f"{'<' if block_type == 'CONFIDENCE' else '>'} {threshold} threshold",
+                    json.dumps({
+                        'signal_id': signal_id,
+                        'asset': asset,
+                        'confidence': float(confidence),
+                        'freshness_hours': float(freshness_hours),
+                        'threshold': float(threshold),
+                        'gate_type': 'HARD',
+                        'block_type': block_type,
+                        'needle_id': str(needle.get('needle_id', 'unknown')),
+                        'eqs_score': float(needle.get('eqs_score', 0)),
+                        'directive': 'CEO-DIR-2026-020',
+                        'deliverable': 'D3',
+                        'timestamp': datetime.now(timezone.utc).isoformat()
+                    })
+                ))
+
+                # 2. Update execution_state to reflect LIDS activity
+                cur.execute("""
+                    UPDATE fhq_governance.execution_state
+                    SET last_lids_block_at = NOW(),
+                        last_lids_block_type = %s,
+                        lids_blocks_today = COALESCE(lids_blocks_today, 0) + 1
+                    WHERE state_id = (SELECT MAX(state_id) FROM fhq_governance.execution_state)
+                """, (block_type,))
+
+                # 3. CEO-DIR-2026-020 D4: Log state change to immutable audit trail
+                cur.execute("""
+                    SELECT fhq_governance.log_execution_state_change(
+                        %s,  -- change_type
+                        %s,  -- change_reason
+                        %s   -- initiated_by
+                    )
+                """, (
+                    f'LIDS_{block_type}_BLOCK',
+                    f'LIDS {block_type.lower()} gate blocked signal {signal_id[:8]}... '
+                    f'({confidence:.2f} conf, {freshness_hours:.1f}h fresh)',
+                    'SIGNAL_EXECUTOR_DAEMON'
+                ))
+
+                self.conn.commit()
+                logger.info(f"[D3-LIDS] Logged {action_type}: {asset} ({signal_id[:8]}...)")
+
+        except Exception as e:
+            logger.error(f"[D3-LIDS] Failed to log LIDS gate block: {e}")
+            # Attempt rollback
+            try:
+                self.conn.rollback()
+            except:
+                pass
+
+    def log_lids_gate_passed(self, confidence: float, freshness_hours: float):
+        """
+        CEO-DIR-2026-020 D3: Log LIDS gate pass for counter-metrics.
+
+        Prevents silent success - enables block rate computation.
+        Called once per signal that passes ALL LIDS gates.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                # Update execution_state pass counter
+                cur.execute("""
+                    UPDATE fhq_governance.execution_state
+                    SET lids_passes_today = COALESCE(lids_passes_today, 0) + 1
+                    WHERE state_id = (SELECT MAX(state_id) FROM fhq_governance.execution_state)
+                """)
+                self.conn.commit()
+                logger.debug(f"[D3-LIDS] Gate PASSED: confidence={confidence:.2f}, freshness={freshness_hours:.1f}h")
+        except Exception as e:
+            logger.warning(f"[D3-LIDS] Failed to log LIDS pass: {e}")
+
     # =========================================================================
     # CCO STATE MONITORING
     # =========================================================================
@@ -1156,7 +1276,7 @@ class SignalExecutorDaemon:
                     exit_price = %s,
                     exit_timestamp = NOW(),
                     realized_pnl = %s,
-                    exit_reason = %s,
+                    exit_trigger = %s,  -- Fixed: was exit_reason (schema mismatch)
                     exit_context = %s
                 WHERE trade_id = %s
             """, (exit_price, realized_pnl, reason, exit_context, position['trade_id']))
@@ -1167,8 +1287,8 @@ class SignalExecutorDaemon:
                 SET
                     current_state = 'EXECUTED',
                     executed_at = NOW(),
-                    position_exit_price = %s,
-                    realized_pnl = %s,
+                    exit_price = %s,  -- Fixed: was position_exit_price (schema mismatch)
+                    exit_pnl = %s,  -- Fixed: was realized_pnl (schema mismatch)
                     last_transition = 'PRIMED_TO_EXECUTED',
                     last_transition_at = NOW(),
                     transition_count = transition_count + 1,
@@ -1514,6 +1634,16 @@ class SignalExecutorDaemon:
             if attempt and self.attempt_logger:
                 self.attempt_logger.log_gate_result(attempt, 'lids_confidence', False, lids_reason)
                 self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='LIDS_CONFIDENCE')
+            # CEO-DIR-2026-020 D3: Log LIDS block to governance (MANDATORY)
+            self.log_lids_gate_block(
+                block_type='CONFIDENCE',
+                signal_id=str(needle.get('needle_id', needle.get('signal_id', 'unknown'))),
+                asset=symbol,
+                confidence=lids_confidence,
+                freshness_hours=0.0,  # Not yet computed
+                threshold=LIDS_MIN_CONFIDENCE,
+                needle=needle
+            )
             return None
         else:
             if attempt and self.attempt_logger:
@@ -1545,11 +1675,25 @@ class SignalExecutorDaemon:
             if attempt and self.attempt_logger:
                 self.attempt_logger.log_gate_result(attempt, 'lids_freshness', False, freshness_reason)
                 self.attempt_logger.complete_attempt(attempt, 'BLOCKED', blocked_at_gate='LIDS_FRESHNESS')
+            # CEO-DIR-2026-020 D3: Log LIDS block to governance (MANDATORY)
+            self.log_lids_gate_block(
+                block_type='FRESHNESS',
+                signal_id=str(needle.get('needle_id', needle.get('signal_id', 'unknown'))),
+                asset=symbol,
+                confidence=lids_confidence,
+                freshness_hours=lids_freshness_hours,
+                threshold=LIDS_MAX_FRESHNESS_HOURS,
+                needle=needle
+            )
             return None
         else:
             if attempt and self.attempt_logger:
                 self.attempt_logger.log_gate_result(attempt, 'lids_freshness', True, f'freshness={lids_freshness_hours:.1f}h')
             logger.info(f"[LIDS-GATE] Freshness PASSED: {lids_freshness_hours:.1f}h <= {LIDS_MAX_FRESHNESS_HOURS}h")
+
+        # CEO-DIR-2026-020 D3: Log LIDS gate pass for counter-metrics
+        # Both confidence and freshness passed - record for block rate computation
+        self.log_lids_gate_passed(lids_confidence, lids_freshness_hours)
 
         # =====================================================================
         # HARD EXPOSURE GATE - MANDATORY PRE-EXECUTION CHECK
