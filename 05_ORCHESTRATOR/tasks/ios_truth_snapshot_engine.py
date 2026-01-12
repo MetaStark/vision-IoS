@@ -722,6 +722,47 @@ def extract_metrics(bundle_results: Dict, delta_results: Dict) -> Dict[str, Any]
     return metrics
 
 
+def generate_alert_file(snapshot: Dict[str, Any]) -> Optional[Path]:
+    """Generate ALERT artifact for AT_RISK or BLOCKED status (CEO-DIR-2026-041)."""
+    status = snapshot.get('status', 'OK')
+
+    if status == 'OK':
+        return None  # No alert needed
+
+    timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')
+    alert_filename = f"ALERT_{status}_{timestamp}.json"
+    alert_path = OUTPUT_DIR / alert_filename
+
+    # Build alert artifact
+    alert = {
+        "alert_id": f"ALERT-{timestamp}",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+        "snapshot_id": snapshot.get('snapshot_id'),
+        "severity": "CRITICAL" if status == "BLOCKED" else "WARNING",
+        "threshold_violations": snapshot.get('threshold_violations', []),
+        "cadence": snapshot.get('cadence', {}),
+        "integrity": snapshot.get('integrity', {}),
+        "action_required": {
+            "BLOCKED": "IMMEDIATE - System halted, manual intervention required",
+            "AT_RISK": "MONITOR - Elevated monitoring active, review violations"
+        }.get(status, "REVIEW"),
+        "escalation_contacts": ["CEO", "VEGA"] if status == "BLOCKED" else ["VEGA"],
+        "_meta": {
+            "directive": "CEO-DIR-2026-041",
+            "generated_by": "IOS-TRUTH-LOOP-v2"
+        }
+    }
+
+    with open(alert_path, 'w') as f:
+        json.dump(alert, f, indent=2, default=json_serializer)
+
+    logger.warning(f"ALERT FILE GENERATED: {alert_path}")
+    logger.warning(f"  Status: {status} | Violations: {len(snapshot.get('threshold_violations', []))}")
+
+    return alert_path
+
+
 def save_snapshot(snapshot: Dict[str, Any]):
     """Save snapshot to designated paths."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -742,6 +783,11 @@ def save_snapshot(snapshot: Dict[str, Any]):
 
     # Append to rolling 7D
     append_to_rolling_7d(snapshot)
+
+    # Generate alert file if AT_RISK or BLOCKED (CEO-DIR-2026-041)
+    alert_path = generate_alert_file(snapshot)
+    if alert_path:
+        logger.info(f"Alert artifact: {alert_path}")
 
     return filepath
 
