@@ -75,7 +75,7 @@ export default function ACITrianglePage() {
               </p>
               <ul className="text-gray-500 space-y-1">
                 <li>• Fabrication detection</li>
-                <li>• Stale data flagging (>24h)</li>
+                <li>• Stale data flagging (&gt;24h)</li>
                 <li>• Verifiability scoring</li>
               </ul>
             </div>
