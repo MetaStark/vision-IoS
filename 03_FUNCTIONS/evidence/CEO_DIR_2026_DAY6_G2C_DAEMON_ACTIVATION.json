@@ -1,0 +1,94 @@
+{
+  "evidence_id": "CEO_DIR_2026_DAY6_G2C_DAEMON_ACTIVATION",
+  "evidence_type": "DAEMON_ACTIVATION",
+  "directive": "CEO-DIR-2026-DAY6-GOAL-REALIGNMENT",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T02:15:00Z",
+
+  "context": {
+    "trigger": "Day 6 Goal 1 failure - forecast volume below threshold",
+    "goal_1_status": "FAILED",
+    "goal_1_actual": 716,
+    "goal_1_threshold": 1000,
+    "root_cause": "g2c_continuous_forecast_engine daemon not running",
+    "root_cause_detail": "Daemon classified as CONTINUOUS_DAEMON_TASK in orchestrator - requires manual/service activation"
+  },
+
+  "daemon_activation": {
+    "daemon_name": "g2c_continuous_forecast_engine",
+    "daemon_file": "03_FUNCTIONS/g2c_continuous_forecast_engine.py",
+    "activation_time": "2026-01-13T02:09:31.956Z",
+    "activation_method": "CLI invocation",
+    "authorized_by": "CEO directive",
+    "executed_by": "STIG"
+  },
+
+  "daemon_configuration": {
+    "directive_id": "CD-G2C-ALPHA-IGNITION-48H-2025-12-13",
+    "amendment_id": "CD-G2C-ALPHA-IGNITION-48H-A1",
+    "duration_hours": 48,
+    "end_time": "2026-01-15T02:09:31Z",
+    "llm_budget_daily_usd": 5.00,
+    "mode": "NON-EXECUTING (Forecast & Research Only)"
+  },
+
+  "strategy_targets": {
+    "STRAT_SEC_V1": {
+      "min_forecasts_48h": 480,
+      "interval_seconds": 360,
+      "horizon_minutes": 5,
+      "description": "Microstructure & momentum"
+    },
+    "STRAT_HOUR_V1": {
+      "min_forecasts_48h": 96,
+      "interval_seconds": 1800,
+      "horizon_minutes": 60,
+      "description": "Intraday regime responsiveness"
+    },
+    "STRAT_DAY_V1": {
+      "min_forecasts_48h": 30,
+      "interval_seconds": 5760,
+      "horizon_minutes": 1440,
+      "description": "Daily horizon skill separation"
+    },
+    "STRAT_WEEK_V1": {
+      "min_forecasts_48h": 30,
+      "interval_seconds": 5760,
+      "horizon_minutes": 10080,
+      "description": "Macro / slow-signal calibration"
+    }
+  },
+
+  "initial_generation": {
+    "cycle_1_timestamp": "2026-01-13T02:09:32Z",
+    "cycle_1_forecasts": 12,
+    "forecasts_by_strategy": {
+      "STRAT_SEC_V1": 3,
+      "STRAT_HOUR_V1": 3,
+      "STRAT_DAY_V1": 3,
+      "STRAT_WEEK_V1": 3
+    },
+    "database_verified": true
+  },
+
+  "expected_impact": {
+    "daily_strat_forecasts": "~300+",
+    "daily_belief_forecasts": "~700+",
+    "expected_daily_total": ">1000",
+    "goal_1_remediation": "IN_PROGRESS"
+  },
+
+  "governance_compliance": {
+    "ceo_authorized": true,
+    "no_execution_escalation": true,
+    "ios012_paper_only": true,
+    "strategy_mutation_locked": true,
+    "evidence_logged": true
+  },
+
+  "process_info": {
+    "background_task_id": "b3450dc",
+    "output_file": "C:\\Users\\RJANSK~1\\AppData\\Local\\Temp\\claude\\C--fhq-market-system-vision-ios\\tasks\\b3450dc.output",
+    "status": "RUNNING"
+  }
+}
