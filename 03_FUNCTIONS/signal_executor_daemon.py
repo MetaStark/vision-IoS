@@ -1353,15 +1353,16 @@ class SignalExecutorDaemon:
                 WHERE trade_id = %s
             """, (exit_price, realized_pnl, reason, exit_context, position['trade_id']))
 
-            # Update signal state to EXECUTED
+            # Update signal state to EXPIRED (position closed)
+            # Valid states: DORMANT, PRIMED, EXECUTING, POSITION, COOLING, EXPIRED, DUPLICATE_PRUNED
             cur.execute("""
                 UPDATE fhq_canonical.g5_signal_state
                 SET
-                    current_state = 'EXECUTED',
+                    current_state = 'EXPIRED',  -- Fixed: was 'EXECUTED' (invalid state per CHECK constraint)
                     executing_at = NOW(),  -- Fixed: was executed_at (schema mismatch)
                     exit_price = %s,  -- Fixed: was position_exit_price (schema mismatch)
                     exit_pnl = %s,  -- Fixed: was realized_pnl (schema mismatch)
-                    last_transition = 'PRIMED_TO_EXECUTED',
+                    last_transition = 'POSITION_TO_EXPIRED',
                     last_transition_at = NOW(),
                     transition_count = transition_count + 1,
                     updated_at = NOW()
@@ -1374,7 +1375,7 @@ class SignalExecutorDaemon:
                     needle_id, from_state, to_state, transition_trigger,
                     context_snapshot, cco_status, transition_valid, transitioned_at
                 ) VALUES (
-                    %s, 'PRIMED', 'EXECUTED', %s,
+                    %s, 'POSITION', 'EXPIRED', %s,
                     %s, %s, TRUE, NOW()
                 )
             """, (
