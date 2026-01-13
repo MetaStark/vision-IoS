@@ -1358,7 +1358,7 @@ class SignalExecutorDaemon:
                 UPDATE fhq_canonical.g5_signal_state
                 SET
                     current_state = 'EXECUTED',
-                    executed_at = NOW(),
+                    executing_at = NOW(),  -- Fixed: was executed_at (schema mismatch)
                     exit_price = %s,  -- Fixed: was position_exit_price (schema mismatch)
                     exit_pnl = %s,  -- Fixed: was realized_pnl (schema mismatch)
                     last_transition = 'PRIMED_TO_EXECUTED',
