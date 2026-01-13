@@ -1,0 +1,258 @@
+{
+  "directive": "CEO-DIR-2026-052",
+  "title": "Failure Mode Closure Protocol (FMCP)",
+  "directive_type": "OPERATIONAL_ACTIVATION",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T17:00:00Z",
+  "applies_to": ["STIG", "FINN", "VEGA", "CDMO"],
+  "effective": "IMMEDIATELY",
+
+  "purpose": {
+    "objective": "Convert failure detection into verified cognitive improvement",
+    "core_principle": "Identifying a failure mode without closing it is not learning - it is accumulating debt",
+    "rationale": "CEO-DIR-2026-051 revealed 24 open failure modes with 0 closed, indicating learning debt accumulation",
+    "constraints": [
+      "Tier-1 diagnostic budget authorized (Claude 3.5 Sonnet / OpenAI o1)",
+      "Diagnosis only - no autonomous code changes without G4 approval",
+      "Market-aware staleness replaces hard-coded 118.8h threshold"
+    ]
+  },
+
+  "implementation": {
+    "migration_executed": {
+      "migration_id": 236,
+      "filename": "236_ceo_dir_2026_052_failure_mode_closure_protocol.sql",
+      "status": "COMPLETE"
+    },
+    "tables_created": [
+      {
+        "table": "fhq_governance.failure_mode_registry",
+        "purpose": "Central registry with 5-stage FMCL lifecycle",
+        "initial_count": 24
+      },
+      {
+        "table": "fhq_governance.golden_scenario_registry",
+        "purpose": "Canonical stress events for judgment quality validation",
+        "initial_count": 4
+      },
+      {
+        "table": "fhq_governance.market_temporal_windows",
+        "purpose": "Market-aware staleness thresholds replacing hard-coded 118.8h",
+        "initial_count": 6
+      }
+    ],
+    "views_created": [
+      "fhq_governance.v_fmcl_daily_metrics",
+      "fhq_governance.v_fmcl_stage_distribution"
+    ],
+    "functions_created": [
+      "fhq_governance.advance_fmcl_stage(UUID, TEXT, JSONB)"
+    ]
+  },
+
+  "fmcl_lifecycle": {
+    "description": "5-Stage Failure Mode Closure Lifecycle",
+    "stages": [
+      {
+        "stage": 1,
+        "name": "CAPTURE",
+        "description": "Failure mode identified and logged with evidence",
+        "owner": "FINN (automatic detection) or STIG (manual registration)"
+      },
+      {
+        "stage": 2,
+        "name": "DIAGNOSIS",
+        "description": "Root cause analysis using Tier-1 LLM budget",
+        "owner": "FINN",
+        "authorized_models": ["Claude 3.5 Sonnet", "OpenAI o1"]
+      },
+      {
+        "stage": 3,
+        "name": "ACTION_DEFINITION",
+        "description": "Corrective action specified (code fix, threshold adjustment, rule update)",
+        "owner": "STIG (code) or FINN (parameters)"
+      },
+      {
+        "stage": 4,
+        "name": "RETEST",
+        "description": "Validation that action resolved the failure mode",
+        "owner": "VEGA"
+      },
+      {
+        "stage": 5,
+        "name": "CLOSED",
+        "description": "Failure mode resolved with closure evidence",
+        "closure_types": ["RESOLVED", "MITIGATED", "ACCEPTED_RISK", "OBSOLETE"]
+      }
+    ]
+  },
+
+  "current_state": {
+    "timestamp": "2026-01-14T17:15:00Z",
+    "failure_modes": {
+      "total": 24,
+      "by_stage": {
+        "CAPTURE": 24,
+        "DIAGNOSIS": 0,
+        "ACTION_DEFINITION": 0,
+        "RETEST": 0,
+        "CLOSED": 0
+      },
+      "by_severity": {
+        "HIGH": 16,
+        "LOW": 8
+      },
+      "by_category": {
+        "REGIME_MISCLASSIFICATION": 9,
+        "CALIBRATION_ERROR": 8,
+        "SUPPRESSION_WISDOM": 6,
+        "SUPPRESSION_REGRET": 1
+      }
+    },
+    "closure_metrics": {
+      "closures_today": 0,
+      "closure_ratio_pct": 0.0,
+      "daily_target_met": false,
+      "ratio_target_met": false
+    }
+  },
+
+  "golden_scenarios": {
+    "count": 4,
+    "scenarios": [
+      {
+        "code": "GS-001",
+        "name": "AIG High Stress 2026-01-11",
+        "asset": "AIG",
+        "stress_probability": 0.9997,
+        "type": "STRESS"
+      },
+      {
+        "code": "GS-002",
+        "name": "GIS High Stress 2026-01-11",
+        "asset": "GIS",
+        "stress_probability": 0.9998,
+        "type": "STRESS"
+      },
+      {
+        "code": "GS-003",
+        "name": "NOW High Stress 2026-01-11",
+        "asset": "NOW",
+        "stress_probability": 0.9988,
+        "type": "STRESS"
+      },
+      {
+        "code": "GS-004",
+        "name": "FLOW-USD Crypto Stress 2026-01-10",
+        "asset": "FLOW-USD",
+        "stress_probability": 0.9907,
+        "type": "STRESS"
+      }
+    ],
+    "target_minimum": 3,
+    "target_met": true
+  },
+
+  "market_temporal_windows": {
+    "description": "Context-aware staleness thresholds replacing hard-coded 118.8h",
+    "windows": [
+      {
+        "asset_class": "crypto",
+        "condition": "ALL",
+        "threshold_hours": 12.0,
+        "applies_days": "all"
+      },
+      {
+        "asset_class": "equity_us",
+        "condition": "NORMAL",
+        "threshold_hours": 12.0,
+        "applies_days": "Mon-Fri"
+      },
+      {
+        "asset_class": "equity_us",
+        "condition": "WEEKEND",
+        "threshold_hours": 72.0,
+        "applies_days": "Sat-Sun",
+        "rationale": "Weekend equity data is NOT stale, just closed"
+      },
+      {
+        "asset_class": "equity_us",
+        "condition": "HOLIDAY",
+        "threshold_hours": 96.0,
+        "applies_days": "all",
+        "rationale": "Extended closure periods (3-day weekends)"
+      },
+      {
+        "asset_class": "fx",
+        "condition": "NORMAL",
+        "threshold_hours": 12.0,
+        "applies_days": "Mon-Fri"
+      },
+      {
+        "asset_class": "fx",
+        "condition": "WEEKEND",
+        "threshold_hours": 60.0,
+        "applies_days": "Sat-Sun"
+      }
+    ],
+    "cdmo_mandate_addressed": true
+  },
+
+  "closure_targets": {
+    "daily_closures_minimum": 5,
+    "closure_ratio_minimum_pct": 20,
+    "net_open_trend": "MUST_DECREASE",
+    "measurement_frequency": "DAILY"
+  },
+
+  "success_criteria_verification": {
+    "failure_mode_registry_created": true,
+    "golden_scenarios_defined": true,
+    "golden_scenarios_count_met": true,
+    "market_temporal_windows_created": true,
+    "fmcl_lifecycle_implemented": true,
+    "existing_lessons_migrated": true,
+    "lessons_migrated_count": 24,
+    "advance_fmcl_stage_function_created": true
+  },
+
+  "next_steps": {
+    "immediate": [
+      "Begin DIAGNOSIS stage for HIGH severity failure modes",
+      "Validate golden scenarios against actual regime detection"
+    ],
+    "phase_2": [
+      "Integrate market_temporal_windows into LIDS gate evaluation",
+      "Implement automatic closure suggestions via FINN diagnosis"
+    ],
+    "blocking_dependencies": [
+      "Tier-1 LLM budget activation for diagnosis",
+      "VEGA attestation for closure approval workflow"
+    ]
+  },
+
+  "standards_preserved": [
+    "ADR-002: Full audit logging",
+    "ADR-012: Economic safety (Tier-1 diagnostic budget only)",
+    "ADR-020: Autonomous Cognitive Intelligence",
+    "ADR-021: Cognitive Engine Architecture"
+  ],
+
+  "sql_reproducibility": {
+    "fmcl_metrics": "SELECT * FROM fhq_governance.v_fmcl_daily_metrics",
+    "stage_distribution": "SELECT * FROM fhq_governance.v_fmcl_stage_distribution",
+    "golden_scenarios": "SELECT scenario_code, scenario_name, stress_probability FROM fhq_governance.golden_scenario_registry",
+    "temporal_windows": "SELECT asset_class, market_condition, freshness_threshold_hours FROM fhq_governance.market_temporal_windows"
+  },
+
+  "attestation": {
+    "implemented_by": "STIG",
+    "implemented_at": "2026-01-14T17:15:00Z",
+    "constitutional_reference": "CEO-DIR-2026-052",
+    "properties": [
+      "Database-verified (all claims backed by SQL)",
+      "Falsifiable (counter-evidence would disprove)",
+      "Migration-logged (governance_actions_log entry)"
+    ]
+  }
+}
