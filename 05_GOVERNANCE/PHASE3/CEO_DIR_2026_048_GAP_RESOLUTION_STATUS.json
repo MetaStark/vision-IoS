@@ -1,0 +1,180 @@
+{
+  "directive": "CEO-DIR-2026-048",
+  "revision": "B (FINAL)",
+  "date": "2026-01-14",
+  "supersedes": "CEO-DIR-2026-047",
+  "execution_owners": ["STIG", "CRIO", "DB Operator"],
+  "independent_validator": "VEGA",
+  "mode": "CONTROLLED_REMEDIATION_MODE",
+  "capital_exposure": "NONE",
+  "change_gates": "ADR-004 G4 — FROZEN",
+
+  "executive_determination": {
+    "ruling": "No gap is considered remediated until its evidence exists as a permanent truth in canonical tables.",
+    "distinction": "Code completion != Canonical persistence"
+  },
+
+  "gap_status": {
+    "GAP-001": {
+      "description": "Sub-Executive Contract Registration",
+      "status": "CANONICAL",
+      "blocking_gate": "CLEARED",
+      "owner": "STIG",
+      "migration_file": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+      "canonical_table": "fhq_governance.agent_contracts",
+      "adr_reference": "ADR-014",
+      "executed_at": "2026-01-14",
+      "verification": {
+        "contracts_inserted": 5,
+        "active_contracts": ["CDMO", "CEIO", "CRIO"],
+        "pending_heartbeat": ["CSEO", "CFAO"]
+      }
+    },
+    "GAP-002": {
+      "description": "Privilege Scope Enforcement",
+      "status": "CANONICAL",
+      "blocking_gate": "CLEARED",
+      "owner": "STIG",
+      "migration_file": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+      "canonical_table": "fhq_governance.agent_mandates",
+      "adr_reference": ["ADR-013", "ADR-014"],
+      "executed_at": "2026-01-14",
+      "verification": {
+        "agents_updated": 5,
+        "canonical_write_false": true,
+        "global_write_false": true,
+        "schema_scoped": true
+      }
+    },
+    "GAP-003": {
+      "description": "Graph Lineage Population",
+      "status": "CANONICAL",
+      "blocking_gate": "CLEARED",
+      "owner": "CRIO",
+      "migration_file": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+      "canonical_tables": ["fhq_graph.nodes", "fhq_graph.edges"],
+      "compliance_reference": "BCBS-239",
+      "executed_at": "2026-01-14",
+      "verification": {
+        "nodes_total": 196,
+        "nodes_with_lineage": 196,
+        "nodes_coverage_pct": 100.0,
+        "edges_total": 18,
+        "edges_with_lineage": 18,
+        "edges_coverage_pct": 100.0
+      }
+    },
+    "GAP-004": {
+      "description": "CNRP Latency Instrumentation",
+      "status": "CLOSED",
+      "blocking_gate": "None",
+      "owner": "STIG",
+      "closed_at": "2026-01-14",
+      "evidence": {
+        "commit": "f79058a",
+        "files_modified": [
+          "ceio_evidence_refresh_daemon.py (R1)",
+          "crio_alpha_graph_rebuild.py (R2)",
+          "cdmo_data_hygiene_attestation.py (R3)",
+          "vega_epistemic_integrity_monitor.py (R4)"
+        ],
+        "evidence_file": "03_FUNCTIONS/evidence/CEO_DIR_2026_047_GAP004_LATENCY_FIX.json"
+      }
+    }
+  },
+
+  "authorized_next_actions": {
+    "sequence": "STRICT — Order is non-negotiable",
+    "step_1": {
+      "action": "Execute Migration Script (Canonical Persistence)",
+      "owner": "DB Operator (under STIG supervision)",
+      "file": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+      "status": "COMPLETED",
+      "executed_at": "2026-01-14",
+      "scope": [
+        "Persist sub-executive contracts (ADR-014)",
+        "Persist privilege scopes with enforced constraints (ADR-013)",
+        "Persist graph lineage hashes (BCBS-239 compliant)"
+      ],
+      "constraints": [
+        "No schema redesign",
+        "No data backfill beyond lineage fields",
+        "No IoS activation",
+        "No ARL promotion"
+      ],
+      "objective": "Transition GAP-001, GAP-002, GAP-003 from PENDING_DB_COMMIT to CANONICAL_TRUTH"
+    },
+    "step_2": {
+      "action": "VEGA G3 Zero-Trust Attestation",
+      "owner": "VEGA",
+      "trigger": "Successful execution of migration script",
+      "status": "READY_FOR_ATTESTATION",
+      "attestation_checks": {
+        "3.2.1_contract_liveness_coupling": {
+          "reference": "ADR-014 + ADR-018",
+          "requirement": "Each agent in agent_contracts must have valid heartbeat within 60 minutes",
+          "ghost_agent_rule": "No G4 unfreeze while any Ghost Agent exists"
+        },
+        "3.2.2_privilege_scope_enforcement": {
+          "reference": "ADR-013 / ADR-014",
+          "requirements": [
+            "CANONICAL_WRITE = FALSE",
+            "No global write privileges",
+            "Schema-level access only"
+          ],
+          "violation_classification": "Constitutional breach"
+        },
+        "3.2.3_graph_lineage_integrity": {
+          "reference": "BCBS-239",
+          "requirements": [
+            "lineage_hash exists for all nodes and edges",
+            "Hash chains are deterministic and reconstructible",
+            "Lineage traces to IoS-006 macro sources"
+          ],
+          "violation_classification": "Graph invalidation"
+        },
+        "3.2.4_cnrp_latency_performance": {
+          "new_in_048": true,
+          "requirement": "Compute p50/p95/p99 from execution logs",
+          "threshold": "p95 latency <= 500ms",
+          "source": "IoS-008 TTL constraints",
+          "violation_effect": "Performance Warning — blocks autonomy eligibility, does NOT reopen GAP-004"
+        }
+      }
+    }
+  },
+
+  "explicit_non_authorizations": [
+    "No G4 unfreeze",
+    "No ARL-5 promotion",
+    "No IoS-007 / IoS-008 activation",
+    "No DecisionPlan generation",
+    "No Alpha Signals",
+    "No paper or live trading"
+  ],
+
+  "success_criteria_for_next_directive": [
+    "Migration script executed successfully",
+    "GAP-001 / 002 / 003 marked CANONICAL",
+    "VEGA G3 attestation complete",
+    "No Ghost Agents present",
+    "No unresolved constitutional breaches",
+    "No p95 latency violations unacknowledged"
+  ],
+
+  "status": {
+    "directive_state": "ACTIVE",
+    "system_phase": "Perception (Final Containment)",
+    "governance_state": "G4 Frozen",
+    "next_gate": "VEGA G3 -> CEO Review"
+  },
+
+  "attestation": {
+    "acknowledged_by": "STIG",
+    "acknowledged_at": "2026-01-14",
+    "ceo_sign_off_principles": [
+      "Nothing is real until it is persisted.",
+      "Nothing is trusted until it is verified."
+    ]
+  }
+}

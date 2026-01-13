@@ -1,0 +1,136 @@
+{
+  "attestation_type": "VEGA_G3_ZERO_TRUST",
+  "directive": "CEO-DIR-2026-048",
+  "attestation_id": "VEGA-G3-20260114-001",
+  "executed_by": "VEGA",
+  "executed_at": "2026-01-14T14:05:00Z",
+  "trigger": "Successful execution of CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+
+  "overall_status": "CONDITIONAL_PASS_WITH_FINDINGS",
+
+  "attestation_checks": {
+    "3.2.1_contract_liveness_coupling": {
+      "reference": "ADR-014 + ADR-018",
+      "requirement": "Each agent with ACTIVE contract must have valid heartbeat within 60 minutes",
+      "status": "FINDING_GHOST_AGENTS",
+      "severity": "CRITICAL",
+      "results": [
+        {"agent": "CDMO", "contract_status": "ACTIVE", "last_heartbeat_minutes_ago": 144.8, "liveness_status": "GHOST_AGENT"},
+        {"agent": "CEIO", "contract_status": "ACTIVE", "last_heartbeat_minutes_ago": 144.8, "liveness_status": "GHOST_AGENT"},
+        {"agent": "CRIO", "contract_status": "ACTIVE", "last_heartbeat_minutes_ago": 144.8, "liveness_status": "GHOST_AGENT"},
+        {"agent": "CSEO", "contract_status": "PENDING_HEARTBEAT", "last_heartbeat_minutes_ago": null, "liveness_status": "EXPECTED_NO_HEARTBEAT"},
+        {"agent": "CFAO", "contract_status": "PENDING_HEARTBEAT", "last_heartbeat_minutes_ago": null, "liveness_status": "EXPECTED_NO_HEARTBEAT"}
+      ],
+      "ghost_agents_detected": ["CDMO", "CEIO", "CRIO"],
+      "ghost_agent_count": 3,
+      "ceo_ruling": "No G4 unfreeze may be considered while any Ghost Agent exists",
+      "recommendation": "Sub-executive heartbeat daemons must be activated or contracts downgraded to PENDING_HEARTBEAT"
+    },
+
+    "3.2.2_privilege_scope_enforcement": {
+      "reference": "ADR-013 / ADR-014",
+      "requirement": "CANONICAL_WRITE=FALSE, no global write, schema-scoped access",
+      "status": "COMPLIANT",
+      "severity": "NONE",
+      "results": [
+        {"agent": "CDMO", "canonical_write": false, "global_write": false, "scope_type": "SCHEMA_SCOPED", "status": "COMPLIANT"},
+        {"agent": "CEIO", "canonical_write": false, "global_write": false, "scope_type": "SCHEMA_SCOPED", "status": "COMPLIANT"},
+        {"agent": "CRIO", "canonical_write": false, "global_write": false, "scope_type": "SCHEMA_SCOPED", "status": "COMPLIANT"},
+        {"agent": "CSEO", "canonical_write": false, "global_write": false, "scope_type": "SCHEMA_SCOPED", "status": "COMPLIANT"},
+        {"agent": "CFAO", "canonical_write": false, "global_write": false, "scope_type": "SCHEMA_SCOPED", "status": "COMPLIANT"}
+      ],
+      "constitutional_breaches": 0
+    },
+
+    "3.2.3_graph_lineage_integrity": {
+      "reference": "BCBS-239",
+      "requirement": "lineage_hash for all nodes/edges, deterministic chains",
+      "status": "COMPLIANT",
+      "severity": "NONE",
+      "coverage": {
+        "fhq_graph.nodes": {"total": 196, "with_lineage": 196, "coverage_pct": 100.0, "status": "BCBS239_COMPLIANT"},
+        "fhq_graph.edges": {"total": 18, "with_lineage": 18, "coverage_pct": 100.0, "status": "BCBS239_COMPLIANT"}
+      },
+      "hash_chain_verification": {
+        "samples_checked": 5,
+        "deterministic": 5,
+        "mismatches": 0,
+        "status": "DETERMINISTIC"
+      }
+    },
+
+    "3.2.4_cnrp_latency_performance": {
+      "reference": "IoS-008 TTL constraints",
+      "requirement": "p95 latency <= 500ms",
+      "status": "PERFORMANCE_WARNING",
+      "severity": "HIGH",
+      "note": "New in CEO-DIR-2026-048",
+      "results": {
+        "R4_vega_epistemic_integrity_monitor": {
+          "instrumented_executions": 2,
+          "p50_ms": 473.36,
+          "p95_ms": 548.62,
+          "p99_ms": 555.31,
+          "max_ms": 556.99,
+          "threshold_ms": 500,
+          "status": "PERFORMANCE_WARNING"
+        },
+        "R1_ceio_evidence_refresh_daemon": {"instrumented_executions": 0, "status": "AWAITING_EXECUTION"},
+        "R2_crio_alpha_graph_rebuild": {"instrumented_executions": 0, "status": "AWAITING_EXECUTION"},
+        "R3_cdmo_data_hygiene_attestation": {"instrumented_executions": 0, "status": "AWAITING_EXECUTION"}
+      },
+      "ceo_ruling": "Persistent p95 violations do not reopen GAP-004, but block autonomy eligibility"
+    }
+  },
+
+  "findings_summary": {
+    "critical": [
+      {
+        "finding_id": "VEGA-F001",
+        "check": "3.2.1",
+        "description": "3 Ghost Agents detected (CDMO, CEIO, CRIO)",
+        "impact": "G4 unfreeze BLOCKED per CEO-DIR-2026-048",
+        "resolution": "Activate sub-executive heartbeat daemons or downgrade contracts to PENDING_HEARTBEAT"
+      }
+    ],
+    "high": [
+      {
+        "finding_id": "VEGA-F002",
+        "check": "3.2.4",
+        "description": "R4 daemon p95 latency (548.62ms) exceeds 500ms threshold",
+        "impact": "Autonomy eligibility BLOCKED",
+        "resolution": "Performance optimization required or threshold acknowledgment by CEO"
+      }
+    ],
+    "compliant": [
+      {"check": "3.2.2", "description": "All privilege scopes correctly enforced"},
+      {"check": "3.2.3", "description": "100% graph lineage coverage with deterministic hashes"}
+    ]
+  },
+
+  "blocking_conditions": {
+    "g4_unfreeze_blocked": true,
+    "blocking_reasons": [
+      "Ghost Agents present (CDMO, CEIO, CRIO) - CEO-DIR-2026-048 Section 3.2.1",
+      "p95 latency violation unacknowledged - CEO-DIR-2026-048 Section 3.2.4"
+    ],
+    "autonomy_eligible": false
+  },
+
+  "success_criteria_evaluation": {
+    "migration_executed": {"status": true, "evidence": "COMMIT successful"},
+    "gap_001_002_003_canonical": {"status": true, "evidence": "All persisted to canonical tables"},
+    "vega_g3_attestation_complete": {"status": true, "evidence": "This attestation"},
+    "no_ghost_agents": {"status": false, "evidence": "3 Ghost Agents detected"},
+    "no_constitutional_breaches": {"status": true, "evidence": "0 breaches found"},
+    "no_p95_violations_unacknowledged": {"status": false, "evidence": "R4 p95=548.62ms > 500ms"}
+  },
+
+  "attestation": {
+    "attested_by": "VEGA",
+    "attested_at": "2026-01-14T14:05:00Z",
+    "attestation_valid_until": "2026-01-14T15:05:00Z",
+    "next_attestation_trigger": "Resolution of Ghost Agent condition",
+    "ceo_review_status": "BLOCKED_UNTIL_FINDINGS_RESOLVED"
+  }
+}

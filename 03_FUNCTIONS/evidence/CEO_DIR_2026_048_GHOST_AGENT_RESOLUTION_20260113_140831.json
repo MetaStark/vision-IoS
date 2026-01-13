@@ -1,0 +1,69 @@
+{
+  "evidence_type": "GHOST_AGENT_RESOLUTION",
+  "directive": "CEO-DIR-2026-048",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T14:08:31.444056+00:00",
+  "daemon": "subexec_heartbeat_daemon",
+  "action": "HEARTBEAT_ACTIVATION",
+  "description": "Activated sub-executive heartbeat updates based on CNRP execution activity",
+  "before_state": {
+    "ghost_agents": [
+      "CDMO",
+      "CEIO",
+      "CRIO"
+    ],
+    "issue": "Sub-executives logged to cnrp_execution_log but heartbeat probes checked governance_actions_log",
+    "impact": "G4 unfreeze BLOCKED per VEGA-F001"
+  },
+  "resolution": {
+    "approach": "Created subexec_heartbeat_daemon that probes cnrp_execution_log",
+    "daemon_map": {
+      "CEIO": {
+        "daemon_name": "ceio_evidence_refresh_daemon",
+        "phase": "R1",
+        "component": "EVIDENCE",
+        "description": "Evidence refresh daemon - refreshes graph nodes with latest evidence"
+      },
+      "CRIO": {
+        "daemon_name": "crio_alpha_graph_rebuild",
+        "phase": "R2",
+        "component": "GRAPH",
+        "description": "Alpha graph rebuild daemon - rebuilds causal relationships"
+      },
+      "CDMO": {
+        "daemon_name": "cdmo_data_hygiene_attestation",
+        "phase": "R3",
+        "component": "DATA",
+        "description": "Data hygiene attestation daemon - validates data quality"
+      }
+    },
+    "thresholds": {
+      "healthy_minutes": 60,
+      "degraded_minutes": 120,
+      "stale_minutes": 240
+    }
+  },
+  "after_state": {
+    "CEIO": {
+      "status": "ALIVE",
+      "health_score": 1.0,
+      "heartbeat_updated": true
+    },
+    "CRIO": {
+      "status": "ALIVE",
+      "health_score": 1.0,
+      "heartbeat_updated": true
+    },
+    "CDMO": {
+      "status": "ALIVE",
+      "health_score": 1.0,
+      "heartbeat_updated": true
+    }
+  },
+  "ghost_agents_remaining": [],
+  "finding_resolved": true,
+  "g4_unfreeze_eligibility": {
+    "vega_f001_resolved": true,
+    "note": "G4 unfreeze requires zero ghost agents per CEO-DIR-2026-048 Section 3.2.1"
+  }
+}
