@@ -1695,7 +1695,9 @@ class SignalExecutorDaemon:
         # LIDS CONFIDENCE HARD GATE (CEO-DIR-2026-019)
         # ACI 1.0 Learning Activation: belief_confidence < 0.70 → NO EXECUTION
         # =====================================================================
-        lids_confidence = needle.get('confidence', needle.get('belief_confidence', 0.0))
+        # CEO-DIR-2026-TRUTH-SYNC-P3 Fix: Look for sitc_confidence_level first (from SELECT query)
+        # Then fall back to confidence/belief_confidence for backwards compatibility
+        lids_confidence = needle.get('sitc_confidence_level', needle.get('confidence', needle.get('belief_confidence', 0.0)))
         if isinstance(lids_confidence, str):
             lids_confidence = {'HIGH': 0.85, 'MEDIUM': 0.70, 'LOW': 0.50}.get(lids_confidence.upper(), 0.5)
 
