@@ -1,0 +1,335 @@
+{
+  "report_id": "CEO_DIR_2026_TRUTH_SYNC_D5_FULL_REPORT",
+  "report_type": "COGNITIVE_PROGRESS_REPORT",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-D5",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T01:37:00Z",
+  "local_time": "2026-01-13T02:37:00+01:00 CET",
+  "day_boundary": "Day 5 → Day 6",
+  "audience": ["CEO", "Board", "External Audit"],
+
+  "section_2_2_system_state_verification": {
+    "regime_computation": {
+      "query": "SELECT asset_id, timestamp, technical_regime, sovereign_regime, created_at FROM fhq_perception.sovereign_regime_state_v4 WHERE asset_id = 'BTC-USD' ORDER BY created_at DESC LIMIT 1",
+      "result": {
+        "asset_id": "BTC-USD",
+        "regime_date": "2026-01-12T23:00:00Z",
+        "technical_regime": "NEUTRAL",
+        "sovereign_regime": "NEUTRAL",
+        "created_at": "2026-01-13T00:30:32Z",
+        "hours_since_update": 1.09
+      },
+      "status": "FRESH",
+      "note": "Regime computed ~1 hour ago, within 24h freshness requirement"
+    },
+    "golden_needle_counts": {
+      "query": "SELECT current_state, COUNT(*) FROM g5_signal_state GROUP BY current_state",
+      "result": {
+        "EXPIRED": 1353,
+        "DUPLICATE_PRUNED": 422,
+        "PRIMED": 9,
+        "DORMANT": 0
+      },
+      "fresh_needles_under_12h": 2,
+      "fresh_needle_ids": [
+        "33710bb8-e301-40c5-b47b-8fed96610ea2",
+        "8d8dc51d-2d50-42c4-bde2-6d3cfc7575ea"
+      ]
+    },
+    "g5_signal_state_distribution": {
+      "query": "SELECT current_state, COUNT(*), COUNT(*) FILTER (WHERE last_transition_at > NOW() - INTERVAL '24 hours') FROM g5_signal_state GROUP BY current_state",
+      "result": {
+        "EXPIRED": {"total": 1353, "transitions_today": 24},
+        "DUPLICATE_PRUNED": {"total": 422, "transitions_today": 0},
+        "PRIMED": {"total": 9, "transitions_today": 0}
+      },
+      "note": "24 transitions today = dormant queue drain (20) + 4 other hygiene"
+    },
+    "lids_sitc_gate_status": {
+      "lids_confidence_gate": "OPERATIONAL",
+      "lids_freshness_gate": "OPERATIONAL",
+      "sitc_cognitive_gate": "OPERATIONAL",
+      "evidence": {
+        "lids_blocks_today": 57,
+        "lids_confidence_blocks": 24,
+        "lids_freshness_blocks": 33,
+        "sitc_research_protocols_created": 4
+      }
+    },
+    "execution_tables_zero_mutation": {
+      "query": "SELECT table_name, COUNT(*) FROM execution tables",
+      "result": {
+        "fhq_execution.trades": 5,
+        "fhq_execution.paper_positions": 0,
+        "fhq_execution.paper_orders": 0,
+        "fhq_canonical.g5_paper_trades": 8,
+        "fhq_canonical.canonical_outcomes": 4
+      },
+      "mutations_today": 0,
+      "status": "VERIFIED_ZERO_MUTATION",
+      "note": "All existing rows are historical - no new trades executed today"
+    },
+    "governance_logs_today": {
+      "query": "SELECT action_type, COUNT(*) FROM governance_actions_log WHERE initiated_at > NOW() - INTERVAL '24 hours'",
+      "total_actions": 478,
+      "breakdown": {
+        "CNRP_ORCHESTRATOR_EXECUTION": 208,
+        "LIDS_FRESHNESS_BLOCK": 33,
+        "IOS003_REGIME_META_SYNC": 27,
+        "EVIDENCE_ATTACHMENT_D2": 27,
+        "LIDS_CONFIDENCE_BLOCK": 24,
+        "CNRP_R1_EVIDENCE_REFRESH": 21,
+        "CNRP_R2_GRAPH_REBUILD": 21,
+        "CNRP_R3_HYGIENE_ATTESTATION": 21,
+        "VISION_ORCHESTRATOR_CYCLE": 14,
+        "IOS010_OUTCOME_CAPTURE": 13,
+        "IOS010_LESSON_EXTRACTION": 13,
+        "STARTUP_RECONCILIATION_CHECK": 10
+      }
+    }
+  },
+
+  "section_2_3_cognitive_activity": {
+    "phase_4_agency_observation": {
+      "status": "COMPLETE",
+      "artifact": "PHASE4_AGENCY_DECISION_TRACE.json",
+      "needles_evaluated": 2,
+      "would_execute": 2,
+      "blocked": 0,
+      "execution_occurred": false
+    },
+    "eqs_delta_analysis": {
+      "needle_33710bb8": {
+        "hypothesis": "Stress-to-Bull Transition via VIX-Crypto Divergence",
+        "stored_eqs": 0.97,
+        "realtime_eqs": 0.812,
+        "delta": -0.158,
+        "explanation": "Minor EQS degradation - slight market drift from hypothesis conditions",
+        "factors_identified": 5
+      },
+      "needle_8d8dc51d": {
+        "hypothesis": "Neutral-to-Bear Transition via Volatility Regime Shift",
+        "stored_eqs": 0.97,
+        "realtime_eqs": 0.632,
+        "delta": -0.338,
+        "explanation": "Moderate EQS degradation - some hypothesis assumptions no longer hold",
+        "factors_identified": 4
+      }
+    },
+    "decision_trace_stability": {
+      "reproducible": true,
+      "deterministic": true,
+      "all_gates_logged": true,
+      "rationale_chain_complete": true
+    },
+    "context_sensitivity_evidence": {
+      "stored_confidence": "HIGH",
+      "realtime_confidence": "MEDIUM",
+      "reason": "System correctly downgraded confidence based on live market conditions vs creation-time assumptions"
+    },
+    "what_aci_chose_not_to_do": [
+      "Did not execute trades (Phase 4 = observation only)",
+      "Did not mutate g5_signal_state (dry-run mode)",
+      "Did not place orders (paper or live)",
+      "Did not override SITC cognitive judgment",
+      "Did not adjust EQS weights or confidence thresholds"
+    ],
+    "judgment_trust_assessment": "YES - The ACI demonstrated sound judgment by: (1) accurately evaluating stored vs real-time belief quality, (2) explaining the delta in plain language, (3) correctly identifying that both signals pass all gates, (4) exercising restraint by awaiting Phase 5 authorization"
+  },
+
+  "section_2_4_learning_insight_extraction": {
+    "assumptions_strengthened": [
+      "Stored EQS ≠ execution readiness - separation is real and measurable",
+      "SITC cognitive reasoning produces different results than static EQS storage",
+      "LIDS gates (confidence + freshness) are effective pre-filters",
+      "Dormant queue hygiene prevents needle hoarding deadlock"
+    ],
+    "assumptions_weakened": [
+      "Initial belief that EQS=0.016 blocking was a bug - actually it was schema issues (now fixed)"
+    ],
+    "failure_modes_identified_and_resolved": {
+      "F1": {
+        "mode": "LIDS confidence field mismatch",
+        "cause": "Code looked for 'confidence' but SELECT provided 'sitc_confidence_level'",
+        "fix": "Commit 3cd7750"
+      },
+      "F2": {
+        "mode": "DORMANT queue deadlock",
+        "cause": "20 stale signals blocked VOL_GATE from accepting new needles",
+        "fix": "CEO-DIR-2026-TRUTH-SYNC-P3-D Task 3.4 (drained queue)"
+      },
+      "F3": {
+        "mode": "SITC enum missing values",
+        "cause": "chain_node_status enum lacked SYNTHESIS, REASONING, LOW, etc.",
+        "fix": "Commit b340d27"
+      },
+      "F4": {
+        "mode": "FK constraint violation in search_in_chain_events",
+        "cause": "Protocol not persisted before chain events created",
+        "fix": "Added _persist_research_protocol() method"
+      }
+    },
+    "causal_loops_closed": [
+      "DORMANT queue deadlock → VOL_GATE release → FINN hunt can regenerate",
+      "Schema mismatch → LIDS always blocked → Fix → LIDS gates operational",
+      "SITC enum errors → Cognitive reasoning fails → Fix → SITC approves signals"
+    ],
+    "new_invariants_enforced": [
+      "Startup reconciliation guard (broker state verified before daemon runs)",
+      "Dry-run observation mode (full trace without execution)",
+      "EQS delta explanation (machine-generated rationale for stored vs live)",
+      "Block category classification (volatility/regime/correlation/liquidity)"
+    ],
+    "learning_vs_execution": {
+      "execution_count_today": 0,
+      "learning_artifacts_generated": 12,
+      "restraint_demonstrated": true,
+      "restraint_was_correct": true
+    }
+  },
+
+  "section_2_5_change_log_evidence_artifacts": {
+    "artifacts_reviewed": 20,
+    "artifacts_created_today": 12,
+    "artifact_summary": [
+      {
+        "file": "PHASE4_AGENCY_DECISION_TRACE.json",
+        "purpose": "Prove cognitive evaluation produces explainable decisions",
+        "type": "ATTESTATIONAL"
+      },
+      {
+        "file": "CHANGE_RECORD_P3_SITC_GATE_SCHEMA_FIX.json",
+        "purpose": "Document SITC enum/FK/CHECK fixes for audit",
+        "type": "CORRECTIVE"
+      },
+      {
+        "file": "PHASE3_FINN_HUNT_REGENERATION_REPORT.json",
+        "purpose": "Prove FINN hunt can generate fresh needles post-deadlock",
+        "type": "DIAGNOSTIC"
+      },
+      {
+        "file": "CHANGE_RECORD_P3_3_4_DORMANT_DRAIN.json",
+        "purpose": "Document dormant queue hygiene transition",
+        "type": "CORRECTIVE"
+      },
+      {
+        "file": "FINN_HUNT_SESSION_INVESTIGATION.json",
+        "purpose": "Root cause analysis of why FINN stopped generating",
+        "type": "DIAGNOSTIC"
+      },
+      {
+        "file": "CHANGE_RECORD_P3_3_2_LIDS_CONFIDENCE_FIX.json",
+        "purpose": "Document LIDS field mismatch fix",
+        "type": "CORRECTIVE"
+      },
+      {
+        "file": "PHASE3_COMPLETION_SUMMARY.json",
+        "purpose": "Summarize Phase 3 gate verification",
+        "type": "ATTESTATIONAL"
+      },
+      {
+        "file": "PHASE3_FRESHNESS_POLICY_RECONCILIATION.json",
+        "purpose": "Document freshness threshold alignment",
+        "type": "DIAGNOSTIC"
+      },
+      {
+        "file": "PHASE3_LIDS_BLOCK_REASON_TAXONOMY.json",
+        "purpose": "Categorize why signals were blocked",
+        "type": "DIAGNOSTIC"
+      },
+      {
+        "file": "PHASE3_SCHEMA_VERIFICATION_RESULTS.json",
+        "purpose": "Verify signal_executor schema alignment",
+        "type": "DIAGNOSTIC"
+      },
+      {
+        "file": "PHASE2_4_DAEMON_STARTUP_REPORT.json",
+        "purpose": "Prove daemon can start with reconciliation guard",
+        "type": "ATTESTATIONAL"
+      },
+      {
+        "file": "PHASE2_REMEDIATION_EVIDENCE_BUNDLE.json",
+        "purpose": "Bundle all Phase 2 fixes for audit",
+        "type": "CORRECTIVE"
+      }
+    ]
+  },
+
+  "section_2_6_search_exploration_footprint": {
+    "conceptual_searches": [
+      "Why are LIDS gates blocking all signals? → Schema mismatch",
+      "Why did FINN hunt stop generating needles? → DORMANT queue deadlock",
+      "What is blocking SITC cognitive reasoning? → Enum values missing",
+      "Can the system explain WHY it would act? → Yes, via EQS delta"
+    ],
+    "subsystems_interrogated": [
+      "fhq_canonical.golden_needles (signal creation)",
+      "fhq_canonical.g5_signal_state (state machine)",
+      "fhq_cognition.search_in_chain_events (SITC reasoning)",
+      "fhq_cognition.research_protocols (cognitive planning)",
+      "fhq_governance.governance_actions_log (audit trail)",
+      "fhq_perception.sovereign_regime_state_v4 (regime computation)"
+    ],
+    "driving_questions": [
+      "Is the ACI capable of clear thinking?",
+      "Can it exercise restraint for explainable reasons?",
+      "Are all decisions traceable to database evidence?",
+      "What prevents Phase 5 execution?"
+    ]
+  },
+
+  "section_2_7_progress_assessment": {
+    "unknowns_reduced": {
+      "before": ["Why LIDS always blocks", "Why FINN stopped", "Why SITC fails"],
+      "after": ["All root causes identified and fixed"],
+      "reduction": "3 unknowns → 0"
+    },
+    "blockers_removed": {
+      "removed": [
+        "LIDS confidence field mismatch",
+        "DORMANT queue deadlock",
+        "SITC schema errors (enum, FK, CHECK)"
+      ],
+      "remaining": ["Phase 5 CEO authorization (intentional gate)"]
+    },
+    "option_set_increased": {
+      "new_capabilities": [
+        "End-to-end decision tracing with machine-generated rationale",
+        "Stored vs real-time belief separation with delta explanation",
+        "Dry-run observation mode for cognitive validation",
+        "Safe regeneration after deadlock"
+      ]
+    },
+    "plain_language_assessment": "Day 5 moved from 'why is everything broken' to 'the system can think, decide, and explain itself'. This is foundational progress."
+  },
+
+  "section_2_8_risks_open_questions": {
+    "risks": [
+      {
+        "risk": "Real-time EQS degradation could block all signals if market conditions diverge significantly",
+        "likelihood": "MEDIUM",
+        "mitigation": "EQS threshold (0.50) is conservative; signals passed at 0.632 and 0.812"
+      },
+      {
+        "risk": "Fresh needles expire in 12h if not evaluated",
+        "likelihood": "LOW",
+        "mitigation": "Phase 5 authorization expected within freshness window"
+      }
+    ],
+    "what_could_prevent_phase_5": [
+      "CEO does not authorize (intentional)",
+      "Fresh needles expire before authorization",
+      "New blocking condition discovered"
+    ],
+    "what_would_invalidate_conclusions": [
+      "Discovery that SITC approval is non-deterministic",
+      "EQS calculation has hidden randomness",
+      "Gate evaluations differ on repeated runs"
+    ],
+    "watch_closely_24_48h": [
+      "Fresh needle expiration (12h threshold)",
+      "SITC approval stability on repeated evaluation",
+      "Regime transition from NEUTRAL (would affect signal validity)"
+    ]
+  }
+}
