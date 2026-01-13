@@ -726,6 +726,10 @@ class SitCPlanner:
             output_modification={'plan_id': plan.plan_id, 'node_count': len(plan.nodes)}
         )
 
+        # CEO-DIR-2026-TRUTH-SYNC-P3-D: Persist protocol to research_protocols
+        # Required for FK constraint in search_in_chain_events
+        self._persist_research_protocol(plan, hypothesis)
+
         logger.info(f"Created research plan {plan.plan_id} with {len(plan.nodes)} nodes")
 
         return plan
@@ -980,6 +984,84 @@ class SitCPlanner:
                 self.conn.rollback()
 
         logger.info(f"Logged {len(nodes)} nodes to chain_of_query")
+
+    # =========================================================================
+    # INTERNAL: Persist research protocol (FK requirement)
+    # =========================================================================
+
+    def _persist_research_protocol(self, plan: 'ResearchPlan', hypothesis: str):
+        """
+        Persist research protocol to fhq_cognition.research_protocols.
+
+        CEO-DIR-2026-TRUTH-SYNC-P3-D: Required for FK constraint in search_in_chain_events.
+        The plan_id is used as protocol_id in chain events.
+        """
+        try:
+            import hashlib
+
+            # Generate hashes for lineage
+            hash_content = f"{plan.plan_id}:{hypothesis}:{self._current_asrp_hash}"
+            hash_self = hashlib.sha256(hash_content.encode()).hexdigest()[:16]
+            lineage_hash = hashlib.sha256(f"{hash_self}:{self.session_id}".encode()).hexdigest()[:16]
+
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_cognition.research_protocols (
+                        protocol_id,
+                        protocol_code,
+                        protocol_name,
+                        protocol_type,
+                        status,
+                        primary_engine,
+                        hypothesis,
+                        budget_allocated_usd,
+                        budget_consumed_usd,
+                        max_search_calls,
+                        search_calls_made,
+                        defcon_at_creation,
+                        defcon_current,
+                        source_document,
+                        governance_class,
+                        initiating_agent,
+                        hash_self,
+                        lineage_hash,
+                        created_at,
+                        ingested_at,
+                        updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, 'EXECUTING'::fhq_cognition.protocol_status,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        NOW(), NOW(), NOW()
+                    )
+                    ON CONFLICT (protocol_id) DO NOTHING
+                """, (
+                    plan.plan_id,
+                    f"SITC-{plan.plan_id[:8]}",
+                    f"SitC Research: {hypothesis[:50]}",
+                    'SITC_REASONING',
+                    'SitC',
+                    hypothesis[:500] if hypothesis else '',
+                    0.10,  # budget_allocated_usd
+                    0.00,  # budget_consumed_usd
+                    5,     # max_search_calls (CHECK constraint: <= 5)
+                    0,     # search_calls_made
+                    self._defcon_level or 'GREEN',
+                    self._defcon_level or 'GREEN',
+                    'CEO-DIR-2026-TRUTH-SYNC-P3-D',
+                    'SITC_EXECUTION',
+                    'STIG',
+                    hash_self,
+                    lineage_hash
+                ))
+                self.conn.commit()
+                logger.debug(f"Persisted research protocol {plan.plan_id}")
+        except Exception as e:
+            logger.warning(f"Failed to persist research protocol: {e}")
+            # Don't fail the plan creation - the FK error will be caught later if needed
+            try:
+                self.conn.rollback()
+            except:
+                pass
 
     # =========================================================================
     # INTERNAL: Log to cognitive_engine_evidence
