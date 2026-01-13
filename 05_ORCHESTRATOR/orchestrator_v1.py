@@ -130,6 +130,11 @@ class Config:
     # Orchestrator publishes heartbeat every 60 seconds to prove liveness
     HEARTBEAT_INTERVAL_SECONDS = 60  # 1 minute heartbeat interval
 
+    # CEO-DIR-2026-045: DEFCON Live Evaluation
+    # Evaluate and update DEFCON state every 5 minutes to keep it fresh
+    DEFCON_EVAL_INTERVAL_SECONDS = 300  # 5 minutes
+    DEFCON_EVALUATOR_PATH = 'defcon_live_evaluator.py'
+
     # Vision-IoS functions directory
     @staticmethod
     def get_functions_dir() -> Path:
@@ -1524,6 +1529,53 @@ class VisionIoSOrchestrator:
 
         return result
 
+    def run_defcon_evaluation(self) -> Dict[str, Any]:
+        """
+        Run DEFCON live evaluation (CEO-DIR-2026-045).
+
+        Evaluates system health and updates DEFCON state timestamp.
+        Level changes only occur if thresholds are breached.
+        """
+        result = {
+            'success': False,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'level': None,
+            'action': None,
+        }
+
+        if self.dry_run:
+            self.logger.info("[DRY RUN] Would run DEFCON evaluation")
+            result['success'] = True
+            result['dry_run'] = True
+            return result
+
+        try:
+            # Import and run the evaluator directly for efficiency
+            functions_dir = Config.get_functions_dir()
+            sys.path.insert(0, str(functions_dir))
+
+            from defcon_live_evaluator import evaluate_defcon, update_defcon_state
+
+            # Connect and evaluate
+            if not self.db.conn or self.db.conn.closed:
+                self.db.connect()
+
+            evaluation = evaluate_defcon(self.db.conn)
+            update_result = update_defcon_state(self.db.conn, evaluation)
+
+            result['success'] = True
+            result['level'] = evaluation['recommendation']['level']
+            result['action'] = update_result['action']
+            result['warnings'] = len(evaluation.get('warnings', []))
+
+            self.logger.info(f"DEFCON evaluated: Level {result['level']} ({result['action']})")
+
+        except Exception as e:
+            self.logger.warning(f"DEFCON evaluation failed: {e}")
+            result['error'] = str(e)
+
+        return result
+
     def run_cnrp_continuous(self):
         """
         Run orchestrator with integrated CNRP and Truth Loop scheduling.
@@ -1542,11 +1594,13 @@ class VisionIoSOrchestrator:
         self.logger.info(f"CNRP Cycle Interval: {Config.CNRP_CYCLE_INTERVAL_SECONDS}s (4 hours)")
         self.logger.info(f"R4 Monitor Interval: {Config.CNRP_R4_INTERVAL_SECONDS}s (10 minutes)")
         self.logger.info(f"Truth Loop Interval: {Config.TRUTH_LOOP_INTERVAL_SECONDS}s (2 hours)")
+        self.logger.info(f"DEFCON Eval Interval: {Config.DEFCON_EVAL_INTERVAL_SECONDS}s (5 minutes)")
         self.logger.info(f"Heartbeat Interval: {Config.HEARTBEAT_INTERVAL_SECONDS}s (CEO-DIR-2026-042)")
 
         last_cnrp_cycle = 0    # Epoch time of last full CNRP cycle
         last_r4_monitor = 0    # Epoch time of last R4 monitor
         last_truth_loop = 0    # Epoch time of last Truth Loop snapshot
+        last_defcon_eval = 0   # CEO-DIR-2026-045: Epoch time of last DEFCON evaluation
         last_heartbeat = 0     # CEO-DIR-2026-042: Epoch time of last heartbeat
         cycle_number = 0
         truth_loop_count = 0
@@ -1612,17 +1666,26 @@ class VisionIoSOrchestrator:
                     if not result.get('success'):
                         self.logger.error("R4 monitor failed, but continuing...")
 
+                # Check if DEFCON evaluation is due (every 5 minutes - CEO-DIR-2026-045)
+                time_since_defcon = now - last_defcon_eval
+                if time_since_defcon >= Config.DEFCON_EVAL_INTERVAL_SECONDS:
+                    result = self.run_defcon_evaluation()
+                    last_defcon_eval = now
+                    total_events += 1
+
                 # Calculate sleep time until next action
                 time_to_cnrp = max(0, Config.CNRP_CYCLE_INTERVAL_SECONDS - (time.time() - last_cnrp_cycle))
                 time_to_r4 = max(0, Config.CNRP_R4_INTERVAL_SECONDS - (time.time() - last_r4_monitor))
                 time_to_truth = max(0, Config.TRUTH_LOOP_INTERVAL_SECONDS - (time.time() - last_truth_loop))
-                sleep_time = min(time_to_cnrp, time_to_r4, time_to_truth, 60)  # Check at least every minute
+                time_to_defcon = max(0, Config.DEFCON_EVAL_INTERVAL_SECONDS - (time.time() - last_defcon_eval))
+                sleep_time = min(time_to_cnrp, time_to_r4, time_to_truth, time_to_defcon, 60)  # Check at least every minute
 
                 if sleep_time > 0:
                     next_times = [
                         ("CNRP chain", time_to_cnrp),
                         ("R4 monitor", time_to_r4),
-                        ("Truth Loop", time_to_truth)
+                        ("Truth Loop", time_to_truth),
+                        ("DEFCON eval", time_to_defcon)
                     ]
                     next_action, next_time = min(next_times, key=lambda x: x[1])
                     self.logger.info(f"Next {next_action} in {next_time:.0f}s. Sleeping {sleep_time:.0f}s...")
