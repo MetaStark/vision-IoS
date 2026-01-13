@@ -3,7 +3,7 @@
  * Export all learning dashboard components
  */
 
-export { LearningProgressBar } from './LearningProgressBar'
+export { LearningProgressBar, DualProgressBars } from './LearningProgressBar'
 export { DailyDeltaPanel } from './DailyDeltaPanel'
 export type { DailyLearningItem } from './DailyDeltaPanel'
 export { MechanismPanel } from './MechanismPanel'

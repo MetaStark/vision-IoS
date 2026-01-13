@@ -1,8 +1,11 @@
 /**
- * Learning Observability Dashboard - CEO-DIR-2026-057
+ * Learning Observability Dashboard - CEO-DIR-2026-057 & CEO-DIR-2026-058
  * "ACI Learning in Motion" - Executive Dashboard
  *
- * NOW CONNECTED TO REAL DATA from database views
+ * CEO-DIR-2026-058 UPDATE:
+ * Dashboard now shows TWO separate progress bars:
+ * - System Maturity (FMCL, safety, governance) - can reach 100%
+ * - Market Learning (holdout performance) - starts at 0%
  */
 
 'use client'
@@ -10,7 +13,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, BookOpen, Brain, AlertCircle } from 'lucide-react'
 import {
-  LearningProgressBar,
+  DualProgressBars,
   DailyDeltaPanel,
   MechanismPanel,
   CognitiveActivityMeters,
@@ -23,8 +26,26 @@ import type {
   LearningYieldData,
 } from '@/components/learning'
 
+interface MarketLearningData {
+  progress: number
+  status: string
+  labelLocked: boolean
+  labelVersion: string | null
+  labelHash: string | null
+  holdoutCount: number
+  holdoutFrozen: boolean
+  holdoutVerified: boolean
+  latestBrier: number | null
+  latestDelta: number | null
+  latestDirection: string | null
+  totalEvaluations: number
+  significantImprovements: number
+}
+
 interface LearningData {
   progress: number
+  systemMaturity: number
+  marketLearning: MarketLearningData
   fmclDistribution: string
   highSeverityClosed: number
   highSeverityTotal: number
@@ -179,12 +200,12 @@ export default function LearningDashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-8 space-y-8">
-        {/* Zone 1: Learning Progress Bar (Primary Visual) */}
+        {/* Zone 1: Dual Progress Bars (CEO-DIR-2026-058) */}
         <section>
           <div className="mb-3 flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-blue-500" />
             <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Learning Maturity (Primary)
+              Dual-Track Progress (CEO-DIR-2026-058)
             </h2>
             {data?.fmclDistribution && (
               <span className="text-xs text-gray-600 font-mono ml-2">
@@ -192,8 +213,13 @@ export default function LearningDashboardPage() {
               </span>
             )}
           </div>
-          <LearningProgressBar
-            currentValue={progress}
+          <DualProgressBars
+            systemMaturity={data?.systemMaturity ?? data?.progress ?? 0}
+            marketLearning={data?.marketLearning?.progress ?? 0}
+            marketLearningStatus={data?.marketLearning?.status ?? 'Loading...'}
+            labelLocked={data?.marketLearning?.labelLocked ?? false}
+            holdoutFrozen={data?.marketLearning?.holdoutFrozen ?? false}
+            holdoutVerified={data?.marketLearning?.holdoutVerified ?? false}
             lastUpdated={mounted && data?.lastUpdated
               ? new Date(data.lastUpdated).toLocaleDateString()
               : undefined}

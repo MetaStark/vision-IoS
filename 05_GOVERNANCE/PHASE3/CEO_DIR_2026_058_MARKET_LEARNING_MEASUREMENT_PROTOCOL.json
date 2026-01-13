@@ -1,0 +1,161 @@
+{
+  "directive": "CEO-DIR-2026-058",
+  "title": "Market Learning Measurement Protocol (MLMP)",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-13T21:30:00Z",
+  "applies_to": ["STIG", "FINN", "VEGA"],
+  "status": "IMPLEMENTING",
+
+  "executive_intent": {
+    "purpose": "Establish ONE and ONLY ONE valid definition of Market Learning in FjordHQ",
+    "principle": "Market Learning exists only when system shows statistically significant improvement on FROZEN, ISOLATED evaluation sets",
+    "mode": "Constitutional enforcement - no exceptions"
+  },
+
+  "problem_statement": {
+    "as_of": "2026-01-13",
+    "findings": [
+      "100% HIGH-severity failure modes CLOSED",
+      "FMCL loop functional",
+      "Calibration discipline enforced",
+      "Regime anti-correlation neutralized"
+    ],
+    "assessment": "This represents SYSTEMIC STABILIZATION, not market understanding",
+    "correction": "Dashboard indicator 'Learning Maturity = 100%' was conceptually WRONG and has been corrected"
+  },
+
+  "dual_track_framework": {
+    "track_a": {
+      "name": "System Maturity",
+      "definition": "Governance readiness: FMCL, safety gates, calibration, integrity",
+      "can_reach_100": true,
+      "directives": ["CEO-DIR-2026-052", "CEO-DIR-2026-054", "CEO-DIR-2026-056"]
+    },
+    "track_b": {
+      "name": "Market Learning",
+      "definition": "Holdout performance improvement - out-of-sample skill",
+      "starts_at_zero": true,
+      "requires": [
+        "Locked label definition",
+        "Frozen holdout dataset",
+        "Predefined metrics",
+        "Significant improvement demonstrated"
+      ],
+      "directive": "CEO-DIR-2026-058"
+    }
+  },
+
+  "implementation": {
+    "database_artifacts": {
+      "tables_created": [
+        "fhq_governance.label_definition_registry",
+        "fhq_governance.frozen_holdout_registry",
+        "fhq_governance.holdout_evaluation_results"
+      ],
+      "views_created": [
+        "fhq_governance.v_market_learning_status"
+      ]
+    },
+
+    "label_definition_v1": {
+      "version": "v1",
+      "forecast_type": "PRICE_DIRECTION",
+      "horizon_minutes": 5,
+      "label_up": "realized_return > 0.00%",
+      "label_down": "realized_return <= 0.00%",
+      "schema_hash": "1fe7c40710beb693d61281fc99ed6efa4b9bffaf6feb11dae1ba954e07a70aee",
+      "locked_at": "2026-01-13T21:39:33Z",
+      "locked_by": "STIG",
+      "ceo_approved": true
+    },
+
+    "dashboard_updates": {
+      "component_modified": "LearningProgressBar.tsx",
+      "new_component": "DualProgressBars",
+      "changes": [
+        "Renamed 'Learning Maturity' to 'System Maturity'",
+        "Added 'Market Learning' progress bar (starts at 0%)",
+        "Added prerequisites check (Label Locked, Holdout Frozen, Isolation Verified)",
+        "Added status label showing blocking conditions"
+      ]
+    },
+
+    "api_updates": {
+      "endpoint": "/api/learning",
+      "new_fields": [
+        "systemMaturity",
+        "marketLearning.progress",
+        "marketLearning.status",
+        "marketLearning.labelLocked",
+        "marketLearning.holdoutFrozen",
+        "marketLearning.holdoutVerified"
+      ]
+    }
+  },
+
+  "binding_requirements": {
+    "section_4_1": {
+      "title": "Locked Label Definition",
+      "owner": "STIG",
+      "status": "COMPLETE",
+      "evidence": "fhq_governance.label_definition_registry contains v1 with schema_hash"
+    },
+    "section_4_2": {
+      "title": "Frozen Holdout Set",
+      "owner": "FINN",
+      "status": "PENDING",
+      "requirement": "Establish frozen evaluation sets with stress regime coverage"
+    },
+    "section_4_3": {
+      "title": "Learning Metrics",
+      "metrics": ["brier_score", "log_loss", "calibration_error", "hit_rate", "regime_accuracy_vs_random"],
+      "constraint": "Comparison only between versions, never against rolling window"
+    }
+  },
+
+  "qg_f6_prerequisites": {
+    "required_before_activation": true,
+    "checklist": [
+      {"item": "Locked labels", "status": "COMPLETE"},
+      {"item": "Frozen holdout", "status": "PENDING"},
+      {"item": "Minimum one documented improvement on holdout", "status": "PENDING"}
+    ]
+  },
+
+  "vega_attestation_required": {
+    "items": [
+      "Label definition is locked and hash-verified",
+      "Holdout set exists and is isolated",
+      "Dashboard explicitly separates System Maturity from Market Learning",
+      "No learning claims based on rolling data"
+    ],
+    "status": "PENDING"
+  },
+
+  "current_status": {
+    "system_maturity": "100% (complete)",
+    "market_learning": "0% (BLOCKED: No frozen holdout set)",
+    "label_locked": true,
+    "holdout_frozen": false,
+    "holdout_verified": false
+  },
+
+  "attestation": {
+    "implemented_by": "STIG",
+    "implemented_at": "2026-01-13T21:45:00Z",
+    "constitutional_reference": "CEO-DIR-2026-058",
+    "properties": [
+      "Label definition v1 locked with SHA-256 hash",
+      "Holdout registry tables created",
+      "Market Learning view created",
+      "Dashboard updated with dual-track progress bars",
+      "API returns separate systemMaturity and marketLearning metrics"
+    ],
+    "pending": [
+      "FINN to establish frozen holdout sets",
+      "VEGA independent attestation",
+      "First holdout evaluation"
+    ]
+  }
+}

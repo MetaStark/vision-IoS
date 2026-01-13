@@ -1,6 +1,11 @@
 /**
- * Learning Dashboard API - CEO-DIR-2026-057
+ * Learning Dashboard API - CEO-DIR-2026-057 & CEO-DIR-2026-058
  * Provides REAL data from database views for the Learning Observability Dashboard
+ *
+ * CEO-DIR-2026-058 UPDATE:
+ * Now returns DUAL metrics:
+ * - System Maturity (FMCL, safety, governance)
+ * - Market Learning (holdout performance - starts at 0%)
  */
 
 import { NextResponse } from 'next/server'
@@ -45,6 +50,12 @@ export async function GET() {
       LIMIT 5
     `)
     const mechanisms = mechanismResult.rows
+
+    // CEO-DIR-2026-058: Fetch Market Learning status (separate from System Maturity)
+    const marketLearningResult = await client.query(`
+      SELECT * FROM fhq_governance.v_market_learning_status
+    `)
+    const marketLearning = marketLearningResult.rows[0]
 
     return NextResponse.json({
       progress: progress?.current_progress_pct || 80,
@@ -92,6 +103,24 @@ export async function GET() {
 
       llmBalance: parseFloat(activity?.llm_balance_remaining) || 0,
       activeProviders: activity?.active_providers || '',
+
+      // CEO-DIR-2026-058: Dual-track metrics
+      systemMaturity: progress?.current_progress_pct || 0,  // Renamed from "progress"
+      marketLearning: {
+        progress: marketLearning?.market_learning_pct || 0,
+        status: marketLearning?.status_label || 'BLOCKED: View not found',
+        labelLocked: marketLearning?.label_locked || false,
+        labelVersion: marketLearning?.label_version || null,
+        labelHash: marketLearning?.label_hash || null,
+        holdoutCount: marketLearning?.holdout_count || 0,
+        holdoutFrozen: (marketLearning?.frozen_count || 0) > 0,
+        holdoutVerified: (marketLearning?.verified_count || 0) > 0,
+        latestBrier: marketLearning?.latest_brier || null,
+        latestDelta: marketLearning?.latest_delta || null,
+        latestDirection: marketLearning?.latest_direction || null,
+        totalEvaluations: marketLearning?.total_evaluations || 0,
+        significantImprovements: marketLearning?.significant_improvements || 0,
+      },
 
       lastUpdated: new Date().toISOString(),
       source: 'database',
