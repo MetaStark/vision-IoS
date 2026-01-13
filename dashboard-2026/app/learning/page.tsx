@@ -163,7 +163,11 @@ export default function LearningDashboardPage() {
             <div className="flex items-center gap-4">
               {data?.llmBalance !== undefined && (
                 <div className="text-xs text-gray-500">
-                  LLM Balance: <span className="text-green-400 font-mono">${data.llmBalance.toFixed(2)}</span>
+                  LLM Balance: <span className="text-green-400 font-mono">
+                    {data.activeProviders === 'serper'
+                      ? `${data.llmBalance.toLocaleString()} credits`
+                      : `$${data.llmBalance.toFixed(2)}`}
+                  </span>
                   {data.activeProviders && (
                     <span className="text-gray-600 ml-1">({data.activeProviders})</span>
                   )}
