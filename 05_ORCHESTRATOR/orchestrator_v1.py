@@ -126,6 +126,10 @@ class Config:
     TRUTH_LOOP_INTERVAL_SECONDS = 7200  # 2 hours baseline
     TRUTH_LOOP_TASK_PATH = 'tasks/ios_truth_snapshot_engine.py'
 
+    # CEO-DIR-2026-042: Heartbeat Configuration
+    # Orchestrator publishes heartbeat every 60 seconds to prove liveness
+    HEARTBEAT_INTERVAL_SECONDS = 60  # 1 minute heartbeat interval
+
     # Vision-IoS functions directory
     @staticmethod
     def get_functions_dir() -> Path:
@@ -1001,6 +1005,44 @@ class VisionIoSOrchestrator:
         """Generate cycle ID"""
         return datetime.now(timezone.utc).strftime("CYCLE_%Y%m%d_%H%M%S")
 
+    def publish_heartbeat(self, current_task: str = "CONTINUOUS_MODE", events_processed: int = 0) -> bool:
+        """
+        Publish orchestrator heartbeat to fhq_governance.agent_heartbeats.
+        CEO-DIR-2026-042: Proves liveness, eliminates "orchestrator running" assumption.
+
+        Args:
+            current_task: Current task being executed
+            events_processed: Number of events processed since start
+
+        Returns:
+            True if heartbeat published successfully
+        """
+        try:
+            if not self.db.conn:
+                self.db.connect()
+
+            cursor = self.db.conn.cursor()
+
+            # Upsert heartbeat for LARS (orchestrator agent)
+            cursor.execute("""
+                INSERT INTO fhq_governance.agent_heartbeats
+                    (agent_id, component, current_task, health_score, events_processed, errors_count, last_heartbeat, created_at)
+                VALUES
+                    ('LARS', 'ORCHESTRATOR', %s, 1.0, %s, 0, NOW(), NOW())
+                ON CONFLICT (agent_id) DO UPDATE SET
+                    current_task = EXCLUDED.current_task,
+                    health_score = 1.0,
+                    events_processed = fhq_governance.agent_heartbeats.events_processed + 1,
+                    last_heartbeat = NOW()
+            """, (current_task, events_processed))
+
+            self.db.conn.commit()
+            return True
+
+        except Exception as e:
+            self.logger.warning(f"Failed to publish heartbeat: {e}")
+            return False
+
     def run_cognitive_queries(self) -> List[Dict[str, Any]]:
         """
         Execute governed cognitive queries via FINN Cognitive Gateway.
@@ -1499,16 +1541,25 @@ class VisionIoSOrchestrator:
         self.logger.info(f"CNRP Cycle Interval: {Config.CNRP_CYCLE_INTERVAL_SECONDS}s (4 hours)")
         self.logger.info(f"R4 Monitor Interval: {Config.CNRP_R4_INTERVAL_SECONDS}s (10 minutes)")
         self.logger.info(f"Truth Loop Interval: {Config.TRUTH_LOOP_INTERVAL_SECONDS}s (2 hours)")
+        self.logger.info(f"Heartbeat Interval: {Config.HEARTBEAT_INTERVAL_SECONDS}s (CEO-DIR-2026-042)")
 
         last_cnrp_cycle = 0    # Epoch time of last full CNRP cycle
         last_r4_monitor = 0    # Epoch time of last R4 monitor
         last_truth_loop = 0    # Epoch time of last Truth Loop snapshot
+        last_heartbeat = 0     # CEO-DIR-2026-042: Epoch time of last heartbeat
         cycle_number = 0
         truth_loop_count = 0
+        total_events = 0       # Total events processed for heartbeat
 
         try:
             while True:
                 now = time.time()
+
+                # CEO-DIR-2026-042: Publish heartbeat every HEARTBEAT_INTERVAL_SECONDS
+                if now - last_heartbeat >= Config.HEARTBEAT_INTERVAL_SECONDS:
+                    current_task = f"CNRP#{cycle_number}|TRUTH#{truth_loop_count}"
+                    self.publish_heartbeat(current_task, total_events)
+                    last_heartbeat = now
 
                 # Check if full CNRP cycle is due (every 4 hours)
                 time_since_cnrp = now - last_cnrp_cycle
@@ -1521,6 +1572,7 @@ class VisionIoSOrchestrator:
 
                     result = self.run_cnrp_chain()
                     last_cnrp_cycle = now
+                    total_events += 1  # CEO-DIR-2026-042: Increment for heartbeat tracking
                     # CEO-DIR-2026-024: R4 timer-only, do NOT reset last_r4_monitor here
 
                     if result.get('chain_status') != 'SUCCESS':
@@ -1537,6 +1589,7 @@ class VisionIoSOrchestrator:
 
                     result = self.run_truth_loop()
                     last_truth_loop = now
+                    total_events += 1  # CEO-DIR-2026-042
 
                     if result.get('success'):
                         self.logger.info(f"Snapshot: {result.get('snapshot_id')} | Status: {result.get('status')} | Cadence: {result.get('cadence_mode')}")
@@ -1553,6 +1606,7 @@ class VisionIoSOrchestrator:
 
                     result = self.run_cnrp_r4()
                     last_r4_monitor = now
+                    total_events += 1  # CEO-DIR-2026-042
 
                     if not result.get('success'):
                         self.logger.error("R4 monitor failed, but continuing...")
@@ -1576,7 +1630,9 @@ class VisionIoSOrchestrator:
         except KeyboardInterrupt:
             self.logger.info("")
             self.logger.info("Received interrupt signal, stopping orchestrator...")
-            self.logger.info(f"Total CNRP cycles: {cycle_number}, Truth Loop snapshots: {truth_loop_count}")
+            self.logger.info(f"Total CNRP cycles: {cycle_number}, Truth Loop: {truth_loop_count}, Events: {total_events}")
+            # Final heartbeat to mark shutdown
+            self.publish_heartbeat("SHUTDOWN", total_events)
 
     def run_healthcheck(self) -> Dict[str, Any]:
         """
