@@ -1018,7 +1018,8 @@ class VisionIoSOrchestrator:
             True if heartbeat published successfully
         """
         try:
-            if not self.db.conn:
+            # Check if connection exists and is open (not just non-None)
+            if not self.db.conn or self.db.conn.closed:
                 self.db.connect()
 
             cursor = self.db.conn.cursor()
