@@ -1,11 +1,16 @@
 /**
- * Learning Dashboard API - CEO-DIR-2026-057 & CEO-DIR-2026-058
+ * Learning Dashboard API - CEO-DIR-2026-057, 058, 059, 060
  * Provides REAL data from database views for the Learning Observability Dashboard
  *
  * CEO-DIR-2026-058 UPDATE:
  * Now returns DUAL metrics:
  * - System Maturity (FMCL, safety, governance)
  * - Market Learning (holdout performance - starts at 0%)
+ *
+ * CEO-DIR-2026-060 UPDATE:
+ * Now returns Time Integrity status:
+ * - Artifact validity counts (valid, invalid, pre-canonical)
+ * - Blocking status for learning/reporting/QG-F6
  */
 
 import { NextResponse } from 'next/server'
@@ -62,6 +67,12 @@ export async function GET() {
       SELECT * FROM fhq_governance.v_evidence_clock
     `)
     const evidenceClock = evidenceClockResult.rows[0]
+
+    // CEO-DIR-2026-060: Fetch Time Integrity status
+    const timeIntegrityResult = await client.query(`
+      SELECT * FROM fhq_governance.v_time_integrity_status
+    `)
+    const timeIntegrity = timeIntegrityResult.rows[0]
 
     return NextResponse.json({
       progress: progress?.current_progress_pct || 80,
@@ -129,6 +140,7 @@ export async function GET() {
       },
 
       // CEO-DIR-2026-059: Evidence Clock (canonical time + data availability)
+      // CEO-DIR-2026-060: Time Integrity status included
       evidenceClock: {
         canonicalNow: evidenceClock?.canonical_now_utc || new Date().toISOString(),
         operationalStart: evidenceClock?.operational_start || null,
@@ -138,6 +150,19 @@ export async function GET() {
         outcomeDaysAvailable: parseInt(evidenceClock?.outcome_days_available) || 0,
         totalHoldoutEligibleRecords: parseInt(evidenceClock?.total_holdout_eligible_records) || 0,
         holdoutEligibilityStatus: evidenceClock?.holdout_eligibility_status || 'UNKNOWN',
+        // CEO-DIR-2026-060: Time Integrity
+        timeIntegrity: timeIntegrity ? {
+          status: timeIntegrity.time_integrity_status || 'UNKNOWN',
+          validCount: parseInt(timeIntegrity.valid_count) || 0,
+          invalidCount: parseInt(timeIntegrity.invalid_count) || 0,
+          pendingCount: parseInt(timeIntegrity.pending_count) || 0,
+          preCanonicalCount: parseInt(timeIntegrity.pre_canonical_count) || 0,
+          totalCount: parseInt(timeIntegrity.total_count) || 0,
+          integrityPct: parseFloat(timeIntegrity.time_integrity_pct) || 100,
+          canProceedWithLearning: timeIntegrity.can_proceed_with_learning || false,
+          canProceedWithReporting: timeIntegrity.can_proceed_with_reporting || false,
+          canProceedWithQgf6: timeIntegrity.can_proceed_with_qgf6 || false,
+        } : undefined,
       },
 
       lastUpdated: new Date().toISOString(),

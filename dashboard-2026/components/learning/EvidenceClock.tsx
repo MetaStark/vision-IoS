@@ -1,16 +1,18 @@
 /**
- * Evidence Clock Widget - CEO-DIR-2026-059
+ * Evidence Clock Widget - CEO-DIR-2026-059 & CEO-DIR-2026-060
  * Canonical Time Anchor & Evidence-Clock Protocol
+ * Evidence Time Integrity & Forward Verification Protocol
  *
  * Shows:
  * - Canonical NOW (DB time)
  * - Data coverage span (earliest → latest)
  * - Holdout eligibility status
+ * - Time Integrity Status (CEO-DIR-2026-060)
  */
 
 'use client'
 
-import { Clock, Database, Calendar, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Clock, Database, Calendar, AlertTriangle, CheckCircle, Shield, XCircle } from 'lucide-react'
 
 export interface EvidenceClockData {
   canonicalNow: string
@@ -21,6 +23,19 @@ export interface EvidenceClockData {
   outcomeDaysAvailable: number
   totalHoldoutEligibleRecords: number
   holdoutEligibilityStatus: string
+  // CEO-DIR-2026-060: Time Integrity
+  timeIntegrity?: {
+    status: string  // CLEAN, WARNING, BLOCKED
+    validCount: number
+    invalidCount: number
+    pendingCount: number
+    preCanonicalCount: number
+    totalCount: number
+    integrityPct: number
+    canProceedWithLearning: boolean
+    canProceedWithReporting: boolean
+    canProceedWithQgf6: boolean
+  }
 }
 
 interface EvidenceClockProps {
@@ -163,10 +178,89 @@ export function EvidenceClock({ data }: EvidenceClockProps) {
         </div>
       </div>
 
+      {/* CEO-DIR-2026-060: Time Integrity Status */}
+      {data?.timeIntegrity && (
+        <div className="mt-4 pt-4 border-t border-gray-800">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-4 w-4 text-blue-400" />
+            <span className="text-xs text-gray-400 font-medium">Time Integrity (CEO-DIR-2026-060)</span>
+          </div>
+
+          {/* Time Integrity Progress */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">Artifact Validity</span>
+              <span className={`text-xs font-mono ${
+                data.timeIntegrity.status === 'CLEAN' ? 'text-green-400' :
+                data.timeIntegrity.status === 'WARNING' ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {data.timeIntegrity.integrityPct}%
+              </span>
+            </div>
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-500 ${
+                  data.timeIntegrity.status === 'CLEAN' ? 'bg-green-500' :
+                  data.timeIntegrity.status === 'WARNING' ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${data.timeIntegrity.integrityPct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Artifact Counts */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="p-2 bg-gray-800/50 rounded text-center">
+              <div className="text-xs text-gray-500">Valid</div>
+              <div className="text-sm font-mono text-green-400">{data.timeIntegrity.validCount}</div>
+            </div>
+            <div className="p-2 bg-gray-800/50 rounded text-center">
+              <div className="text-xs text-gray-500">Invalid</div>
+              <div className={`text-sm font-mono ${data.timeIntegrity.invalidCount > 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {data.timeIntegrity.invalidCount}
+              </div>
+            </div>
+            <div className="p-2 bg-gray-800/50 rounded text-center">
+              <div className="text-xs text-gray-500">Pre-Canon</div>
+              <div className="text-sm font-mono text-gray-400">{data.timeIntegrity.preCanonicalCount}</div>
+            </div>
+          </div>
+
+          {/* Blocking Status */}
+          <div className={`p-2 rounded border ${
+            data.timeIntegrity.status === 'CLEAN'
+              ? 'bg-green-500/10 border-green-500/30'
+              : data.timeIntegrity.status === 'WARNING'
+              ? 'bg-yellow-500/10 border-yellow-500/30'
+              : 'bg-red-500/10 border-red-500/30'
+          }`}>
+            <div className="flex items-center gap-2">
+              {data.timeIntegrity.status === 'CLEAN' ? (
+                <CheckCircle className="h-3.5 w-3.5 text-green-400" />
+              ) : data.timeIntegrity.status === 'WARNING' ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5 text-red-400" />
+              )}
+              <span className={`text-xs ${
+                data.timeIntegrity.status === 'CLEAN' ? 'text-green-400' :
+                data.timeIntegrity.status === 'WARNING' ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {data.timeIntegrity.status === 'CLEAN'
+                  ? 'All artifacts have valid canonical timestamps'
+                  : data.timeIntegrity.status === 'WARNING'
+                  ? `${data.timeIntegrity.invalidCount} artifact(s) with invalid timestamps`
+                  : 'Time integrity BLOCKED - cannot proceed with learning'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-800">
         <div className="text-xs text-gray-600">
-          Source: fhq_governance.v_evidence_clock
+          Source: fhq_governance.v_evidence_clock, v_time_integrity_status
         </div>
       </div>
     </div>
