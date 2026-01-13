@@ -57,6 +57,12 @@ export async function GET() {
     `)
     const marketLearning = marketLearningResult.rows[0]
 
+    // CEO-DIR-2026-059: Fetch Evidence Clock (canonical time + data availability)
+    const evidenceClockResult = await client.query(`
+      SELECT * FROM fhq_governance.v_evidence_clock
+    `)
+    const evidenceClock = evidenceClockResult.rows[0]
+
     return NextResponse.json({
       progress: progress?.current_progress_pct || 80,
       fmclDistribution: progress?.fmcl_distribution || '0-0-0-0-0',
@@ -108,7 +114,7 @@ export async function GET() {
       systemMaturity: progress?.current_progress_pct || 0,  // Renamed from "progress"
       marketLearning: {
         progress: marketLearning?.market_learning_pct || 0,
-        status: marketLearning?.status_label || 'BLOCKED: View not found',
+        status: evidenceClock?.holdout_eligibility_status || marketLearning?.status_label || 'BLOCKED: View not found',
         labelLocked: marketLearning?.label_locked || false,
         labelVersion: marketLearning?.label_version || null,
         labelHash: marketLearning?.label_hash || null,
@@ -120,6 +126,18 @@ export async function GET() {
         latestDirection: marketLearning?.latest_direction || null,
         totalEvaluations: marketLearning?.total_evaluations || 0,
         significantImprovements: marketLearning?.significant_improvements || 0,
+      },
+
+      // CEO-DIR-2026-059: Evidence Clock (canonical time + data availability)
+      evidenceClock: {
+        canonicalNow: evidenceClock?.canonical_now_utc || new Date().toISOString(),
+        operationalStart: evidenceClock?.operational_start || null,
+        holdoutWindowStart: evidenceClock?.holdout_window_start || null,
+        holdoutWindowEnd: evidenceClock?.holdout_window_end || null,
+        forecastDaysAvailable: parseInt(evidenceClock?.forecast_days_available) || 0,
+        outcomeDaysAvailable: parseInt(evidenceClock?.outcome_days_available) || 0,
+        totalHoldoutEligibleRecords: parseInt(evidenceClock?.total_holdout_eligible_records) || 0,
+        holdoutEligibilityStatus: evidenceClock?.holdout_eligibility_status || 'UNKNOWN',
       },
 
       lastUpdated: new Date().toISOString(),

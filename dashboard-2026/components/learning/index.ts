@@ -4,6 +4,8 @@
  */
 
 export { LearningProgressBar, DualProgressBars } from './LearningProgressBar'
+export { EvidenceClock } from './EvidenceClock'
+export type { EvidenceClockData } from './EvidenceClock'
 export { DailyDeltaPanel } from './DailyDeltaPanel'
 export type { DailyLearningItem } from './DailyDeltaPanel'
 export { MechanismPanel } from './MechanismPanel'

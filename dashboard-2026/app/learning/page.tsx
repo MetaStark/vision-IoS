@@ -17,6 +17,7 @@ import {
   DailyDeltaPanel,
   MechanismPanel,
   CognitiveActivityMeters,
+  EvidenceClock,
 } from '@/components/learning'
 import type {
   DailyLearningItem,
@@ -24,6 +25,7 @@ import type {
   SearchActivityData,
   ReasoningIntensityData,
   LearningYieldData,
+  EvidenceClockData,
 } from '@/components/learning'
 
 interface MarketLearningData {
@@ -46,6 +48,7 @@ interface LearningData {
   progress: number
   systemMaturity: number
   marketLearning: MarketLearningData
+  evidenceClock: EvidenceClockData
   fmclDistribution: string
   highSeverityClosed: number
   highSeverityTotal: number
@@ -251,20 +254,34 @@ export default function LearningDashboardPage() {
           </section>
         </div>
 
-        {/* Zone 3: Cognitive Activity Meters */}
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <div className="h-1 w-1 rounded-full bg-purple-500" />
-            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Cognitive Resource Utilization
-            </h2>
-          </div>
-          <CognitiveActivityMeters
-            searchActivity={searchActivity}
-            reasoningIntensity={reasoningIntensity}
-            learningYield={learningYield}
-          />
-        </section>
+        {/* Zone 3: Two-column - Cognitive Activity + Evidence Clock */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cognitive Activity Meters (2/3 width) */}
+          <section className="lg:col-span-2">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-purple-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Cognitive Resource Utilization
+              </h2>
+            </div>
+            <CognitiveActivityMeters
+              searchActivity={searchActivity}
+              reasoningIntensity={reasoningIntensity}
+              learningYield={learningYield}
+            />
+          </section>
+
+          {/* Evidence Clock (1/3 width) - CEO-DIR-2026-059 */}
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-cyan-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Evidence Clock (CEO-DIR-2026-059)
+              </h2>
+            </div>
+            <EvidenceClock data={data?.evidenceClock ?? null} />
+          </section>
+        </div>
 
         {/* CEO Guidance Panel */}
         <section className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">

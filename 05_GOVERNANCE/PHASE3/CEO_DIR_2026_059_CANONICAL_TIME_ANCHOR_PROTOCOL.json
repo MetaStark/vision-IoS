@@ -1,0 +1,176 @@
+{
+  "directive": "CEO-DIR-2026-059",
+  "title": "Canonical Time Anchor & Evidence-Clock Protocol (CTAP)",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-13T21:00:00Z",
+  "applies_to": ["STIG", "FINN"],
+  "validator": "VEGA",
+  "status": "IMPLEMENTED",
+
+  "executive_mandate": {
+    "purpose": "FjordHQ cannot be a learning system without an indisputable time axis",
+    "trigger": "STIG proposed 'Aug-Sep 2024 stress period' as holdout, but FjordHQ operational history starts October 2025",
+    "principle": "No component may reference dates, periods, or 'historical scenarios' without passing this protocol"
+  },
+
+  "problem_statement": {
+    "observed_failure": "Holdout window proposed outside actual data availability",
+    "symptoms": [
+      "Missing data-availability bound",
+      "Missing canonical clock",
+      "Missing time-window validator"
+    ],
+    "consequence": "Market Learning cannot be measured audit-safely until time and availability are contracted"
+  },
+
+  "implementation": {
+    "database_artifacts": {
+      "views_created": [
+        "fhq_governance.v_canonical_clock",
+        "fhq_governance.v_evidence_clock"
+      ],
+      "tables_created": [
+        "fhq_governance.data_availability_registry"
+      ],
+      "functions_created": [
+        "fhq_governance.validate_time_window(dataset_name, window_start, window_end)"
+      ]
+    },
+
+    "data_availability_verified": {
+      "forecast_ledger": {
+        "earliest": "2025-12-09",
+        "latest": "2026-01-13",
+        "record_count": 22524,
+        "is_holdout_eligible": true
+      },
+      "forecast_outcome_pairs": {
+        "earliest": "2026-01-09",
+        "latest": "2026-01-12",
+        "record_count": 16823,
+        "is_holdout_eligible": true
+      },
+      "regime_daily": {
+        "earliest": "2016-08-28",
+        "latest": "2026-01-12",
+        "record_count": 143434,
+        "is_holdout_eligible": true,
+        "note": "Historical backfill + live data"
+      }
+    },
+
+    "operational_bounds": {
+      "operational_start": "2025-12-09",
+      "holdout_window_start": "2026-01-09",
+      "holdout_window_end": "2026-01-12",
+      "outcome_days_available": 3,
+      "total_holdout_eligible_records": 182781
+    },
+
+    "dashboard_updates": {
+      "component_created": "EvidenceClock.tsx",
+      "shows": [
+        "Canonical NOW (DB time)",
+        "Data coverage span (earliest → latest)",
+        "Holdout eligibility status"
+      ],
+      "blocker_message": "BLOCKED: No frozen holdout exists inside verified data availability window"
+    },
+
+    "api_updates": {
+      "endpoint": "/api/learning",
+      "new_fields": [
+        "evidenceClock.canonicalNow",
+        "evidenceClock.operationalStart",
+        "evidenceClock.holdoutWindowStart",
+        "evidenceClock.holdoutWindowEnd",
+        "evidenceClock.forecastDaysAvailable",
+        "evidenceClock.outcomeDaysAvailable",
+        "evidenceClock.totalHoldoutEligibleRecords",
+        "evidenceClock.holdoutEligibilityStatus"
+      ]
+    }
+  },
+
+  "binding_requirements": {
+    "section_3_1": {
+      "title": "Canonical Clock Source",
+      "owner": "STIG",
+      "status": "COMPLETE",
+      "evidence": "fhq_governance.v_canonical_clock returns PostgreSQL server time"
+    },
+    "section_3_2": {
+      "title": "Data Availability Registry",
+      "owner": "STIG",
+      "status": "COMPLETE",
+      "evidence": "fhq_governance.data_availability_registry populated with 5 critical datasets"
+    },
+    "section_3_3": {
+      "title": "Time Window Validation Gate",
+      "owner": "STIG",
+      "status": "COMPLETE",
+      "evidence": "fhq_governance.validate_time_window() function blocks invalid windows"
+    },
+    "section_3_4": {
+      "title": "Holdout Proposal Protocol",
+      "owner": "FINN",
+      "status": "PENDING",
+      "requirement": "FINN must propose holdout based on availability registry, not calendar ideas"
+    }
+  },
+
+  "time_window_validation": {
+    "rule": "No holdout/backtest/eval window can be defined outside data availability",
+    "invalid_window_handling": {
+      "flag": "INVALID_WINDOW",
+      "cannot_be_used_in": ["CEO reports", "Market Learning claims"],
+      "example_blocked": "Aug-Sep 2024 (proposed) - data starts Dec 2025"
+    }
+  },
+
+  "exit_criteria": {
+    "criteria": [
+      {"item": "Canonical clock active in all governance artifacts", "status": "COMPLETE"},
+      {"item": "Data availability registry exists and populated", "status": "COMPLETE"},
+      {"item": "Time-window validation gate blocks invalid windows", "status": "COMPLETE"},
+      {"item": "FINN defines holdout within available history", "status": "PENDING"}
+    ]
+  },
+
+  "vega_attestation_required": {
+    "items": [
+      "Canonical clock is DB-verified and consistently used",
+      "Data availability registry is correct and reproducible",
+      "Time-window gate stops invalid periods",
+      "No learning claims without valid holdout window"
+    ],
+    "status": "PENDING"
+  },
+
+  "current_status": {
+    "canonical_clock": "ACTIVE",
+    "data_availability": "POPULATED (5 datasets)",
+    "validation_gate": "ACTIVE",
+    "holdout_eligibility": "BLOCKED: No frozen holdout exists inside verified data availability window",
+    "valid_holdout_window": "2026-01-09 to 2026-01-12 (3 days of outcomes)"
+  },
+
+  "attestation": {
+    "implemented_by": "STIG",
+    "implemented_at": "2026-01-13T22:00:00Z",
+    "constitutional_reference": "CEO-DIR-2026-059",
+    "properties": [
+      "Canonical clock established with DB server time",
+      "Data availability registry populated with actual bounds",
+      "Time window validation function created",
+      "Evidence Clock widget added to dashboard",
+      "Market Learning blocker message updated to reflect availability constraint",
+      "API returns evidenceClock data"
+    ],
+    "pending": [
+      "FINN to propose valid holdout within 2026-01-09 to 2026-01-12 window",
+      "VEGA independent attestation"
+    ]
+  }
+}
