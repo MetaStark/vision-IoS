@@ -1,0 +1,83 @@
+{
+  "change_record_id": "CHANGE_RECORD_P2_2_2_SCHEMA_FIX",
+  "change_type": "CODE_FIX",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P2-A",
+  "task": "2.2",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-13T01:30:00Z",
+  "commit_hash": "fd0d8f0",
+
+  "scope_boundary": {
+    "file_modified": "03_FUNCTIONS/signal_executor_daemon.py",
+    "changes": "Schema mismatch fixes only - no logic changes",
+    "lines_affected": [1279, 1290, 1291],
+    "risk_level": "LOW",
+    "rationale": "Deterministic defects with clear fix path"
+  },
+
+  "field_mapping_before_after": [
+    {
+      "line": 1279,
+      "table": "fhq_canonical.g5_paper_trades",
+      "before": "exit_reason = %s",
+      "after": "exit_trigger = %s",
+      "column_verified": true,
+      "column_exists_in_schema": true
+    },
+    {
+      "line": 1290,
+      "table": "fhq_canonical.g5_signal_state",
+      "before": "position_exit_price = %s",
+      "after": "exit_price = %s",
+      "column_verified": true,
+      "column_exists_in_schema": true
+    },
+    {
+      "line": 1291,
+      "table": "fhq_canonical.g5_signal_state",
+      "before": "realized_pnl = %s",
+      "after": "exit_pnl = %s",
+      "column_verified": true,
+      "column_exists_in_schema": true
+    }
+  ],
+
+  "schema_verification": {
+    "g5_paper_trades": {
+      "verified_columns": ["exit_price", "exit_trigger", "realized_pnl", "exit_context"],
+      "verification_query": "SELECT column_name FROM information_schema.columns WHERE table_schema = 'fhq_canonical' AND table_name = 'g5_paper_trades'",
+      "verification_date": "2026-01-13"
+    },
+    "g5_signal_state": {
+      "verified_columns": ["exit_price", "exit_reason", "exit_pnl", "current_state"],
+      "verification_query": "SELECT column_name FROM information_schema.columns WHERE table_schema = 'fhq_canonical' AND table_name = 'g5_signal_state'",
+      "verification_date": "2026-01-13"
+    }
+  },
+
+  "compliance_attestation": {
+    "adr_004_change_gates": {
+      "status": "COMPLIANT",
+      "evidence": "CEO approval via CEO-DIR-2026-TRUTH-SYNC-P2-A"
+    },
+    "adr_002_audit_logging": {
+      "status": "COMPLIANT",
+      "evidence": "Change record created, commit logged"
+    },
+    "no_logic_refactor": {
+      "status": "VERIFIED",
+      "evidence": "Only column name changes, no algorithm or flow modifications"
+    }
+  },
+
+  "testing_status": {
+    "unit_tests": "N/A - column name changes only",
+    "integration_tests": "Pending daemon restart",
+    "manual_verification": "Schema columns verified via information_schema queries"
+  },
+
+  "rollback_procedure": {
+    "git_revert": "git revert fd0d8f0",
+    "impact": "Return to broken schema mapping (will fail on exit execution)"
+  }
+}

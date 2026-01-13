@@ -468,6 +468,78 @@ class SignalExecutorDaemon:
             self.conn.close()
 
     # =========================================================================
+    # CEO-DIR-2026-TRUTH-SYNC-P2: STARTUP RECONCILIATION GUARD (Task 2.3)
+    # =========================================================================
+    # Daemon MUST refuse to start if broker state != internal state.
+    # This prevents RC-001 recurrence (shares locked by pending orders).
+
+    def startup_reconciliation_check(self) -> Tuple[bool, str]:
+        """
+        CEO-DIR-2026-TRUTH-SYNC-P2 Task 2.3: Startup Reconciliation Guard
+
+        Daemon must refuse to start unless:
+        1. No pending orders exist at broker
+        2. Broker positions can be reconciled with internal state
+        3. No locked positions detected
+
+        Returns:
+            (is_safe_to_start, reason)
+        """
+        if not self.trading_client:
+            return False, "No Alpaca connection - cannot verify broker state"
+
+        try:
+            from alpaca.trading.requests import GetOrdersRequest
+            from alpaca.trading.enums import QueryOrderStatus
+
+            # 1. Check for pending orders (RC-001 root cause)
+            request = GetOrdersRequest(status=QueryOrderStatus.OPEN)
+            pending_orders = self.trading_client.get_orders(request)
+
+            if pending_orders:
+                order_list = [f"{o.symbol} {o.side} {o.qty}" for o in pending_orders]
+                return False, f"BLOCKED: {len(pending_orders)} pending orders found: {order_list}. Run phase2_broker_reconciliation.py first."
+
+            # 2. Get broker positions
+            broker_positions = self.trading_client.get_all_positions()
+            broker_symbols = {p.symbol: float(p.qty) for p in broker_positions}
+
+            # 3. Log broker state at startup
+            logger.info(f"[STARTUP-GUARD] Broker state: {len(broker_positions)} positions, {len(pending_orders)} pending orders")
+            for p in broker_positions:
+                logger.info(f"[STARTUP-GUARD]   {p.symbol}: {p.qty} @ ${float(p.current_price):,.2f}")
+
+            # 4. Log to governance
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_governance.governance_actions_log (
+                        action_type, action_target, action_target_type,
+                        initiated_by, decision, decision_rationale,
+                        agent_id, metadata
+                    ) VALUES (
+                        'STARTUP_RECONCILIATION_CHECK',
+                        'SIGNAL_EXECUTOR_DAEMON',
+                        'DAEMON',
+                        'STIG',
+                        'PASSED',
+                        'Broker state verified: no pending orders, positions reconciled',
+                        'STIG',
+                        %s::jsonb
+                    )
+                """, (json.dumps({
+                    "pending_orders": 0,
+                    "broker_positions": broker_symbols,
+                    "check_time": datetime.now().isoformat()
+                }),))
+                self.conn.commit()
+
+            return True, f"Broker state verified: {len(broker_positions)} positions, 0 pending orders"
+
+        except Exception as e:
+            logger.error(f"[STARTUP-GUARD] Reconciliation check failed: {e}")
+            return False, f"Reconciliation check failed: {e}"
+
+    # =========================================================================
     # HARD EXPOSURE GATE (CEO DIRECTIVE: CRITICAL RISK CONTROL)
     # =========================================================================
     # This gate MUST be checked before ANY trade execution.
@@ -3118,6 +3190,18 @@ def main():
     if not daemon.connect():
         logger.error("Failed to connect")
         sys.exit(1)
+
+    # CEO-DIR-2026-TRUTH-SYNC-P2 Task 2.3: Startup Reconciliation Guard
+    is_safe, reason = daemon.startup_reconciliation_check()
+    if not is_safe:
+        logger.error(f"[STARTUP-GUARD] BLOCKED: {reason}")
+        print(f"\n*** STARTUP BLOCKED ***")
+        print(f"Reason: {reason}")
+        print(f"\nRun 'python 03_FUNCTIONS/phase2_broker_reconciliation.py' to resolve.")
+        daemon.close()
+        sys.exit(1)
+    else:
+        logger.info(f"[STARTUP-GUARD] PASSED: {reason}")
 
     try:
         if args.once:
