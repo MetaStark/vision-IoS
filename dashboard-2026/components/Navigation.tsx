@@ -26,6 +26,7 @@ import {
   Telescope,
   Server,
   Crosshair,
+  BookOpen,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -101,6 +102,22 @@ const skillSection: NavItemType = {
   href: '/skill',
   icon: Brain,
   badge: 'G2C',
+}
+
+// CEO Directive Metacognitive Observability & Audit-Hardening
+const metacognitiveSection: NavItemType = {
+  name: 'Metacognitive',
+  href: '/metacognitive',
+  icon: Eye,
+  badge: 'CEO',
+}
+
+// CEO-DIR-2026-057 Learning Observability Dashboard
+const learningSection: NavItemType = {
+  name: 'Learning',
+  href: '/learning',
+  icon: BookOpen,
+  badge: 'D57',
 }
 
 // EC-018 Meta-Alpha & Freedom Optimizer
@@ -231,6 +248,8 @@ export function Navigation() {
         <ul className="space-y-2">
           <NavItem item={aolSection} pathname={pathname} collapsed={collapsed} />
           <NavItem item={skillSection} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={metacognitiveSection} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={learningSection} pathname={pathname} collapsed={collapsed} />
         </ul>
 
         {/* Alpha Discovery Separator */}
