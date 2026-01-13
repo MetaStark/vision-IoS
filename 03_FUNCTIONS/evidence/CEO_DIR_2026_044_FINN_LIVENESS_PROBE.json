@@ -1,0 +1,35 @@
+{
+  "evidence_id": "CEO_DIR_2026_044_FINN_LIVENESS_PROBE",
+  "directive": "CEO-DIR-2026-044",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T10:52:22.633569+00:00",
+  "status": "COMPLETE",
+  "probe_type": "RESEARCH_LIVENESS",
+  "agent_id": "FINN",
+  "health_source": "research",
+  "rationale": {
+    "problem": "FINN showed 0 actions in governance log, falsely appearing unhealthy",
+    "truth": "FINN outputs 1000+ forecasts/day to fhq_research.forecast_ledger",
+    "solution": "Health signal now based on forecast output, not governance actions",
+    "principle": "We improve observation. We do not change truth."
+  },
+  "probe_result": {
+    "agent_id": "FINN",
+    "status": "ALIVE",
+    "health_score": 1.0,
+    "health_source": "research",
+    "liveness_basis": "Forecast output: 18 forecasts in last 30 min, 1423 in 24h",
+    "liveness_metadata": {
+      "probe_type": "RESEARCH_LIVENESS",
+      "forecast_count_30min": 18,
+      "forecast_count_24h": 1423,
+      "sources_active_30min": 2,
+      "sources_active_24h": 5,
+      "last_forecast_at": "2026-01-13T11:52:21.215588+01:00",
+      "staleness_minutes": -60.0,
+      "threshold_min": 1,
+      "threshold_healthy": 5
+    }
+  },
+  "verification_query": "\n            SELECT COUNT(*) as forecast_count_30min,\n                   MAX(created_at) as last_forecast_at\n            FROM fhq_research.forecast_ledger\n            WHERE created_at >= NOW() - INTERVAL '30 minutes'\n        "
+}

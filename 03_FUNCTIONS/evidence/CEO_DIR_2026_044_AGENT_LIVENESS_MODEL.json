@@ -1,0 +1,175 @@
+{
+  "evidence_id": "CEO_DIR_2026_044_AGENT_LIVENESS_MODEL",
+  "directive": "CEO-DIR-2026-044",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T10:52:22.633569+00:00",
+  "status": "COMPLETE",
+  "model_changes": {
+    "schema_extended": true,
+    "columns_added": [
+      "health_source",
+      "liveness_basis",
+      "liveness_metadata"
+    ],
+    "governance_semantics_changed": false,
+    "breaking_changes": false
+  },
+  "agent_probes": {
+    "FINN": {
+      "probe_type": "RESEARCH_LIVENESS",
+      "health_source": "research",
+      "rationale": "FINN outputs forecasts to fhq_research, not governance log. Health based on forecast activity.",
+      "result": {
+        "agent_id": "FINN",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "research",
+        "liveness_basis": "Forecast output: 18 forecasts in last 30 min, 1423 in 24h",
+        "liveness_metadata": {
+          "probe_type": "RESEARCH_LIVENESS",
+          "forecast_count_30min": 18,
+          "forecast_count_24h": 1423,
+          "sources_active_30min": 2,
+          "sources_active_24h": 5,
+          "last_forecast_at": "2026-01-13T11:52:21.215588+01:00",
+          "staleness_minutes": -60.0,
+          "threshold_min": 1,
+          "threshold_healthy": 5
+        }
+      }
+    },
+    "LINE": {
+      "probe_type": "EXECUTION_READINESS",
+      "health_source": "execution",
+      "rationale": "LINE is IDLE-BY-DESIGN because execution is intentionally gated. Zero trades is correct behavior.",
+      "result": {
+        "agent_id": "LINE",
+        "status": "IDLE-BY-DESIGN",
+        "health_score": 1.0,
+        "health_source": "execution",
+        "liveness_basis": "Execution intentionally gated. DEFCON=GREEN. 57 gate blocks in 24h.",
+        "liveness_metadata": {
+          "probe_type": "EXECUTION_READINESS",
+          "execution_gated": true,
+          "gate_blocks_24h": 57,
+          "last_block_at": "2026-01-13T02:13:33.593434+01:00",
+          "trade_count": 5,
+          "paper_order_count": 0,
+          "defcon_level": "GREEN",
+          "expected_state": "IDLE-BY-DESIGN",
+          "reason": "Execution is intentionally gated per governance. Zero trades is correct behavior."
+        }
+      }
+    }
+  },
+  "governance_agents": {
+    "LARS": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "LARS",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "governance",
+        "liveness_basis": "Governance activity: 27 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "GOVERNANCE_ACTIVITY",
+          "actions_24h": 27,
+          "last_action": "2026-01-13T11:39:57.933262+01:00",
+          "staleness_hours": -0.8
+        }
+      }
+    },
+    "STIG": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "STIG",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "mixed",
+        "liveness_basis": "Governance activity: 181 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "MIXED_LIVENESS",
+          "actions_24h": 181,
+          "last_action": "2026-01-13T11:49:44.956061+01:00",
+          "staleness_hours": -1.0
+        }
+      }
+    },
+    "VEGA": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "VEGA",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "governance",
+        "liveness_basis": "Governance activity: 236 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "GOVERNANCE_ACTIVITY",
+          "actions_24h": 236,
+          "last_action": "2026-01-13T11:43:16.339498+01:00",
+          "staleness_hours": -0.8
+        }
+      }
+    },
+    "CEIO": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "CEIO",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "governance",
+        "liveness_basis": "Governance activity: 35 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "GOVERNANCE_ACTIVITY",
+          "actions_24h": 35,
+          "last_action": "2026-01-13T11:51:11.918665+01:00",
+          "staleness_hours": -1.0
+        }
+      }
+    },
+    "CRIO": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "CRIO",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "governance",
+        "liveness_basis": "Governance activity: 33 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "GOVERNANCE_ACTIVITY",
+          "actions_24h": 33,
+          "last_action": "2026-01-13T10:53:40.378920+01:00",
+          "staleness_hours": -0.0
+        }
+      }
+    },
+    "CDMO": {
+      "probe_type": "GOVERNANCE_ACTIVITY",
+      "health_source": "governance",
+      "result": {
+        "agent_id": "CDMO",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "health_source": "governance",
+        "liveness_basis": "Governance activity: 33 actions in 24h",
+        "liveness_metadata": {
+          "probe_type": "GOVERNANCE_ACTIVITY",
+          "actions_24h": 33,
+          "last_action": "2026-01-13T10:55:40.868575+01:00",
+          "staleness_hours": -0.1
+        }
+      }
+    }
+  },
+  "compliance": {
+    "governance_log_clean": true,
+    "no_forecast_writes_to_governance": true,
+    "execution_impact": "NONE",
+    "agency_change": "NONE"
+  }
+}
