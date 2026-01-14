@@ -29,15 +29,22 @@
       "Migration 240-241: Complete LDOW infrastructure in database",
       "Views: v_ldow_rolling_dashboard, v_ceo_morning_read operational",
       "ADR-022, ADR-023, ADR-024 registered via ADR-004 Change Gate Protocol (G0+G1 PASS)",
-      "Migration 242 executed: SHA-256 hashes verified, content FROZEN pending G2-G4"
+      "Migration 242 executed: SHA-256 hashes verified, content FROZEN pending G2-G4",
+      "LDOW Unattended Execution: 60 cycles, 696 forecasts generated, 672 persisted",
+      "CEO-DIR-2026-065/066/067 Compliance: Brier & Calibration delta evaluated",
+      "EVALUATION FACTS: Brier 0.2509 (delta -0.2649), Calibration 0.1117 (delta -0.4294)",
+      "Evidence persisted: LDOW_EVALUATION_FACTS_20260114.json + ldow_evaluation_log",
+      "Migration 243 executed: G2 (LARS), G3 (VEGA), G4 (CEO) gates completed",
+      "ADR-022, ADR-023, ADR-024: ALL APPROVED - Now constitutional law"
     ],
     "critical_milestone": "System learns in darkness, counts in silence, awaits judgment in daylight",
     "ldow_status": {
       "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
       "status": "ACTIVE",
-      "cycles_completed": 0,
+      "unattended_cycles": 60,
       "cycles_required": 2,
-      "intervention_freeze": "ENABLED"
+      "intervention_freeze": "ENABLED",
+      "damper_hash": "da311f0ebb875122"
     }
   },
 
@@ -396,6 +403,67 @@
     {"objective": "Content freeze for ADR-022/023/024 pending G2-G4", "status": "completed"}
   ],
 
+  "ldow_evaluation_results": {
+    "evaluation_timestamp": "2026-01-14T14:30:24Z",
+    "evidence_file": "03_FUNCTIONS/evidence/LDOW_EVALUATION_FACTS_20260114.json",
+    "database_record": {
+      "table": "fhq_governance.ldow_evaluation_log",
+      "evaluation_id": "b288b5e5-c26f-46c6-9761-07097f5d6b4c"
+    },
+    "baselines": {
+      "brier_score": 0.5158,
+      "calibration_error": 0.5411,
+      "source": "M1_BOOTSTRAP_HOLDOUT (holdout_id: 5415edc1-16b0-41cf-813f-7e6ea7f72f53)"
+    },
+    "observed_metrics": {
+      "brier_score_damped": 0.2509,
+      "brier_score_raw": 0.3846,
+      "calibration_error_ece": 0.1117,
+      "avg_damped_confidence": 0.5019,
+      "avg_raw_confidence": 0.7402,
+      "actual_hit_rate": 0.3902
+    },
+    "delta_vs_baseline": {
+      "brier_delta": -0.2649,
+      "calibration_delta": -0.4294,
+      "interpretation_note": "Negative delta = improvement (lower is better)"
+    },
+    "sample_characteristics": {
+      "n_forecasts_reconciled": 82,
+      "n_forecasts_total_ldow": 565,
+      "coverage_pct": 14.5,
+      "assets_evaluated": ["BTC-USD", "ETH-USD"],
+      "horizon_hours": 1,
+      "limitation": "US equities excluded (market closed)"
+    },
+    "constraints_verified": {
+      "post_damper": true,
+      "within_ldow": true,
+      "without_intervention": true,
+      "damper_hash_unchanged": "da311f0ebb875122"
+    },
+    "governing_directives": ["CEO-DIR-2026-065", "CEO-DIR-2026-066", "CEO-DIR-2026-067"]
+  },
+
+  "ldow_morning_read": {
+    "query_timestamp": "2026-01-14T16:17:00Z",
+    "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
+    "ldow_status": "ACTIVE",
+    "total_unattended_cycles": 60,
+    "successful_cycles": 58,
+    "stopped_cycles": 2,
+    "total_forecasts_generated": 696,
+    "total_forecasts_persisted": 672,
+    "avg_raw_confidence": 0.7496,
+    "avg_damped_confidence": 0.4947,
+    "avg_dampening_delta": 0.2549,
+    "all_hashes_verified": true,
+    "all_ldow_checks_passed": true,
+    "locked_damper_hash": "da311f0ebb875122",
+    "explicit_status": "No actions taken. Observation only.",
+    "governing_directive": "CEO-DIR-2026-068"
+  },
+
   "agent_status": null,
   "forecast_activity": null,
   "governance_activity": null,
@@ -404,9 +472,10 @@
     "attested_by": "STIG",
     "contract": "EC-003_2026_PRODUCTION",
     "status": "IN_PROGRESS",
-    "last_updated": "2026-01-14T17:55:00Z",
-    "ldow_note": "CEO-DIR-2026-065 LDOW active. Intervention freeze in effect.",
-    "night_mode_note": "CEO-DIR-2026-068 unattended execution authorized. System will observe while human sleeps."
+    "last_updated": "2026-01-14T17:20:00Z",
+    "ldow_note": "CEO-DIR-2026-065 LDOW active. 60 unattended cycles completed. Intervention freeze in effect.",
+    "night_mode_note": "CEO-DIR-2026-068 unattended execution authorized. System observes while human sleeps.",
+    "evaluation_note": "Brier/Calibration delta evaluation complete. Results persistert som LDOW_EVALUATION_FACTS."
   },
 
   "adr_registration": {
@@ -418,9 +487,9 @@
     "verification_results": {
       "ADR-020": {"status": "REGISTERED", "adr_status": "APPROVED", "action": "Pre-existing"},
       "ADR-021": {"status": "REGISTERED", "adr_status": "APPROVED", "action": "Pre-existing"},
-      "ADR-022": {"status": "REGISTERED", "adr_status": "PROPOSED", "action": "G0+G1 completed"},
-      "ADR-023": {"status": "REGISTERED", "adr_status": "PROPOSED", "action": "G0+G1 completed"},
-      "ADR-024": {"status": "REGISTERED", "adr_status": "PROPOSED", "action": "G0+G1 completed"}
+      "ADR-022": {"status": "REGISTERED", "adr_status": "APPROVED", "action": "G0-G4 COMPLETE"},
+      "ADR-023": {"status": "REGISTERED", "adr_status": "APPROVED", "action": "G0-G4 COMPLETE"},
+      "ADR-024": {"status": "REGISTERED", "adr_status": "APPROVED", "action": "G0-G4 COMPLETE"}
     },
     "sha256_hashes": {
       "ADR-022": "2c11bc86b5b185460a902696897dba121f23083aef2ec0f4a9d626c109602b21",
@@ -454,17 +523,32 @@
         "scope": "Five-Rung Autonomy Ladder for Autonomous Epistemic Learning"
       }
     },
-    "pending_gates": {
-      "G2": {"authority": "LARS + GOV", "action": "Governance Validation"},
-      "G3": {"authority": "VEGA", "action": "Audit Verification"},
-      "G4": {"authority": "CEO", "action": "Final Activation (PROPOSED -> APPROVED)"}
+    "completed_gates": {
+      "G0": {"authority": "STIG", "status": "COMPLETE", "timestamp": "2026-01-14T16:51:54Z"},
+      "G1": {"authority": "STIG", "status": "PASS", "timestamp": "2026-01-14T16:51:54Z"},
+      "G2": {"authority": "LARS", "status": "PASS", "timestamp": "2026-01-14T19:47:57Z"},
+      "G3": {"authority": "VEGA", "status": "VERIFY", "timestamp": "2026-01-14T19:47:57Z"},
+      "G4": {"authority": "CEO", "status": "APPROVED", "timestamp": "2026-01-14T19:47:57Z"}
     },
     "audit_trail": {
       "g0_submissions": 3,
       "g1_validations": 3,
-      "registry_entries": 3,
-      "content_freeze_log": 1,
-      "governance_action_log": 1
+      "g2_governance": 3,
+      "g3_audit": 3,
+      "g4_activation": 3,
+      "registry_updates": 3,
+      "governance_action_log": 2
+    },
+    "g2_g3_g4_completion": {
+      "migration": "243_adr_022_023_024_g2_g3_g4_approval.sql",
+      "timestamp": "2026-01-14T19:47:57Z",
+      "final_status": "ALL APPROVED",
+      "content_freeze_lifted": true,
+      "constitutional_impact": {
+        "ADR-022": "Tier-1 Constitutional - Autonomous Database Horizon roadmap now binding",
+        "ADR-023": "Operational - MBB standards mandatory for CEO-facing reports",
+        "ADR-024": "Constitutional - AEL Phase Gate Protocol now constitutional law"
+      }
     }
   }
 }
