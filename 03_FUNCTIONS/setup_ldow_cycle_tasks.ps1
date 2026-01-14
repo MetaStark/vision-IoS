@@ -1,13 +1,18 @@
 # =============================================================================
 # LDOW CYCLE COMPLETION TASKS - WINDOWS TASK SCHEDULER SETUP
 # =============================================================================
+# CEO Directive: 2026-01-14 - Evidence-Based Cycle Completion
 # ADR-024 Compliance: Formal cycle completion for Rung D eligibility
 #
 # Creates Windows Scheduled Tasks for:
-#   - Cycle 1 Reconciliation: 2026-01-15 01:30 UTC
-#   - Cycle 1 Evaluation:     2026-01-15 02:00 UTC
-#   - Cycle 2 Reconciliation: 2026-01-16 01:30 UTC
-#   - Cycle 2 Evaluation:     2026-01-16 02:00 UTC
+#   - Cycle 1 Completion: 2026-01-15 01:30 UTC (evidence-based)
+#   - Cycle 2 Completion: 2026-01-16 01:30 UTC (evidence-based)
+#
+# Evidence-Based Completion includes:
+#   - Coverage threshold check (80% minimum forecasts paired)
+#   - Stability threshold check (5% max Brier variance)
+#   - Damper immutability verification
+#   - Full evidence logging per CEO requirements
 #
 # Run as Administrator: .\setup_ldow_cycle_tasks.ps1
 # =============================================================================
@@ -22,21 +27,23 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $ProjectRoot = "C:\fhq-market-system\vision-ios"
 $PythonExe = "python"
-$ReconciliationScript = Join-Path $ProjectRoot "03_FUNCTIONS\ios010_forecast_reconciliation_daemon.py"
+$CycleCompletionScript = Join-Path $ProjectRoot "03_FUNCTIONS\ldow_cycle_completion_daemon.py"
 
 # Task definitions (times in LOCAL timezone - Oslo/CET = UTC+1)
 $Tasks = @(
     @{
-        Name = "FHQ_LDOW_Cycle1_Reconciliation"
-        Description = "LDOW Cycle 1 - Reconcile 24h forecasts with outcomes (ADR-024)"
-        Script = $ReconciliationScript
+        Name = "FHQ_LDOW_Cycle1_Completion"
+        Description = "LDOW Cycle 1 - Evidence-Based Completion (ADR-024 Rung D)"
+        Script = $CycleCompletionScript
+        Arguments = "--cycle 1"
         # 01:30 UTC = 02:30 CET
         TriggerTime = [DateTime]"2026-01-15 02:30:00"
     },
     @{
-        Name = "FHQ_LDOW_Cycle2_Reconciliation"
-        Description = "LDOW Cycle 2 - Reconcile 24h forecasts with outcomes (ADR-024)"
-        Script = $ReconciliationScript
+        Name = "FHQ_LDOW_Cycle2_Completion"
+        Description = "LDOW Cycle 2 - Evidence-Based Completion (ADR-024 Rung D)"
+        Script = $CycleCompletionScript
+        Arguments = "--cycle 2"
         # 01:30 UTC = 02:30 CET
         TriggerTime = [DateTime]"2026-01-16 02:30:00"
     }
@@ -82,15 +89,16 @@ function Uninstall-Tasks {
 }
 
 function Install-Tasks {
-    # Verify reconciliation script exists
-    if (-not (Test-Path $ReconciliationScript)) {
-        Write-Host "ERROR: Reconciliation script not found: $ReconciliationScript" -ForegroundColor Red
+    # Verify cycle completion script exists
+    if (-not (Test-Path $CycleCompletionScript)) {
+        Write-Host "ERROR: Cycle completion script not found: $CycleCompletionScript" -ForegroundColor Red
         exit 1
     }
 
     Write-Host ""
     Write-Host "===== INSTALLING LDOW CYCLE TASKS =====" -ForegroundColor Cyan
-    Write-Host "ADR-024 Compliance: Formal cycle completion" -ForegroundColor Gray
+    Write-Host "CEO Directive 2026-01-14: Evidence-Based Cycle Completion" -ForegroundColor Gray
+    Write-Host "ADR-024 Compliance: Rung D eligibility" -ForegroundColor Gray
     Write-Host ""
 
     foreach ($taskDef in $Tasks) {
@@ -103,11 +111,12 @@ function Install-Tasks {
 
         Write-Host "Creating task: $($taskDef.Name)" -ForegroundColor White
         Write-Host "  Scheduled: $($taskDef.TriggerTime) (local time)" -ForegroundColor Gray
+        Write-Host "  Arguments: $($taskDef.Arguments)" -ForegroundColor Gray
 
-        # Create action
+        # Create action with script arguments
         $Action = New-ScheduledTaskAction `
             -Execute $PythonExe `
-            -Argument "`"$($taskDef.Script)`"" `
+            -Argument "`"$($taskDef.Script)`" $($taskDef.Arguments)" `
             -WorkingDirectory $ProjectRoot
 
         # Create trigger (one-time at specified time)
