@@ -1,0 +1,139 @@
+{
+    "evidence_id": "CEO-DIR-2026-ADR024-EXEC",
+    "directive_type": "CEO_DIRECTIVE",
+    "adr_reference": "ADR-024",
+    "title": "ADR-024 Rungs A-C Activation: AEL Phase Gate Protocol",
+    "executed_by": "STIG",
+    "executed_at": "2026-01-14T20:20:00Z",
+    "classification": "CONSTITUTIONAL - LEARNING GOVERNANCE",
+
+    "summary": {
+        "purpose": "Activate ADR-024 Rungs A (Measurement Completeness), B (Canonical Evaluation Contract), and C (Intervention Registry & Causal Isolation) to establish the foundation for Autonomous Epistemic Learning governance.",
+        "outcome": "SUCCESS - All four directive tasks completed",
+        "stillness_principle": "Stillness is not weakness. Stillness is discipline."
+    },
+
+    "tasks_completed": [
+        {
+            "task_id": 1,
+            "name": "Observability First",
+            "description": "Instrument Rungs A-C before any refinement or optimization",
+            "migration": "196_observability_2_immediate.sql",
+            "status": "VERIFIED_DEPLOYED",
+            "tables_created": [
+                "fhq_monitoring.agent_semantic_health",
+                "fhq_monitoring.sql_refinement_metrics",
+                "fhq_monitoring.self_healing_actions",
+                "fhq_monitoring.query_lineage"
+            ],
+            "view_created": "fhq_monitoring.vw_observability_dashboard"
+        },
+        {
+            "task_id": 2,
+            "name": "Clock Synchronization",
+            "description": "Align all IoS-010 matchers to canonical clocks",
+            "status": "VERIFIED",
+            "canonical_clock_directive": "CEO-DIR-2026-059",
+            "verification_results": {
+                "total_pairs_checked": 16839,
+                "all_outcomes_within_horizon": true,
+                "clock_drift_detected": false,
+                "db_timezone": "Europe/Oslo",
+                "canonical_time_source": "PostgreSQL server time"
+            }
+        },
+        {
+            "task_id": 3,
+            "name": "AEL Intervention Registry Baseline",
+            "description": "Create intervention registry per ADR-024 Rung C requirements",
+            "migration": "244_adr024_ael_intervention_registry.sql",
+            "status": "DEPLOYED",
+            "table_created": "fhq_governance.ael_intervention_registry",
+            "columns_count": 42,
+            "baseline_record": {
+                "intervention_id": "439c1d75-0f88-4955-99c4-ff06315f7a1f",
+                "intervention_name": "ADR-024 Baseline Observation Record",
+                "intervention_category": "OBSERVATION_ONLY",
+                "ael_phase": 0,
+                "rung_qualification": "RUNG_C"
+            },
+            "views_created": [
+                "fhq_governance.v_ael_stillness_violations",
+                "fhq_governance.v_ael_presignable_interventions"
+            ]
+        },
+        {
+            "task_id": 4,
+            "name": "Stillness Protocol Enforcement",
+            "description": "Block proposals without intervention hash, evidence ID, rollback path",
+            "migration": "245_adr024_stillness_protocol_enforcement.sql",
+            "status": "ACTIVE",
+            "enforcement_triggers": [
+                "trg_stillness_protocol_insert",
+                "trg_stillness_protocol_update"
+            ],
+            "enforcement_function": "fhq_governance.enforce_stillness_protocol()",
+            "blocks": {
+                "missing_hash": true,
+                "missing_evidence": true,
+                "missing_rollback": true,
+                "missing_hypothesis": true,
+                "missing_scope": true,
+                "unverified_rollback": true
+            },
+            "helper_functions": [
+                "fhq_governance.propose_ael_intervention()",
+                "fhq_governance.authorize_ael_intervention()"
+            ],
+            "audit_view": "fhq_governance.v_ael_stillness_audit"
+        }
+    ],
+
+    "adr024_rung_status": {
+        "rung_a_measurement_completeness": {
+            "status": "ACTIVATED",
+            "observability_deployed": true,
+            "canonical_clock_aligned": true
+        },
+        "rung_b_canonical_evaluation_contract": {
+            "status": "ACTIVATED",
+            "clock_sync_verified": true,
+            "evaluation_metrics_defined": true
+        },
+        "rung_c_intervention_registry": {
+            "status": "ACTIVATED",
+            "registry_deployed": true,
+            "stillness_enforced": true,
+            "causal_isolation_enabled": true
+        },
+        "rung_d_human_authorized_execution": {
+            "status": "PENDING",
+            "requires": "First intervention proposal through new registry"
+        },
+        "rung_e_presigned_policy": {
+            "status": "NOT_STARTED",
+            "requires": "Rung D proven safe through multiple cycles"
+        }
+    },
+
+    "ael_phase_gate_model": {
+        "current_phase": 0,
+        "phase_0": "Observation only - CURRENT STATE",
+        "phase_1": "Read-only evaluation + evidence packaging - NEAR-COMPLETE",
+        "phase_2": "Intervention proposal - NEXT GATE",
+        "phase_3": "Execution of pre-approved classes - CONDITIONAL",
+        "phase_4": "Expanded bounded autonomy - FUTURE"
+    },
+
+    "governance_action_id": "06b5e4ae-f09c-49ef-9702-866d4c47d76b",
+
+    "attestation": {
+        "stig_signature": "ADR-024 Rungs A-C activation completed per CEO Directive",
+        "constitutional_alignment": [
+            "ADR-001: System Charter",
+            "ADR-004: Change Gates G0-G4",
+            "ADR-024: AEL Phase Gate Protocol"
+        ],
+        "prime_rule": "Write-access is earned through repeated correct read-only judgments"
+    }
+}
