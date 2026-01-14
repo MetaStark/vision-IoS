@@ -78,6 +78,59 @@ def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 # =============================================================================
+# RETRY AUTHORIZATION CHECK (CEO Directive: No retry without VEGA attestation)
+# =============================================================================
+
+def check_retry_authorization(conn, cycle_number: int) -> Tuple[bool, str, Optional[str]]:
+    """
+    Check if cycle execution is authorized.
+    CEO Directive: Failed cycles require root cause + VEGA attestation before retry.
+    Returns (can_execute, block_reason, incident_id)
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT * FROM fhq_governance.check_retry_authorization(%s)
+        """, (cycle_number,))
+        result = cur.fetchone()
+
+        if result:
+            return (
+                result['can_execute'],
+                result['block_reason'],
+                str(result['incident_id']) if result['incident_id'] else None
+            )
+        return (True, None, None)
+
+
+def register_failure(conn, cycle_number: int, failure_type: str, details: Dict,
+                     coverage_achieved: float = None, coverage_required: float = None,
+                     brier_variance_achieved: float = None, brier_variance_required: float = None,
+                     damper_expected: str = None, damper_actual: str = None) -> str:
+    """
+    Register a cycle failure incident.
+    CEO Directive: Failed cycles do NOT count. Correction resets counter.
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT fhq_governance.register_ldow_failure(
+                %s, %s, %s, %s, %s, %s, %s, %s, %s
+            ) AS incident_id
+        """, (
+            cycle_number,
+            failure_type,
+            json.dumps(details),
+            coverage_achieved,
+            coverage_required,
+            brier_variance_achieved,
+            brier_variance_required,
+            damper_expected,
+            damper_actual
+        ))
+        result = cur.fetchone()
+        return str(result['incident_id']) if result else None
+
+
+# =============================================================================
 # PRICE REALITY GATE (from ios010)
 # =============================================================================
 
@@ -497,6 +550,19 @@ def execute_cycle_completion(cycle_number: int) -> Dict[str, Any]:
 
         logger.info(f"Price Reality Gate: {reason}")
 
+        # 1b. Retry Authorization Check (CEO Directive: No retry without VEGA attestation)
+        can_execute, block_reason, incident_id = check_retry_authorization(conn, cycle_number)
+        if not can_execute:
+            logger.critical(f"RETRY BLOCKED: {block_reason}")
+            logger.critical(f"Incident ID: {incident_id}")
+            logger.critical("CEO Directive: Root cause must be documented and VEGA must attest before retry")
+            result['status'] = 'RETRY_BLOCKED'
+            result['block_reason'] = block_reason
+            result['incident_id'] = incident_id
+            return result
+
+        logger.info("Retry authorization: CLEAR (no unresolved failures)")
+
         # 2. Load thresholds
         thresholds = load_thresholds(conn)
         logger.info(f"Thresholds: coverage={thresholds['coverage']}, stability={thresholds['stability']}")
@@ -550,9 +616,22 @@ def execute_cycle_completion(cycle_number: int) -> Dict[str, Any]:
                                 forecasts_paired=metrics_1['forecasts_paired'],
                                 forecasts_expired=metrics_1['forecasts_expired'],
                                 brier_score_run1=metrics_1['brier_score'])
+
+            # Register failure incident (CEO Directive: No retry without root cause + VEGA)
+            incident_id = register_failure(
+                conn, cycle_number, 'COVERAGE_FAIL',
+                {'message': f'Coverage {coverage_ratio:.2%} below threshold {thresholds["coverage"]:.0%}',
+                 'metrics': metrics_1},
+                coverage_achieved=coverage_ratio,
+                coverage_required=thresholds['coverage']
+            )
+            logger.critical(f"FAILURE INCIDENT REGISTERED: {incident_id}")
+            logger.critical("Cycle does NOT count. Root cause + VEGA attestation required before retry.")
+
             conn.commit()
             result['status'] = 'COVERAGE_FAIL'
             result['coverage_ratio'] = coverage_ratio
+            result['incident_id'] = incident_id
             return result
 
         # 8. Stability check - wait and run again
@@ -591,9 +670,22 @@ def execute_cycle_completion(cycle_number: int) -> Dict[str, Any]:
             update_cycle_status(conn, cycle_number, 'STABILITY_FAIL',
                                 brier_score_run1=metrics_1['brier_score'],
                                 brier_score_run2=metrics_2['brier_score'])
+
+            # Register failure incident (CEO Directive: No retry without root cause + VEGA)
+            incident_id = register_failure(
+                conn, cycle_number, 'STABILITY_FAIL',
+                {'message': f'Brier variance {brier_variance:.5f} exceeds threshold {thresholds["stability"]:.5f}',
+                 'metrics_run1': metrics_1, 'metrics_run2': metrics_2},
+                brier_variance_achieved=brier_variance,
+                brier_variance_required=thresholds['stability']
+            )
+            logger.critical(f"FAILURE INCIDENT REGISTERED: {incident_id}")
+            logger.critical("Cycle does NOT count. Root cause + VEGA attestation required before retry.")
+
             conn.commit()
             result['status'] = 'STABILITY_FAIL'
             result['brier_variance'] = brier_variance
+            result['incident_id'] = incident_id
             return result
 
         # 10. Verify damper unchanged
@@ -604,8 +696,21 @@ def execute_cycle_completion(cycle_number: int) -> Dict[str, Any]:
             logger.critical(f"DAMPER CHANGED DURING CYCLE: {damper_hash_start} -> {damper_hash_end}")
             update_cycle_status(conn, cycle_number, 'DAMPER_CHANGED',
                                 damper_hash_at_end=damper_hash_end)
+
+            # Register failure incident (CEO Directive: No retry without root cause + VEGA)
+            incident_id = register_failure(
+                conn, cycle_number, 'DAMPER_CHANGED',
+                {'message': f'Damper hash changed during cycle execution',
+                 'hash_start': damper_hash_start, 'hash_end': damper_hash_end},
+                damper_expected=damper_hash_start,
+                damper_actual=damper_hash_end
+            )
+            logger.critical(f"FAILURE INCIDENT REGISTERED: {incident_id}")
+            logger.critical("Cycle does NOT count. Root cause + VEGA attestation required before retry.")
+
             conn.commit()
             result['status'] = 'DAMPER_CHANGED'
+            result['incident_id'] = incident_id
             return result
 
         # 11. Log evidence
