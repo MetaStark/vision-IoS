@@ -1,0 +1,172 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_OPERATIONAL_ACTIVATION",
+  "directive_id": "CEO-DIR-2026-01-16B",
+  "title": "Automated Activation of UMA (Universal Meta-Analyst)",
+  "timestamp": "2026-01-16T00:55:00Z",
+  "status": "ACTIVE",
+  "executed_by": "STIG",
+  "signed_by": "CEO (Ørjan Skjold)",
+  "signature_type": "Ed25519 — Attested",
+
+  "constitutional_confirmation": {
+    "ec_014_registered": true,
+    "migrations_251_254_deployed": true,
+    "defcon_bindings_active": true,
+    "adr_immutability_checks_active": true,
+    "synthetic_isolation_active": true,
+    "tier_2_constraints_enforced": true,
+    "preconditions_satisfied": true
+  },
+
+  "migration": {
+    "number": 255,
+    "name": "255_uma_operational_activation.sql",
+    "status": "SUCCESS",
+    "tables_created": [
+      "uma_daily_loop",
+      "uma_stop_conditions",
+      "uma_exclusions",
+      "uma_recommendations",
+      "ceo_uma_overrides"
+    ],
+    "functions_created": ["check_uma_stop_conditions"]
+  },
+
+  "uma_daily_operating_loop": {
+    "frequency": "Once per 24h cycle",
+    "phases": [
+      {
+        "phase": "T+00h",
+        "name": "Ingest",
+        "inputs": [
+          "Last 7 Daily Reports",
+          "CFAO Shadow Mode synthetic outputs",
+          "Current DEFCON state"
+        ]
+      },
+      {
+        "phase": "T+01h",
+        "name": "Bottleneck Mapping",
+        "identifies": [
+          "Hypothesis quality frictions",
+          "Falsification failure frictions",
+          "Governance latency frictions",
+          "Validation bottleneck frictions"
+        ]
+      },
+      {
+        "phase": "T+02h",
+        "name": "Learning ROI Ranking",
+        "method": "Rank by expected marginal LVI uplift",
+        "explicit_exclusions": [
+          "Execution optimization",
+          "PnL chasing",
+          "Model micro-tuning outside Fast-Track scope"
+        ]
+      },
+      {
+        "phase": "T+03h",
+        "name": "Action Signaling",
+        "max_recommendations": 2,
+        "allowed_types": [
+          "Fast-Track G1 eligibility flags",
+          "Governance feedback submissions"
+        ],
+        "prohibited_types": [
+          "Strategy changes",
+          "Parameter enforcement",
+          "Capital allocation suggestions"
+        ]
+      },
+      {
+        "phase": "T+04h",
+        "name": "Signature & Audit",
+        "actions": [
+          "Sign with UMA Ed25519 key",
+          "Submit to VEGA for post-hoc audit"
+        ]
+      }
+    ]
+  },
+
+  "stop_conditions": {
+    "total": 5,
+    "type": "HARD (mandatory)",
+    "conditions": [
+      {
+        "code": "DEFCON_ELEVATED",
+        "description": "DEFCON >= ORANGE",
+        "current_status": "NOT_TRIGGERED",
+        "current_defcon": "GREEN"
+      },
+      {
+        "code": "SINGLE_HYPOTHESIS_DRIVEN",
+        "description": "LVI improvement driven by single hypothesis class",
+        "current_status": "REQUIRES_RUNTIME_ANALYSIS"
+      },
+      {
+        "code": "SYNTHETIC_DIVERGENCE",
+        "description": "Synthetic performance diverges from canonical validation",
+        "current_status": "REQUIRES_RUNTIME_ANALYSIS"
+      },
+      {
+        "code": "EXECUTION_AUTHORITY_EXPANSION",
+        "description": "Friction removal would expand execution authority",
+        "current_status": "REQUIRES_RUNTIME_ANALYSIS"
+      },
+      {
+        "code": "VEGA_METRIC_INTEGRITY_RISK",
+        "description": "VEGA flags metric integrity risk",
+        "current_status": "NOT_TRIGGERED"
+      }
+    ]
+  },
+
+  "exclusions": {
+    "total": 9,
+    "binding": true,
+    "categories": {
+      "ranking_phase": [
+        "EXECUTION_OPTIMIZATION",
+        "PNL_CHASING",
+        "MODEL_MICRO_TUNING"
+      ],
+      "signaling_phase": [
+        "STRATEGY_CHANGES",
+        "PARAMETER_ENFORCEMENT",
+        "CAPITAL_ALLOCATION"
+      ],
+      "lvi_governance": [
+        "INCREASED_RISK",
+        "RELAXED_CAPITAL_CONSTRAINTS",
+        "EXECUTION_AUTONOMY"
+      ]
+    }
+  },
+
+  "ceo_override_authority": {
+    "description": "CEO retains absolute authority",
+    "override_types": [
+      "PAUSE_RECOMMENDATIONS",
+      "RESET_LVI_BASELINE",
+      "RESTRICT_FAST_TRACK_SCOPE",
+      "FREEZE_LEARNING"
+    ],
+    "principle": "No learning system supersedes human capital sovereignty"
+  },
+
+  "strategic_closure": {
+    "learning": "No longer accidental",
+    "speed": "No longer chaotic",
+    "intelligence": "Compounds under control",
+    "freedom": "Achieved through governed acceleration, not reckless speed"
+  },
+
+  "verification": {
+    "stop_conditions_deployed": 5,
+    "exclusions_deployed": 9,
+    "defcon_gate_operational": true,
+    "uma_daily_loop_table_created": true,
+    "ceo_override_table_created": true
+  }
+}

@@ -265,9 +265,90 @@ For audit defensibility:
 | 252 | 252_fast_track_g1_infrastructure.sql | Directive A - Fast-Track G1 | SUCCESS |
 | 253 | 253_cfao_crio_synthetic_integration.sql | Directive B - CFAO × CRIO | SUCCESS |
 | 254 | 254_vega_feedback_loop.sql | Directive C - VEGA Feedback | SUCCESS |
+| 255 | 255_uma_operational_activation.sql | CEO-DIR-2026-01-16B - UMA Activation | SUCCESS |
 
-**Total Migrations (M1 Bootstrap):** 254
-**Governance Actions Logged:** 4
+**Total Migrations (M1 Bootstrap):** 255
+**Governance Actions Logged:** 5
+
+---
+
+## Section 9: CEO Directive 2026-01-16B - UMA Operational Activation
+
+### Directive Status
+
+| Field | Value |
+|-------|-------|
+| Directive ID | CEO-DIR-2026-01-16B |
+| Title | Automated Activation of UMA |
+| Status | ACTIVE |
+| Signed By | CEO (Ørjan Skjold) |
+
+### Constitutional Confirmation
+
+All preconditions satisfied:
+- EC-014 registered and signed
+- Migrations 251-254 deployed and verified
+- DEFCON bindings active
+- ADR immutability checks active
+- Synthetic isolation active
+- Tier-2 Meta-Executive constraints enforced
+
+### UMA Daily Operating Loop (Authoritative)
+
+| Phase | Time | Action |
+|-------|------|--------|
+| Ingest | T+00h | Last 7 Daily Reports, CFAO synthetic outputs, DEFCON state |
+| Mapping | T+01h | Identify frictions: hypothesis, falsification, governance, validation |
+| Ranking | T+02h | Rank by expected marginal LVI uplift |
+| Signaling | T+03h | Issue max 2 recommendations |
+| Audit | T+04h | Sign with Ed25519, submit to VEGA |
+
+### Mandatory Stop Conditions (HARD Rules)
+
+UMA must recommend **no action** if ANY of the following hold:
+
+1. **DEFCON >= ORANGE**
+2. **LVI improvement driven by single hypothesis class**
+3. **Synthetic performance diverges from canonical validation**
+4. **Friction removal would expand execution authority**
+5. **VEGA flags metric integrity risk**
+
+> Learning speed is subordinate to capital safety and regime integrity.
+
+### Explicit Exclusions
+
+**Ranking Phase (T+02h) - May NOT consider:**
+- Execution optimization
+- PnL chasing
+- Model micro-tuning outside Fast-Track scope
+
+**Signaling Phase (T+03h) - May NOT recommend:**
+- Strategy changes
+- Parameter enforcement
+- Capital allocation suggestions
+
+**LVI Governance - May NOT justify:**
+- Increased risk
+- Relaxed capital constraints
+- Execution autonomy
+
+### CEO Override Authority
+
+The CEO retains **absolute authority** to:
+- Pause UMA recommendations
+- Reset LVI baselines
+- Restrict Fast-Track scopes
+- Freeze learning during regime uncertainty
+
+> No learning system supersedes human capital sovereignty.
+
+### Strategic Closure
+
+With this directive:
+- **Learning** is no longer accidental
+- **Speed** is no longer chaotic
+- **Intelligence** compounds under control
+- **Freedom** is achieved through governed acceleration, not reckless speed
 
 ---
 
