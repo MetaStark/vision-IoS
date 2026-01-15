@@ -180,8 +180,12 @@ V2_TO_V4_MAPPING = {
     'BEAR': 'BEAR',
     'STRONG_BEAR': 'BEAR',
     'PARABOLIC': 'BULL',  # High vol bull
-    'BROKEN': 'STRESS',
-    'VOLATILE_NON_DIRECTIONAL': 'STRESS',
+    # P1 FIX (CEO-DIR Regime Ontology Remediation 2026-01-15):
+    # Identity mappings - no longer map to STRESS (definition mismatch)
+    # BROKEN: scalar=0.0 (full cash) in regime_scalar_config
+    # VOLATILE_NON_DIRECTIONAL: scalar=0.25 in regime_scalar_config
+    'BROKEN': 'BROKEN',
+    'VOLATILE_NON_DIRECTIONAL': 'VOLATILE_NON_DIRECTIONAL',
     'COMPRESSION': 'NEUTRAL',
     'UNTRUSTED': 'NEUTRAL'
 }
@@ -502,6 +506,22 @@ class DailyRegimeUpdaterV4:
             # Compute confidence
             max_prob = max(state_probs.values())
             confidence = min(max_prob + (consecutive_confirms * 0.05), 0.98)
+
+            # ================================================================
+            # P0 STRESS FREEZE (CEO-DIR Regime Ontology Remediation 2026-01-15)
+            # ================================================================
+            # Hardcoded cap until full damper integration.
+            # Reason: Definition mismatch - forecast uses fragility/VIX (macro),
+            #         outcome uses vol_ratio (price). 0% hit rate on 75 predictions.
+            # This is runtime enforcement complementing calibration gate 249.
+            if sovereign_regime == 'STRESS':
+                raw_confidence = confidence  # Preserve for audit log
+                confidence = min(confidence, 0.50)
+                if raw_confidence > 0.50:
+                    logger.warning(
+                        f"P0 STRESS FREEZE: Capped confidence from {raw_confidence:.3f} "
+                        f"to {confidence:.3f} (definition mismatch - see calibration gate)"
+                    )
 
             # Compute hashes
             data_str = f"{asset_id}|{date}|{sovereign_regime}|{technical_regime}|{confidence}|{crio_quad_hash}"
