@@ -1,0 +1,83 @@
+{
+  "evidence_type": "G3_5_SHADOW_MODE_ACTIVATION",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_5_SHADOW",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T23:38:00Z",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "executive_summary": {
+    "status": "SHADOW_MODE_ACTIVE",
+    "session_id": "9c495eb2-9bb1-46f0-acd5-3a73b233e2ed",
+    "session_name": "G3.5_PRE_G4_VALIDATION",
+    "started_at": "2026-01-16T23:37:51+01:00",
+    "planned_end_at": "2026-01-18T23:37:51+01:00",
+    "duration_hours": 48
+  },
+
+  "initial_validation": {
+    "determinism_checks": 6,
+    "determinism_failures": 0,
+    "drift_detected": false,
+    "health_status": "WARMING_UP",
+    "unique_assets_tested": ["BTC-USD", "ETH-USD", "SPY"],
+    "all_hashes_match": true
+  },
+
+  "shadow_mode_purpose": {
+    "description": "48h parallel operation before G4 production activation",
+    "verification_targets": [
+      "tag_event_proximity() determinism",
+      "resolve_source_conflict() consistency",
+      "canonicalize_staging_event() reliability"
+    ],
+    "success_criteria": {
+      "determinism_failures": 0,
+      "drift_detected": false,
+      "minimum_checks": 100
+    }
+  },
+
+  "infrastructure_deployed": {
+    "tables": [
+      "shadow_mode_sessions",
+      "shadow_tagging_results"
+    ],
+    "functions": [
+      "activate_shadow_mode()",
+      "run_shadow_tagging()",
+      "get_shadow_mode_status()",
+      "complete_shadow_mode()"
+    ],
+    "views": [
+      "shadow_mode_dashboard"
+    ]
+  },
+
+  "monitoring_instructions": {
+    "dashboard": "SELECT * FROM fhq_calendar.shadow_mode_dashboard;",
+    "detailed_status": "SELECT * FROM fhq_calendar.get_shadow_mode_status();",
+    "run_tagging": "SELECT * FROM fhq_calendar.run_shadow_tagging(session_id, asset_id, timestamp);",
+    "complete_session": "SELECT * FROM fhq_calendar.complete_shadow_mode(session_id, 'PROMOTE', 'CEO');"
+  },
+
+  "promotion_criteria": {
+    "time_elapsed": "48 hours minimum",
+    "determinism_failures": "Must be 0",
+    "drift_detected": "Must be false",
+    "ceo_approval": "Required for PROMOTE decision"
+  },
+
+  "next_steps": {
+    "during_shadow_mode": "Run shadow tagging on all forecast operations",
+    "at_48h": "CEO reviews dashboard, decides PROMOTE or ABORT",
+    "on_promotion": "G4 CEO Activation begins"
+  },
+
+  "stig_attestation": {
+    "shadow_mode_active": true,
+    "infrastructure_operational": true,
+    "initial_determinism_verified": true,
+    "monitoring_in_progress": true,
+    "statement": "G3.5 Shadow Mode ACTIVE. Session 9c495eb2-9bb1-46f0-acd5-3a73b233e2ed running for 48h. Initial determinism checks PASS (6/6). No drift detected. Monitoring until 2026-01-18 23:37:51+01."
+  }
+}
