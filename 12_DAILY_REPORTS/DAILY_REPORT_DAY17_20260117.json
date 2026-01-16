@@ -1,0 +1,173 @@
+{
+  "report_id": "DAILY_REPORT_DAY17_20260117",
+  "report_date": "2026-01-17",
+  "day_number": 17,
+  "phase": "M1_BOOTSTRAP_SEQUENCE",
+  "status": "IN_PROGRESS",
+  "generated_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "timestamp": "2026-01-17T00:00:00Z",
+
+  "executive_summary": {
+    "headline": "Day 17: Court-Defensibility Establishment Phase - Shadow Mode Monitoring",
+    "mode": "STILLNESS_AND_OBSERVATION",
+    "key_priorities": [
+      "Monitor G3.5 Shadow Mode (47h remaining)",
+      "No tuning, no changes - baseline establishment",
+      "LDOW Cycle 2 retry scheduled 00:15 UTC",
+      "Await VEGA Ed25519 signature for full G3 lock"
+    ],
+    "inherited_from_day16": {
+      "g3_lock_status": "CEO_LOCKED_VEGA_PENDING",
+      "shadow_mode_status": "ACTIVE",
+      "uma_recommendation_status": "DEFERRED_POST_G3"
+    }
+  },
+
+  "section_1_shadow_mode_monitoring": {
+    "session_id": "9c495eb2-9bb1-46f0-acd5-3a73b233e2ed",
+    "session_name": "G3.5_PRE_G4_VALIDATION",
+    "started_at": "2026-01-16T23:37:51+01:00",
+    "planned_end_at": "2026-01-18T23:37:51+01:00",
+    "status_at_day_start": {
+      "hours_elapsed": 1,
+      "hours_remaining": 47,
+      "determinism_checks": 6,
+      "determinism_failures": 0,
+      "drift_detected": false,
+      "health_status": "WARMING_UP",
+      "unique_assets": 3
+    },
+    "promotion_criteria": {
+      "time_elapsed": {"required": "48h minimum", "current": "1h"},
+      "determinism_failures": {"required": 0, "current": 0, "status": "PASS"},
+      "drift_detected": {"required": false, "current": false, "status": "PASS"},
+      "minimum_checks": {"required": 100, "current": 6, "status": "PENDING"},
+      "ceo_approval": {"required": true, "current": false, "status": "PENDING"}
+    },
+    "stop_signals": {
+      "description": "Only these trigger STOP",
+      "signals": [
+        {"signal": "determinism_fail > 0", "current": "0", "status": "OK"},
+        {"signal": "drift = true", "current": "false", "status": "OK"},
+        {"signal": "hash mismatch", "current": "none", "status": "OK"}
+      ]
+    }
+  },
+
+  "section_2_g3_lock_status": {
+    "ceo_decision": "LOCKED",
+    "locked_at": "2026-01-16T23:33:33+01:00",
+    "mechanical_enforcement": "100%",
+    "vega_signature": {
+      "status": "PENDING",
+      "attestation_id": "1b76aed9-08b1-413e-a7ab-073814877e35",
+      "content_hash": "27fa53428a77ac01f655f029f14bff8ceee617f0a46dc9d4bf2cfac89c7c1290",
+      "vega_public_key": "7c71b6356827f270200cc3b870b8c8d33b72eca77d5b87145c377812705515c9"
+    },
+    "fully_locked": false,
+    "remaining_for_full_lock": [
+      "VEGA Ed25519 signature on content_hash",
+      "48h shadow mode completion without deviation",
+      "CEO formal approval post-shadow"
+    ],
+    "principle": "This is baseline. All future ROI measured against locked system."
+  },
+
+  "section_3_uma_status": {
+    "first_loop_completed": "2026-01-16",
+    "recommendation_status": "DEFERRED_POST_G3",
+    "governance_correction": {
+      "directive": "CEO-DIR-2026-01-17-UMA-GOVERNANCE",
+      "ruling": "No tuning until G3 fully locked",
+      "key_principle": "Ikke gjør irreversible endringer før G3 = låst"
+    },
+    "deferred_recommendation": {
+      "id": "UMA-REC-20260116-01",
+      "target": "confidence_damper_alpha, confidence_damper_beta",
+      "reclassified_to": "POST_G3_BASELINE_CALIBRATION_CANDIDATE",
+      "execution_gate": "G3_FULLY_LOCKED"
+    },
+    "day_17_loop": {
+      "status": "SCHEDULED",
+      "purpose": "Observation only - verify if FRICTION-001 reproduces"
+    }
+  },
+
+  "section_4_ldow_status": {
+    "cycle_1": {
+      "status": "COMPLETED",
+      "completed_at": "2026-01-16T00:03:05Z",
+      "brier_score": 0.4800,
+      "hit_rate": 0.4252,
+      "coverage": 1.0
+    },
+    "cycle_2": {
+      "status": "SCHEDULED",
+      "scheduled_at": "2026-01-17T00:15:00Z",
+      "retry_reason": "Jan 16 attempt had 0 eligible forecasts (expected gap)"
+    },
+    "rung_d_progress": {
+      "cycles_completed": 1,
+      "cycles_required": 2,
+      "eligible": false
+    }
+  },
+
+  "section_5_operating_mode": {
+    "mode": "COURT_DEFENSIBILITY_ESTABLISHMENT",
+    "not_roi_phase": true,
+    "mental_model": "All future ROI rests on ability to say: This was baseline. Everything after measured against locked system.",
+    "allowed_actions": [
+      "Monitor shadow mode",
+      "Monitor determinism checks",
+      "Monitor for drift",
+      "Let LDOW cycles run"
+    ],
+    "prohibited_actions": [
+      "Tune damper parameters",
+      "Execute UMA recommendations",
+      "Make any irreversible changes",
+      "Interpret numbers prematurely"
+    ]
+  },
+
+  "section_6_day_17_goals": {
+    "primary": [
+      {"goal": "Shadow mode 24h checkpoint", "metric": "determinism_failures = 0, drift = false"},
+      {"goal": "LDOW Cycle 2 execution", "metric": "Coverage >= 80%"},
+      {"goal": "Accumulate >=50 shadow checks", "metric": "total_checks >= 50"}
+    ],
+    "secondary": [
+      {"goal": "UMA daily loop for observation", "metric": "Verify FRICTION-001 persistence"},
+      {"goal": "VEGA signature ceremony", "metric": "Ed25519 signature on content_hash"}
+    ],
+    "success_criteria": {
+      "shadow_mode": "0 failures, 0 drift",
+      "ldow": "Cycle 2 completes with >=80% coverage",
+      "baseline": "No interventions, no tuning"
+    }
+  },
+
+  "section_7_evidence_chain": {
+    "inherited_from_day16": [
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_IOS016_G3_LOCKED.json",
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_IOS016_G3_5_SHADOW_ACTIVE.json",
+      "03_FUNCTIONS/evidence/UMA_DAILY_LOOP_20260116.json"
+    ],
+    "day_17_evidence": []
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "attestation_timestamp": "2026-01-17T00:00:00Z",
+    "attestation_summary": [
+      "Day 17 opened in STILLNESS_AND_OBSERVATION mode",
+      "Shadow mode at 1h elapsed, 47h remaining",
+      "G3 CEO-locked but awaiting VEGA signature",
+      "UMA recommendation deferred per governance correction",
+      "System in court-defensibility establishment phase"
+    ]
+  }
+}
