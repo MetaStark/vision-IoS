@@ -1,0 +1,158 @@
+{
+  "evidence_type": "G3_REQUIREMENT_COMPLETION",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_REQ_002_003",
+  "requirements": ["G3-REQ-002", "G3-REQ-003"],
+  "titles": [
+    "TOS Evidence - Real Evidence, Not Placeholders",
+    "VEGA Attestation Bundle - End-to-End Lineage Binding"
+  ],
+  "classification": "GOVERNANCE-CRITICAL",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T22:30:00Z",
+
+  "executive_summary": {
+    "status": "INFRASTRUCTURE_COMPLETE",
+    "tos_fields_enhanced": true,
+    "attestation_framework_created": true,
+    "lineage_proof_structure": true,
+    "pending_actions": [
+      "TOS population during provider integration (G4)",
+      "VEGA Ed25519 signature during attestation ceremony (G4)"
+    ]
+  },
+
+  "g3_req_002_tos_evidence": {
+    "ceo_objection": "'TOS structure verified' is not the same as 'license defensible'",
+    "original_state": "TOS fields exist but not populated, verify_provider_tos() blocks ingestion",
+    "audit_risk_mitigated": "TOS infrastructure now captures all court-required evidence fields",
+
+    "required_fields_implemented": {
+      "tos_document_text_or_url": "Already in provider_tos_archive.tos_document_text",
+      "tos_document_hash": "Already in provider_tos_archive.tos_document_hash",
+      "capture_timestamp": "Already in provider_tos_archive.capture_date",
+      "permitted_use_scope": "ADDED - ENUM: PERSONAL_USE | COMMERCIAL_INTERNAL | REDISTRIBUTION_ALLOWED | RESTRICTED",
+      "dataset_type_coverage": "ADDED - TEXT[] for MACRO_EVENTS | EQUITY_EVENTS | CRYPTO_EVENTS | ALL",
+      "eligibility_state": "ADDED - ENUM: ELIGIBLE | CONDITIONAL | INELIGIBLE | REVIEW_REQUIRED",
+      "vega_attestation_id": "ADDED - UUID linking to attestation bundle"
+    },
+
+    "enforcement_functions": {
+      "verify_provider_tos_complete": "Checks all required TOS fields present and reviewed",
+      "check_tos_before_ingest": "Ingestion gate - blocks providers without valid TOS"
+    }
+  },
+
+  "g3_req_003_vega_attestation": {
+    "ceo_objection": "'VEGA attestation pending' means G2 is governance-reviewed, not governance-final",
+    "original_state": "G2 = design-compliant, VEGA attestation deferred to G3",
+    "audit_risk_mitigated": "Attestation bundle infrastructure ties entire lineage with Ed25519 signature",
+
+    "attestation_bundle_contents": {
+      "schema_hash": "SHA-256 of fhq_calendar schema DDL",
+      "function_hashes": "JSONB of SHA-256 for each function definition",
+      "test_results_hash": "SHA-256 of operational test output",
+      "tos_evidence_hash": "SHA-256 of TOS archive content",
+      "lineage_proof": {
+        "provider_to_staging": "FK constraint proof",
+        "staging_to_canonical": "Transformation function hash + signature requirement",
+        "conflict_resolution": "resolve_source_conflict() audit log",
+        "tagging_output": "tag_event_proximity() determinism proof"
+      },
+      "vega_public_key": "Ed25519 public key for verification",
+      "attestation_content_hash": "SHA-256 of all bundle components",
+      "vega_signature": "Ed25519 signature over content_hash"
+    },
+
+    "verification_capability": {
+      "independent_verification": true,
+      "method": "Re-compute content_hash, verify Ed25519 signature against vega_public_key",
+      "function": "verify_attestation_bundle(attestation_id)"
+    }
+  },
+
+  "implementation_summary": {
+    "migration": "268_g3_tos_vega_attestation.sql",
+    "tables_created": [
+      "vega_attestation_bundles",
+      "lineage_proof_components"
+    ],
+    "columns_added_to_provider_tos_archive": [
+      "permitted_use_scope",
+      "dataset_type_coverage",
+      "eligibility_state",
+      "vega_attestation_id",
+      "acceptance_timestamp",
+      "review_notes"
+    ],
+    "functions_created": [
+      "verify_provider_tos_complete(provider_id)",
+      "generate_attestation_bundle(type, version, pubkey, signature)",
+      "verify_attestation_bundle(attestation_id)",
+      "check_tos_before_ingest(provider_id)"
+    ]
+  },
+
+  "verification_test": {
+    "test": "verify_provider_tos_complete('FRED_provider_id')",
+    "result": {
+      "is_complete": false,
+      "missing_fields": ["NO_TOS_RECORD"],
+      "eligibility": "INELIGIBLE"
+    },
+    "interpretation": "Correctly identifies FRED has no TOS record - population pending G4 integration"
+  },
+
+  "acceptance_criteria_validation": {
+    "g3_req_002_tos_fields": {
+      "criteria": "Captured terms snapshot, timestamped acceptance, explicit permitted use",
+      "status": "INFRASTRUCTURE_COMPLETE",
+      "note": "All fields available, population during G4 provider integration"
+    },
+    "g3_req_002_tos_gate": {
+      "criteria": "Each provider has non-null TOS evidence before production activation",
+      "status": "ENFORCED",
+      "verification": "check_tos_before_ingest() blocks non-compliant providers"
+    },
+    "g3_req_003_lineage_binding": {
+      "criteria": "Signed attestation bundle ties entire data lineage",
+      "status": "INFRASTRUCTURE_COMPLETE",
+      "note": "Bundle generator ready, VEGA signature pending key availability"
+    },
+    "g3_req_003_third_party_verification": {
+      "criteria": "Hash chain integrity verifiable by third party",
+      "status": "IMPLEMENTED",
+      "verification": "verify_attestation_bundle() re-computes and compares hashes"
+    }
+  },
+
+  "pending_for_g4": {
+    "tos_population": [
+      "Capture actual TOS documents for each provider",
+      "Review and set eligibility_state",
+      "Document permitted_use_scope"
+    ],
+    "vega_attestation": [
+      "VEGA key generation/retrieval",
+      "Attestation ceremony with Ed25519 signature",
+      "Bundle generation with actual VEGA signature"
+    ]
+  },
+
+  "next_requirements": {
+    "p1_items": [
+      "G3-REQ-004: Granular Conflict Resolution",
+      "G3-REQ-005: Ghost Non-Exculpatory",
+      "G3-REQ-006: Scope Firewall Enforcement"
+    ],
+    "rationale": "P1 hardening items per CEO execution order"
+  },
+
+  "stig_attestation": {
+    "infrastructure_complete": true,
+    "tos_gate_functional": true,
+    "attestation_framework_ready": true,
+    "pending_population_at_g4": true,
+    "ready_for_p1_requirements": true,
+    "statement": "G3-REQ-002/003 infrastructure COMPLETE. TOS evidence fields enhanced, VEGA attestation bundle framework created. Population and actual VEGA signature pending G4 provider integration and attestation ceremony."
+  }
+}

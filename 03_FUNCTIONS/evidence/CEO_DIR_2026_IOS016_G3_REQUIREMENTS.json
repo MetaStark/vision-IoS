@@ -1,0 +1,260 @@
+{
+  "directive_type": "G3_REQUIREMENTS_SPECIFICATION",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_REQ",
+  "target": "IoS-016 Economic Calendar",
+  "classification": "GOVERNANCE-CRITICAL",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T22:45:00Z",
+  "ceo_feedback_date": "2026-01-16",
+
+  "executive_summary": {
+    "g2_outcome": "PASS (design-compliant, not system-defensible)",
+    "g3_objective": "Transform design-compliance into shutdown-proof, court-defensible system",
+    "non_negotiables": [
+      "ADR-008 enforcement mechanically unavoidable",
+      "TOS evidence real (not schema placeholders)",
+      "VEGA attestation binding whole lineage end-to-end"
+    ]
+  },
+
+  "ceo_objections_formalized": {
+
+    "objection_1_adr008_chain_of_custody": {
+      "ceo_statement": "ADR-008 PARTIAL is not cosmetic - it's a chain-of-custody gap",
+      "severity": "CRITICAL",
+      "current_state": "ceio_signature field exists but nullable, enforcement deferred",
+      "audit_risk": "If CEIO can ingest events without cryptographic attribution, defense becomes 'trust the operator' - NOT constitutional",
+      "g3_requirement": {
+        "id": "G3-REQ-001",
+        "title": "CEIO Signature Enforcement - Mechanically Unavoidable",
+        "acceptance_criteria": [
+          "No unsigned canonical events can exist in production state",
+          "Enforcement is NOT policy-only - it is mechanically unavoidable",
+          "Database constraint or trigger rejects unsigned inserts",
+          "Batch-level signing with strict invariants if record-level impractical"
+        ],
+        "implementation_options": [
+          "CHECK constraint: ceio_signature IS NOT NULL for is_canonical = true",
+          "BEFORE INSERT trigger validates Ed25519 signature",
+          "Batch table: ingestion_batches.batch_signature required, FK enforces membership"
+        ],
+        "verification": "Attempt unsigned insert - must fail with logged rejection"
+      }
+    },
+
+    "objection_2_tos_license_defensibility": {
+      "ceo_statement": "'TOS structure verified' is not the same as 'license defensible'",
+      "severity": "HIGH",
+      "current_state": "TOS fields exist but not populated, verify_provider_tos() blocks ingestion",
+      "audit_risk": "In court, 'we had a table for TOS' is irrelevant without captured terms, timestamps, and explicit permitted use",
+      "g3_requirement": {
+        "id": "G3-REQ-002",
+        "title": "TOS Evidence - Real Evidence, Not Placeholders",
+        "acceptance_criteria": [
+          "Captured terms snapshot (or link + hash) for each provider",
+          "Timestamped acceptance/eligibility state",
+          "Explicit 'permitted use' classification per provider + dataset type",
+          "VEGA-attested TOS capture with signature"
+        ],
+        "required_fields": {
+          "tos_document_text_or_url": "Full TOS text or canonical URL",
+          "tos_document_hash": "SHA-256 of TOS at capture time",
+          "capture_timestamp": "TIMESTAMPTZ of capture",
+          "permitted_use_scope": "ENUM: PERSONAL_USE | COMMERCIAL_INTERNAL | REDISTRIBUTION_ALLOWED | RESTRICTED",
+          "dataset_type_coverage": "Which data types covered: MACRO_EVENTS | EQUITY_EVENTS | CRYPTO_EVENTS | ALL",
+          "eligibility_state": "ENUM: ELIGIBLE | CONDITIONAL | INELIGIBLE | REVIEW_REQUIRED",
+          "vega_attestation_id": "UUID of VEGA attestation"
+        },
+        "verification": "Each provider has non-null TOS evidence before production activation"
+      }
+    },
+
+    "objection_3_vega_attestation_binding": {
+      "ceo_statement": "'VEGA attestation pending' means G2 is governance-reviewed, not governance-final",
+      "severity": "CRITICAL",
+      "current_state": "G2 = design-compliant, VEGA attestation deferred to G3",
+      "audit_risk": "Without signed attestation bundle, lineage is narrative not proof",
+      "g3_requirement": {
+        "id": "G3-REQ-003",
+        "title": "VEGA Attestation Bundle - End-to-End Lineage Binding",
+        "acceptance_criteria": [
+          "Signed attestation bundle ties: providers → raw responses → hashes → staging rows → canonical rows → conflict decisions → downstream tags",
+          "Ed25519 signature from VEGA key",
+          "Hash chain integrity verifiable by third party",
+          "Attestation covers: schema, functions, test results, operational run"
+        ],
+        "attestation_bundle_contents": {
+          "schema_hash": "SHA-256 of fhq_calendar schema DDL",
+          "function_hashes": "SHA-256 of each function definition",
+          "test_results_hash": "SHA-256 of G1 test output",
+          "operational_run_hash": "SHA-256 of 24h operational test log",
+          "lineage_proof": {
+            "provider_to_staging": "FK constraint proof",
+            "staging_to_canonical": "Transformation function hash",
+            "conflict_resolution": "resolve_source_conflict() output hash",
+            "tagging_output": "tag_event_proximity() determinism proof"
+          },
+          "vega_signature": "Ed25519 signature over bundle",
+          "attestation_timestamp": "TIMESTAMPTZ"
+        },
+        "verification": "Independent party can verify bundle integrity and trace any canonical event to provider source"
+      }
+    },
+
+    "objection_4_conflict_logic_granularity": {
+      "ceo_statement": "Provider conflict logic must be 'domain + event-type aware', not just one reliability score",
+      "severity": "MEDIUM",
+      "current_state": "Domain-specific reliability: provider × domain (macro/equity/crypto/cross_asset)",
+      "audit_risk": "Provider excellent for macro times may be weak for crypto upgrade times - same domain, different event types",
+      "g3_requirement": {
+        "id": "G3-REQ-004",
+        "title": "Granular Conflict Resolution - Provider × Domain × Event Type",
+        "acceptance_criteria": [
+          "Reliability at minimum: provider × domain × event_type_category",
+          "ADR-013 'why did this source win?' answerable for edge cases",
+          "Conflict log includes granular reliability used, not just provider-level"
+        ],
+        "schema_enhancement": {
+          "new_table": "fhq_calendar.provider_event_type_reliability",
+          "columns": [
+            "provider_id UUID FK",
+            "event_type_category TEXT",
+            "reliability_score NUMERIC(3,2)",
+            "sample_size INTEGER",
+            "last_calibrated_at TIMESTAMPTZ",
+            "calibration_method TEXT"
+          ]
+        },
+        "conflict_resolution_update": "resolve_source_conflict() to use provider × event_type_category reliability when available, fallback to domain",
+        "verification": "Conflict log shows granular reliability lookup path for each decision"
+      }
+    },
+
+    "objection_5_ghost_event_non_exculpatory": {
+      "ceo_statement": "Ghost event triage categories are strong - but you need a hard non-excuse constraint",
+      "severity": "MEDIUM",
+      "current_state": "Ghost flags can be: COVERAGE_GAP | TIMESTAMP_DEFECT | MAPPING_DEFECT | TRUE_GHOST",
+      "audit_risk": "Ghost flags become escape hatch: 'we performed badly because ghost event'",
+      "g3_requirement": {
+        "id": "G3-REQ-005",
+        "title": "Ghost Events - Non-Exculpatory by Default",
+        "acceptance_criteria": [
+          "Ghost event flags are NON-EXCULPATORY by default",
+          "Flags can open investigation but CANNOT reduce accountability of calibration",
+          "Only resolved flags (COVERAGE_GAP or TIMESTAMP_DEFECT) with evidence can affect Brier stratification",
+          "Unresolved ghosts NEVER excuse performance"
+        ],
+        "schema_enhancement": {
+          "new_column": "exculpatory_eligible BOOLEAN DEFAULT FALSE",
+          "constraint": "exculpatory_eligible = TRUE only if flag_status = 'RESOLVED' AND suspected_cause IN ('COVERAGE_GAP', 'TIMESTAMP_DEFECT') AND resolution_evidence_hash IS NOT NULL"
+        },
+        "brier_stratification_rule": "EVENT_GHOST tag only applies to Brier if exculpatory_eligible = TRUE",
+        "verification": "Unresolved ghost cannot affect LVI_adjusted calculation"
+      }
+    },
+
+    "objection_6_scope_firewall_enforcement": {
+      "ceo_statement": "14-day scope firewall is good - but define the enforcement boundary precisely",
+      "severity": "MEDIUM",
+      "current_state": "14-day scope firewall mentioned but enforcement unclear",
+      "audit_risk": "'Firewall' becomes narrative instead of control",
+      "g3_requirement": {
+        "id": "G3-REQ-006",
+        "title": "Scope Firewall - Precise Enforcement Boundary",
+        "acceptance_criteria": [
+          "Explicit definition: firewall applies to INGESTION HORIZON (not tagging or analysis)",
+          "Events with event_timestamp > NOW() + 14 days are REJECTED at staging",
+          "Events with event_timestamp < NOW() - 14 days are REJECTED (historical backfill requires separate approval)",
+          "Rejection is LOGGED, HASHED, and REVIEWABLE",
+          "Provider returns 6 months of events → only 14-day window accepted, rest logged as REJECTED_OUTSIDE_FIREWALL"
+        ],
+        "schema_enhancement": {
+          "new_table": "fhq_calendar.firewall_rejection_log",
+          "columns": [
+            "rejection_id UUID PK",
+            "provider_id UUID FK",
+            "batch_id UUID FK",
+            "event_type_code TEXT",
+            "event_timestamp TIMESTAMPTZ",
+            "rejection_reason TEXT",
+            "rejection_timestamp TIMESTAMPTZ",
+            "rejection_hash TEXT"
+          ]
+        },
+        "staging_constraint": "CHECK (event_timestamp BETWEEN NOW() - INTERVAL '14 days' AND NOW() + INTERVAL '14 days')",
+        "verification": "Attempt to insert event 30 days out - must fail with logged rejection"
+      }
+    },
+
+    "objection_7_operational_test_oracle": {
+      "ceo_statement": "The '24h operational test' needs a test oracle and pass/fail thresholds",
+      "severity": "HIGH",
+      "current_state": "24h test listed as next step without explicit criteria",
+      "audit_risk": "'24h test passed' is not defensible without explicit thresholds",
+      "g3_requirement": {
+        "id": "G3-REQ-007",
+        "title": "24h Operational Test Oracle - Explicit Pass/Fail Thresholds",
+        "acceptance_criteria": [
+          "COMPLETENESS: Expected event types present for chosen window",
+          "DETERMINISM: Re-run yields identical canonical events + conflict outcomes",
+          "TIME_INTEGRITY: UTC normalization + DST edge-cases don't drift tags",
+          "COST_SAFETY: API waterfall doesn't breach quotas / rate constraints",
+          "OBSERVABILITY: Every batch has a hash and a traceable audit record"
+        ],
+        "pass_fail_thresholds": {
+          "completeness": {
+            "metric": "expected_event_types_present / expected_event_types_total",
+            "threshold": ">= 0.95",
+            "measurement": "Query event_type_registry vs calendar_events for test window"
+          },
+          "determinism": {
+            "metric": "canonical_events_hash_run1 == canonical_events_hash_run2",
+            "threshold": "EXACT_MATCH",
+            "measurement": "Run ingestion twice with same input, compare output hashes"
+          },
+          "time_integrity": {
+            "metric": "tag_drift_count (same forecast, different tags across runs)",
+            "threshold": "= 0",
+            "measurement": "Run tag_event_proximity() twice, compare outputs"
+          },
+          "cost_safety": {
+            "metric": "api_calls_actual / api_quota_limit",
+            "threshold": "<= 0.80",
+            "measurement": "Query calendar_provider_state.current_daily_usage"
+          },
+          "observability": {
+            "metric": "batches_with_hash / batches_total",
+            "threshold": "= 1.00",
+            "measurement": "Query ingestion_batches WHERE batch_hash IS NOT NULL"
+          }
+        },
+        "test_oracle_function": "fhq_calendar.run_24h_operational_test() returns test_result_bundle",
+        "verification": "All 5 dimensions PASS with logged evidence"
+      }
+    }
+  },
+
+  "g3_implementation_checklist": [
+    {"id": "G3-REQ-001", "title": "CEIO Signature Enforcement", "priority": "P0", "status": "PENDING"},
+    {"id": "G3-REQ-002", "title": "TOS Evidence Real", "priority": "P0", "status": "PENDING"},
+    {"id": "G3-REQ-003", "title": "VEGA Attestation Bundle", "priority": "P0", "status": "PENDING"},
+    {"id": "G3-REQ-004", "title": "Granular Conflict Resolution", "priority": "P1", "status": "PENDING"},
+    {"id": "G3-REQ-005", "title": "Ghost Non-Exculpatory", "priority": "P1", "status": "PENDING"},
+    {"id": "G3-REQ-006", "title": "Scope Firewall Enforcement", "priority": "P1", "status": "PENDING"},
+    {"id": "G3-REQ-007", "title": "24h Test Oracle", "priority": "P0", "status": "PENDING"}
+  ],
+
+  "g3_exit_criteria": {
+    "all_p0_requirements": "MUST PASS",
+    "all_p1_requirements": "MUST PASS or DOCUMENTED_EXCEPTION with CEO approval",
+    "vega_attestation": "SIGNED",
+    "shutdown_proof_declaration": "STIG and VEGA both sign: 'This system is shutdown-proof and court-defensible'"
+  },
+
+  "acknowledgment": {
+    "ceo_objections_received": true,
+    "objections_formalized": 7,
+    "stig_response": "All objections accepted as G3 non-negotiables. G2 remains PASS (design-compliant). G3 will transform design into mechanically-enforced, court-defensible system.",
+    "next_action": "Begin G3 implementation with G3-REQ-001 (CEIO Signature Enforcement)"
+  }
+}

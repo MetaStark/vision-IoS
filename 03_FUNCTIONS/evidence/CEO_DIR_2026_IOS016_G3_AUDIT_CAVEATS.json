@@ -1,0 +1,100 @@
+{
+  "document_type": "AUDIT_CAVEATS_ACKNOWLEDGMENT",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_CAVEATS",
+  "target": "IoS-016 Economic Calendar G3 Implementation",
+  "classification": "GOVERNANCE-CRITICAL",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T23:00:00Z",
+  "ceo_feedback_date": "2026-01-16",
+
+  "auditor_verdict": {
+    "g2_status": "PASS - DEFENSIBLE",
+    "objection_classification": "Governance hardening, not architectural defects",
+    "proceed_authorization": "YES - G3 implementation authorized"
+  },
+
+  "audit_caveats_locked": {
+
+    "caveat_a_ceio_signature_scope": {
+      "risk_identified": "If CEIO signature enforcement only at is_canonical = TRUE, then staging pollution is possible and delayed canonicalization becomes attack surface",
+      "required_constraints": [
+        "Unsigned events may exist ONLY in staging_events table",
+        "NO downstream process can consume staging_events directly",
+        "Canonicalization is a SINGLE CHOKE POINT",
+        "staging_events has NO FK references FROM other tables (only TO calendar_events)"
+      ],
+      "mechanical_enforcement": {
+        "staging_isolation": "staging_events is write-only sink, read-only by canonicalization process",
+        "no_downstream_fks": "No table references staging_events as parent",
+        "canonicalization_gate": "Only resolve_source_conflict() or direct INSERT to calendar_events can create canonical records",
+        "signature_check": "calendar_events.ceio_signature IS NOT NULL enforced via CHECK constraint"
+      },
+      "documentation_required": true,
+      "status": "ACKNOWLEDGED - Will enforce mechanically"
+    },
+
+    "caveat_b_ghost_event_ordering": {
+      "risk_identified": "If ghost classification happens AFTER UMA tagging, learning leakage is still possible",
+      "required_ordering": [
+        "Ghost classification MUST occur BEFORE Brier attribution",
+        "Ghost classification MUST occur BEFORE UMA learning updates",
+        "Ghost classification MUST occur BEFORE LDOW summaries"
+      ],
+      "mechanical_enforcement": {
+        "classification_trigger": "Ghost classification runs in tag_event_proximity() BEFORE returning proximity_tag",
+        "brier_dependency": "Brier scoring checks ghost_flag status before attributing to EVENT_NEUTRAL",
+        "uma_dependency": "UMA learning queries exclude forecasts where ghost investigation is OPEN",
+        "ldow_dependency": "LDOW capture excludes ghost-flagged windows until resolution"
+      },
+      "ordering_guarantee": "Ghost detection is synchronous in tagging pipeline, not asynchronous post-process",
+      "status": "ACKNOWLEDGED - Will enforce ordering"
+    },
+
+    "caveat_c_determinism_availability_state": {
+      "risk_identified": "Provider outages may create false negatives if expected event sets are not versioned per provider state",
+      "required_behavior": [
+        "Determinism must be EXACT given identical provider availability states",
+        "If availability differs between runs, the run MUST FAIL explicitly",
+        "Drift is never acceptable - only PASS or explicit FAIL"
+      ],
+      "mechanical_enforcement": {
+        "availability_snapshot": "24h test captures provider_availability_state at T0",
+        "comparison_precondition": "Determinism check REQUIRES availability_state_hash match",
+        "availability_mismatch": "If availability differs, test returns FAIL_AVAILABILITY_DRIFT, not soft comparison",
+        "no_partial_pass": "Determinism is binary: EXACT_MATCH or FAIL"
+      },
+      "failure_modes": {
+        "PASS": "All hashes match, availability identical",
+        "FAIL_DETERMINISM": "Hashes differ, availability identical",
+        "FAIL_AVAILABILITY_DRIFT": "Availability state changed between runs - cannot compare"
+      },
+      "status": "ACKNOWLEDGED - Explicit failure mode required"
+    }
+  },
+
+  "g3_execution_order_locked": [
+    {"sequence": 1, "requirement": "G3-REQ-001", "title": "CEIO Signature Enforcement", "rationale": "Make canonical ingestion mechanically impossible without signature"},
+    {"sequence": 2, "requirement": "G3-REQ-007", "title": "24h Test Oracle", "rationale": "Truth oracle before expanding enforcement surface"},
+    {"sequence": 3, "requirement": "G3-REQ-002", "title": "TOS Evidence", "rationale": "Finalize court defensibility"},
+    {"sequence": 4, "requirement": "G3-REQ-003", "title": "VEGA Attestation", "rationale": "Finalize court defensibility"},
+    {"sequence": 5, "requirement": "G3-REQ-004", "title": "Granular Conflict Resolution", "rationale": "P1 - hardening"},
+    {"sequence": 6, "requirement": "G3-REQ-005", "title": "Ghost Non-Exculpatory", "rationale": "P1 - hardening"},
+    {"sequence": 7, "requirement": "G3-REQ-006", "title": "Scope Firewall", "rationale": "P1 - hardening"}
+  ],
+
+  "stig_acknowledgment": {
+    "caveats_understood": true,
+    "caveats_accepted": true,
+    "mechanical_enforcement_committed": true,
+    "no_policy_only_enforcement": true,
+    "statement": "All three audit caveats are acknowledged and will be mechanically enforced. No downstream process will consume staging. Ghost classification will precede all learning. Determinism failure modes will be explicit."
+  },
+
+  "pre_commit_checklist": {
+    "caveat_a_documented": true,
+    "caveat_b_documented": true,
+    "caveat_c_documented": true,
+    "execution_order_locked": true,
+    "ready_for_g3_implementation": true
+  }
+}
