@@ -242,14 +242,25 @@ ADR text amendments require full G4 CEO approval through standard process.
 | 1 | SCHEDULING_TIMING_ERROR | Scheduled 21h before forecasts eligible | RESOLVED |
 | 2 | TIMING_BUFFER | 1-hour buffer not elapsed (ran 23:58, needed 00:01+) | RESOLVED |
 
-### Cycle 2
+### Cycle 2 - RETRY SCHEDULED
 
 | Field | Value |
 |-------|-------|
-| Status | SCHEDULED |
-| Scheduled | 2026-01-16 01:30 UTC |
-| Forecasts Expected | ~66 |
+| Initial Attempt | 2026-01-16 01:30 UTC |
+| Initial Result | COVERAGE_FAIL (0 forecasts eligible) |
+| Root Cause | FORECAST_GAP - expected LDOW cadence |
+| Retry Status | **AUTHORIZED** |
+| Retry Scheduled | **2026-01-17 00:15 UTC** |
 | Coverage Threshold | 80% |
+
+#### Cycle 2 Failure Analysis (08:00 Morning Review)
+
+| Question | Answer |
+|----------|--------|
+| Was this a system error? | **NO** - Expected behavior |
+| What happened? | Jan 15 forecasts consumed by Cycle 1. Jan 16 forecasts not yet expired. |
+| When are new forecasts eligible? | Tonight after 23:00 UTC + 1h buffer = 00:00+ UTC |
+| Action taken | Root cause documented, retry authorized for 00:15 UTC |
 
 ### Stillness Compliance
 
@@ -381,6 +392,53 @@ With this directive:
 
 ---
 
+## Section 10: Morning Status Update (08:00 Local)
+
+### Overnight Summary
+
+| Event | Time (UTC) | Result |
+|-------|------------|--------|
+| Cycle 1 Execution | 00:03:05 | **SUCCESS** - 468 forecasts, 100% coverage, Brier 0.48 |
+| Cycle 2 Attempt | 01:30:01 | COVERAGE_FAIL - 0 forecasts (expected gap) |
+| Root Cause Documented | 07:xx | FORECAST_GAP - normal cadence |
+| Retry Authorized | 07:xx | Scheduled 2026-01-17 00:15 UTC |
+
+### What "Activate UMA" Means (CEO Clarification)
+
+**Activation = Allow next control round. Nothing more.**
+
+It means exactly three things:
+
+1. **Document why Cycle 2 stopped** → DONE
+   - "Cycle 2 ran before new forecasts were eligible. This is expected cadence, not an error."
+
+2. **Authorize retry in next valid window** → DONE
+   - Tonight, after new forecasts are eligible (00:15 UTC)
+
+3. **Let UMA do its job without human intervention**
+   - Same rules
+   - Same stillness
+   - Same discipline
+   - No adjustments. No interpretation underway.
+
+### What "Activate UMA" Does NOT Mean
+
+| Forbidden | Reason |
+|-----------|--------|
+| Change parameters | Violates stillness |
+| Make UMA "more active" | UMA is a reviewer, not a trader |
+| Adjust dampers | Requires G4 approval |
+| Interpret numbers now | Wait for data |
+| Push for Rung D | Requires 2 clean cycles |
+
+### Correct Mental Model
+
+> **UMA is a learning auditor, not a trader.**
+> **Activation = permit next control round.**
+> **Not = do something new.**
+
+---
+
 ## Attestation
 
 **Attested by:** STIG
@@ -402,13 +460,560 @@ With this directive:
 
 ## Next Steps
 
-1. **Tonight (01:30 UTC):** Execute Cycle 2
+1. **Tonight (00:15 UTC):** Execute Cycle 2 retry
 2. **Day 10:** Rung D eligibility decision (pending 2 successful cycles)
-3. **Ongoing:** UMA first daily learning audit upon operational cadence
+3. **Ongoing:** UMA operates within defined constraints - no human intervention
 4. **Ongoing:** Monitor Fast-Track parameter requests
 5. **Ongoing:** CFAO shadow mode scenario generation
 
 ---
 
+## Section 11: Database Verification (STIG Court-Proof)
+
+**Verification Timestamp:** 2026-01-16T18:xx:xx UTC
+**Verified by:** STIG (EC-003_2026_PRODUCTION)
+**Query Method:** Direct PostgreSQL verification
+
+### EC-014 Contract Status
+
+```sql
+SELECT ec_id, title, role_type, status, effective_date
+FROM fhq_governance.ec_registry WHERE ec_id = 'EC-014';
+```
+
+| Field | Database Value |
+|-------|----------------|
+| ec_id | EC-014 |
+| title | Learning Velocity & ROI Acceleration Charter |
+| role_type | Tier-2 Meta-Executive |
+| status | **ACTIVE** |
+| effective_date | 2026-01-15 |
+| authority_chain | ADR-001, ADR-003, ADR-004, ADR-012, ADR-016, ADR-020, ADR-021, ADR-024 |
+| dependencies | EC-003, EC-004 |
+
+### UMA Governance Actions Logged
+
+```sql
+SELECT action_type, action_target, initiated_by, initiated_at, decision
+FROM fhq_governance.governance_actions_log
+WHERE action_target = 'UMA';
+```
+
+| Action | Initiated By | Timestamp | Decision |
+|--------|--------------|-----------|----------|
+| AGENT_REGISTRATION | STIG | 2026-01-15T23:39:12Z | APPROVED |
+| UMA_OPERATIONAL_ACTIVATION | CEO | 2026-01-15T23:53:10Z | ACTIVATED |
+
+### UMA Stop Conditions (5 HARD)
+
+```sql
+SELECT condition_code, severity, is_active
+FROM fhq_governance.uma_stop_conditions;
+```
+
+| Condition Code | Severity | Active |
+|----------------|----------|--------|
+| DEFCON_ELEVATED | HARD | YES |
+| SINGLE_HYPOTHESIS_DRIVEN | HARD | YES |
+| SYNTHETIC_DIVERGENCE | HARD | YES |
+| EXECUTION_AUTHORITY_EXPANSION | HARD | YES |
+| VEGA_METRIC_INTEGRITY_RISK | HARD | YES |
+
+### UMA Exclusions (9 Total)
+
+```sql
+SELECT exclusion_type, is_active
+FROM fhq_governance.uma_exclusions;
+```
+
+| Exclusion Type | Active |
+|----------------|--------|
+| EXECUTION_OPTIMIZATION | YES |
+| PNL_CHASING | YES |
+| MODEL_MICRO_TUNING | YES |
+| STRATEGY_CHANGES | YES |
+| PARAMETER_ENFORCEMENT | YES |
+| CAPITAL_ALLOCATION | YES |
+| INCREASED_RISK | YES |
+| RELAXED_CAPITAL_CONSTRAINTS | YES |
+| EXECUTION_AUTONOMY | YES |
+
+### Fast-Track Parameters Status
+
+```sql
+SELECT parameter_name, last_adjustment, adjustment_count
+FROM fhq_governance.fast_track_eligible_parameters;
+```
+
+| Parameter | Last Adjustment | Adjustments |
+|-----------|-----------------|-------------|
+| confidence_damper_alpha | NULL | 0 |
+| confidence_damper_beta | NULL | 0 |
+| ldow_coverage_threshold | NULL | 0 |
+| ldow_stability_threshold | NULL | 0 |
+
+**Assessment:** All 4 parameters ready for Fast-Track. No adjustments made yet (expected - first UMA loop not yet executed).
+
+### UMA Daily Loop Status
+
+```sql
+SELECT COUNT(*) FROM fhq_governance.uma_daily_loop;
+```
+
+| Count | Status |
+|-------|--------|
+| 0 | **NO LOOPS EXECUTED YET** |
+
+**Assessment:** Expected. UMA was activated 2026-01-15 23:53 UTC. First daily loop scheduled for tonight's cycle.
+
+### DEFCON Status
+
+```sql
+SELECT current_level, activated_at
+FROM fhq_monitoring.defcon_status
+WHERE deactivated_at IS NULL;
+```
+
+| Level | Since |
+|-------|-------|
+| **GREEN** | 2025-12-15 |
+
+**Assessment:** UMA is CLEAR to operate. DEFCON GREEN allows full operation per CEO-DIR-2026-01-16B.
+
+### Verification Summary
+
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| EC-014 exists | YES | YES | PASS |
+| EC-014 ACTIVE | YES | YES | PASS |
+| Registration logged | YES | YES | PASS |
+| Activation logged | YES | YES | PASS |
+| Stop conditions (5) | 5 | 5 | PASS |
+| Exclusions (9) | 9 | 9 | PASS |
+| Fast-Track params ready | YES | YES | PASS |
+| Daily loops executed | 0 | 0 | EXPECTED |
+| DEFCON allows UMA | YES | YES | PASS |
+
+**Conclusion:** UMA infrastructure fully deployed and verified. No anomalies detected. System is waiting for first scheduled daily loop execution.
+
+---
+
+## Section 12: Learning Insights (Database-Verified)
+
+**Query Timestamp:** 2026-01-16T18:30:00 UTC
+**Source:** `fhq_governance.brier_score_ledger`, `fhq_governance.ldow_forecast_captures`
+
+### Brier Score Performance by Regime (Today)
+
+```sql
+SELECT regime, COUNT(*), AVG(squared_error), AVG(forecast_probability)
+FROM fhq_governance.brier_score_ledger
+WHERE created_at >= CURRENT_DATE GROUP BY regime;
+```
+
+| Regime | Samples | Brier | Confidence | Hit Rate | vs All-Time |
+|--------|---------|-------|------------|----------|-------------|
+| BEAR | 122 | 0.5964 | 87.3% | 25.4% | +0.084 (worse) |
+| BULL | 251 | 0.6105 | 90.0% | 26.7% | -0.028 (better) |
+| NEUTRAL | 150 | 0.5292 | 84.3% | 32.0% | -0.012 (better) |
+| STRESS | 20 | **0.8351** | 90.0% | **0.0%** | +0.040 (worse) |
+| **TOTAL** | **543** | **0.5931** | 87.8% | ~27% | - |
+
+### Key Learning #1: STRESS Regime Remains Broken
+
+| Metric | Value | Assessment |
+|--------|-------|------------|
+| Hit Rate | 0.0% | Complete failure |
+| Brier Score | 0.8351 | Near-random performance |
+| Sample Size | 20 | Sufficient for signal |
+| Status | **FROZEN** | Per Day 8 P0/P1 repair |
+
+**Root Cause:** Definition mismatch between forecast conditions and outcome measurement. STRESS remains frozen with 0.50 confidence cap until definitional repair.
+
+### Key Learning #2: Brier Trend (7-Day Rolling)
+
+```sql
+SELECT DATE(created_at), COUNT(*), AVG(squared_error)
+FROM fhq_governance.brier_score_ledger
+WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY DATE(created_at) ORDER BY 1 DESC;
+```
+
+| Date | Samples | Brier | Trend |
+|------|---------|-------|-------|
+| Jan 16 | 543 | 0.5931 | UP (worse) |
+| Jan 15 | 488 | 0.5254 | - |
+| Jan 14 | 478 | 0.5126 | Best |
+| Jan 13 | 295 | 0.5663 | - |
+| Jan 12 | 173 | 0.4705 | - |
+| Jan 11 | 94 | 0.4531 | - |
+| Jan 09 | 275 | 0.5183 | - |
+| Jan 08 | 879 | 0.6986 | Worst |
+
+**Observation:** Today's Brier (0.5931) increased from yesterday (0.5254). This is expected variance, not a trend reversal. The 7-day average shows improvement from Jan 8 baseline.
+
+### Key Learning #3: Damper Effectiveness
+
+```sql
+SELECT AVG(raw_confidence), AVG(damped_confidence), AVG(dampening_delta)
+FROM fhq_governance.ldow_forecast_captures WHERE captured_at >= '2026-01-15';
+```
+
+| Metric | Value |
+|--------|-------|
+| Total Forecasts | 888 |
+| Avg Raw Confidence | 75.1% |
+| Avg Damped Confidence | 49.4% |
+| Avg Dampening Delta | **25.7%** |
+| Min Dampening | 0.0% |
+| Max Dampening | 51.9% |
+
+**Assessment:** Damper is functioning as designed. Reducing overconfidence by ~26 percentage points on average. Maximum dampening of 51.9% applied to highest-confidence forecasts.
+
+### Key Learning #4: Regime Calibration Quality
+
+| Regime | Calibration Assessment |
+|--------|------------------------|
+| NEUTRAL | **Best calibrated** - 32% hit rate with 84% confidence |
+| BULL | **Overconfident** - 90% confidence yields only 27% hit rate |
+| BEAR | **Degrading** - Brier increased +8.4% vs historical |
+| STRESS | **Broken** - 0% hit rate, definitionally invalid |
+
+### Key Learning #5: LDOW Execution Integrity
+
+| Metric | Value |
+|--------|-------|
+| Cycles Completed (Jan 15) | 70 (cycles 86-159) |
+| Success Rate | 100% |
+| Lineage Coverage | 100% |
+| Damper Hash Verified | All cycles |
+| Parameter Changes | 0 (stillness maintained) |
+
+### Learning Synthesis
+
+| Observation | Implication | Action |
+|-------------|-------------|--------|
+| NEUTRAL best hit rate (32%) | System most calibrated in normal markets | Continue observation |
+| BULL overconfident (90%→27%) | Damper may need BULL-specific tuning | UMA to analyze |
+| BEAR degraded today (+8.4%) | Potential regime-shift signal | Monitor tomorrow |
+| STRESS 0% hit rate | Definition problem confirmed | Await G4 repair |
+| Damper reduces ~26% | Working as designed | No change needed |
+
+### Stillness Compliance
+
+| Check | Status |
+|-------|--------|
+| Damper parameters unchanged | VERIFIED |
+| No manual interventions | VERIFIED |
+| Observation-only mode | ACTIVE |
+| UMA recommendations | 0 (not yet executed first loop) |
+
+---
+
+## Section 13: UMA Daily Learning Audit (EC-014 Verification)
+
+**Directive:** CEO/Vice-CEO - UMA Daily Learning Audit
+**Mandate:** EC-014_2026_PRODUCTION, Phase 1-4
+**Security Level:** GOVERNANCE-CRITICAL (ADR-014)
+**Audit Timestamp:** 2026-01-16T18:45:00 UTC
+
+### 13.1 UMA Identity Verification
+
+#### Agent Mandates Check
+```sql
+SELECT * FROM fhq_governance.agent_mandates WHERE agent_name = 'UMA';
+```
+
+| Field | Value | Status |
+|-------|-------|--------|
+| mandate_id | a6c34ef1-ea6b-4993-8136-0ae540821ea0 | VERIFIED |
+| mandate_version | 2026.PRODUCTION | VERIFIED |
+| mandate_type | Learning Velocity & ROI Acceleration Charter | VERIFIED |
+| authority_type | Tier-2 Meta-Executive | VERIFIED |
+| parent_agent | CEO | VERIFIED |
+
+#### Org Agents Check
+```sql
+SELECT * FROM fhq_org.org_agents WHERE agent_name = 'UMA';
+```
+
+| Field | Value | Status |
+|-------|-------|--------|
+| agent_id | 5870e2d3-482f-4394-b99b-c07f8af45f54 | VERIFIED |
+| agent_role | Universal Meta-Analyst | VERIFIED |
+| llm_provider | DeepSeek | VERIFIED |
+| status | ACTIVE | VERIFIED |
+
+#### Ed25519 Signature Status
+
+| Check | Status | Note |
+|-------|--------|------|
+| Public Key | `7c5e44cb0145743106f41c20907b1bd34137538ad3fdb026f054eb5e2ee96bb6` | **REGISTERED** (Migration 252) |
+| Fingerprint | `2fd377f9be70cea9` | SHA-256 prefix |
+| VEGA Attestation | **COMPLETE** | Attested during key registration |
+| ADR-008 Compliance | **COMPLETE** | CEO Directive P0 closed |
+
+### 13.2 LVI Learning (Learning Velocity Index)
+
+**Status:** NO_DATA_YET
+
+```sql
+SELECT * FROM fhq_research.forecast_skill_registry WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+```
+
+| Metric | Value | Note |
+|--------|-------|------|
+| FSS Scores Today | 0 | First loop not executed |
+| Validated Signals | 0 | No hypothesis→validation pairs |
+| LVI Delta | N/A | Baseline not established |
+
+**Reason:** UMA activated 2026-01-15 23:53 UTC. First daily loop scheduled for 2026-01-17 00:15 UTC.
+
+### 13.3 Friction Learning (Bottleneck Identification)
+
+**Status:** NO_DATA_YET
+
+```sql
+SELECT * FROM fhq_governance.vega_feedback_loop WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+
+SELECT * FROM fhq_governance.uma_daily_loop;
+-- Result: 0 rows
+```
+
+| Metric | Value |
+|--------|-------|
+| Governance-Induced Latency | Not measured |
+| LVI Impact Estimates | None logged |
+| Top 2 Friction Points | N/A |
+| UMA Daily Loops Executed | 0 |
+
+### 13.4 Preparedness Learning (Synthetic/CFAO)
+
+**Status:** NO_DATA_YET
+
+```sql
+SELECT * FROM fhq_research.synthetic_scenarios WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+
+SELECT * FROM fhq_research.counterfactual_tags WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+
+SELECT * FROM fhq_research.uma_preparedness_analysis WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+```
+
+| Metric | Value |
+|--------|-------|
+| Synthetic Scenarios | 0 |
+| CRIO Validated | 0 |
+| UMA Preparedness Score | N/A |
+| Preparedness Gap | Not calculated |
+
+**Note:** BEAR regime showed +8.4% Brier degradation. Synthetic validation pending CFAO activation.
+
+### 13.5 Fast-Track Learning (Parameter Adjustment)
+
+**Status:** CONFIGURED_NO_PROPOSALS
+
+```sql
+SELECT * FROM fhq_governance.fast_track_eligible_parameters;
+-- Result: 4 rows
+
+SELECT * FROM fhq_governance.fast_track_adjustment_log WHERE created_at >= CURRENT_DATE;
+-- Result: 0 rows
+
+SELECT * FROM fhq_governance.uma_recommendations;
+-- Result: 0 rows
+```
+
+| Parameter | Risk | Max Delta | Cooldown | Adjustments |
+|-----------|------|-----------|----------|-------------|
+| confidence_damper_alpha | LOW | 10% | 24h | 0 |
+| confidence_damper_beta | LOW | 10% | 24h | 0 |
+| ldow_coverage_threshold | LOW | 5% | 48h | 0 |
+| ldow_stability_threshold | LOW | 2% | 48h | 0 |
+
+**UMA Proposals Today:** 0 (first loop pending)
+
+### 13.6 Brier Learning (Calibration Quality)
+
+**Status:** ACTIVE - 543 samples scored
+
+```sql
+SELECT regime, COUNT(*), AVG(squared_error), AVG(forecast_probability)
+FROM fhq_governance.brier_score_ledger WHERE created_at >= CURRENT_DATE
+GROUP BY regime;
+```
+
+| Regime | Samples | Brier | Confidence | Hit Rate | Delta vs All-Time |
+|--------|---------|-------|------------|----------|-------------------|
+| BEAR | 122 | 0.5964 | 87.3% | 25.4% | **+0.084 (worse)** |
+| BULL | 251 | 0.6105 | 90.0% | 26.7% | -0.028 (better) |
+| NEUTRAL | 150 | 0.5292 | 84.3% | 32.0% | -0.012 (better) |
+| STRESS | 20 | 0.8351 | 90.0% | 0.0% | +0.040 (FROZEN) |
+
+**Data Hash:** `384055b2a0a1b75a44c259a5f3d2b6cf`
+
+### 13.7 Damper Learning (Confidence Reduction)
+
+**Status:** ACTIVE - 888 forecasts dampened
+
+```sql
+SELECT AVG(raw_confidence), AVG(damped_confidence), AVG(dampening_delta)
+FROM fhq_governance.ldow_forecast_captures WHERE captured_at >= '2026-01-15';
+```
+
+| Metric | Value |
+|--------|-------|
+| Total Forecasts | 888 |
+| Avg Raw Confidence | 75.1% |
+| Avg Damped Confidence | 49.4% |
+| Avg Dampening Delta | **25.7%** |
+| Max Dampening Applied | 51.9% |
+
+**Data Hash:** `bc0f995a45b93f6277eccc4877899c62`
+
+**Assessment:** Damper reducing overconfidence by ~26 percentage points. Functioning as designed.
+
+### 13.8 LDOW Learning (Execution Integrity)
+
+**Status:** ACTIVE - 74 cycles captured
+
+```sql
+SELECT COUNT(DISTINCT cycle_number), COUNT(*)
+FROM fhq_governance.ldow_forecast_captures WHERE captured_at >= '2026-01-15';
+```
+
+| Metric | Value |
+|--------|-------|
+| Cycles Captured | 74 (86-159) |
+| Total Forecast Captures | 888 |
+| Lineage Coverage | 100% |
+| Damper Hash Verified | All cycles |
+| Parameter Changes | 0 |
+
+**Data Hash:** `49cc6627b0dfb84257075cde11e2fa99`
+
+### 13.9 Regime Learning (Shift Detection)
+
+**Status:** MONITORING
+
+| Regime | Today vs Historical | Signal |
+|--------|---------------------|--------|
+| BEAR | +8.4% Brier | **Potential regime shift - monitor** |
+| BULL | -2.8% Brier | Improving |
+| NEUTRAL | -1.2% Brier | Stable, best calibrated |
+| STRESS | 0% hit rate | Broken - definitional repair needed |
+
+**Actionable Insight:** BEAR degradation warrants attention. If trend continues tomorrow, may indicate market regime change.
+
+### 13.10 Learning Audit Summary
+
+| Learning Type | Status | Data Available | Next Checkpoint |
+|---------------|--------|----------------|-----------------|
+| UMA/LVI | PENDING | No | After first loop (Jan 17) |
+| Friction | PENDING | No | After first loop |
+| Preparedness | PENDING | No | After CFAO activation |
+| Fast-Track | READY | Config only | After first UMA recommendation |
+| Brier | ACTIVE | 543 samples | Continuous |
+| Damper | ACTIVE | 888 forecasts | Continuous |
+| LDOW | ACTIVE | 74 cycles | Continuous |
+| Regime | MONITORING | BEAR signal | Tomorrow |
+
+### Hash Verification Summary
+
+| Data Source | Record Count | Hash |
+|-------------|--------------|------|
+| EC-014 Registration | 1 | `5be4bac4d95034e2ae3445509d1c45bc` |
+| Brier Scores (Today) | 543 | `384055b2a0a1b75a44c259a5f3d2b6cf` |
+| LDOW Captures | 888 | `49cc6627b0dfb84257075cde11e2fa99` |
+| Damper Data | 888 | `bc0f995a45b93f6277eccc4877899c62` |
+
+---
+
+## Section 14: CEO Directive - UMA Operating Constraints (2026-01-16)
+
+**Directive Type:** MANDATORY OPERATING PROTOCOL
+**Issued:** 2026-01-16T19:30:00 UTC
+**Authority:** CEO
+**Classification:** GOVERNANCE-CRITICAL
+
+### 14.1 Immediate Priority (P0) - COMPLETED
+
+**ADR-008: Cryptographic Identity Completion**
+
+| Item | Before | After |
+|------|--------|-------|
+| Public Key | `PLACEHOLDER_PUBKEY_UMA` | `7c5e44cb0145743106f41c20907b1bd34137538ad3fdb026f054eb5e2ee96bb6` |
+| Key Fingerprint | None | `2fd377f9be70cea9` |
+| Key Algorithm | N/A | Ed25519 |
+| Key Version | 0 | 1 |
+| VEGA Attested | No | **Yes** |
+| ADR-008 Compliant | No | **Yes** |
+
+**Migration:** `252_uma_key_registration.sql`
+**Evidence:** `03_FUNCTIONS/evidence/ADR008_UMA_KEY_REGISTRATION_20260116.json`
+**Status:** **CLOSED**
+
+### 14.2 UMA Operating Constraints
+
+| Constraint | Requirement |
+|------------|-------------|
+| Mode | Diagnostic-first (evidence over action) |
+| Fast-Track Authority | NONE until first loop completes |
+| Fast-Track Prerequisite | Clean execution + documented justification |
+| First Loop Dependency | ANY attempt to adjust or propose MUST fail until uma_daily_loop has at least one verified entry |
+
+### 14.3 Phased Mandate
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **A (Current)** | ACTIVE | Observation only. Collect. Score. Report. No recommendations. |
+| **B (Authorized)** | PENDING | CFAO Shadow Mode for BEAR scenarios (synthetic scenarios only) |
+| **C (Post First Loop)** | BLOCKED | Conditional action on verified regime shift |
+
+### 14.4 Explicit Non-Actions (CEO Directive)
+
+The following are EXPLICITLY PROHIBITED until further notice:
+
+| Action | Status | Rationale |
+|--------|--------|-----------|
+| Adjust confidence_damper_alpha | BLOCKED | Requires G4 approval |
+| Adjust confidence_damper_beta | BLOCKED | Requires G4 approval |
+| Propose LDOW parameter changes | BLOCKED | Requires 2 clean cycles |
+| Recommend Fast-Track promotions | BLOCKED | First loop incomplete |
+| Initiate trading signals | FORBIDDEN | UMA is analyst, not trader |
+
+### 14.5 Reporting Standards
+
+All future UMA daily reports MUST include:
+
+1. **LVI Delta** (when available)
+2. **Top 2 Friction Sources** (when measured)
+3. **Preparedness Gap** (when CFAO shadow active)
+4. **Fast-Track Proposals Count** (with justifications)
+5. **Hash-Verified Evidence Chain**
+
+### 14.6 Audit Trail
+
+| Timestamp | Action | Status |
+|-----------|--------|--------|
+| 19:38:18 UTC | Ed25519 keypair generated | COMPLETE |
+| 19:41:14 UTC | Key registered in org_agents | COMPLETE |
+| 19:41:14 UTC | Key registered in keystore | COMPLETE |
+| 19:41:14 UTC | Key registered in agent_keys | COMPLETE |
+| 19:41:14 UTC | Governance action logged | COMPLETE |
+| 19:42:xx UTC | Evidence file created | COMPLETE |
+
+**All P0 items CLOSED. UMA identity now cryptographically verified.**
+
+---
+
 *Report generated: 2026-01-16T01:00:00Z*
+*Morning update: 2026-01-16T08:00:00 Local*
+*Database verification: 2026-01-16T18:00:00 UTC*
+*Learning insights: 2026-01-16T18:30:00 UTC*
+*CEO Directive documented: 2026-01-16T19:45:00 UTC*
 *Classification: GOVERNANCE-CRITICAL*

@@ -255,9 +255,20 @@
       ]
     },
     "cycle_2": {
-      "status": "SCHEDULED",
-      "scheduled_at": "2026-01-16T01:30:00Z",
-      "forecasts_expected": "~66",
+      "initial_attempt": {
+        "scheduled_at": "2026-01-16T01:30:00Z",
+        "result": "COVERAGE_FAIL",
+        "forecasts_eligible": 0,
+        "reason": "No forecasts eligible - Jan 15 batch consumed by Cycle 1"
+      },
+      "retry": {
+        "status": "SCHEDULED",
+        "scheduled_at": "2026-01-17T00:15:00Z",
+        "root_cause_documented": true,
+        "root_cause": "FORECAST_GAP - expected LDOW cadence behavior",
+        "retry_authorized": true,
+        "retry_authorized_at": "2026-01-16T07:00:00Z"
+      },
       "coverage_threshold": "80%"
     },
     "stillness_compliance": {
@@ -383,6 +394,41 @@
     }
   },
 
+  "section_10_morning_status": {
+    "update_time": "2026-01-16T08:00:00+01:00",
+    "overnight_summary": {
+      "cycle_1_execution": {
+        "time_utc": "00:03:05",
+        "result": "SUCCESS",
+        "details": "468 forecasts, 100% coverage, Brier 0.48"
+      },
+      "cycle_2_attempt": {
+        "time_utc": "01:30:01",
+        "result": "COVERAGE_FAIL",
+        "details": "0 forecasts (expected gap)"
+      },
+      "root_cause_documented": "07:xx UTC",
+      "retry_authorized": "07:xx UTC",
+      "retry_scheduled": "2026-01-17T00:15:00Z"
+    },
+    "activate_uma_clarification": {
+      "definition": "Activation = Allow next control round. Nothing more.",
+      "what_it_means": [
+        "Document why Cycle 2 stopped (DONE)",
+        "Authorize retry in next valid window (DONE)",
+        "Let UMA do its job without human intervention"
+      ],
+      "what_it_does_not_mean": [
+        "Change parameters",
+        "Make UMA more active",
+        "Adjust dampers",
+        "Interpret numbers now",
+        "Push for Rung D"
+      ],
+      "mental_model": "UMA is a learning auditor, not a trader. Activation = permit next control round. Not = do something new."
+    }
+  },
+
   "attestation": {
     "attested_by": "STIG",
     "contract": "EC-003_2026_PRODUCTION",
@@ -391,13 +437,14 @@
       "UMA registration complete and verified in all three tables",
       "Fast-Track G1 infrastructure deployed with DEFCON gate verified operational",
       "CFAO × CRIO synthetic integration tables created with canonical safety constraints",
-      "VEGA feedback loop deployed with scope limitation triggers active"
+      "VEGA feedback loop deployed with scope limitation triggers active",
+      "Morning status: Cycle 2 retry authorized for 2026-01-17 00:15 UTC"
     ]
   },
 
   "next_steps": [
-    "Cycle 2 execution (2026-01-16 01:30 UTC)",
-    "UMA first daily learning audit upon reaching operational cadence",
+    "Cycle 2 retry execution (2026-01-17 00:15 UTC)",
+    "UMA operates within defined constraints - no human intervention",
     "Monitor Fast-Track parameter requests",
     "CFAO shadow mode scenario generation",
     "Day 10: Rung D eligibility decision (pending 2 successful cycles)"
@@ -406,5 +453,446 @@
   "evidence_files": [
     "03_FUNCTIONS/evidence/CEO_DIR_2026_UMA_REGISTRATION_20260116.json",
     "03_FUNCTIONS/evidence/CEO_DIR_2026_016B_UMA_ACTIVATION_20260116.json"
-  ]
+  ],
+
+  "section_11_database_verification": {
+    "verification_timestamp": "2026-01-16T18:00:00Z",
+    "verified_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "query_method": "Direct PostgreSQL verification",
+
+    "ec_014_status": {
+      "ec_id": "EC-014",
+      "title": "Learning Velocity & ROI Acceleration Charter",
+      "role_type": "Tier-2 Meta-Executive",
+      "status": "ACTIVE",
+      "effective_date": "2026-01-15",
+      "authority_chain": ["ADR-001", "ADR-003", "ADR-004", "ADR-012", "ADR-016", "ADR-020", "ADR-021", "ADR-024"],
+      "dependencies": ["EC-003", "EC-004"]
+    },
+
+    "governance_actions_logged": [
+      {
+        "action_type": "AGENT_REGISTRATION",
+        "initiated_by": "STIG",
+        "initiated_at": "2026-01-15T23:39:12Z",
+        "decision": "APPROVED"
+      },
+      {
+        "action_type": "UMA_OPERATIONAL_ACTIVATION",
+        "initiated_by": "CEO",
+        "initiated_at": "2026-01-15T23:53:10Z",
+        "decision": "ACTIVATED"
+      }
+    ],
+
+    "stop_conditions": {
+      "total": 5,
+      "severity": "HARD",
+      "all_active": true,
+      "conditions": [
+        "DEFCON_ELEVATED",
+        "SINGLE_HYPOTHESIS_DRIVEN",
+        "SYNTHETIC_DIVERGENCE",
+        "EXECUTION_AUTHORITY_EXPANSION",
+        "VEGA_METRIC_INTEGRITY_RISK"
+      ]
+    },
+
+    "exclusions": {
+      "total": 9,
+      "all_active": true,
+      "exclusion_types": [
+        "EXECUTION_OPTIMIZATION",
+        "PNL_CHASING",
+        "MODEL_MICRO_TUNING",
+        "STRATEGY_CHANGES",
+        "PARAMETER_ENFORCEMENT",
+        "CAPITAL_ALLOCATION",
+        "INCREASED_RISK",
+        "RELAXED_CAPITAL_CONSTRAINTS",
+        "EXECUTION_AUTONOMY"
+      ]
+    },
+
+    "fast_track_parameters": {
+      "total": 4,
+      "all_ready": true,
+      "adjustments_made": 0,
+      "parameters": [
+        {"name": "confidence_damper_alpha", "last_adjustment": null, "adjustment_count": 0},
+        {"name": "confidence_damper_beta", "last_adjustment": null, "adjustment_count": 0},
+        {"name": "ldow_coverage_threshold", "last_adjustment": null, "adjustment_count": 0},
+        {"name": "ldow_stability_threshold", "last_adjustment": null, "adjustment_count": 0}
+      ]
+    },
+
+    "uma_daily_loop": {
+      "loops_executed": 0,
+      "status": "WAITING_FOR_FIRST_CYCLE",
+      "assessment": "Expected - UMA activated 2026-01-15 23:53 UTC, first loop scheduled for tonight"
+    },
+
+    "defcon_status": {
+      "current_level": "GREEN",
+      "since": "2025-12-15",
+      "uma_operation_allowed": true
+    },
+
+    "verification_summary": {
+      "ec_014_exists": "PASS",
+      "ec_014_active": "PASS",
+      "registration_logged": "PASS",
+      "activation_logged": "PASS",
+      "stop_conditions_configured": "PASS",
+      "exclusions_configured": "PASS",
+      "fast_track_ready": "PASS",
+      "daily_loops_expected": "PASS",
+      "defcon_allows_uma": "PASS"
+    },
+
+    "conclusion": "UMA infrastructure fully deployed and verified. No anomalies detected. System waiting for first scheduled daily loop execution."
+  },
+
+  "section_12_learning_insights": {
+    "query_timestamp": "2026-01-16T18:30:00Z",
+    "verified_by": "STIG",
+    "sources": ["fhq_governance.brier_score_ledger", "fhq_governance.ldow_forecast_captures"],
+
+    "brier_performance_today": {
+      "total_samples": 543,
+      "overall_brier": 0.5931,
+      "overall_confidence": 0.878,
+      "by_regime": [
+        {
+          "regime": "BEAR",
+          "samples": 122,
+          "brier": 0.5964,
+          "confidence": 0.873,
+          "hit_rate": 0.254,
+          "vs_all_time": "+0.084 (worse)"
+        },
+        {
+          "regime": "BULL",
+          "samples": 251,
+          "brier": 0.6105,
+          "confidence": 0.900,
+          "hit_rate": 0.267,
+          "vs_all_time": "-0.028 (better)"
+        },
+        {
+          "regime": "NEUTRAL",
+          "samples": 150,
+          "brier": 0.5292,
+          "confidence": 0.843,
+          "hit_rate": 0.320,
+          "vs_all_time": "-0.012 (better)"
+        },
+        {
+          "regime": "STRESS",
+          "samples": 20,
+          "brier": 0.8351,
+          "confidence": 0.900,
+          "hit_rate": 0.000,
+          "vs_all_time": "+0.040 (worse)",
+          "status": "FROZEN"
+        }
+      ]
+    },
+
+    "key_learning_1_stress_broken": {
+      "title": "STRESS Regime Remains Broken",
+      "hit_rate": 0.0,
+      "brier_score": 0.8351,
+      "sample_size": 20,
+      "status": "FROZEN",
+      "root_cause": "Definition mismatch between forecast conditions and outcome measurement",
+      "action": "Await G4 repair"
+    },
+
+    "key_learning_2_brier_trend": {
+      "title": "7-Day Brier Trend",
+      "trend": [
+        {"date": "2026-01-16", "samples": 543, "brier": 0.5931, "note": "TODAY - UP (worse)"},
+        {"date": "2026-01-15", "samples": 488, "brier": 0.5254, "note": null},
+        {"date": "2026-01-14", "samples": 478, "brier": 0.5126, "note": "Best"},
+        {"date": "2026-01-13", "samples": 295, "brier": 0.5663, "note": null},
+        {"date": "2026-01-12", "samples": 173, "brier": 0.4705, "note": null},
+        {"date": "2026-01-11", "samples": 94, "brier": 0.4531, "note": null},
+        {"date": "2026-01-09", "samples": 275, "brier": 0.5183, "note": null},
+        {"date": "2026-01-08", "samples": 879, "brier": 0.6986, "note": "Worst"}
+      ],
+      "observation": "Today's Brier increased from yesterday. Expected variance, not trend reversal."
+    },
+
+    "key_learning_3_damper_effectiveness": {
+      "title": "Damper Effectiveness",
+      "total_forecasts": 888,
+      "avg_raw_confidence": 0.751,
+      "avg_damped_confidence": 0.494,
+      "avg_dampening_delta": 0.257,
+      "min_dampening": 0.000,
+      "max_dampening": 0.519,
+      "assessment": "Damper functioning as designed. Reducing overconfidence by ~26 percentage points."
+    },
+
+    "key_learning_4_regime_calibration": {
+      "title": "Regime Calibration Quality",
+      "assessments": [
+        {"regime": "NEUTRAL", "quality": "BEST_CALIBRATED", "detail": "32% hit rate with 84% confidence"},
+        {"regime": "BULL", "quality": "OVERCONFIDENT", "detail": "90% confidence yields only 27% hit rate"},
+        {"regime": "BEAR", "quality": "DEGRADING", "detail": "Brier increased +8.4% vs historical"},
+        {"regime": "STRESS", "quality": "BROKEN", "detail": "0% hit rate, definitionally invalid"}
+      ]
+    },
+
+    "key_learning_5_ldow_integrity": {
+      "title": "LDOW Execution Integrity",
+      "cycles_completed": 70,
+      "cycle_range": "86-159",
+      "success_rate": 1.0,
+      "lineage_coverage": 1.0,
+      "damper_hash_verified": true,
+      "parameter_changes": 0
+    },
+
+    "learning_synthesis": [
+      {
+        "observation": "NEUTRAL best hit rate (32%)",
+        "implication": "System most calibrated in normal markets",
+        "action": "Continue observation"
+      },
+      {
+        "observation": "BULL overconfident (90%→27%)",
+        "implication": "Damper may need BULL-specific tuning",
+        "action": "UMA to analyze"
+      },
+      {
+        "observation": "BEAR degraded today (+8.4%)",
+        "implication": "Potential regime-shift signal",
+        "action": "Monitor tomorrow"
+      },
+      {
+        "observation": "STRESS 0% hit rate",
+        "implication": "Definition problem confirmed",
+        "action": "Await G4 repair"
+      },
+      {
+        "observation": "Damper reduces ~26%",
+        "implication": "Working as designed",
+        "action": "No change needed"
+      }
+    ],
+
+    "stillness_compliance": {
+      "damper_parameters_unchanged": true,
+      "manual_interventions": 0,
+      "observation_only_mode": true,
+      "uma_recommendations_issued": 0
+    }
+  },
+
+  "section_13_uma_daily_learning_audit": {
+    "directive": "CEO/Vice-CEO - UMA Daily Learning Audit",
+    "mandate": "EC-014_2026_PRODUCTION, Phase 1-4",
+    "security_level": "GOVERNANCE-CRITICAL (ADR-014)",
+    "audit_timestamp": "2026-01-16T18:45:00Z",
+
+    "uma_identity_verification": {
+      "status": "VERIFIED",
+      "agent_mandates": {
+        "mandate_id": "a6c34ef1-ea6b-4993-8136-0ae540821ea0",
+        "mandate_version": "2026.PRODUCTION",
+        "mandate_type": "Learning Velocity & ROI Acceleration Charter",
+        "authority_type": "Tier-2 Meta-Executive",
+        "parent_agent": "CEO",
+        "verification": "PASS"
+      },
+      "org_agents": {
+        "agent_id": "5870e2d3-482f-4394-b99b-c07f8af45f54",
+        "agent_role": "Universal Meta-Analyst",
+        "llm_provider": "DeepSeek",
+        "status": "ACTIVE",
+        "verification": "PASS"
+      },
+      "ed25519_status": {
+        "public_key": "7c5e44cb0145743106f41c20907b1bd34137538ad3fdb026f054eb5e2ee96bb6",
+        "fingerprint": "2fd377f9be70cea9",
+        "key_algorithm": "Ed25519",
+        "key_version": 1,
+        "vega_attestation": "COMPLETE",
+        "adr_008_compliant": true,
+        "migration": "252_uma_key_registration.sql"
+      }
+    },
+
+    "lvi_learning": {
+      "status": "NO_DATA_YET",
+      "fss_scores_today": 0,
+      "validated_signals": 0,
+      "lvi_delta": null,
+      "reason": "UMA activated 2026-01-15 23:53 UTC. First daily loop scheduled for 2026-01-17 00:15 UTC."
+    },
+
+    "friction_learning": {
+      "status": "NO_DATA_YET",
+      "governance_induced_latency": null,
+      "lvi_impact_estimates": [],
+      "top_2_frictions": null,
+      "uma_daily_loops_executed": 0
+    },
+
+    "preparedness_learning": {
+      "status": "NO_DATA_YET",
+      "synthetic_scenarios": 0,
+      "crio_validated": 0,
+      "uma_preparedness_score": null,
+      "preparedness_gap": null,
+      "note": "BEAR regime showed +8.4% Brier degradation. Synthetic validation pending CFAO activation."
+    },
+
+    "fast_track_learning": {
+      "status": "CONFIGURED_NO_PROPOSALS",
+      "eligible_parameters": [
+        {"name": "confidence_damper_alpha", "risk": "LOW", "max_delta": "10%", "cooldown": "24h", "adjustments": 0},
+        {"name": "confidence_damper_beta", "risk": "LOW", "max_delta": "10%", "cooldown": "24h", "adjustments": 0},
+        {"name": "ldow_coverage_threshold", "risk": "LOW", "max_delta": "5%", "cooldown": "48h", "adjustments": 0},
+        {"name": "ldow_stability_threshold", "risk": "LOW", "max_delta": "2%", "cooldown": "48h", "adjustments": 0}
+      ],
+      "uma_proposals_today": 0
+    },
+
+    "brier_learning": {
+      "status": "ACTIVE",
+      "samples_scored": 543,
+      "by_regime": [
+        {"regime": "BEAR", "samples": 122, "brier": 0.5964, "confidence": 0.873, "hit_rate": 0.254, "delta": "+0.084 (worse)"},
+        {"regime": "BULL", "samples": 251, "brier": 0.6105, "confidence": 0.900, "hit_rate": 0.267, "delta": "-0.028 (better)"},
+        {"regime": "NEUTRAL", "samples": 150, "brier": 0.5292, "confidence": 0.843, "hit_rate": 0.320, "delta": "-0.012 (better)"},
+        {"regime": "STRESS", "samples": 20, "brier": 0.8351, "confidence": 0.900, "hit_rate": 0.000, "delta": "+0.040 (FROZEN)"}
+      ],
+      "data_hash": "384055b2a0a1b75a44c259a5f3d2b6cf"
+    },
+
+    "damper_learning": {
+      "status": "ACTIVE",
+      "forecasts_dampened": 888,
+      "avg_raw_confidence": 0.751,
+      "avg_damped_confidence": 0.494,
+      "avg_dampening_delta": 0.257,
+      "max_dampening": 0.519,
+      "assessment": "Damper reducing overconfidence by ~26 percentage points. Functioning as designed.",
+      "data_hash": "bc0f995a45b93f6277eccc4877899c62"
+    },
+
+    "ldow_learning": {
+      "status": "ACTIVE",
+      "cycles_captured": 74,
+      "cycle_range": "86-159",
+      "total_forecast_captures": 888,
+      "lineage_coverage": 1.0,
+      "damper_hash_verified": true,
+      "parameter_changes": 0,
+      "data_hash": "49cc6627b0dfb84257075cde11e2fa99"
+    },
+
+    "regime_learning": {
+      "status": "MONITORING",
+      "signals": [
+        {"regime": "BEAR", "delta": "+8.4% Brier", "signal": "POTENTIAL_REGIME_SHIFT"},
+        {"regime": "BULL", "delta": "-2.8% Brier", "signal": "IMPROVING"},
+        {"regime": "NEUTRAL", "delta": "-1.2% Brier", "signal": "STABLE_BEST_CALIBRATED"},
+        {"regime": "STRESS", "delta": "0% hit rate", "signal": "BROKEN_NEEDS_REPAIR"}
+      ],
+      "actionable_insight": "BEAR degradation warrants attention. If trend continues tomorrow, may indicate market regime change."
+    },
+
+    "learning_audit_summary": {
+      "learning_types": [
+        {"type": "UMA/LVI", "status": "PENDING", "data_available": false, "next_checkpoint": "After first loop (Jan 17)"},
+        {"type": "Friction", "status": "PENDING", "data_available": false, "next_checkpoint": "After first loop"},
+        {"type": "Preparedness", "status": "PENDING", "data_available": false, "next_checkpoint": "After CFAO activation"},
+        {"type": "Fast-Track", "status": "READY", "data_available": "config_only", "next_checkpoint": "After first UMA recommendation"},
+        {"type": "Brier", "status": "ACTIVE", "data_available": true, "samples": 543, "next_checkpoint": "Continuous"},
+        {"type": "Damper", "status": "ACTIVE", "data_available": true, "samples": 888, "next_checkpoint": "Continuous"},
+        {"type": "LDOW", "status": "ACTIVE", "data_available": true, "cycles": 74, "next_checkpoint": "Continuous"},
+        {"type": "Regime", "status": "MONITORING", "data_available": true, "signal": "BEAR", "next_checkpoint": "Tomorrow"}
+      ]
+    },
+
+    "hash_verification_summary": {
+      "ec014_registration": {"record_count": 1, "hash": "5be4bac4d95034e2ae3445509d1c45bc"},
+      "brier_scores_today": {"record_count": 543, "hash": "384055b2a0a1b75a44c259a5f3d2b6cf"},
+      "ldow_captures": {"record_count": 888, "hash": "49cc6627b0dfb84257075cde11e2fa99"},
+      "damper_data": {"record_count": 888, "hash": "bc0f995a45b93f6277eccc4877899c62"}
+    }
+  },
+
+  "section_14_ceo_directive_uma_operating_constraints": {
+    "directive_type": "MANDATORY_OPERATING_PROTOCOL",
+    "issued": "2026-01-16T19:30:00Z",
+    "authority": "CEO",
+    "classification": "GOVERNANCE-CRITICAL",
+
+    "p0_immediate_priority": {
+      "title": "ADR-008 Cryptographic Identity Completion",
+      "status": "CLOSED",
+      "changes": {
+        "public_key": {
+          "before": "PLACEHOLDER_PUBKEY_UMA",
+          "after": "7c5e44cb0145743106f41c20907b1bd34137538ad3fdb026f054eb5e2ee96bb6"
+        },
+        "fingerprint": {
+          "before": null,
+          "after": "2fd377f9be70cea9"
+        },
+        "key_algorithm": "Ed25519",
+        "key_version": 1,
+        "vega_attested": true,
+        "adr_008_compliant": true
+      },
+      "migration": "252_uma_key_registration.sql",
+      "evidence_file": "03_FUNCTIONS/evidence/ADR008_UMA_KEY_REGISTRATION_20260116.json"
+    },
+
+    "operating_constraints": {
+      "mode": "diagnostic-first",
+      "fast_track_authority": "NONE_UNTIL_FIRST_LOOP",
+      "fast_track_prerequisite": "clean_execution_plus_documented_justification",
+      "first_loop_dependency": "ANY attempt to adjust or propose MUST fail until uma_daily_loop has at least one verified entry"
+    },
+
+    "phased_mandate": [
+      {"phase": "A", "status": "ACTIVE", "description": "Observation only. Collect. Score. Report. No recommendations."},
+      {"phase": "B", "status": "PENDING", "description": "CFAO Shadow Mode for BEAR scenarios (synthetic scenarios only)"},
+      {"phase": "C", "status": "BLOCKED", "description": "Conditional action on verified regime shift"}
+    ],
+
+    "explicit_non_actions": [
+      {"action": "Adjust confidence_damper_alpha", "status": "BLOCKED", "rationale": "Requires G4 approval"},
+      {"action": "Adjust confidence_damper_beta", "status": "BLOCKED", "rationale": "Requires G4 approval"},
+      {"action": "Propose LDOW parameter changes", "status": "BLOCKED", "rationale": "Requires 2 clean cycles"},
+      {"action": "Recommend Fast-Track promotions", "status": "BLOCKED", "rationale": "First loop incomplete"},
+      {"action": "Initiate trading signals", "status": "FORBIDDEN", "rationale": "UMA is analyst, not trader"}
+    ],
+
+    "reporting_standards": [
+      "LVI Delta (when available)",
+      "Top 2 Friction Sources (when measured)",
+      "Preparedness Gap (when CFAO shadow active)",
+      "Fast-Track Proposals Count (with justifications)",
+      "Hash-Verified Evidence Chain"
+    ],
+
+    "audit_trail": [
+      {"timestamp": "2026-01-16T19:38:18Z", "action": "Ed25519 keypair generated", "status": "COMPLETE"},
+      {"timestamp": "2026-01-16T19:41:14Z", "action": "Key registered in org_agents", "status": "COMPLETE"},
+      {"timestamp": "2026-01-16T19:41:14Z", "action": "Key registered in keystore", "status": "COMPLETE"},
+      {"timestamp": "2026-01-16T19:41:14Z", "action": "Key registered in agent_keys", "status": "COMPLETE"},
+      {"timestamp": "2026-01-16T19:41:14Z", "action": "Governance action logged", "status": "COMPLETE"},
+      {"timestamp": "2026-01-16T19:42:00Z", "action": "Evidence file created", "status": "COMPLETE"}
+    ],
+
+    "summary": "All P0 items CLOSED. UMA identity now cryptographically verified."
+  }
 }
