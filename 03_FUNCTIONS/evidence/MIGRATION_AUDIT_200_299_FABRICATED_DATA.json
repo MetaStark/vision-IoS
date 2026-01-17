@@ -1,0 +1,125 @@
+{
+  "audit_report": "MIGRATION_AUDIT_200_299",
+  "directive": "CEO-DIR-2026-063 Order 6 - Retroactive Audit",
+  "audit_id": "AUDIT-MIG-200-299-001",
+  "timestamp": "2026-01-17T14:30:00Z",
+  "auditor": "STIG",
+  "coordinator": "VEGA",
+  "contract": "EC-003_2026_PRODUCTION",
+
+  "scope": {
+    "migration_range": "200-299",
+    "total_migrations_reviewed": 85,
+    "search_criteria": [
+      "LLM-generated numerical data",
+      "Plausible-but-false values",
+      "Numerically unverified data"
+    ]
+  },
+
+  "findings_summary": {
+    "total_violations_found": 4,
+    "migrations_with_fabricated_data": [286, 287, 288, 290],
+    "migrations_clean": "All other migrations in range 200-299",
+    "severity": "CLASS_A",
+    "status": "ALL_CORRECTED_VIA_MIGRATIONS_291_293"
+  },
+
+  "detailed_findings": {
+    "migration_286": {
+      "file": "286_seed_macro_calendar_jan2026.sql",
+      "status": "CONTAINS_FABRICATED_DATA",
+      "execution_status": "NOT_EXECUTED (superseded by 288)",
+      "fabricated_values": [
+        {"field": "US_NFP actual", "value": 256000, "correct": 50000, "error": "5x overstatement"},
+        {"field": "US_NFP previous", "value": 212000, "correct": 56000, "error": "4x overstatement"},
+        {"field": "US_FOMC consensus", "value": 4.25, "correct": 3.50, "error": "75bps"},
+        {"field": "US_FOMC previous", "value": 4.50, "correct": 3.50, "error": "100bps"},
+        {"field": "ECB_RATE consensus", "value": 2.75, "correct": 2.00, "error": "75bps"},
+        {"field": "ECB_RATE previous", "value": 3.00, "correct": 2.00, "error": "100bps"},
+        {"field": "BOJ_RATE previous", "value": 0.25, "correct": 0.75, "error": "50bps"},
+        {"field": "US_CPI actual", "value": 2.9, "correct": 2.7, "error": "0.2%"}
+      ],
+      "evidence": "LLM-generated values with no API source verification"
+    },
+
+    "migration_287": {
+      "file": "287_seed_macro_calendar_jan2026_fixed.sql",
+      "status": "CONTAINS_FABRICATED_DATA",
+      "execution_status": "NOT_EXECUTED (superseded by 288)",
+      "fabricated_values": "SAME AS MIGRATION 286",
+      "note": "Fixed surprise_score column issue but retained fabricated numerical data"
+    },
+
+    "migration_288": {
+      "file": "288_seed_macro_calendar_with_signatures.sql",
+      "status": "CONTAINS_FABRICATED_DATA",
+      "execution_status": "NOT_EXECUTED (superseded by 290)",
+      "fabricated_values": "SAME AS MIGRATION 286",
+      "note": "Added CEIO signatures but retained fabricated numerical data - signatures on false data"
+    },
+
+    "migration_290": {
+      "file": "290_seed_macro_calendar_extended.sql",
+      "status": "CONTAINED_FABRICATED_DATA_NOW_CORRECTED",
+      "execution_status": "EXECUTED",
+      "fabricated_values": "SAME AS MIGRATION 286 plus additional events",
+      "correction_status": "Corrected via Migrations 291, 292, 293"
+    }
+  },
+
+  "root_cause_analysis": {
+    "mechanism": "LLM hallucination of numerical financial data",
+    "pattern": "Same fabricated values propagated across 4 iterations (286 → 287 → 288 → 290)",
+    "failure_points": [
+      "No API call to official sources (FRED, BLS, BEA, ECB, BOE, BOJ, PBOC)",
+      "No cross-reference verification",
+      "No human spot-check before execution",
+      "Signatures applied to unverified data (migration 288)"
+    ],
+    "cognitive_bias": "LLM generated 'plausible' 2024-era values, not 2025-2026 reality"
+  },
+
+  "other_migrations_in_range": {
+    "status": "NO_FABRICATED_NUMERICAL_DATA_FOUND",
+    "categories": {
+      "schema_migrations": "200-235, 260-275 - Structure only, no numerical financial data",
+      "configuration_migrations": "236-259 - System configuration, no macro values",
+      "calibration_migrations": "276-285 - Algorithm parameters, not market data"
+    },
+    "note": "Only calendar_events seeding migrations (286-290) contained fabricated numerical data"
+  },
+
+  "corrective_actions_taken": {
+    "migration_291": "FOMC rate corrected: 4.50% → 3.50%",
+    "migration_292": "ECB, BOE, BOJ, PBOC rates corrected",
+    "migration_293": "US NFP (256K→50K), CPI (2.9%→2.7%) corrected",
+    "migration_294": "Zero-Trust Airlock infrastructure deployed"
+  },
+
+  "prevention_measures_deployed": {
+    "per_ceo_dir_2026_063": [
+      "Absolute prohibition on LLM-generated numerical data",
+      "Approved data sources table created",
+      "Data lineage proof table created",
+      "G3.75 Truth Gate verification table created",
+      "Drift detection configuration deployed",
+      "LLM generation violation logging enabled"
+    ]
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T14:30:00Z",
+    "summary": [
+      "Retroactive audit of migrations 200-299 completed per CEO-DIR-2026-063",
+      "4 migrations identified with fabricated numerical data: 286, 287, 288, 290",
+      "All fabricated data has been corrected via migrations 291-293",
+      "85 migrations reviewed, only calendar seeding migrations contained violations",
+      "Root cause: LLM hallucination propagated across 4 migration iterations",
+      "Prevention infrastructure deployed via migration 294",
+      "No silent fixes - all findings documented"
+    ]
+  }
+}

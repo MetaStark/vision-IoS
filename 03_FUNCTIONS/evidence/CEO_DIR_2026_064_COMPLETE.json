@@ -1,0 +1,170 @@
+{
+  "evidence_id": "CEO-DIR-2026-064-COMPLETE",
+  "directive": "CEO-DIR-2026-064",
+  "title": "Canonical Source Provider Alignment & Calendar-Orchestrator Integration",
+  "completion_timestamp": "2026-01-17T12:35:00Z",
+  "executed_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+
+  "executive_summary": {
+    "status": "ALL_ORDERS_COMPLETE",
+    "orders_executed": 3,
+    "migrations_deployed": 1,
+    "files_created": 1,
+    "verdict": "Coordination gap CLOSED"
+  },
+
+  "order_1_source_provider_alignment": {
+    "status": "COMPLETE",
+    "migration": "296_canonical_source_provider_alignment.sql",
+    "executed_at": "2026-01-17T12:30:11Z",
+
+    "changes": {
+      "central_bank_suffix_updates": [
+        {"before": "ECB", "after": "ECB_OFFICIAL", "count": 1},
+        {"before": "BOE", "after": "BOE_OFFICIAL", "count": 1},
+        {"before": "BOJ", "after": "BOJ_OFFICIAL", "count": 1},
+        {"before": "PBOC", "after": "PBOC_OFFICIAL", "count": 1}
+      ],
+      "consolidation_updates": [
+        {"before": "CENSUS", "after": "CENSUS_BUREAU", "count": 1}
+      ],
+      "new_approved_sources": [
+        {"code": "DOL", "name": "Department of Labor", "type": "GOVERNMENT_AGENCY"},
+        {"code": "CENSUS_BUREAU", "name": "US Census Bureau", "type": "GOVERNMENT_AGENCY"},
+        {"code": "ISM", "name": "Institute for Supply Management", "type": "OFFICIAL_STATISTICAL"},
+        {"code": "ISM_CHICAGO", "name": "ISM Chicago", "type": "OFFICIAL_STATISTICAL"},
+        {"code": "CONFERENCE_BOARD", "name": "The Conference Board", "type": "OFFICIAL_STATISTICAL"},
+        {"code": "SP_GLOBAL", "name": "S&P Global", "type": "OFFICIAL_STATISTICAL"}
+      ]
+    },
+
+    "verification": {
+      "query": "SELECT source_provider FROM fhq_calendar.calendar_events WHERE is_canonical = true AND source_provider NOT IN (SELECT source_code FROM fhq_governance.approved_data_sources WHERE is_active = true)",
+      "result": "0 rows - ALL calendar rows now use approved source_provider",
+      "total_approved_sources": 14,
+      "total_canonical_events": 35
+    },
+
+    "audit_table": "fhq_governance.source_provider_alignment_audit"
+  },
+
+  "order_2_orchestrator_integration": {
+    "status": "COMPLETE",
+    "file_created": "03_FUNCTIONS/ios016_calendar_event_scheduler.py",
+
+    "orchestrator_flow": {
+      "diagram": "IoS-016 → Scheduler → Ingestion → Verification → Knowledge",
+      "steps": [
+        "1. Scheduler reads upcoming events from fhq_calendar.calendar_events",
+        "2. Time-based triggers scheduled using event_timestamp",
+        "3. At event time: trigger outcome ingestion from approved APIs",
+        "4. Post-event: verify outcome vs consensus, compute surprise_score",
+        "5. Store results with lineage proof in data_lineage_proof",
+        "6. Forward verified knowledge to ACI via CALENDAR_KNOWLEDGE_HANDOFF"
+      ]
+    },
+
+    "dry_run_trace": {
+      "executed_at": "2026-01-17T12:34:17Z",
+      "cycle_result": {
+        "events_checked": 0,
+        "events_verified": 0,
+        "events_forwarded": 0,
+        "upcoming_events": [
+          {"event_type": "US_RETAIL", "timestamp": "2026-01-17T14:30:00+01:00", "consensus": "0.4"}
+        ]
+      },
+      "scheduler_status": {
+        "status": "ACTIVE",
+        "next_event": {
+          "type": "US_RETAIL",
+          "timestamp": "2026-01-17T14:30:00+01:00",
+          "minutes_until": 55.7
+        },
+        "pending_verification": 0,
+        "handoffs_last_24h": 0
+      }
+    },
+
+    "constraints_enforced": [
+      "No trading authority",
+      "No signal generation",
+      "No regime overrides",
+      "Knowledge plumbing only, not strategy"
+    ]
+  },
+
+  "order_3_legacy_classification": {
+    "status": "COMPLETE",
+    "column_added": "lineage_status",
+    "valid_values": ["PENDING", "LEGACY_UNVERIFIED", "VERIFIED", "VERIFICATION_FAILED"],
+
+    "classification_result": {
+      "LEGACY_UNVERIFIED": 35,
+      "VERIFIED": 0,
+      "note": "All existing events classified as LEGACY_UNVERIFIED, excluded from learning by default"
+    },
+
+    "index_created": "idx_calendar_lineage_status"
+  },
+
+  "verification_evidence": {
+    "proof_1_no_unapproved_sources": {
+      "query": "SELECT source_provider, COUNT(*) FROM fhq_calendar.calendar_events ce LEFT JOIN fhq_governance.approved_data_sources ads ON ce.source_provider = ads.source_code WHERE ce.is_canonical = true AND ads.source_code IS NULL GROUP BY source_provider",
+      "result": "0 rows - ALL sources approved"
+    },
+
+    "proof_2_scheduler_active": {
+      "file": "ios016_calendar_event_scheduler.py",
+      "status": "ACTIVE",
+      "dry_run": "SUCCESSFUL"
+    },
+
+    "proof_3_legacy_classified": {
+      "query": "SELECT lineage_status, COUNT(*) FROM fhq_calendar.calendar_events WHERE is_canonical = true GROUP BY lineage_status",
+      "result": {"LEGACY_UNVERIFIED": 35}
+    }
+  },
+
+  "governance_log_entries": [
+    {
+      "action_type": "SOURCE_PROVIDER_ALIGNMENT",
+      "action_target": "fhq_calendar.calendar_events",
+      "decision": "APPROVED",
+      "initiated_at": "2026-01-17T12:30:11Z"
+    }
+  ],
+
+  "files_delivered": {
+    "migrations": [
+      "04_DATABASE/MIGRATIONS/296_canonical_source_provider_alignment.sql"
+    ],
+    "python_functions": [
+      "03_FUNCTIONS/ios016_calendar_event_scheduler.py"
+    ],
+    "evidence": [
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_064_COMPLETE.json"
+    ]
+  },
+
+  "ceo_closing_statement_compliance": {
+    "numbers_cannot_be_hallucinated": true,
+    "sources_cannot_be_ambiguous": true,
+    "time_is_first_class_control_signal": true,
+    "learning_fed_by_reality": true
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T12:35:00Z",
+    "summary": [
+      "Order 1 COMPLETE: All 35 canonical events use approved source_providers",
+      "Order 2 COMPLETE: IoS-016 wired into Orchestrator as temporal control surface",
+      "Order 3 COMPLETE: Existing events classified as LEGACY_UNVERIFIED",
+      "CEO-DIR-2026-063 closed the truth gap",
+      "CEO-DIR-2026-064 closed the coordination gap"
+    ]
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "event": "IOS016_CALENDAR_DATA_QUALITY_FAILURE_ANALYSIS",
+  "report_id": "IOS016-FAILURE-001",
+  "severity": "CRITICAL",
+  "timestamp": "2026-01-17T13:00:00Z",
+  "initiated_by": "CEO_BOARD",
+  "analyzed_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+
+  "executive_summary": {
+    "finding": "SYSTEMATIC DATA FABRICATION DETECTED",
+    "scope": "Economic calendar contains fictional or severely stale data across ALL central bank rates and US macro releases",
+    "impact": "If used for forecast evaluation, would systematically penalize correct predictions and reward wrong ones",
+    "root_cause": "Migration 290 seed data was HALLUCINATED - not sourced from any real data provider",
+    "governance_failure_classification": "CLASS A VIOLATION - Fabricated financial data entered production"
+  },
+
+  "section_1_discrepancy_inventory": {
+    "title": "Complete Inventory of Verified Errors",
+    "verification_method": "Cross-referenced against official central bank websites, FRED, TradingEconomics",
+    "verification_timestamp": "2026-01-17T13:00:00Z",
+
+    "central_bank_rate_errors": [
+      {
+        "event": "US FOMC",
+        "calendar_value": "4.50%",
+        "actual_value": "3.50%",
+        "delta_bps": 100,
+        "source_of_truth": "Federal Reserve - 3 cuts in 2025 totaling 100bps",
+        "status": "CORRECTED via Migration 291"
+      },
+      {
+        "event": "ECB Rate Decision (Jan 30)",
+        "field": "consensus_estimate",
+        "calendar_value": "2.75%",
+        "actual_value": "2.00% (deposit rate)",
+        "delta_bps": 75,
+        "source_of_truth": "ECB Official - Deposit rate at 2.00% since Dec 2025",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "ECB Rate Decision (Jan 30)",
+        "field": "previous_value",
+        "calendar_value": "3.00%",
+        "actual_value": "2.00%",
+        "delta_bps": 100,
+        "source_of_truth": "ECB held at 2.00% for 4 consecutive meetings",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "BOE Rate Decision (Feb 6)",
+        "field": "consensus_estimate",
+        "calendar_value": "4.50%",
+        "actual_value": "3.50-3.75% expected",
+        "delta_bps": 75,
+        "source_of_truth": "BOE cut to 3.75% in Dec 2025 - 4 cuts in 2025",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "BOE Rate Decision (Feb 6)",
+        "field": "previous_value",
+        "calendar_value": "4.75%",
+        "actual_value": "3.75%",
+        "delta_bps": 100,
+        "source_of_truth": "BOE Bank Rate at 3.75% as of Dec 2025",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "BOJ Rate Decision (Jan 24)",
+        "field": "previous_value",
+        "calendar_value": "0.25%",
+        "actual_value": "0.75%",
+        "delta_bps": 50,
+        "source_of_truth": "BOJ raised to 0.75% in Dec 2025 - highest in 30 years",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "PBOC LPR (Jan 22)",
+        "field": "consensus_estimate",
+        "calendar_value": "3.10%",
+        "actual_value": "3.00%",
+        "delta_bps": 10,
+        "source_of_truth": "PBOC 1-year LPR at 3.00% since May 2025",
+        "status": "NEEDS CORRECTION"
+      }
+    ],
+
+    "us_macro_data_errors": [
+      {
+        "event": "US NFP (Jan 10, 2026 release for Dec 2025)",
+        "field": "actual_value",
+        "calendar_value": "256,000",
+        "actual_value": "50,000",
+        "delta": "206,000 jobs",
+        "error_magnitude": "5x overstatement",
+        "source_of_truth": "BLS Employment Situation Summary",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "US NFP (Jan 10, 2026 release for Dec 2025)",
+        "field": "previous_value",
+        "calendar_value": "212,000",
+        "actual_value": "56,000 (November revised)",
+        "delta": "156,000 jobs",
+        "source_of_truth": "BLS revised November from 64K to 56K",
+        "status": "NEEDS CORRECTION"
+      },
+      {
+        "event": "US CPI (Jan 14, 2026 release for Dec 2025)",
+        "field": "actual_value",
+        "calendar_value": "2.9%",
+        "actual_value": "2.7%",
+        "delta": "0.2%",
+        "source_of_truth": "BLS Consumer Price Index Summary",
+        "status": "NEEDS CORRECTION"
+      }
+    ],
+
+    "error_summary": {
+      "total_errors_found": 10,
+      "central_bank_errors": 7,
+      "us_macro_errors": 3,
+      "corrected": 1,
+      "pending_correction": 9,
+      "average_rate_error_bps": 72.9,
+      "max_rate_error_bps": 100,
+      "nfp_error_magnitude": "5x overstatement"
+    }
+  },
+
+  "section_2_root_cause_analysis": {
+    "title": "How Could IoS-016 Fail This Badly?",
+
+    "primary_root_cause": {
+      "classification": "DATA_HALLUCINATION",
+      "description": "Migration 290 seed data was generated without querying any real data source",
+      "mechanism": "The seed data appears to have been fabricated based on outdated assumptions or generated by LLM without verification",
+      "evidence": [
+        "No API calls logged to FRED, ECB, BOE, BOJ, or PBOC",
+        "No ingestion_batch records from real-time providers",
+        "Rates reflect 2024 levels, not post-2025 easing cycles",
+        "NFP numbers (256K) wildly inconsistent with 2025 labor market cooling"
+      ]
+    },
+
+    "contributing_factors": [
+      {
+        "factor": "No Real-Time Data Pipeline",
+        "description": "IoS-016 was designed but never connected to live data feeds",
+        "mitigation_required": "Implement ADR-012 API waterfall for calendar data"
+      },
+      {
+        "factor": "Seed Data Not Validated",
+        "description": "Migration 290 was executed without cross-referencing official sources",
+        "mitigation_required": "Mandatory multi-source verification before G4 promotion"
+      },
+      {
+        "factor": "LLM-Generated Content Risk",
+        "description": "STIG may have generated 'plausible' numbers instead of querying real data",
+        "mitigation_required": "Court-proof evidence requirement for all financial data"
+      },
+      {
+        "factor": "Shadow Mode Tested Logic, Not Data",
+        "description": "G3.5 shadow mode verified determinism but not data accuracy",
+        "mitigation_required": "Add data accuracy validation to shadow mode"
+      },
+      {
+        "factor": "No CEO/Board Data Review Gate",
+        "description": "Calendar went live without human verification of actual values",
+        "mitigation_required": "Add mandatory CEO/Board spot-check before G4"
+      }
+    ],
+
+    "governance_failure_chain": [
+      "G0: IoS-016 proposal approved without data source specification",
+      "G1: Technical validation tested schema, not data accuracy",
+      "G2: Governance review checked permissions, not data validity",
+      "G3: Audit verified hash chains, not numerical correctness",
+      "G3.5: Shadow mode verified determinism, not truth",
+      "G4: Activated with fabricated data"
+    ]
+  },
+
+  "section_3_impact_assessment": {
+    "title": "Impact of Incorrect Calendar Data",
+
+    "forecast_evaluation_impact": {
+      "description": "Event-adjacent Brier scoring would be systematically wrong",
+      "mechanism": "Surprise scores calculated against wrong baselines",
+      "example": {
+        "scenario": "NFP forecast of 100K (reasonable given 50K actual)",
+        "with_wrong_calendar": "Marked as massive miss vs 256K baseline",
+        "with_correct_calendar": "Marked as slight beat vs 50K actual",
+        "consequence": "System would PUNISH correct predictions"
+      }
+    },
+
+    "learning_system_impact": {
+      "false_signal_rate": "Near 100% for event-adjacent forecasts",
+      "learning_direction": "Would learn to predict WRONG to match wrong data",
+      "calibration_damage": "Confidence would be miscalibrated against fiction"
+    },
+
+    "capital_allocation_impact": {
+      "if_system_were_live": "Would generate signals based on fantasy economics",
+      "risk": "Complete inversion of alpha signals",
+      "mitigation": "G4 stillness prevented any capital deployment"
+    },
+
+    "defensibility_impact": {
+      "audit_finding": "Calendar data cannot be traced to authoritative source",
+      "legal_risk": "Claims of market prediction capability based on fictional data",
+      "reputational_risk": "Institutional credibility at stake"
+    }
+  },
+
+  "section_4_why_this_is_the_worst_kind_of_mistake": {
+    "title": "Why Wrong Interest Rates Are Catastrophic",
+
+    "principle": "Interest rates are the FOUNDATION of all financial valuation",
+
+    "reasons": [
+      {
+        "reason": "Discount Rate Foundation",
+        "explanation": "All asset valuations derive from risk-free rates. A 100bps error in Fed Funds rate propagates to every equity, bond, and derivative valuation."
+      },
+      {
+        "reason": "Regime Classification Dependency",
+        "explanation": "IoS-003 regime engine uses rate expectations to classify BULL/BEAR/STRESS. Wrong rates = wrong regimes = wrong everything."
+      },
+      {
+        "reason": "Surprise Score Inversion",
+        "explanation": "If calendar shows 4.50% and actual is 3.50%, a PAUSE decision looks like a 100bps surprise cut. The surprise score is completely inverted."
+      },
+      {
+        "reason": "Cross-Asset Contamination",
+        "explanation": "Wrong USD rates affect DXY forecasts, which affect commodity forecasts, which affect equity forecasts. The error cascades across the entire portfolio."
+      },
+      {
+        "reason": "Institutional Credibility Destruction",
+        "explanation": "Any investor reviewing the calendar would immediately identify the error and question ALL system outputs."
+      }
+    ],
+
+    "analogy": "This is equivalent to a navigation system with the wrong GPS coordinates - every subsequent calculation is guaranteed to be wrong, and the system will confidently guide you into a wall."
+  },
+
+  "section_5_how_this_happened": {
+    "title": "Failure Mechanism Reconstruction",
+
+    "timeline": [
+      {
+        "event": "Migration 290 Created",
+        "timestamp": "2026-01-17T12:15:00Z",
+        "action": "STIG generated seed data for macro calendar",
+        "failure_point": "Data was generated from LLM knowledge, not queried from APIs",
+        "evidence": "No CEIO API ingestion logs exist for this data"
+      },
+      {
+        "event": "Migration 290 Executed",
+        "timestamp": "2026-01-17T12:15:00Z",
+        "action": "19 events seeded into production calendar",
+        "failure_point": "No validation against official sources",
+        "evidence": "Data matches no known real-world values"
+      },
+      {
+        "event": "Calendar Declared Live",
+        "timestamp": "2026-01-17T12:15:00Z",
+        "action": "Truth Snapshot updated to show calendar active",
+        "failure_point": "CEO/Board not shown actual data values for verification"
+      },
+      {
+        "event": "CEO/Board Spot Check",
+        "timestamp": "2026-01-17T12:30:00Z",
+        "action": "Board compared calendar values to known market reality",
+        "outcome": "IMMEDIATE DISCREPANCY DETECTED",
+        "lesson": "Human verification caught what automation missed"
+      }
+    ],
+
+    "fundamental_failure": {
+      "description": "Court-proof evidence enforcement was not applied to calendar data",
+      "ceo_directive_violated": "CEO Directive 2025-12-20 requires raw query evidence for all data",
+      "what_should_have_happened": "Calendar seed should have been: (1) Query FRED/ECB/BOE APIs, (2) Hash results, (3) Log evidence, (4) Seed from verified data",
+      "what_actually_happened": "LLM generated 'plausible' numbers without any API queries"
+    }
+  },
+
+  "section_6_prevention_framework": {
+    "title": "How to Ensure This Never Happens Again",
+
+    "immediate_actions": [
+      {
+        "action": "HALT all calendar-dependent processing",
+        "owner": "LINE",
+        "deadline": "IMMEDIATE",
+        "rationale": "Prevent contamination of forecast evaluation"
+      },
+      {
+        "action": "Create Migration 292 to correct ALL central bank rates",
+        "owner": "STIG",
+        "deadline": "TODAY",
+        "rationale": "ECB, BOE, BOJ, PBOC all need correction"
+      },
+      {
+        "action": "Create Migration 293 to correct US macro actuals",
+        "owner": "STIG",
+        "deadline": "TODAY",
+        "rationale": "NFP 256K->50K, CPI 2.9%->2.7%"
+      },
+      {
+        "action": "Invalidate all event-adjacent Brier scores since calendar activation",
+        "owner": "STIG",
+        "deadline": "TODAY",
+        "rationale": "Scores computed against wrong baselines are invalid"
+      }
+    ],
+
+    "structural_fixes": [
+      {
+        "fix": "Mandatory API-Sourced Calendar Data",
+        "description": "All calendar data MUST come from verified API calls to official sources",
+        "implementation": "CEIO ingestion pipeline with FRED, ECB, BOE, BOJ, PBOC endpoints",
+        "verification": "ingestion_batch table must have non-null API response hashes"
+      },
+      {
+        "fix": "Real-Time Rate Verification Trigger",
+        "description": "Before any rate event is marked canonical, verify against live API",
+        "implementation": "PostgreSQL trigger on calendar_events INSERT/UPDATE",
+        "verification": "CHECK constraint requiring api_verification_hash NOT NULL"
+      },
+      {
+        "fix": "CEO/Board Pre-Activation Spot Check",
+        "description": "Before G4 activation, CEO/Board must verify 5 random data points",
+        "implementation": "New G3.75 gate: Data Accuracy Validation",
+        "verification": "spot_check_verification table with CEO signature"
+      },
+      {
+        "fix": "Automated Drift Detection",
+        "description": "Daily comparison of calendar values against live API feeds",
+        "implementation": "Scheduled job comparing stored values to FRED/official sources",
+        "verification": "drift_detection_log with alerts on >5bps deviation"
+      },
+      {
+        "fix": "LLM Generation Firewall",
+        "description": "Prohibit LLM from generating financial data - query only",
+        "implementation": "ADR amendment: LLMs may NOT generate numerical financial data",
+        "verification": "Audit log of all data origin points"
+      }
+    ],
+
+    "governance_amendments_required": [
+      {
+        "adr": "ADR-002",
+        "amendment": "Add Data Accuracy Audit requirement for calendar data",
+        "requirement": "All financial data must trace to official source API response"
+      },
+      {
+        "adr": "ADR-004",
+        "amendment": "Add G3.75 Data Accuracy Validation gate",
+        "requirement": "CEO/Board spot check of 5 random values before G4"
+      },
+      {
+        "adr": "ADR-013",
+        "amendment": "Calendar canonical source must be API, not seed migration",
+        "requirement": "Seed data only for schema testing, never production"
+      }
+    ]
+  },
+
+  "section_7_verification_protocol": {
+    "title": "New Calendar Data Verification Protocol",
+
+    "principle": "Every number in the calendar must be defensible in court",
+
+    "verification_chain": {
+      "step_1": "API Query",
+      "step_1_details": "CEIO queries official source (FRED, ECB API, BOE API, etc.)",
+      "step_1_evidence": "Raw API response stored in api_response_archive table",
+
+      "step_2": "Hash Verification",
+      "step_2_details": "SHA-256 hash of API response computed and stored",
+      "step_2_evidence": "api_response_hash column in ingestion_batches",
+
+      "step_3": "Value Extraction",
+      "step_3_details": "Parse response to extract canonical value",
+      "step_3_evidence": "extraction_logic logged in calendar_events.source_metadata",
+
+      "step_4": "Cross-Reference Check",
+      "step_4_details": "Compare extracted value against 2nd source",
+      "step_4_evidence": "cross_reference_hash in source_conflict_log",
+
+      "step_5": "CEIO Signature",
+      "step_5_details": "CEIO signs the verified value",
+      "step_5_evidence": "ceio_signature column with Ed25519 signature",
+
+      "step_6": "VEGA Attestation",
+      "step_6_details": "VEGA attests the complete evidence chain",
+      "step_6_evidence": "vega_attestation in governance_attestations"
+    },
+
+    "verification_sql": "SELECT e.event_type_code, e.consensus_estimate, e.actual_value, b.api_response_hash, b.cross_reference_hash, e.ceio_signature, g.vega_public_key FROM fhq_calendar.calendar_events e JOIN fhq_calendar.ingestion_batches b ON e.ingestion_batch_id = b.batch_id JOIN fhq_governance.governance_attestations g ON e.event_id = g.target_id WHERE e.is_canonical = true AND b.api_response_hash IS NOT NULL"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T13:00:00Z",
+    "severity_classification": "CLASS A GOVERNANCE VIOLATION",
+    "summary": [
+      "IoS-016 Economic Calendar activated with FABRICATED data",
+      "10 critical data errors identified across ALL central bank rates and US macro",
+      "Root cause: Migration 290 seed data was LLM-generated, not API-sourced",
+      "FOMC corrected via Migration 291, 9 errors pending correction",
+      "ECB wrong by 75bps, BOE wrong by 75bps, BOJ wrong by 50bps, PBOC wrong by 10bps",
+      "NFP wrong by 206,000 jobs (5x overstatement), CPI wrong by 0.2%",
+      "Court-proof evidence enforcement was NOT applied to calendar data",
+      "Structural fixes required: API-sourced data, G3.75 accuracy gate, drift detection",
+      "CEO/Board spot check SAVED the system from catastrophic miscalibration",
+      "This is the worst kind of mistake - interest rates are the foundation of all valuation"
+    ],
+    "lessons_learned": [
+      "LLMs must NEVER generate financial data - query only",
+      "Shadow mode tests logic, not data accuracy - need separate validation",
+      "Human spot-check is essential before production activation",
+      "Court-proof evidence applies to ALL data, not just summaries"
+    ]
+  }
+}
