@@ -46,6 +46,7 @@ Cron-scheduled tasks managed by the orchestrator.
 | Task Name | Schedule | Next Run | Script |
 |-----------|----------|----------|--------|
 | FjordHQ-TradingCalendarGovernance | Monthly (1st @ 03:00) | 2026-02-01 | run_calendar_daemon.bat |
+| FjordHQ-CalendarIntegrityCheck | Daily @ 05:00 | 2026-01-19 | run_calendar_integrity_daemon.bat |
 | FjordHQ-UMA-MetaAnalyst | Daily @ 06:00 | 2026-01-19 | run_uma_daemon.bat |
 
 ### Setup Commands (run as Administrator)
@@ -55,6 +56,13 @@ Cron-scheduled tasks managed by the orchestrator.
 schtasks /create /tn "FjordHQ-TradingCalendarGovernance" ^
     /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_calendar_daemon.bat" ^
     /sc monthly /d 1 /st 03:00 /f
+```
+
+**Calendar Integrity Check (CEO-DIR-2026-091):**
+```cmd
+schtasks /create /tn "FjordHQ-CalendarIntegrityCheck" ^
+    /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_calendar_integrity_daemon.bat" ^
+    /sc daily /st 05:00 /f
 ```
 
 **UMA Meta-Analyst:**

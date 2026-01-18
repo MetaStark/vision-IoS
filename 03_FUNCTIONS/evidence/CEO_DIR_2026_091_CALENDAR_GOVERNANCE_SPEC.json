@@ -1,0 +1,215 @@
+{
+  "spec_id": "CALENDAR-GOV-SPEC-001",
+  "directive": "CEO-DIR-2026-091",
+  "title": "Trading Calendar Continuous Governance Specification",
+  "submitted_by": "STIG (EC-003)",
+  "submitted_at": "2026-01-18T19:30:00Z",
+
+  "section_1_verified_vs_projected": {
+    "_title": "What is Verified vs Projected",
+
+    "verified_library": {
+      "source": "exchange_calendars Python library (XNYS for NYSE/NASDAQ)",
+      "provenance": "LIBRARY",
+      "date_range": {
+        "start": "2025-01-01",
+        "end": "2026-12-31"
+      },
+      "count": 730,
+      "authority": "Library vendors compile from authoritative exchange publications",
+      "trading_authority": "FULL - May be used for all trading decisions"
+    },
+
+    "projected_extrapolated": {
+      "source": "trading_calendar_governance_daemon.py rule-based projection",
+      "provenance": "PROJECTED",
+      "date_range": {
+        "start": "2027-01-01",
+        "end": "2028-01-08"
+      },
+      "count": 373,
+      "projection_rules": [
+        "Weekend detection (Saturday/Sunday = CLOSED)",
+        "Known US Federal holidays projected forward",
+        "Historical pattern continuation"
+      ],
+      "trading_authority": "NONE - Display only, no trading decisions",
+      "governance_note": "Projected dates are tentative. Exchange may announce different holidays."
+    },
+
+    "verification_chain": [
+      "exchange_calendars library → Python ingestion → fhq_meta.calendar_days",
+      "Each record stamped with verified_at timestamp",
+      "Provenance column distinguishes LIBRARY from PROJECTED"
+    ]
+  },
+
+  "section_2_displayed_vs_decisioning": {
+    "_title": "What is Displayed vs Allowed for Decisioning",
+
+    "display_rules": {
+      "daily_report": {
+        "market_open_tomorrow": "Always displayed (regardless of provenance)",
+        "next_5_trading_days": "Always displayed (with tentative flag if PROJECTED)",
+        "projection_window": "Explicitly shows count of projected days in next 30"
+      },
+      "ios016_view": {
+        "all_dates": "Displayed with is_tentative flag",
+        "provenance_note": "Human-readable explanation of source"
+      }
+    },
+
+    "decisioning_rules": {
+      "paper_trading": {
+        "LIBRARY_dates": "ALLOWED - Full trading authority",
+        "PROJECTED_dates": "BLOCKED - Cannot schedule paper trades on projected dates"
+      },
+      "live_trading": {
+        "LIBRARY_dates": "ALLOWED - Full trading authority",
+        "PROJECTED_dates": "BLOCKED - Cannot schedule live trades on projected dates"
+      },
+      "signal_generation": {
+        "LIBRARY_dates": "ALLOWED - Signals may reference",
+        "PROJECTED_dates": "ALLOWED with WARNING - Signal must note tentative calendar"
+      },
+      "roi_measurement": {
+        "LIBRARY_dates": "ALLOWED - ROI calculations valid",
+        "PROJECTED_dates": "BLOCKED - Cannot measure ROI on projected dates"
+      }
+    },
+
+    "enforcement": "Provenance check required before any execution-path decision"
+  },
+
+  "section_3_red_abort_triggers": {
+    "_title": "What Triggers RED/ABORT",
+
+    "red_triggers": [
+      {
+        "condition": "Forward coverage < 690 days",
+        "status": "RED",
+        "action": "IMMEDIATE calendar extension required",
+        "impact": "Block new signal generation until resolved"
+      },
+      {
+        "condition": "Tomorrow's market status unresolved",
+        "status": "RED",
+        "action": "HALT daily processing",
+        "impact": "Cannot determine if market open for next trading day"
+      },
+      {
+        "condition": "Next 7 trading days incomplete",
+        "status": "RED",
+        "action": "HALT horizon calculations",
+        "impact": "Cannot compute T+N trading day horizons"
+      },
+      {
+        "condition": "NULL values in required fields (reason, provenance)",
+        "status": "RED",
+        "action": "Data repair required",
+        "impact": "Audit trail incomplete"
+      },
+      {
+        "condition": "Coverage threshold proximity < 30 days",
+        "status": "RED",
+        "action": "Schedule immediate extension",
+        "impact": "Risk of coverage gap approaching"
+      }
+    ],
+
+    "abort_triggers": [
+      {
+        "condition": "Attempt to use PROJECTED date for trading decision",
+        "status": "ABORT",
+        "action": "REJECT trade authority",
+        "rationale": "Projected dates not verified against authoritative schedule"
+      },
+      {
+        "condition": "Calendar data corruption detected",
+        "status": "ABORT",
+        "action": "Full system halt + audit",
+        "rationale": "Time-as-infrastructure failure is catastrophic"
+      },
+      {
+        "condition": "Timezone/DST error detected",
+        "status": "ABORT",
+        "action": "Class B violation escalation",
+        "rationale": "Temporal integrity compromised"
+      }
+    ],
+
+    "yellow_triggers": [
+      {
+        "condition": "30-60 days to coverage threshold",
+        "status": "YELLOW",
+        "action": "Schedule extension in next monthly run"
+      },
+      {
+        "condition": "PROJECTED dates in next 30 days",
+        "status": "YELLOW",
+        "action": "Awareness flag in daily report"
+      }
+    ]
+  },
+
+  "section_4_daemon_registry": {
+    "_title": "Registered Daemons",
+
+    "monthly_extension": {
+      "name": "trading_calendar_governance_daemon.py",
+      "schedule": "Monthly on 1st at 03:00",
+      "task_name": "FjordHQ-TradingCalendarGovernance",
+      "purpose": "Extend forward coverage to maintain >= 720 days",
+      "evidence": "CALENDAR_EXTENSION_*.json",
+      "status": "ACTIVE"
+    },
+
+    "daily_integrity": {
+      "name": "calendar_integrity_daemon.py",
+      "schedule": "Daily at 05:00",
+      "task_name": "FjordHQ-CalendarIntegrityCheck",
+      "purpose": "Verify calendar integrity before market open",
+      "evidence": "CALENDAR_INTEGRITY_*.json",
+      "status": "ACTIVE"
+    }
+  },
+
+  "section_5_crypto_epoch": {
+    "_title": "Crypto Epoch Specification",
+
+    "boundary": "00:00:00 UTC",
+    "rationale": "Crypto markets are 24/7; need canonical daily delimiter for regime evaluation",
+    "database_function": "fhq_meta.crypto_epoch_boundary(timestamp)",
+    "display_format": "CRYPTO_EPOCH (00:00 UTC boundary)",
+
+    "horizon_definitions": {
+      "T+1D": "Signal epoch + 1 calendar day at 00:00 UTC",
+      "T+3D": "Signal epoch + 3 calendar days at 00:00 UTC",
+      "T+5D": "Signal epoch + 5 calendar days at 00:00 UTC",
+      "T+7D": "Signal epoch + 7 calendar days at 00:00 UTC"
+    },
+
+    "difference_from_equity": {
+      "equity": "Uses trading days (market open days only)",
+      "crypto": "Uses epoch days (all calendar days)"
+    }
+  },
+
+  "section_6_audit_trail": {
+    "_title": "Audit Requirements",
+
+    "every_calendar_change_logged": true,
+    "governance_table": "fhq_governance.governance_actions_log",
+    "evidence_directory": "03_FUNCTIONS/evidence/",
+
+    "traceability": [
+      "Every date → provenance → source library or daemon",
+      "Every integrity check → evidence file → governance log",
+      "Every extension → diff summary → evidence file"
+    ],
+
+    "vega_attestation": "VEGA may attest: 'This system knew what was scheduled, when it was scheduled, and why it mattered.'"
+  },
+
+  "principle": "A system that wants ROI must operate ahead of time. Calendar truth is not a convenience - it's a control surface."
+}
