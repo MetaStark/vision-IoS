@@ -5,7 +5,7 @@
   "generated_at": "2026-01-18T20:30:00+01:00",
   "generated_by": "STIG",
   "report_status": "CLOSED",
-  "closing_summary": "CEO-DIR-2026-091/092/093/095/096/097 executed. Shadow learning ACTIVE. Gate-3 template LOCKED. UMA pipeline restored. Autonomy clock formalized.",
+  "closing_summary": "CEO-DIR-2026-091/092/093/095/096/097 executed. Shadow learning ACTIVE. Gate-3 template LOCKED. UMA pipeline restored. Autonomy clock formalized. IoS-016 calendar integrated into liveness checker.",
 
   "section_01_executive_summary": {
     "_title": "Day 18 Executive Summary",
@@ -2285,6 +2285,43 @@
     },
 
     "doctrine": "Autonomy is not announced. It is observed to emerge. Once proven, it will be obvious, boring, and unquestionable."
+  },
+
+  "section_33_ios016_liveness_integration": {
+    "_title": "IoS-016 Calendar Integration - Data Liveness Checker",
+    "_status": "COMPLETE",
+    "_timestamp": "2026-01-18T22:20:00Z",
+
+    "problem_identified": {
+      "symptom": "Telegram alerts for stale data on weekends/holidays",
+      "root_cause": "data_liveness_checker.py did not consult trading calendar",
+      "impact": "False positive alerts when markets are closed"
+    },
+
+    "fix_applied": {
+      "file": "03_FUNCTIONS/data_liveness_checker.py",
+      "integration": "IoS-016 trading calendar via fhq_meta.ios016_calendar_truth",
+      "logic": "Staleness EXCUSED for equity-sensitive domains on non-trading days",
+      "domains_affected": ["market_prices", "regime_state"],
+      "crypto_behavior": "24/7 - always checked (no calendar adjustment)"
+    },
+
+    "verification": {
+      "timestamp": "2026-01-18T21:20:55Z",
+      "trading_day": false,
+      "calendar_reason": "WEEKEND",
+      "regime_state": "FRESH (CALENDAR: EXCUSED: WEEKEND)",
+      "market_prices": "FRESH (CALENDAR: EXCUSED: WEEKEND)",
+      "all_fresh": true
+    },
+
+    "next_trading_day": {
+      "date": "2026-01-20",
+      "reason": "Jan 19 is MLK Day (HOLIDAY)",
+      "alerts_will_resume": "Normal staleness checking on trading days"
+    },
+
+    "principle": "Alerts must reflect operational reality, not raw staleness."
   },
 
   "section_38_CEO_DATABASE_AUDIT": {

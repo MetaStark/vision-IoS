@@ -11,10 +11,46 @@ Date: 2026-01-04
 
 import os
 import psycopg2
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from dataclasses import dataclass
 from typing import Dict, Optional, List
 import json
+
+
+def is_equity_trading_day(conn, check_date: date = None) -> tuple:
+    """
+    Check if given date is an equity trading day per IoS-016 calendar.
+
+    CEO-DIR-2026-097: Integrate with trading calendar to prevent false alerts.
+
+    Returns:
+        Tuple of (is_trading_day: bool, reason: str)
+    """
+    if check_date is None:
+        check_date = date.today()
+
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT status, reason
+            FROM fhq_meta.ios016_calendar_truth
+            WHERE market = 'US_EQUITY'
+            AND date = %s
+        """, (check_date,))
+        row = cursor.fetchone()
+
+        if row is None:
+            # No calendar entry - assume trading day for safety
+            return (True, "NO_CALENDAR_ENTRY")
+
+        status, reason = row
+        is_trading = status == 'OPEN'
+        return (is_trading, reason or status)
+    except Exception as e:
+        # Calendar check failed - assume trading day for safety
+        return (True, f"CALENDAR_CHECK_FAILED: {e}")
+    finally:
+        cursor.close()
 
 # Database connection parameters
 DB_HOST = os.environ.get('PGHOST', 'localhost')
@@ -34,6 +70,8 @@ class LivenessResult:
     abort_reason: Optional[str]
     record_count: int = 0
     latest_timestamp: Optional[datetime] = None
+    calendar_adjusted: bool = False
+    calendar_reason: Optional[str] = None
 
     def to_dict(self) -> Dict:
         return {
@@ -43,7 +81,9 @@ class LivenessResult:
             'is_stale': self.is_stale,
             'abort_reason': self.abort_reason,
             'record_count': self.record_count,
-            'latest_timestamp': self.latest_timestamp.isoformat() if self.latest_timestamp else None
+            'latest_timestamp': self.latest_timestamp.isoformat() if self.latest_timestamp else None,
+            'calendar_adjusted': self.calendar_adjusted,
+            'calendar_reason': self.calendar_reason
         }
 
 
@@ -71,11 +111,12 @@ class LivenessReport:
 # CRYPTO (24/7 markets): max_ok=6h, warn=6-12h, blackout=12h+
 # The 12h gate allows crypto signals with graded confidence penalty
 # EQUITY/FX would use stricter rules (2h) during trading hours
+# CEO-DIR-2026-046: Regime Continuity Invariant - 6h SLA
 STALENESS_GATES = {
-    'regime_state': timedelta(hours=12),  # P1: Relaxed for SHADOW mode testing
+    'regime_state': timedelta(hours=6),   # CEO-DIR-2026-046: Regime Reality Continuity SLA
     'market_prices': timedelta(hours=12), # P1: Crypto blackout threshold (was 6h)
-    'evidence_nodes': timedelta(hours=48), # P1: Relaxed for SHADOW mode testing
-    'causal_edges': timedelta(hours=72)
+    'evidence_nodes': timedelta(hours=24), # CEO-DIR-2026-009-B: Constitutional freshness mandate
+    'causal_edges': timedelta(hours=48)    # CEO-DIR-2026-009-B: Tightened from 72h
 }
 
 # Market-aware price staleness thresholds (CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P1)
@@ -93,12 +134,13 @@ PRICE_STALENESS_EQUITY = {
 
 # SQL queries to check freshness per domain
 # Schema mapping verified against production database
+# CEO-DIR-2026-047: regime_state uses fhq_perception.model_belief_state (same as regime clock)
 STALENESS_QUERIES = {
     'regime_state': """
         SELECT
             COUNT(*) as record_count,
-            MAX(last_updated_at) as latest_timestamp
-        FROM fhq_meta.regime_state
+            MAX(belief_timestamp) as latest_timestamp
+        FROM fhq_perception.model_belief_state
     """,
     'market_prices': """
         SELECT
@@ -160,6 +202,10 @@ def check_domain_liveness(conn, domain: str) -> LivenessResult:
     """
     Check liveness for a single data domain.
 
+    CEO-DIR-2026-097 / IoS-016 Integration:
+    For equity-sensitive domains, staleness is EXCUSED on non-trading days.
+    Crypto domains (24/7) are always checked.
+
     Returns:
         LivenessResult with staleness info and abort reason if stale
     """
@@ -167,14 +213,32 @@ def check_domain_liveness(conn, domain: str) -> LivenessResult:
     if max_stale is None:
         raise ValueError(f"Unknown domain: {domain}")
 
+    # Domains that respect equity trading calendar
+    EQUITY_CALENDAR_DOMAINS = {'market_prices', 'regime_state'}
+
     try:
         actual_staleness, record_count, latest_timestamp = get_staleness(conn, domain)
         is_stale = actual_staleness > max_stale
+        calendar_adjusted = False
+        calendar_reason = None
+
+        # IoS-016 Calendar Integration: Excuse staleness on non-trading days
+        if is_stale and domain in EQUITY_CALENDAR_DOMAINS:
+            is_trading, cal_reason = is_equity_trading_day(conn)
+            if not is_trading:
+                # Not a trading day - staleness is excused
+                is_stale = False
+                calendar_adjusted = True
+                calendar_reason = f"EXCUSED: {cal_reason}"
 
         if is_stale:
             hours_stale = actual_staleness.total_seconds() / 3600
             max_hours = max_stale.total_seconds() / 3600
-            abort_reason = f"{domain} is {hours_stale:.2f}h stale (max: {max_hours:.0f}h)"
+            # CEO-DIR-2026-046: Special message for regime staleness
+            if domain == 'regime_state':
+                abort_reason = f"SYSTEMIC_REALITY_GAP: regime is {hours_stale:.2f}h stale (max: {max_hours:.0f}h) - system is EPISTEMICALLY_BLIND"
+            else:
+                abort_reason = f"{domain} is {hours_stale:.2f}h stale (max: {max_hours:.0f}h)"
         else:
             abort_reason = None
 
@@ -185,7 +249,9 @@ def check_domain_liveness(conn, domain: str) -> LivenessResult:
             is_stale=is_stale,
             abort_reason=abort_reason,
             record_count=record_count,
-            latest_timestamp=latest_timestamp
+            latest_timestamp=latest_timestamp,
+            calendar_adjusted=calendar_adjusted,
+            calendar_reason=calendar_reason
         )
     except Exception as e:
         # Rollback the failed transaction to allow subsequent queries
@@ -277,8 +343,15 @@ def main():
         print(f"All Fresh: {report.all_fresh}")
         print()
 
+        # IoS-016 Calendar Check
+        is_trading, cal_reason = is_equity_trading_day(conn)
+        print(f"Trading Day: {is_trading} ({cal_reason})")
+        print()
+
         for domain, result in report.results.items():
             status = "FRESH" if not result.is_stale else "STALE"
+            if result.calendar_adjusted:
+                status = f"FRESH (CALENDAR: {result.calendar_reason})"
             hours = result.actual_staleness.total_seconds() / 3600
             max_hours = result.max_allowed.total_seconds() / 3600
             print(f"  {domain}:")
