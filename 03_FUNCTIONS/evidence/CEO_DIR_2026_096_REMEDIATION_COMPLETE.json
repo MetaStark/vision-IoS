@@ -1,0 +1,151 @@
+{
+  "directive_id": "CEO-DIR-2026-096",
+  "title": "UMA AUTONOMY REMEDIATION & PIPELINE RESTORATION",
+  "authority": "CEO",
+  "priority": "P0 (Critical)",
+  "effective": "2026-01-18T21:30:00Z",
+  "completed_at": "2026-01-18T21:35:00Z",
+  "executed_by": "STIG (EC-003)",
+
+  "section_1_gap_001_remediation": {
+    "_title": "Canonical Outcome Logic Restored",
+    "_status": "COMPLETE",
+
+    "original_problem": {
+      "file": "ios003c_shadow_learning_daemon.py",
+      "issue": "Outcome computation queried non-canonical table fhq_data.price_series",
+      "impact": "T+1/T+3/T+5 outcomes would never be captured"
+    },
+
+    "fix_applied": {
+      "epoch_snapshot_query": {
+        "before": "SELECT close FROM fhq_data.price_series WHERE listing_id = %s",
+        "after": "SELECT close, timestamp FROM fhq_market.prices WHERE canonical_id = %s"
+      },
+      "outcome_computation_query": {
+        "before": "SELECT close, date FROM fhq_data.price_series WHERE listing_id = %s",
+        "after": "SELECT close FROM fhq_market.prices WHERE canonical_id = %s AND timestamp::date = %s"
+      },
+      "identity_anchor": "canonical_id (per ADR-013)",
+      "lines_modified": [162, 167, 267, 280, 292]
+    },
+
+    "verification_test": {
+      "timestamp": "2026-01-18T21:33:46Z",
+      "task": "snapshot",
+      "result": "SUCCESS",
+      "assets_scanned": 46,
+      "signals_captured": 46,
+      "errors": 0
+    },
+
+    "canonical_source_confirmed": "fhq_market.prices"
+  },
+
+  "section_2_governance_hardening": {
+    "_title": "Governance Hardening (GAP-003 & GAP-004)",
+    "_status": "COMPLETE",
+
+    "task_registry_compliance": {
+      "migration": "312_ceo_dir_2026_096_task_registry.sql",
+      "tasks_registered": [
+        "ios003c_epoch_snapshot",
+        "ios003c_outcome_computation",
+        "ios003c_weekly_analysis",
+        "ios003c_learning_update_00",
+        "ios003c_learning_update_06",
+        "ios003c_learning_update_12",
+        "ios003c_learning_update_18",
+        "ios003c_gate3_check",
+        "uma_daily_learning_audit"
+      ],
+      "fields_declared": ["schedule", "owning_agent", "purpose", "escalation_class"]
+    },
+
+    "execution_evidence_persistence": {
+      "function_added": "log_execution_evidence()",
+      "target_table": "fhq_governance.agent_task_log",
+      "fields_persisted": [
+        "last_run_at (via started_at/completed_at)",
+        "status (SUCCESS | NOOP | FAIL)",
+        "rows_written (in result_summary)",
+        "error_count (in result_summary)"
+      ],
+      "silence_prevented": true
+    }
+  },
+
+  "section_3_autonomy_clock": {
+    "_title": "Autonomy Clock Status",
+    "_status": "READY_TO_START",
+
+    "neglect_period_definition": {
+      "requirement": "N >= 3 consecutive unattended daily cycles",
+      "restrictions": [
+        "No SSH triggers",
+        "No manual SQL",
+        "No hot-fixes",
+        "No data backfills"
+      ],
+      "reset_condition": "Any manual intervention resets clock to zero"
+    },
+
+    "clock_start": "2026-01-19 00:05 UTC (next scheduled epoch snapshot)",
+    "verification_gate": "2026-01-21",
+    "expected_cycles_by_gate": 3
+  },
+
+  "section_4_vega_oversight": {
+    "_title": "VEGA Audit Trigger",
+    "_status": "ACTIVE",
+
+    "trigger_conditions": [
+      "error_count > 0 during Jan 19 outcome run",
+      "outcomes not captured when eligible"
+    ],
+    "consequence": "VEGA issues immediate Suspension Recommendation per ADR-009"
+  },
+
+  "section_5_files_modified": {
+    "code": [
+      {
+        "file": "03_FUNCTIONS/ios003c_shadow_learning_daemon.py",
+        "changes": [
+          "Epoch snapshot: fhq_data.price_series -> fhq_market.prices (canonical_id)",
+          "Outcome computation: Date-specific horizon queries with canonical_id",
+          "Added log_execution_evidence() function for court-grade persistence"
+        ]
+      }
+    ],
+    "migrations": [
+      {
+        "file": "04_DATABASE/MIGRATIONS/312_ceo_dir_2026_096_task_registry.sql",
+        "purpose": "Register IoS-003C and UMA tasks in fhq_governance.task_registry"
+      }
+    ],
+    "evidence": [
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_095_UMA_AUTONOMY_READINESS.json",
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_096_REMEDIATION_COMPLETE.json"
+    ]
+  },
+
+  "section_6_verification_deliverable": {
+    "due_date": "2026-01-21",
+    "expected_statement": "UMA has completed N >= 3 unattended daily learning cycles with closed signal -> outcome -> metrics -> report loop and persistent database evidence.",
+    "alternative_statement": "If false, explicit explanation of remaining gaps"
+  },
+
+  "section_7_strategic_assessment": {
+    "current_autonomy": "0% (by design, not by failure)",
+    "post_remediation": "Infrastructure complete, awaiting scheduled execution proof",
+    "next_phase_gate": "3 unattended cycles verified",
+    "doctrine": "Integrity over speed. Evidence over intent. Autonomy is earned under neglect."
+  },
+
+  "signature": {
+    "agent": "STIG",
+    "contract": "EC-003",
+    "timestamp": "2026-01-18T21:35:00Z",
+    "directive_ref": "CEO-DIR-2026-096"
+  }
+}

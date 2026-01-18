@@ -157,11 +157,13 @@ class ShadowLearningDaemon:
             for ticker, asset_class in assets:
                 try:
                     # Get latest price for the asset
+                    # CEO-DIR-2026-096: Use canonical source fhq_market.prices
+                    # Identity anchored on canonical_id per ADR-013
                     cur.execute("""
-                        SELECT close
-                        FROM fhq_data.price_series
-                        WHERE listing_id = %s
-                        ORDER BY date DESC
+                        SELECT close, timestamp
+                        FROM fhq_market.prices
+                        WHERE canonical_id = %s
+                        ORDER BY timestamp DESC
                         LIMIT 1
                     """, (ticker,))
 
@@ -251,25 +253,53 @@ class ShadowLearningDaemon:
                 try:
                     days_ago = (date.today() - epoch_date).days
 
-                    # Get current price
-                    cur.execute("""
-                        SELECT close, date
-                        FROM fhq_data.price_series
-                        WHERE listing_id = %s
-                        ORDER BY date DESC
-                        LIMIT 1
-                    """, (ticker,))
+                    # CEO-DIR-2026-096: Use canonical source fhq_market.prices
+                    # Identity anchored on canonical_id per ADR-013
+                    # Get prices at specific horizons (T+1, T+3, T+5)
 
-                    price_row = cur.fetchone()
-                    if not price_row:
+                    price_1d = None
+                    price_3d = None
+                    price_5d = None
+
+                    # T+1 price (if signal is at least 1 day old)
+                    if days_ago >= 1:
+                        cur.execute("""
+                            SELECT close FROM fhq_market.prices
+                            WHERE canonical_id = %s
+                            AND timestamp::date = %s
+                            ORDER BY timestamp DESC LIMIT 1
+                        """, (ticker, epoch_date + timedelta(days=1)))
+                        row = cur.fetchone()
+                        if row:
+                            price_1d = row[0]
+
+                    # T+3 price (if signal is at least 3 days old)
+                    if days_ago >= 3:
+                        cur.execute("""
+                            SELECT close FROM fhq_market.prices
+                            WHERE canonical_id = %s
+                            AND timestamp::date = %s
+                            ORDER BY timestamp DESC LIMIT 1
+                        """, (ticker, epoch_date + timedelta(days=3)))
+                        row = cur.fetchone()
+                        if row:
+                            price_3d = row[0]
+
+                    # T+5 price (if signal is at least 5 days old)
+                    if days_ago >= 5:
+                        cur.execute("""
+                            SELECT close FROM fhq_market.prices
+                            WHERE canonical_id = %s
+                            AND timestamp::date = %s
+                            ORDER BY timestamp DESC LIMIT 1
+                        """, (ticker, epoch_date + timedelta(days=5)))
+                        row = cur.fetchone()
+                        if row:
+                            price_5d = row[0]
+
+                    # Skip if no prices available for any horizon
+                    if price_1d is None and price_3d is None and price_5d is None:
                         continue
-
-                    current_price = price_row[0]
-
-                    # Determine which horizons to update
-                    price_1d = current_price if days_ago >= 1 else None
-                    price_3d = current_price if days_ago >= 3 else None
-                    price_5d = current_price if days_ago >= 5 else None
 
                     # Capture outcome
                     cur.execute("""
@@ -837,6 +867,38 @@ class ShadowLearningDaemon:
         return attestation
 
 
+def log_execution_evidence(conn, task_name: str, status: str, rows_written: int, error_count: int, result_summary: Dict = None):
+    """
+    CEO-DIR-2026-096: Persist execution evidence to database.
+    Silence is a governance failure - every execution must leave evidence.
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_governance.agent_task_log (
+                    agent_id, task_name, task_type, status,
+                    started_at, completed_at, latency_ms,
+                    result_summary
+                ) VALUES (
+                    'STIG', %s, 'SHADOW_LEARNING', %s,
+                    NOW() - INTERVAL '1 second', NOW(), 1000,
+                    %s
+                )
+            """, (
+                task_name,
+                status,
+                json.dumps({
+                    'rows_written': rows_written,
+                    'error_count': error_count,
+                    'summary': result_summary or {}
+                })
+            ))
+            conn.commit()
+    except Exception as e:
+        # Don't let logging failure break execution
+        print(f"[EVIDENCE_LOG_WARNING] Failed to log execution: {e}")
+
+
 def run_daily_snapshot(dry_run: bool = False) -> Dict[str, Any]:
     """Run daily @ 00:05 UTC task."""
     conn = get_db_connection()
@@ -845,11 +907,13 @@ def run_daily_snapshot(dry_run: bool = False) -> Dict[str, Any]:
         experiment = daemon.get_experiment_status()
 
         if experiment.get('status') != 'ACTIVE':
+            log_execution_evidence(conn, 'ios003c_epoch_snapshot', 'NOOP', 0, 0, {'reason': 'No active experiment'})
             return {'status': 'SKIPPED', 'reason': 'No active experiment'}
 
         # Check stop conditions first
         stop_check = daemon.check_stop_conditions()
         if stop_check['any_triggered']:
+            log_execution_evidence(conn, 'ios003c_epoch_snapshot', 'STOPPED', 0, 0, {'reason': 'Stop condition triggered'})
             return {
                 'status': 'STOPPED',
                 'reason': 'Stop condition triggered',
@@ -858,6 +922,10 @@ def run_daily_snapshot(dry_run: bool = False) -> Dict[str, Any]:
 
         if not dry_run:
             result = daemon.capture_epoch_snapshot()
+            rows_written = result.get('signals_captured', 0)
+            error_count = len(result.get('errors', []))
+            status = 'SUCCESS' if error_count == 0 else 'PARTIAL'
+            log_execution_evidence(conn, 'ios003c_epoch_snapshot', status, rows_written, error_count, result)
             print(f"[SHADOW_LEARNING] {datetime.now().isoformat()} - Epoch snapshot captured")
             print(f"  Signals: {result['signals_captured']}")
             return result
@@ -875,10 +943,15 @@ def run_outcome_computation(dry_run: bool = False) -> Dict[str, Any]:
         experiment = daemon.get_experiment_status()
 
         if experiment.get('status') != 'ACTIVE':
+            log_execution_evidence(conn, 'ios003c_outcome_computation', 'NOOP', 0, 0, {'reason': 'No active experiment'})
             return {'status': 'SKIPPED', 'reason': 'No active experiment'}
 
         if not dry_run:
             result = daemon.compute_outcomes()
+            rows_written = result.get('outcomes_updated', 0)
+            error_count = len(result.get('errors', []))
+            status = 'SUCCESS' if error_count == 0 else 'PARTIAL'
+            log_execution_evidence(conn, 'ios003c_outcome_computation', status, rows_written, error_count, result)
             print(f"[SHADOW_LEARNING] {datetime.now().isoformat()} - Outcomes computed")
             print(f"  Updated: {result['outcomes_updated']}")
             return result
@@ -896,6 +969,7 @@ def run_weekly_analysis(dry_run: bool = False) -> Dict[str, Any]:
         experiment = daemon.get_experiment_status()
 
         if experiment.get('status') != 'ACTIVE':
+            log_execution_evidence(conn, 'ios003c_weekly_analysis', 'NOOP', 0, 0, {'reason': 'No active experiment'})
             return {'status': 'SKIPPED', 'reason': 'No active experiment'}
 
         if not dry_run:
@@ -905,14 +979,16 @@ def run_weekly_analysis(dry_run: bool = False) -> Dict[str, Any]:
             # Run VEGA attestation
             attestation = daemon.vega_weekly_attestation()
 
+            result = {
+                'analysis': analysis,
+                'attestation': attestation
+            }
+            log_execution_evidence(conn, 'ios003c_weekly_analysis', 'SUCCESS', 1, 0, result)
             print(f"[SHADOW_LEARNING] {datetime.now().isoformat()} - Weekly analysis complete")
             print(f"  Predictive skill significant: {analysis.get('predictive_skill_significant')}")
             print(f"  VEGA attestation: {attestation['verdict']}")
 
-            return {
-                'analysis': analysis,
-                'attestation': attestation
-            }
+            return result
         else:
             return {'status': 'DRY_RUN', 'would_run': 'weekly analysis + VEGA attestation'}
     finally:

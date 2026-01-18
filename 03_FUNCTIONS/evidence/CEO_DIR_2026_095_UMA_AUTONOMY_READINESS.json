@@ -1,0 +1,307 @@
+{
+  "report_id": "CEO_DIR_2026_095_UMA_AUTONOMY_READINESS",
+  "directive": "CEO-DIR-2026-095",
+  "title": "UMA AUTONOMY VERIFICATION & SCHEDULER CLOSURE",
+  "generated_at": "2026-01-18T21:15:00Z",
+  "generated_by": "STIG (EC-003)",
+  "authority": "CEO",
+  "classification": "OPERATIONAL_TRUTH",
+
+  "section_a_scheduler_verification": {
+    "_title": "Scheduler Verification",
+    "_status": "PARTIALLY_READY",
+
+    "windows_scheduled_tasks": [
+      {
+        "task_name": "FjordHQ-IoS003C-EpochSnapshot",
+        "schedule": "Daily @ 00:05 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 00:05:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Outcomes",
+        "schedule": "Daily @ 04:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 04:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Weekly",
+        "schedule": "Sunday @ 00:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-25 00:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Learning-00",
+        "schedule": "Daily @ 00:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 00:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Learning-06",
+        "schedule": "Daily @ 06:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 06:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Learning-12",
+        "schedule": "Daily @ 12:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 12:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-IoS003C-Learning-18",
+        "schedule": "Daily @ 18:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 18:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      },
+      {
+        "task_name": "FjordHQ-UMA-MetaAnalyst",
+        "schedule": "Daily @ 06:00 UTC",
+        "state": "Ready",
+        "last_run": "NEVER",
+        "next_run": "2026-01-19 06:00:00",
+        "last_result": 267011,
+        "last_result_meaning": "Task has not yet run"
+      }
+    ],
+
+    "database_task_registry": {
+      "ios003c_tasks_registered": false,
+      "uma_tasks_registered": false,
+      "gap": "Windows tasks exist but NOT mirrored in fhq_governance.task_registry"
+    },
+
+    "consecutive_execution_requirement": {
+      "required": ">=3 days",
+      "achieved": 0,
+      "status": "NOT_MET",
+      "earliest_possible_verification": "2026-01-21"
+    },
+
+    "manual_intervention_required": true,
+    "manual_intervention_reason": "Tasks created today (2026-01-18). Zero scheduled executions completed."
+  },
+
+  "section_b_pipeline_closure_verification": {
+    "_title": "Pipeline Closure Verification",
+    "_status": "BROKEN",
+
+    "signal_to_report_chain": {
+      "stage_1_epoch_snapshot": {
+        "status": "OPERATIONAL",
+        "signals_captured": 46,
+        "evidence": "Live test successful @ 2026-01-18T20:54:34Z",
+        "automated": true
+      },
+      "stage_2_price_ingestion": {
+        "status": "OPERATIONAL",
+        "source": "fhq_market.staging_prices",
+        "latest_data": "2026-01-17",
+        "coverage": "BTC/ETH/SOL and 43 other crypto assets",
+        "automated": true,
+        "scheduled_task": "ios001_daily_ingest_crypto"
+      },
+      "stage_3_outcome_computation": {
+        "status": "BROKEN",
+        "error": "SCHEMA_MISMATCH",
+        "detail": "Daemon queries fhq_data.price_series but crypto prices are in fhq_market.staging_prices",
+        "impact": "T+1/T+3/T+5 outcomes will NOT be captured",
+        "automated": false,
+        "requires_fix": true
+      },
+      "stage_4_quality_metrics": {
+        "status": "BLOCKED",
+        "reason": "Depends on Stage 3 (outcome computation)",
+        "current_count": 1,
+        "note": "Baseline metric created but no outcome data to aggregate"
+      },
+      "stage_5_stop_condition_evaluation": {
+        "status": "READY",
+        "conditions_defined": 5,
+        "active_conditions": 4,
+        "deferred_condition": "IDENTITY_DRIFT (awaiting Migration 309)"
+      },
+      "stage_6_daily_report_integration": {
+        "status": "OPERATIONAL",
+        "section": "section_31_ios003c_shadow_learning",
+        "update_frequency": "4x daily (00:00, 06:00, 12:00, 18:00 UTC)",
+        "automated": true
+      }
+    },
+
+    "human_dependencies_detected": [
+      {
+        "stage": "Stage 3 - Outcome Computation",
+        "dependency": "Requires code fix to query correct table",
+        "severity": "CRITICAL",
+        "blocker": true
+      }
+    ],
+
+    "closed_loop_status": "OPEN",
+    "open_reason": "Outcome computation cannot retrieve crypto prices from correct table"
+  },
+
+  "section_c_gaps_to_full_autonomy": {
+    "_title": "Gaps to Full Constitutional Autonomy",
+    "_status": "4 GAPS IDENTIFIED",
+
+    "gaps": [
+      {
+        "gap_id": "GAP-001",
+        "category": "SCHEMA",
+        "severity": "CRITICAL",
+        "title": "Outcome Computation Price Source Mismatch",
+        "description": "ios003c_shadow_learning_daemon.py queries fhq_data.price_series for crypto prices, but crypto prices are stored in fhq_market.staging_prices",
+        "impact": "T+1/T+3/T+5 outcome capture will fail. No Brier scores. No hit rates. Learning loop is broken.",
+        "fix_required": "Update compute_outcomes() to query fhq_market.staging_prices using canonical_id",
+        "fix_complexity": "LOW",
+        "blocking_autonomy": true
+      },
+      {
+        "gap_id": "GAP-002",
+        "category": "SCHEDULER",
+        "severity": "HIGH",
+        "title": "Zero Scheduled Executions",
+        "description": "All IoS-003C and UMA tasks have Last Run Time = NEVER. No execution history exists.",
+        "impact": "Cannot prove autonomous operation. CEO requirement is >=3 consecutive days.",
+        "fix_required": "Wait for scheduled executions to complete naturally",
+        "fix_complexity": "NONE (time-dependent)",
+        "blocking_autonomy": true,
+        "earliest_resolution": "2026-01-21"
+      },
+      {
+        "gap_id": "GAP-003",
+        "category": "CONFIG",
+        "severity": "MEDIUM",
+        "title": "Task Registry Not Synchronized",
+        "description": "Windows scheduled tasks exist but are NOT registered in fhq_governance.task_registry",
+        "impact": "Database has no visibility into scheduler state. Cannot verify execution from DB alone.",
+        "fix_required": "Insert task records into fhq_governance.task_registry with schedule metadata",
+        "fix_complexity": "LOW",
+        "blocking_autonomy": false
+      },
+      {
+        "gap_id": "GAP-004",
+        "category": "GOVERNANCE",
+        "severity": "LOW",
+        "title": "Execution Evidence Persistence Gap",
+        "description": "Batch files write to .log files but do not insert evidence into database tables",
+        "impact": "Court-proof evidence requires database persistence with hash chains",
+        "fix_required": "Daemon should write execution evidence to fhq_governance.agent_task_log",
+        "fix_complexity": "LOW",
+        "blocking_autonomy": false
+      }
+    ],
+
+    "gap_summary": {
+      "critical": 1,
+      "high": 1,
+      "medium": 1,
+      "low": 1,
+      "total": 4,
+      "blocking_autonomy": 2
+    }
+  },
+
+  "section_d_autonomy_assessment": {
+    "_title": "Final Autonomy Assessment",
+
+    "autonomy_status": "NOT_AUTONOMOUS",
+    "reason": "2 blocking gaps must be resolved before autonomous operation is provable",
+
+    "required_for_autonomy": [
+      {
+        "requirement": "Scheduler Control (3 consecutive days)",
+        "status": "NOT_MET",
+        "blocking": true
+      },
+      {
+        "requirement": "Closed Learning Loop",
+        "status": "NOT_MET",
+        "blocking": true,
+        "reason": "GAP-001 breaks outcome capture"
+      },
+      {
+        "requirement": "Evidence Persistence (Court-Grade)",
+        "status": "PARTIAL",
+        "blocking": false,
+        "note": "Shadow ledger works, execution logs need enhancement"
+      }
+    ],
+
+    "ceo_statement_cannot_be_made": "UMA can run daily for 30 days without human touch, produce auditable learning evidence, and self-terminate or escalate per rules.",
+
+    "ceo_statement_blocked_by": ["GAP-001 (SCHEMA)", "GAP-002 (SCHEDULER)"]
+  },
+
+  "section_e_recommended_actions": {
+    "_title": "Immediate Actions Required",
+
+    "p0_actions": [
+      {
+        "action_id": "FIX-001",
+        "priority": "P0",
+        "owner": "STIG",
+        "action": "Fix outcome computation to query fhq_market.staging_prices",
+        "deadline": "2026-01-19",
+        "rationale": "Without this fix, the 30-day learning loop cannot produce outcomes"
+      }
+    ],
+
+    "p1_actions": [
+      {
+        "action_id": "SYNC-001",
+        "priority": "P1",
+        "owner": "STIG",
+        "action": "Register Windows tasks in fhq_governance.task_registry",
+        "deadline": "2026-01-19",
+        "rationale": "Database visibility into scheduler state"
+      },
+      {
+        "action_id": "LOG-001",
+        "priority": "P1",
+        "owner": "STIG",
+        "action": "Add database evidence logging to daemon execution",
+        "deadline": "2026-01-20",
+        "rationale": "Court-proof execution evidence"
+      }
+    ],
+
+    "verification_checkpoint": {
+      "date": "2026-01-21",
+      "requirement": "3 consecutive scheduled executions + outcome capture confirmed",
+      "deliverable": "Updated autonomy readiness report"
+    }
+  },
+
+  "principle": "Autonomy is not declared. It is proven under neglect.",
+
+  "signature": {
+    "agent": "STIG",
+    "contract": "EC-003",
+    "timestamp": "2026-01-18T21:15:00Z",
+    "directive_ref": "CEO-DIR-2026-095"
+  }
+}
