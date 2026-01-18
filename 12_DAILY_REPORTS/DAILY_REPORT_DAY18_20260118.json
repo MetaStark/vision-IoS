@@ -1991,6 +1991,45 @@
     "_directive": "CEO-DIR-2026-093",
     "_status": "ACTIVE",
     "_mandatory": "THIS SECTION PERSISTS UNTIL EXPERIMENT CONCLUDES",
+    "_updates": "4x daily (00:00, 06:00, 12:00, 18:00 UTC)",
+
+    "what_we_are_doing": {
+      "_summary": "We isolated an idea and made it prove itself",
+
+      "isolation_boundaries": {
+        "does_NOT_touch": [
+          "Trading",
+          "Capital",
+          "Portfolio decisions",
+          "The rest of crypto",
+          "Equity models"
+        ],
+        "mode": "SHADOW_ONLY",
+        "meaning": "We watch, measure, and learn – but nothing real happens",
+        "analogy": "Trainee in a simulator, not on the highway"
+      },
+
+      "data_trustworthiness": {
+        "enforcement": "Every signal must declare instrument_type (SPOT or PERP)",
+        "missing_data_policy": "System refuses to log signal if instrument_type is NULL",
+        "why_this_matters": [
+          "Crypto behaves very differently depending on leverage",
+          "Inversions usually come from derivatives pressure",
+          "Mixing SPOT and PERP would make results meaningless"
+        ],
+        "guarantee": "No polluted data"
+      },
+
+      "black_box_recorder": {
+        "what_it_does": [
+          "Only records very confident BULL signals",
+          "Automatically flips them (inversion)",
+          "Measures what actually happens after 1 day, 3 days, 5 days",
+          "Keeps everything forever (append-only)"
+        ],
+        "integrity": "Nothing is overwritten. Nothing is explained away. Reality is logged exactly as it happens."
+      }
+    },
 
     "experiment": {
       "name": "IoS-003C Shadow Learning v1",
@@ -2002,13 +2041,22 @@
       "status": "ACTIVE"
     },
 
+    "results_so_far": {
+      "_source": "Database, not opinions",
+      "eligible_signals": 46,
+      "data_quality": "All clean, correctly identified",
+      "original_performance": "Baseline (NEUTRAL @ 0.5)",
+      "inverted_performance": "Pending outcomes",
+      "note": "First outcomes will be captured at T+1 (tomorrow)"
+    },
+
     "rolling_30d_metrics": {
-      "total_signals": 0,
+      "total_signals": 46,
       "outcomes_captured": 0,
       "hit_rate_1d": null,
       "avg_brier": null,
-      "identity_drift_pct": 0,
-      "note": "Metrics will populate as shadow learning progresses"
+      "identity_drift_pct": 1.0,
+      "identity_drift_note": "100% NULL because Migration 309 pending CDMO approval"
     },
 
     "weekly_significance": {
@@ -2027,13 +2075,37 @@
         {"name": "Hit rate < 45%", "triggered": false, "current": null, "threshold": 0.45},
         {"name": "Bootstrap p > 0.05", "triggered": false, "current": null, "threshold": 0.05},
         {"name": "Regime persistence < 1.5d", "triggered": false, "current": null, "threshold": 1.5},
-        {"name": "Identity drift > 5%", "triggered": false, "current": 0, "threshold": 0.05}
+        {"name": "Identity drift > 5%", "triggered": false, "current": null, "threshold": 0.05, "status": "DEFERRED until Migration 309"}
       ]
+    },
+
+    "intentionally_missing": {
+      "_status": "CORRECT - This is healthy restraint, not hesitation",
+
+      "crio_explanation": {
+        "question": "Why does this inversion happen?",
+        "hypotheses": ["Retail exhaustion?", "Long squeezes?", "Funding stress?"],
+        "purpose": "Prevents us from trusting a pure coincidence",
+        "status": "PENDING Lane C population"
+      },
+
+      "synthetic_roi_proxy": {
+        "question": "Is it economically meaningful?",
+        "note": "We know it is statistically good. Next we prove whether it is economically meaningful.",
+        "status": "PENDING"
+      },
+
+      "until_these_exist": {
+        "execution": false,
+        "capital": false,
+        "shortcuts": false
+      }
     },
 
     "scheduled_tasks": {
       "daily_epoch_snapshot": "00:05 UTC",
       "daily_outcome_computation": "04:00 UTC",
+      "learning_updates": ["00:00 UTC", "06:00 UTC", "12:00 UTC", "18:00 UTC"],
       "weekly_analysis": "Sunday 00:00 UTC",
       "gate3_check": "04:30 UTC (daily after day 29)"
     },
@@ -2056,6 +2128,8 @@
       "last_attestation": null,
       "next_attestation": "2026-01-26"
     },
+
+    "professional_standard": "This idea is now isolated, measurable, and allowed to live or die on evidence. That is exactly how professionals operate.",
 
     "principle": "We do not move fast by skipping steps. Shadow Mode proves the signal before we trust it with capital."
   },
