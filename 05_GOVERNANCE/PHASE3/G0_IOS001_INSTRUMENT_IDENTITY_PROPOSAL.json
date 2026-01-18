@@ -1,0 +1,311 @@
+{
+  "proposal_id": "G0-2026-001",
+  "title": "IoS-001 CANONICAL SCHEMA EXPANSION - INSTRUMENT IDENTITY",
+  "directive": "CEO-DIR-2026-090",
+  "gate": "G0",
+  "status": "SUBMITTED_FOR_REVIEW",
+  "submitted_by": "STIG (EC-003)",
+  "submitted_at": "2026-01-18T18:00:00Z",
+
+  "section_1_executive_summary": {
+    "_title": "Change Proposal Overview",
+
+    "problem_statement": {
+      "description": "fhq_meta.assets lacks explicit distinction between instrument types (SPOT, PERP, FUTURE, OPTION)",
+      "impact": [
+        "Lane C (Microstructure Stress) is not auditable",
+        "Funding rates, liquidation dynamics, and basis vary structurally between instrument types",
+        "ADR-013 (One-Source-of-Truth) violation",
+        "IoS-001 (Canonical Asset Registry) incomplete",
+        "IoS-003C Gate 2 blocked"
+      ],
+      "verified_against_database": true,
+      "current_state": {
+        "crypto_assets_count": 50,
+        "exchange_mic": "XCRY (generic, no exchange-level distinction)",
+        "instrument_type": "NOT_PRESENT",
+        "data_granularity": "NOT_PRESENT"
+      }
+    },
+
+    "proposed_solution": {
+      "action": "Add two mandatory columns to fhq_meta.assets",
+      "columns": [
+        {
+          "name": "instrument_type",
+          "type": "ENUM",
+          "values": ["SPOT", "PERP", "FUTURE", "OPTION"],
+          "nullable": false,
+          "default": "SPOT"
+        },
+        {
+          "name": "data_granularity",
+          "type": "ENUM",
+          "values": ["AGGREGATED", "EXCHANGE_RAW"],
+          "nullable": false,
+          "default": "AGGREGATED"
+        }
+      ],
+      "scope": "All asset classes (universal, not crypto-only)",
+      "backward_compatibility": "Existing equity assets default to SPOT + AGGREGATED"
+    },
+
+    "authority": "CEO-DIR-2026-090",
+    "gate_sequence": "G0 → G1 → G2 → G3 → G4 per ADR-004"
+  },
+
+  "section_2_schema_specification": {
+    "_title": "Technical Schema Definition",
+
+    "target_table": "fhq_meta.assets",
+    "change_type": "ADD_COLUMNS",
+
+    "column_1_instrument_type": {
+      "name": "instrument_type",
+      "sql_type": "VARCHAR(20)",
+      "constraint": "NOT NULL",
+      "default": "'SPOT'",
+      "check_constraint": "instrument_type IN ('SPOT', 'PERP', 'FUTURE', 'OPTION')",
+      "description": "Classification of financial instrument type",
+      "examples": {
+        "BTC-USD (spot)": "SPOT",
+        "BTC-USD-PERP (perpetual swap)": "PERP",
+        "BTC-USD-0328 (quarterly future)": "FUTURE",
+        "BTC-USD-CALL-50000": "OPTION"
+      }
+    },
+
+    "column_2_data_granularity": {
+      "name": "data_granularity",
+      "sql_type": "VARCHAR(20)",
+      "constraint": "NOT NULL",
+      "default": "'AGGREGATED'",
+      "check_constraint": "data_granularity IN ('AGGREGATED', 'EXCHANGE_RAW')",
+      "description": "Source granularity level for price/volume data",
+      "examples": {
+        "CoinGecko aggregate": "AGGREGATED",
+        "Binance direct feed": "EXCHANGE_RAW",
+        "Yahoo Finance": "AGGREGATED",
+        "Alpaca direct": "EXCHANGE_RAW"
+      }
+    },
+
+    "migration_sql": {
+      "file": "04_DATABASE/MIGRATIONS/309_ceo_dir_2026_090_instrument_identity.sql",
+      "operations": [
+        "CREATE TYPE instrument_type_enum",
+        "CREATE TYPE data_granularity_enum",
+        "ALTER TABLE fhq_meta.assets ADD COLUMN instrument_type",
+        "ALTER TABLE fhq_meta.assets ADD COLUMN data_granularity",
+        "UPDATE fhq_meta.assets SET instrument_type = 'SPOT' WHERE instrument_type IS NULL",
+        "UPDATE fhq_meta.assets SET data_granularity = 'AGGREGATED' WHERE data_granularity IS NULL",
+        "ALTER TABLE fhq_meta.assets ALTER COLUMN instrument_type SET NOT NULL",
+        "ALTER TABLE fhq_meta.assets ALTER COLUMN data_granularity SET NOT NULL"
+      ],
+      "rollback": "Reversible via DROP COLUMN (data preserved in audit log)"
+    }
+  },
+
+  "section_3_exchange_mic_decomposition": {
+    "_title": "Exchange MIC Decomposition Plan",
+
+    "current_state": {
+      "all_crypto_use": "XCRY",
+      "problem": "No distinction between exchanges"
+    },
+
+    "proposed_mic_codes": {
+      "note": "Using unofficial but consistent MIC-style codes for crypto exchanges",
+      "mappings": [
+        {"exchange": "Binance", "mic": "XBIN", "priority": 1},
+        {"exchange": "Bybit", "mic": "XBYB", "priority": 2},
+        {"exchange": "OKX", "mic": "XOKX", "priority": 3},
+        {"exchange": "Deribit", "mic": "XDRB", "priority": 4},
+        {"exchange": "Coinbase", "mic": "XCBS", "priority": 5},
+        {"exchange": "Aggregated (CoinGecko/etc)", "mic": "XCRY", "priority": 99}
+      ]
+    },
+
+    "implementation_phases": {
+      "phase_1_design": {
+        "deadline": "G0 (now)",
+        "deliverable": "MIC code mapping table",
+        "status": "COMPLETE"
+      },
+      "phase_2_integration": {
+        "deadline": "G2 (2026-02-01)",
+        "deliverable": "exchange_mic column populated for derivative feeds",
+        "status": "PENDING",
+        "dependency": "CEIO Coinglass/Laevitas integration"
+      },
+      "phase_3_verification": {
+        "deadline": "G3 (2026-02-15)",
+        "deliverable": "VEGA audit of exchange_mic accuracy",
+        "status": "PENDING"
+      }
+    },
+
+    "proposed_reference_table": {
+      "table_name": "fhq_meta.exchange_mic_registry",
+      "columns": ["mic_code", "exchange_name", "exchange_type", "asset_classes", "active"],
+      "purpose": "Canonical reference for all exchange identifiers"
+    }
+  },
+
+  "section_4_agent_assignments": {
+    "_title": "Parallel Workstreams",
+
+    "STIG": {
+      "role": "G0 Specification + Migration Development",
+      "deliverables": [
+        "G0 Change Proposal (this document)",
+        "Migration 309 SQL",
+        "Exchange MIC decomposition design"
+      ],
+      "deadline": "Immediate"
+    },
+
+    "CDMO": {
+      "role": "Data AIRLOCK & Mapping",
+      "deliverables": [
+        "Map existing 50 crypto assets to instrument_type",
+        "Map existing 50 crypto assets to data_granularity",
+        "Signed mapping document for G1"
+      ],
+      "deadline": "Before migration (G1)",
+      "constraint": "No migration runs until CDMO mapping complete"
+    },
+
+    "CEIO": {
+      "role": "Derivative Ingest Preparation",
+      "deliverables": [
+        "Coinglass integration spec",
+        "Laevitas integration spec",
+        "Data sources remain in AIRLOCK until instrument_type live"
+      ],
+      "deadline": "G2",
+      "constraint": "No data reaches FINN or IoS-003C until canonical columns exist"
+    },
+
+    "VEGA": {
+      "role": "Audit & Governance",
+      "deliverables": [
+        "Monitor historical integrity",
+        "Verify append-only principle",
+        "Confirm no equity data affected"
+      ],
+      "deadline": "G4"
+    }
+  },
+
+  "section_5_gate_requirements": {
+    "_title": "ADR-004 Gate Sequence",
+
+    "G0_change_proposal": {
+      "owner": "STIG",
+      "deadline": "2026-01-18",
+      "requirements": [
+        "Problem statement documented",
+        "Schema specification complete",
+        "Exchange MIC decomposition design present",
+        "Agent assignments defined"
+      ],
+      "status": "SUBMITTED"
+    },
+
+    "G1_design_approval": {
+      "owner": "STIG + CDMO",
+      "deadline": "2026-01-22",
+      "requirements": [
+        "CDMO mapping document signed",
+        "Migration SQL reviewed",
+        "Backward compatibility verified"
+      ],
+      "status": "PENDING"
+    },
+
+    "G2_implementation": {
+      "owner": "STIG",
+      "deadline": "2026-02-01",
+      "requirements": [
+        "Migration executed",
+        "All assets have instrument_type and data_granularity",
+        "No NULL values in canonical layer"
+      ],
+      "status": "PENDING",
+      "blocks": "IoS-003C Gate 2"
+    },
+
+    "G3_validation": {
+      "owner": "VEGA",
+      "deadline": "2026-02-08",
+      "requirements": [
+        "Historical integrity verified",
+        "No equity data affected",
+        "Append-only principle confirmed"
+      ],
+      "status": "PENDING"
+    },
+
+    "G4_production": {
+      "owner": "CEO",
+      "deadline": "2026-02-15",
+      "requirements": [
+        "All gates passed",
+        "Evidence bundle complete",
+        "CEO sign-off"
+      ],
+      "status": "PENDING"
+    }
+  },
+
+  "section_6_risk_assessment": {
+    "_title": "Risk If Not Implemented",
+
+    "immediate_risks": [
+      {
+        "risk": "IoS-003C Gate 2 cannot be approved",
+        "impact": "Crypto regime research blocked indefinitely",
+        "probability": "CERTAIN"
+      },
+      {
+        "risk": "Lane C research produces non-auditable results",
+        "impact": "Funding rate analysis cannot distinguish spot from perp",
+        "probability": "CERTAIN"
+      },
+      {
+        "risk": "ADR-013 violation persists",
+        "impact": "One-Source-of-Truth principle compromised",
+        "probability": "CERTAIN"
+      }
+    ],
+
+    "mitigation": "Immediate implementation of CEO-DIR-2026-090"
+  },
+
+  "section_7_backward_compatibility": {
+    "_title": "Impact on Existing Data",
+
+    "equity_assets": {
+      "impact": "NONE (defaults to SPOT + AGGREGATED)",
+      "data_modification": false,
+      "schema_modification": true
+    },
+
+    "crypto_assets": {
+      "impact": "COLUMN_ADDITION",
+      "default_values": {
+        "instrument_type": "SPOT",
+        "data_granularity": "AGGREGATED"
+      },
+      "post_migration": "CDMO updates to correct values"
+    },
+
+    "existing_queries": {
+      "impact": "NONE (new columns are additive)",
+      "breaking_changes": false
+    }
+  },
+
+  "principle": "We build one canonical truth - and it holds in court."
+}

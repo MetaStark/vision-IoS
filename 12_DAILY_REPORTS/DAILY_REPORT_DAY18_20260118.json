@@ -12,6 +12,28 @@
 
     "active_directives": [
       {
+        "directive": "CEO-DIR-2026-090",
+        "title": "IoS-001 CANONICAL SCHEMA EXPANSION - INSTRUMENT IDENTITY",
+        "status": "G0_SUBMITTED",
+        "priority": "P0",
+        "issued_at": "2026-01-18T18:00:00Z",
+        "classification": "INFRASTRUCTURE_EXTENSION",
+        "result": "G0 Change Proposal ready for CEO review",
+        "board_summary": "Adding instrument_type and data_granularity columns to fhq_meta.assets",
+        "principle": "We build one canonical truth - and it holds in court."
+      },
+      {
+        "directive": "CEO-DIR-2026-089",
+        "title": "IoS-003C CRYPTO REGIME ENGINE - DISCIPLINE UPGRADE",
+        "status": "EXECUTED",
+        "priority": "P0",
+        "issued_at": "2026-01-18T17:00:00Z",
+        "classification": "RESEARCH_GOVERNANCE",
+        "result": "Five discipline requirements applied to IoS-003C",
+        "disciplines": ["HYSTERESIS", "CRIO_LANE_C", "STATISTICAL_DISCIPLINE", "CONTEXTUAL_INTEGRITY", "EPOCH_EVALUATION"],
+        "principle": "Do this once. Do it right. Then we move."
+      },
+      {
         "directive": "CEO-DIR-2026-088",
         "title": "CONTINUOUS TRADING CALENDAR GOVERNANCE (EQUITY)",
         "status": "EXECUTED",
@@ -1721,7 +1743,66 @@
     "principle": "This is not caution. This is correctness."
   },
 
+  "section_28_ceo_dir_2026_090_instrument_identity": {
+    "_title": "CEO-DIR-2026-090: IoS-001 CANONICAL SCHEMA EXPANSION",
+    "_status": "G0_SUBMITTED",
+    "_priority": "P0",
+
+    "directive": "CEO-DIR-2026-090",
+    "issued_at": "2026-01-18T18:00:00Z",
+    "classification": "INFRASTRUCTURE_EXTENSION",
+
+    "problem_addressed": {
+      "gap": "fhq_meta.assets lacks instrument_type distinction",
+      "impact": "IoS-003C Gate 2 blocked, Lane C research non-auditable",
+      "adr_violation": "ADR-013 (One-Source-of-Truth)"
+    },
+
+    "solution_implemented": {
+      "columns_added": ["instrument_type", "data_granularity"],
+      "table_created": "fhq_meta.exchange_mic_registry",
+      "migration": "309_ceo_dir_2026_090_instrument_identity.sql"
+    },
+
+    "g0_deliverables": {
+      "change_proposal": "G0_IOS001_INSTRUMENT_IDENTITY_PROPOSAL.json",
+      "migration_sql": "READY",
+      "exchange_mic_design": "COMPLETE",
+      "agent_assignments": "REGISTERED"
+    },
+
+    "agent_assignments": {
+      "CDMO": {"task": "Map 50 crypto assets to instrument_type", "gate": "G1", "deadline": "2026-01-22"},
+      "CEIO": {"task": "Derivative ingest preparation", "gate": "G2", "deadline": "2026-02-01"},
+      "VEGA": {"task": "Audit exchange_mic accuracy", "gate": "G3", "deadline": "2026-02-15"}
+    },
+
+    "exchange_mic_decomposition": {
+      "XBIN": "Binance",
+      "XBYB": "Bybit",
+      "XOKX": "OKX",
+      "XDRB": "Deribit",
+      "XCBS": "Coinbase",
+      "XCRY": "Aggregated (CoinGecko/etc)"
+    },
+
+    "status_report": "CEO_DIR_2026_090_48H_STATUS_REPORT.json",
+
+    "gate_sequence": {
+      "G0": {"status": "SUBMITTED", "owner": "STIG", "date": "2026-01-18"},
+      "G1": {"status": "PENDING", "owner": "STIG + CDMO", "deadline": "2026-01-22"},
+      "G2": {"status": "PENDING", "owner": "STIG", "deadline": "2026-02-01"},
+      "G3": {"status": "PENDING", "owner": "VEGA", "deadline": "2026-02-08"},
+      "G4": {"status": "PENDING", "owner": "CEO", "deadline": "2026-02-15"}
+    },
+
+    "principle": "We build one canonical truth - and it holds in court."
+  },
+
   "evidence_files": [
+    "CEO_DIR_2026_090_48H_STATUS_REPORT.json",
+    "G0_IOS001_INSTRUMENT_IDENTITY_PROPOSAL.json",
+    "CEO_DIR_2026_089_DISCIPLINE_UPGRADE_STATUS.json",
     "CEO_DIR_2026_085_HORIZON_CALCULATION_FIX.json",
     "CEO_DIR_2026_083_ROI_LEDGER_POPULATED.json",
     "CEO_DIR_2026_083_OKR_REALIGNMENT.json",
