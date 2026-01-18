@@ -1,0 +1,189 @@
+{
+  "directive_id": "CEO-DIR-2026-089",
+  "title": "IoS-003C CRYPTO REGIME ENGINE - DISCIPLINE UPGRADE (RESEARCH ONLY)",
+  "status": "EXECUTED",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T17:45:00Z",
+
+  "section_A_discipline_upgrade_applied": {
+    "_title": "IoS-003C Discipline Upgrade Applied",
+    "_status": "CONFIRMED",
+
+    "governance_registrations": {
+      "main_directive": {
+        "action_id": "99f5e000-10e7-4c1c-bd34-6bcfcafdf764",
+        "action_type": "CEO_DIRECTIVE_ISSUED",
+        "status": "EFFECTIVE"
+      },
+      "discipline_requirements": [
+        {"requirement": "HYSTERESIS", "owner": "FINN", "gate": "G1", "deadline": "2026-01-25"},
+        {"requirement": "CRIO_LANE_C", "owner": "CRIO", "gate": "G3", "deadline": "2026-02-15"},
+        {"requirement": "STATISTICAL_DISCIPLINE", "owner": "FINN", "gate": "G3", "deadline": "2026-02-15"},
+        {"requirement": "CONTEXTUAL_INTEGRITY", "owner": "STIG", "gate": "G2", "deadline": "2026-02-01"},
+        {"requirement": "EPOCH_EVALUATION", "owner": "STIG", "gate": "G2", "deadline": "2026-02-01"}
+      ]
+    },
+
+    "owners_assigned": {
+      "FINN": ["Hysteresis specification (G1)", "Statistical discipline/bootstrap (G3)", "Primary target definition (G1)"],
+      "CRIO": ["Lane C causal mechanism mapping (G3)", "Funding Rate Arbitrage mapping", "Short Squeeze Dynamics mapping"],
+      "STIG": ["Canonical ID verification (G2)", "Epoch boundary implementation (G2)", "AIRLOCK validation (G2)"],
+      "VEGA": ["Evidence Bundle attestation (G4)", "Class A violation monitoring"]
+    },
+
+    "document_updated": "02_IOS/IoS-003C_Crypto_Regime_Engine.md"
+  },
+
+  "section_B_database_verification": {
+    "_title": "Database Verification Evidence",
+    "_status": "FEASIBLE_WITH_EXTENSIONS",
+
+    "canonical_id_feasibility": {
+      "status": "FEASIBLE",
+      "existing_infrastructure": {
+        "table": "fhq_meta.assets",
+        "columns_present": ["canonical_id", "exchange_mic", "asset_class"],
+        "crypto_assets_count": 50,
+        "current_exchange_mic": "XCRY"
+      },
+      "verification_query": "SELECT canonical_id, exchange_mic FROM fhq_meta.assets WHERE asset_class = 'CRYPTO'",
+      "result": "All 50 crypto assets have canonical_id and exchange_mic tagged"
+    },
+
+    "exchange_mic_feasibility": {
+      "status": "PARTIAL - REQUIRES EXTENSION",
+      "current_state": "All crypto assets use 'XCRY' as generic exchange_mic",
+      "gap_identified": "Does not distinguish between exchanges (Binance, Coinbase, etc.)",
+      "recommended_extension": {
+        "proposal": "Add 'data_source_exchange' column for provider-level tracking",
+        "examples": ["XBIN (Binance)", "XCBS (Coinbase)", "XFTX (FTX legacy)"]
+      },
+      "mitigation": "AIRLOCK protocol applies until exchange-level tagging resolved"
+    },
+
+    "instrument_type_feasibility": {
+      "status": "REQUIRES_NEW_COLUMN",
+      "current_state": "asset_type column exists but only contains 'CRYPTO'",
+      "gap_identified": "No distinction between spot, perp, option",
+      "recommended_extension": {
+        "proposal": "Add 'instrument_type' column with enum: ['SPOT', 'PERP', 'OPTION', 'FUTURE']",
+        "table": "fhq_meta.assets or new fhq_meta.crypto_instruments"
+      },
+      "airlock_status": "All derivative data behind AIRLOCK until instrument_type implemented"
+    },
+
+    "blockers_identified": [
+      "Exchange-level MIC not available for crypto (uses generic XCRY)",
+      "No instrument_type distinction (spot vs perp)",
+      "Derivative data sources (Coinglass, Laevitas) not yet integrated"
+    ]
+  },
+
+  "section_C_epoch_boundary": {
+    "_title": "Epoch Boundary Definition",
+    "_status": "SPECIFICATION_COMPLETE",
+
+    "canonical_delimiter": {
+      "name": "CRYPTO_EPOCH_BOUNDARY",
+      "definition": "00:00:00 UTC",
+      "format": "YYYY-MM-DD 00:00:00+00",
+      "timezone": "UTC (no local time conversion)"
+    },
+
+    "horizon_definitions": {
+      "T+1D": "Signal epoch + 1 calendar day at 00:00 UTC",
+      "T+3D": "Signal epoch + 3 calendar days at 00:00 UTC",
+      "T+5D": "Signal epoch + 5 calendar days at 00:00 UTC",
+      "T+7D": "Signal epoch + 7 calendar days at 00:00 UTC"
+    },
+
+    "implementation_requirements": [
+      "All crypto outcome captures must use epoch boundary",
+      "No 'calendar day add' operations",
+      "No local exchange time references",
+      "Epoch logged in evidence bundle for each forecast"
+    ],
+
+    "database_anchoring": {
+      "status": "PENDING_MIGRATION",
+      "proposed_table": "fhq_meta.epoch_definitions",
+      "proposed_function": "fhq_meta.crypto_epoch_boundary(timestamp) -> epoch_start",
+      "deadline": "Gate 2 (2026-02-01)"
+    }
+  },
+
+  "section_D_risk_register": {
+    "_title": "Top 3 Failure Modes for IoS-003C",
+
+    "R1_data_lineage_contamination": {
+      "risk": "Non-canonical data sources contaminate research conclusions",
+      "severity": "HIGH",
+      "probability": "MEDIUM",
+      "mitigation": {
+        "status": "IMPLEMENTED",
+        "mechanism": "AIRLOCK protocol - all non-canonical sources explicitly labeled",
+        "verification": "Gate 2 AIRLOCK validation"
+      }
+    },
+
+    "R2_target_ambiguity": {
+      "risk": "Research drifts due to undefined or changing target definition",
+      "severity": "HIGH",
+      "probability": "LOW",
+      "mitigation": {
+        "status": "DESIGNED",
+        "mechanism": "Definition freeze at Gate 1",
+        "verification": "VEGA logged exception required for any post-freeze changes"
+      }
+    },
+
+    "R3_identity_drift": {
+      "risk": "Spot and derivative prices mixed without distinction, invalidating conclusions",
+      "severity": "HIGH",
+      "probability": "HIGH (current state)",
+      "mitigation": {
+        "status": "PENDING",
+        "mechanism": "instrument_type column + AIRLOCK for untagged derivatives",
+        "verification": "Gate 2 canonical ID compliance report",
+        "blocker": "instrument_type column not yet implemented"
+      }
+    }
+  },
+
+  "section_E_gate_summary": {
+    "G1": {
+      "date": "2026-01-25",
+      "owner": "FINN",
+      "requirements": ["Regime ontology frozen", "Primary target frozen", "Hysteresis specification"],
+      "status": "PENDING"
+    },
+    "G2": {
+      "date": "2026-02-01",
+      "owner": "STIG",
+      "requirements": ["AIRLOCK validation", "Canonical ID verification", "Epoch boundary implementation"],
+      "status": "PENDING",
+      "blockers": ["instrument_type column needed", "exchange-level MIC extension needed"]
+    },
+    "G3": {
+      "date": "2026-02-15",
+      "owner": "FINN + CRIO",
+      "requirements": ["Brier < 0.25", "Bootstrap p < 0.05", "CRIO causal map"],
+      "status": "PENDING"
+    },
+    "G4": {
+      "date": "2026-02-22",
+      "owner": "VEGA",
+      "requirements": ["Evidence Bundle signed"],
+      "status": "PENDING"
+    }
+  },
+
+  "section_F_stig_48h_deliverables": {
+    "A_discipline_upgrade_applied": "CONFIRMED",
+    "B_database_verification": "FEASIBLE_WITH_EXTENSIONS",
+    "C_risk_register": "COMPLETE",
+    "status_memo_delivered": true
+  },
+
+  "principle": "Do this once. Do it right. Then we move."
+}
