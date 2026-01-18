@@ -1,0 +1,202 @@
+{
+  "_template_id": "G3-IOS003C-BUNDLE-v1",
+  "_authority": "CEO-DIR-2026-093",
+  "_classification": "MANDATORY",
+  "_locked_at": "2026-01-18T20:00:00Z",
+  "_locked_by": "CEO",
+  "_purpose": "Frozen template for IoS-003C Gate 3 decision. No discretion. Binary outcome.",
+
+  "section_0_template_binding": {
+    "statement": "This template is LOCKED. All Gate 3 decisions for IoS-003C must use this exact structure.",
+    "discretion_allowed": false,
+    "narrative_allowed": false,
+    "modification_authority": "CEO ONLY",
+    "deviation_classification": "CLASS_A_VIOLATION"
+  },
+
+  "section_1_frozen_kpis": {
+    "_description": "These thresholds are immutable. SUCCESS requires ALL conditions met.",
+
+    "primary_kpis": {
+      "hit_rate_1d": {
+        "threshold": 0.55,
+        "operator": ">=",
+        "description": "Directional accuracy at T+1 must be >= 55%",
+        "weight": "CRITICAL"
+      },
+      "brier_score": {
+        "threshold": 0.25,
+        "operator": "<=",
+        "description": "Mean Brier score must be <= 0.25",
+        "weight": "CRITICAL"
+      },
+      "bootstrap_p_value": {
+        "threshold": 0.05,
+        "operator": "<",
+        "description": "Bootstrap significance p-value must be < 0.05",
+        "weight": "CRITICAL"
+      }
+    },
+
+    "secondary_kpis": {
+      "regime_persistence_mean": {
+        "threshold": 1.5,
+        "operator": ">=",
+        "description": "Mean regime persistence must be >= 1.5 days",
+        "weight": "REQUIRED"
+      },
+      "identity_drift_pct": {
+        "threshold": 0.05,
+        "operator": "<=",
+        "description": "instrument_type NULL rate must be <= 5%",
+        "weight": "REQUIRED"
+      },
+      "sample_size": {
+        "threshold": 30,
+        "operator": ">=",
+        "description": "Minimum 30 days of observations",
+        "weight": "REQUIRED"
+      }
+    }
+  },
+
+  "section_2_binary_decision_logic": {
+    "_description": "Deterministic decision tree. No human judgment.",
+
+    "decision_tree": {
+      "step_1": {
+        "check": "ANY stop_condition triggered?",
+        "if_true": "KILL",
+        "if_false": "proceed to step_2"
+      },
+      "step_2": {
+        "check": "ALL primary_kpis met?",
+        "if_true": "proceed to step_3",
+        "if_false": "ITERATE"
+      },
+      "step_3": {
+        "check": "ALL secondary_kpis met?",
+        "if_true": "GO",
+        "if_false": "ITERATE"
+      }
+    },
+
+    "outcome_definitions": {
+      "GO": {
+        "meaning": "IoS-003C promoted to paper trading",
+        "requires": "All primary AND secondary KPIs met, no stop conditions",
+        "next_action": "CEO issues paper trading directive"
+      },
+      "KILL": {
+        "meaning": "IoS-003C terminated, learnings archived",
+        "requires": "Any stop condition triggered during 30 days",
+        "next_action": "Archive evidence, document failure modes"
+      },
+      "ITERATE": {
+        "meaning": "Continue shadow mode with modifications",
+        "requires": "No stop conditions but KPIs not fully met",
+        "next_action": "Extend shadow period, refine regime definitions"
+      }
+    }
+  },
+
+  "section_3_evidence_bundle_structure": {
+    "_description": "Required contents of Gate 3 submission. All fields mandatory.",
+
+    "header": {
+      "packet_id": "SHA256 hash",
+      "generated_at": "ISO timestamp",
+      "experiment_id": "UUID from crypto_regime_experiment",
+      "directive_ref": "CEO-DIR-2026-093"
+    },
+
+    "raw_metrics": {
+      "_source": "fhq_research.crypto_shadow_rolling_30d",
+      "total_signals": "INTEGER",
+      "outcomes_captured": "INTEGER",
+      "hit_rate_1d": "DECIMAL(5,4)",
+      "hit_rate_3d": "DECIMAL(5,4)",
+      "hit_rate_5d": "DECIMAL(5,4)",
+      "avg_brier": "DECIMAL(10,6)",
+      "identity_drift_pct": "DECIMAL(5,4)"
+    },
+
+    "statistical_significance": {
+      "_source": "fhq_research.crypto_regime_quality_metrics WHERE metric_type = 'WEEKLY'",
+      "bootstrap_p_value": "DECIMAL(10,6)",
+      "bootstrap_ci_lower": "DECIMAL(10,6)",
+      "bootstrap_ci_upper": "DECIMAL(10,6)",
+      "regime_persistence_mean": "DECIMAL(10,4)",
+      "regime_persistence_median": "DECIMAL(10,4)"
+    },
+
+    "stop_conditions_audit": {
+      "_source": "fhq_research.crypto_regime_stop_conditions",
+      "conditions_checked": "ARRAY of condition_id",
+      "any_triggered": "BOOLEAN",
+      "triggered_conditions": "ARRAY (empty if none)"
+    },
+
+    "crio_causality_attestation": {
+      "_source": "CRIO weekly causality check",
+      "causal_mechanisms_validated": "BOOLEAN",
+      "primary_drivers": "ARRAY of mechanism names",
+      "spurious_correlation_risk": "LOW/MEDIUM/HIGH"
+    },
+
+    "vega_integrity_attestation": {
+      "_source": "VEGA weekly attestations",
+      "all_attestations_passed": "BOOLEAN",
+      "attestation_count": "INTEGER",
+      "failed_attestations": "ARRAY (empty if none)"
+    },
+
+    "binary_conclusion": {
+      "decision": "GO | KILL | ITERATE",
+      "decision_timestamp": "ISO timestamp",
+      "kpi_summary": {
+        "primary_kpis_met": "BOOLEAN",
+        "secondary_kpis_met": "BOOLEAN",
+        "stop_conditions_triggered": "BOOLEAN"
+      },
+      "human_override_applied": false,
+      "override_justification": null
+    }
+  },
+
+  "section_4_anti_discretion_locks": {
+    "narrative_prohibition": {
+      "rule": "NO explanatory text in binary_conclusion",
+      "violation_type": "CLASS_A"
+    },
+    "threshold_modification_prohibition": {
+      "rule": "Frozen KPIs cannot be modified post-lock",
+      "violation_type": "CLASS_A"
+    },
+    "decision_override_prohibition": {
+      "rule": "Human override requires CEO signature + documented exceptional circumstance",
+      "violation_type": "CLASS_A"
+    },
+    "delayed_decision_prohibition": {
+      "rule": "Gate 3 must be generated within 24h of Day 30",
+      "violation_type": "CLASS_B"
+    }
+  },
+
+  "section_5_signature_block": {
+    "template_locked_by": {
+      "agent": "CEO",
+      "timestamp": "2026-01-18T20:00:00Z",
+      "directive": "CEO-DIR-2026-093"
+    },
+    "implementation_responsibility": {
+      "gate3_generation": "STIG",
+      "kpi_calculation": "STIG",
+      "vega_attestation": "VEGA",
+      "crio_causality": "CRIO",
+      "final_decision_execution": "CEO"
+    }
+  },
+
+  "principle": "The finish line was defined before the race started. No moving goalposts."
+}

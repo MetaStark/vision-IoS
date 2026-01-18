@@ -1,6 +1,7 @@
 # FjordHQ Daemon Registry
 
 **CEO-DIR-2026-088: Continuous Trading Calendar Governance**
+**CEO-DIR-2026-093: IoS-003C Shadow Learning**
 **Last Updated: 2026-01-18**
 
 ## Registered Daemons (fhq_monitoring.daemon_health)
@@ -11,6 +12,7 @@ Long-running background processes with heartbeat monitoring.
 |-------------|--------|---------|---------|
 | TRADING_CALENDAR_GOVERNANCE | HEALTHY | Monthly (1st @ 03:00) | Extend US_EQUITY calendar 24+ months |
 | uma_meta_analyst | HEALTHY | Daily @ 06:00 | Universal Meta-Analyst - strategic self-correction |
+| ios003c_shadow_learning | ACTIVE | Multi-schedule | IoS-003C 30-day shadow learning experiment |
 | cnrp_orchestrator | HEALTHY | Continuous | Cognitive Refresh Protocol |
 | g2c_continuous_forecast_engine | HEALTHY | Continuous | G2C Forecast Generation |
 | ios003_regime_update | HEALTHY | Daily | Regime Classification Update |
@@ -40,6 +42,10 @@ Cron-scheduled tasks managed by the orchestrator.
 | ios001_daily_ingest_equity | G1 | STIG | Daily @ 22:00 (Mon-Fri) | Equity price ingestion |
 | ios001_daily_ingest_fx | G1 | STIG | Daily @ 22:00 (Sun-Thu) | FX rate ingestion |
 | IOS013_HCP_LAB_G4_RUNNER | G4 | LARS | Every 15 min (market hours) | HCP Lab execution |
+| ios003c_epoch_snapshot | SHADOW | STIG | Daily @ 00:05 UTC | Capture crypto regime predictions |
+| ios003c_outcome_computation | SHADOW | STIG | Daily @ 04:00 UTC | Compute outcomes, update metrics |
+| ios003c_weekly_analysis | SHADOW | STIG/VEGA | Weekly (Sunday @ 00:00) | Bootstrap significance, VEGA attestation |
+| ios003c_gate3_check | SHADOW | STIG | Daily @ 04:30 UTC | Check Day 30 eligibility, generate packet |
 
 ## Windows Task Scheduler Tasks
 
@@ -48,6 +54,9 @@ Cron-scheduled tasks managed by the orchestrator.
 | FjordHQ-TradingCalendarGovernance | Monthly (1st @ 03:00) | 2026-02-01 | run_calendar_daemon.bat |
 | FjordHQ-CalendarIntegrityCheck | Daily @ 05:00 | 2026-01-19 | run_calendar_integrity_daemon.bat |
 | FjordHQ-UMA-MetaAnalyst | Daily @ 06:00 | 2026-01-19 | run_uma_daemon.bat |
+| FjordHQ-IoS003C-EpochSnapshot | Daily @ 00:05 UTC | 2026-01-19 | run_ios003c_snapshot.bat |
+| FjordHQ-IoS003C-Outcomes | Daily @ 04:00 UTC | 2026-01-19 | run_ios003c_outcomes.bat |
+| FjordHQ-IoS003C-Weekly | Weekly (Sun @ 00:00) | 2026-01-26 | run_ios003c_weekly.bat |
 
 ### Setup Commands (run as Administrator)
 
@@ -70,6 +79,27 @@ schtasks /create /tn "FjordHQ-CalendarIntegrityCheck" ^
 schtasks /create /tn "FjordHQ-UMA-MetaAnalyst" ^
     /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_uma_daemon.bat" ^
     /sc daily /st 06:00 /f
+```
+
+**IoS-003C Shadow Learning - Epoch Snapshot (CEO-DIR-2026-093):**
+```cmd
+schtasks /create /tn "FjordHQ-IoS003C-EpochSnapshot" ^
+    /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_ios003c_snapshot.bat" ^
+    /sc daily /st 00:05 /f
+```
+
+**IoS-003C Shadow Learning - Outcome Computation:**
+```cmd
+schtasks /create /tn "FjordHQ-IoS003C-Outcomes" ^
+    /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_ios003c_outcomes.bat" ^
+    /sc daily /st 04:00 /f
+```
+
+**IoS-003C Shadow Learning - Weekly Analysis:**
+```cmd
+schtasks /create /tn "FjordHQ-IoS003C-Weekly" ^
+    /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_ios003c_weekly.bat" ^
+    /sc weekly /d SUN /st 00:00 /f
 ```
 
 ## Query Database Registry
