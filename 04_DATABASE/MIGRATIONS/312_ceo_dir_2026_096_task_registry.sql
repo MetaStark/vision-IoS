@@ -9,18 +9,26 @@
 
 INSERT INTO fhq_governance.task_registry (
     task_id,
+    description,
+    domain,
+    assigned_to,
+    status,
     task_name,
     task_type,
     agent_id,
     task_description,
     task_config,
     enabled,
-    status,
+    metadata,
     created_at
 ) VALUES
 -- Epoch Snapshot (Daily @ 00:05 UTC)
 (
     gen_random_uuid(),
+    'IoS-003C Epoch Snapshot - Capture daily crypto regime predictions',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_epoch_snapshot',
     'SHADOW_LEARNING',
     'STIG',
@@ -33,12 +41,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Signal capture for 30-day shadow learning experiment'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Outcome Computation (Daily @ 04:00 UTC)
 (
     gen_random_uuid(),
+    'IoS-003C Outcome Computation - T+1/T+3/T+5 outcomes',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_outcome_computation',
     'SHADOW_LEARNING',
     'STIG',
@@ -52,12 +64,16 @@ INSERT INTO fhq_governance.task_registry (
         'price_source', 'fhq_market.prices (canonical)'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Weekly Analysis (Sunday @ 00:00 UTC)
 (
     gen_random_uuid(),
+    'IoS-003C Weekly Analysis - Bootstrap significance and VEGA attestation',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_weekly_analysis',
     'SHADOW_LEARNING',
     'STIG',
@@ -70,12 +86,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Statistical validation and governance attestation'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Learning Update 00:00 (4x Daily)
 (
     gen_random_uuid(),
+    'IoS-003C Learning Update 00:00 - Daily report integration',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_learning_update_00',
     'SHADOW_LEARNING',
     'STIG',
@@ -88,12 +108,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Daily report integration'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Learning Update 06:00 (4x Daily)
 (
     gen_random_uuid(),
+    'IoS-003C Learning Update 06:00 - Daily report integration',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_learning_update_06',
     'SHADOW_LEARNING',
     'STIG',
@@ -106,12 +130,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Daily report integration'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Learning Update 12:00 (4x Daily)
 (
     gen_random_uuid(),
+    'IoS-003C Learning Update 12:00 - Daily report integration',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_learning_update_12',
     'SHADOW_LEARNING',
     'STIG',
@@ -124,12 +152,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Daily report integration'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Learning Update 18:00 (4x Daily)
 (
     gen_random_uuid(),
+    'IoS-003C Learning Update 18:00 - Daily report integration',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_learning_update_18',
     'SHADOW_LEARNING',
     'STIG',
@@ -142,12 +174,16 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Daily report integration'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 ),
 -- Gate 3 Check (Day 30+)
 (
     gen_random_uuid(),
+    'IoS-003C Gate 3 Check - Auto-generate decision packet',
+    'SHADOW_LEARNING',
+    'STIG',
+    'active',
     'ios003c_gate3_check',
     'SHADOW_LEARNING',
     'STIG',
@@ -159,10 +195,11 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Automated Gate 3 decision packet generation'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 )
 ON CONFLICT (task_name) DO UPDATE SET
+    description = EXCLUDED.description,
     task_config = EXCLUDED.task_config,
     enabled = EXCLUDED.enabled,
     updated_at = NOW();
@@ -173,17 +210,25 @@ ON CONFLICT (task_name) DO UPDATE SET
 
 INSERT INTO fhq_governance.task_registry (
     task_id,
+    description,
+    domain,
+    assigned_to,
+    status,
     task_name,
     task_type,
     agent_id,
     task_description,
     task_config,
     enabled,
-    status,
+    metadata,
     created_at
 ) VALUES
 (
     gen_random_uuid(),
+    'UMA Daily Learning Audit - Learning velocity per EC-014',
+    'META_ANALYSIS',
+    'UMA',
+    'active',
     'uma_daily_learning_audit',
     'META_ANALYSIS',
     'UMA',
@@ -196,10 +241,11 @@ INSERT INTO fhq_governance.task_registry (
         'purpose', 'Learning friction identification and LVI optimization'
     ),
     true,
-    'active',
+    jsonb_build_object('directive', 'CEO-DIR-2026-096'),
     NOW()
 )
 ON CONFLICT (task_name) DO UPDATE SET
+    description = EXCLUDED.description,
     task_config = EXCLUDED.task_config,
     enabled = EXCLUDED.enabled,
     updated_at = NOW();
