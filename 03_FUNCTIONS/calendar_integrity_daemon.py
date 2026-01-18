@@ -44,15 +44,22 @@ def get_db_connection():
 def run_integrity_check(conn, market: str = 'US_EQUITY') -> Dict[str, Any]:
     """
     Run the database integrity check function and return results.
+
+    Status levels (per CEO-DIR-2026-091):
+    - GREEN: All clear
+    - AMBER: Warning condition (actionable but not halting)
+    - RED: Failure condition (requires immediate action or halt)
     """
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT check_name, status, value, threshold, message
+            SELECT check_name, status, value, threshold, message, severity
             FROM fhq_meta.check_calendar_integrity(%s)
         """, (market,))
 
         checks = []
         overall_status = 'GREEN'
+        has_failure = False
+        has_warning = False
 
         for row in cur.fetchall():
             check = {
@@ -60,20 +67,31 @@ def run_integrity_check(conn, market: str = 'US_EQUITY') -> Dict[str, Any]:
                 'status': row[1],
                 'value': row[2],
                 'threshold': row[3],
-                'message': row[4]
+                'message': row[4],
+                'severity': row[5]
             }
             checks.append(check)
 
-            # Determine overall status (worst wins)
-            if row[1] == 'RED':
-                overall_status = 'RED'
-            elif row[1] == 'YELLOW' and overall_status != 'RED':
-                overall_status = 'YELLOW'
+            # Determine overall status using severity
+            if row[5] == 'FAILURE':
+                has_failure = True
+            elif row[5] == 'WARNING':
+                has_warning = True
+
+        # Overall status: RED only for failures, AMBER for warnings
+        if has_failure:
+            overall_status = 'RED'
+        elif has_warning:
+            overall_status = 'AMBER'
+        else:
+            overall_status = 'GREEN'
 
         return {
             'market': market,
             'checks': checks,
-            'overall_status': overall_status
+            'overall_status': overall_status,
+            'has_failure': has_failure,
+            'has_warning': has_warning
         }
 
 
@@ -293,14 +311,14 @@ def run_daily_check(market: str = 'US_EQUITY', dry_run: bool = False) -> Dict[st
             }
         }
 
-        # Determine if any RED status requires action
-        red_checks = [c for c in integrity['checks'] if c['status'] == 'RED']
-        if red_checks:
-            result['action_required'] = True
-            result['red_alerts'] = red_checks
-        else:
-            result['action_required'] = False
-            result['red_alerts'] = []
+        # Determine action requirements based on severity
+        # RED (FAILURE) = halt required, AMBER (WARNING) = actionable but not halting
+        red_checks = [c for c in integrity['checks'] if c.get('severity') == 'FAILURE']
+        amber_checks = [c for c in integrity['checks'] if c.get('severity') == 'WARNING']
+
+        result['action_required'] = integrity.get('has_failure', len(red_checks) > 0)
+        result['red_alerts'] = red_checks
+        result['amber_alerts'] = amber_checks
 
         if not dry_run:
             # Log to governance
@@ -316,11 +334,16 @@ def run_daily_check(market: str = 'US_EQUITY', dry_run: bool = False) -> Dict[st
             print(f"  Overall Status: {result['overall_status']}")
             print(f"  Forward Coverage: {coverage['forward_days']} days")
             print(f"  Tomorrow: {tomorrow['status']} ({tomorrow['reason']})")
-            print(f"  Action Required: {result['action_required']}")
+            print(f"  Action Required (HALT): {result['action_required']}")
 
             if red_checks:
-                print(f"  RED ALERTS:")
+                print(f"  RED ALERTS (FAILURE - requires halt):")
                 for check in red_checks:
+                    print(f"    - {check['check_name']}: {check['message']}")
+
+            if amber_checks:
+                print(f"  AMBER ALERTS (WARNING - actionable):")
+                for check in amber_checks:
                     print(f"    - {check['check_name']}: {check['message']}")
 
             print(f"  Evidence: {evidence_path}")
