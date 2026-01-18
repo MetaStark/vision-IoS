@@ -10,6 +10,7 @@ Long-running background processes with heartbeat monitoring.
 | Daemon Name | Status | Cadence | Purpose |
 |-------------|--------|---------|---------|
 | TRADING_CALENDAR_GOVERNANCE | HEALTHY | Monthly (1st @ 03:00) | Extend US_EQUITY calendar 24+ months |
+| uma_meta_analyst | HEALTHY | Daily @ 06:00 | Universal Meta-Analyst - strategic self-correction |
 | cnrp_orchestrator | HEALTHY | Continuous | Cognitive Refresh Protocol |
 | g2c_continuous_forecast_engine | HEALTHY | Continuous | G2C Forecast Generation |
 | ios003_regime_update | HEALTHY | Daily | Regime Classification Update |
@@ -40,19 +41,27 @@ Cron-scheduled tasks managed by the orchestrator.
 | ios001_daily_ingest_fx | G1 | STIG | Daily @ 22:00 (Sun-Thu) | FX rate ingestion |
 | IOS013_HCP_LAB_G4_RUNNER | G4 | LARS | Every 15 min (market hours) | HCP Lab execution |
 
-## Windows Task Scheduler Setup
+## Windows Task Scheduler Tasks
 
-To create the monthly calendar governance task, run as Administrator:
+| Task Name | Schedule | Next Run | Script |
+|-----------|----------|----------|--------|
+| FjordHQ-TradingCalendarGovernance | Monthly (1st @ 03:00) | 2026-02-01 | run_calendar_daemon.bat |
+| FjordHQ-UMA-MetaAnalyst | Daily @ 06:00 | 2026-01-19 | run_uma_daemon.bat |
 
+### Setup Commands (run as Administrator)
+
+**Trading Calendar Governance:**
 ```cmd
 schtasks /create /tn "FjordHQ-TradingCalendarGovernance" ^
     /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_calendar_daemon.bat" ^
     /sc monthly /d 1 /st 03:00 /f
 ```
 
-Or run the batch file:
-```
-C:\fhq-market-system\vision-ios\03_FUNCTIONS\create_calendar_task.bat
+**UMA Meta-Analyst:**
+```cmd
+schtasks /create /tn "FjordHQ-UMA-MetaAnalyst" ^
+    /tr "C:\fhq-market-system\vision-ios\03_FUNCTIONS\run_uma_daemon.bat" ^
+    /sc daily /st 06:00 /f
 ```
 
 ## Query Database Registry
