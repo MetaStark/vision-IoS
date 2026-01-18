@@ -1,0 +1,138 @@
+{
+  "directive_id": "CEO-DIR-2026-097",
+  "title": "UMA AUTONOMY CLOCK — FORMALIZATION & DAILY REPORT CANONICALIZATION",
+  "authority": "CEO",
+  "priority": "P0",
+  "effective": "2026-01-18T22:00:00Z",
+  "executed_by": "STIG (EC-003)",
+
+  "section_1_constitutional_principle": {
+    "_binding": true,
+    "principle": "Autonomy is a property proven under neglect, not a design intent",
+    "rule": "UMA autonomy may only be expressed as a state derived from database evidence"
+  },
+
+  "section_2_canonical_states": {
+    "enum": [
+      {"code": "INFRA_READY", "meaning": "Infrastructure complete", "interpretation": "Tasks exist, pipeline wired, no executions yet"},
+      {"code": "AUTONOMY_IN_PROOF", "meaning": "Autonomy clock running", "interpretation": "Unattended executions occurring, proof in progress"},
+      {"code": "AUTONOMOUS_VERIFIED", "meaning": "Autonomy proven", "interpretation": ">= N consecutive unattended cycles verified"},
+      {"code": "AUTONOMY_BROKEN", "meaning": "Autonomy failed", "interpretation": "Any required execution missing or error > 0"}
+    ],
+    "other_states_permitted": false
+  },
+
+  "section_3_autonomy_clock": {
+    "clock_start_condition": {
+      "trigger": "First successful scheduled execution of ios003c_epoch_snapshot",
+      "field": "autonomy_clock_start_at",
+      "manual_execution_qualifies": false
+    },
+
+    "clock_advancement_rule": {
+      "advances_by": "one day",
+      "requirements": [
+        "executed via scheduler (not manual)",
+        "status = SUCCESS",
+        "error_count = 0",
+        "execution evidence written to DB",
+        "discrepancy_score <= 0.10 for shadow_ledger rows (ADR-010)"
+      ]
+    },
+
+    "verification_threshold": {
+      "formula": "consecutive_unattended_days >= 3",
+      "threshold": 3,
+      "fixed": true,
+      "change_authority": "CEO directive only"
+    },
+
+    "clock_reset_conditions": [
+      "manual task execution",
+      "missing scheduled execution",
+      "error_count > 0",
+      "schema mismatch",
+      "hot-fix applied without CEO waiver"
+    ],
+    "reset_must_record_reason": true
+  },
+
+  "section_4_database_evidence": {
+    "required_fields": [
+      "autonomy_state",
+      "autonomy_clock_start_at",
+      "consecutive_unattended_days",
+      "last_execution_at",
+      "last_execution_status",
+      "last_execution_error_count",
+      "triggered_by_identity"
+    ],
+    "triggered_by_identity_values": ["SCHEDULER", "SYSTEM_DAEMON", "MANUAL"],
+    "rule": "If fields cannot be reconstructed from DB evidence, autonomy cannot be claimed"
+  },
+
+  "section_5_daily_report_section": {
+    "section_name": "UMA AUTONOMY STATUS (EC-014)",
+    "required_elements": [
+      "autonomy_state",
+      "consecutive_unattended_days",
+      "autonomy_clock_start_at",
+      "last_execution_at",
+      "blocking_reason (if state != AUTONOMOUS_VERIFIED)"
+    ],
+    "language_rules": {
+      "prohibited": ["narrative interpretation", "optimistic phrasing", "expected", "should", "almost"],
+      "allowed": "database-derived facts only"
+    }
+  },
+
+  "section_6_vega_oversight": {
+    "weekly_attestation": "Verify autonomy state is correctly derived from DB evidence",
+    "immediate_objection_trigger": "Autonomy overstated or inferred",
+    "false_claim_classification": "Class A governance violation"
+  },
+
+  "section_7_current_state": {
+    "autonomy_state": "INFRA_READY",
+    "transition_to": "AUTONOMY_IN_PROOF",
+    "transition_condition": "First scheduled execution at 2026-01-19 00:05 UTC",
+    "gap_001_remediation_verified": true,
+    "gap_001_reference": "CEO-DIR-2026-096"
+  },
+
+  "ceo_improvements_integrated": {
+    "improvement_1": {
+      "title": "ADR-010 Quality Gate Integration",
+      "addition": "discrepancy_score <= 0.10 for shadow_ledger rows",
+      "rationale": "Autonomy is worthless if system produces garbage autonomously"
+    },
+    "improvement_2": {
+      "title": "Scheduler Identity in Evidence",
+      "addition": "triggered_by_identity field (SCHEDULER | SYSTEM_DAEMON | MANUAL)",
+      "rationale": "Proves who triggered the task, enables immediate Clock Reset on manual"
+    },
+    "improvement_3": {
+      "title": "GAP-001 Remediation Link",
+      "addition": "Transition to AUTONOMY_IN_PROOF conditional on GAP-001 fix verified",
+      "rationale": "Prevents clock starting on broken pipeline"
+    }
+  },
+
+  "final_snapshot_test": {
+    "timestamp": "2026-01-18T21:56:00Z",
+    "task": "snapshot",
+    "result": "SUCCESS",
+    "signals_captured": 46,
+    "errors": 0,
+    "status": "PIPELINE_VERIFIED"
+  },
+
+  "doctrine": "We do not announce autonomy. We observe it emerge. Once proven, it will be obvious, boring, and unquestionable.",
+
+  "signature": {
+    "agent": "STIG",
+    "contract": "EC-003",
+    "timestamp": "2026-01-18T22:00:00Z",
+    "directive_ref": "CEO-DIR-2026-097"
+  }
+}
