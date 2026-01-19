@@ -19,6 +19,26 @@
 BEGIN;
 
 -- =============================================================================
+-- SECTION 0: EXTEND MACRO_NODES SUBTYPE CONSTRAINT
+-- =============================================================================
+-- Add new subtypes for geopolitical friction monitoring (G0-2026-019)
+
+ALTER TABLE fhq_macro.macro_nodes DROP CONSTRAINT IF EXISTS macro_nodes_subtype_check;
+
+ALTER TABLE fhq_macro.macro_nodes ADD CONSTRAINT macro_nodes_subtype_check
+CHECK (subtype IN (
+    'VOLATILITY', 'LIQUIDITY', 'CREDIT', 'RATES', 'INFLATION', 'ACTIVITY', 'FX',
+    -- New subtypes for G0-2026-019:
+    'GEOPOLITICAL', 'TRADE', 'SANCTIONS'
+));
+
+-- Extend frequency constraint to include QUARTERLY (for BIS/IMF data)
+ALTER TABLE fhq_macro.macro_nodes DROP CONSTRAINT IF EXISTS macro_nodes_frequency_check;
+
+ALTER TABLE fhq_macro.macro_nodes ADD CONSTRAINT macro_nodes_frequency_check
+CHECK (frequency IN ('DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY'));
+
+-- =============================================================================
 -- SECTION 1: NEW DATA SOURCES
 -- =============================================================================
 
@@ -29,11 +49,11 @@ VALUES
      'https://ustr.gov/issue-areas/industry-manufacturing/industrial-tariffs',
      'OFFICIAL_PUBLICATION', 'CEO', true),
 
-    ('BIS', 'Bank for International Settlements', 'INTERNATIONAL_ORG',
+    ('BIS', 'Bank for International Settlements', 'OFFICIAL_STATISTICAL',
      'https://www.bis.org/statistics/index.htm',
      'API_WITH_HASH', 'CEO', true),
 
-    ('IMF_COFER', 'IMF Currency Composition of FX Reserves', 'INTERNATIONAL_ORG',
+    ('IMF_COFER', 'IMF Currency Composition of FX Reserves', 'OFFICIAL_STATISTICAL',
      'https://data.imf.org/regular.aspx?key=41175',
      'QUARTERLY_PUBLICATION', 'CEO', true),
 
