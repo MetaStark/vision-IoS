@@ -1,0 +1,52 @@
+{
+  "evidence_id": "CEIO_BACKFILL_GFI_20260119_080347",
+  "directive": "G0-2026-019",
+  "phase": "DATA_INGESTION",
+  "executed_by": "STIG",
+  "timestamp": "2026-01-19T08:03:47.062069",
+  "results": {
+    "total_records": 307,
+    "earliest_date": "2020-01-01",
+    "latest_date": "2026-01-19",
+    "avg_gfi": 0.24299982084690555,
+    "min_gfi": 0.01874,
+    "max_gfi": 0.713745,
+    "stress_count": 1,
+    "extreme_count": 0
+  },
+  "gfi_formula": "GFI = 0.30*TARIFF + 0.35*BRICS + 0.20*SANCTIONS + 0.15*USD_DELTA",
+  "normalization": {
+    "tariff": {
+      "min": 2.0,
+      "max": 50.0
+    },
+    "brics": {
+      "min": 5.0,
+      "max": 30.0
+    },
+    "sanctions": {
+      "min": 0.2,
+      "max": 1.0
+    },
+    "usd_delta": {
+      "baseline": 60.0,
+      "max_decline": 15.0
+    }
+  },
+  "weights": {
+    "tariff": 0.3,
+    "brics": 0.35,
+    "sanctions": 0.2,
+    "usd_delta": 0.15
+  },
+  "attestation": {
+    "data_sources": [
+      "USTR",
+      "BIS",
+      "IMF_COFER",
+      "OFAC"
+    ],
+    "methodology": "Historical data points with weekly interpolation",
+    "quality_notes": "Pre-2024 data is estimated from quarterly reports"
+  }
+}
