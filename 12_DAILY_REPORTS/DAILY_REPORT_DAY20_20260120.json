@@ -3,11 +3,61 @@
   "report_date": "2026-01-20",
   "day_number": 20,
   "generated_at": "2026-01-20T02:45:00+01:00",
-  "updated_at": "2026-01-20T14:45:00.000Z",
-  "db_clock_verified": "2026-01-20T14:45:00.000Z",
+  "updated_at": "2026-01-20T16:50:00.000Z",
+  "db_clock_verified": "2026-01-20T16:49:17.567Z",
   "generated_by": "STIG",
   "report_status": "ACTIVE",
-  "closing_summary": "CEO-DIR-2026-115 ACTIVATED: 5 PAPER ORDERS SUBMITTED to Alpaca (ADBE, INTU, PGR, GIS, NOW) med fullstendig TP/SL og begrunnelse. Risk management: 3% SL, 6% TP (2:1 R:R). Total risiko ved SL: $295.70 (0.28% av NAV). Regime: SPY NEUTRAL @98%. Ordrer venter på market open (MLK Day). 24h checkpoint deadline: 2026-01-21T12:55:43Z.",
+  "closing_summary": "CEO-DIR-2026-116 ZERO-ASSUMPTION PROTOCOL ACTIVATED. STIG governance incident: Shadow-Creation forsøk blokkert. EC-003 oppdatert med ZAP-001 spec. Ny tabell fhq_meta.agent_instruction_changelog opprettet. CLAUDE.md oppdatert med 99.999999% presisjonskrav. LIVE-PAPER: 5 ordrer venter på market open (MLK Day).",
+
+  "CEO_DIR_2026_116_ZERO_ASSUMPTION_PROTOCOL": {
+    "_directive": "CEO-DIR-2026-116",
+    "_title": "Zero-Assumption Protocol Activation",
+    "_classification": "GOVERNANCE-CRITICAL / INTEGRITY-ENFORCEMENT",
+    "activation_timestamp": "2026-01-20T16:49:17.567Z",
+    "incident": {
+      "type": "SHADOW-CREATION ATTEMPT",
+      "description": "STIG forsøkte å opprette EC-003 i fhq_governance.ec_registry uten å verifisere alle tabeller",
+      "root_cause": "Antok at EC-003 manglet etter søk i kun én tabell",
+      "actual_location": "fhq_meta.vega_employment_contract (contract_id=14)",
+      "severity": "FATAL FINDING (MBB standard)",
+      "blocked_by": "MCP read-only + CEO interrupt"
+    },
+    "resolution": {
+      "step_1": "Full database skanning utført",
+      "step_2": "EC-003 lokalisert i fhq_meta.vega_employment_contract",
+      "step_3": "Zero-Assumption Protocol definert og godkjent av CEO",
+      "step_4": "CLAUDE.md oppdatert med nye constraints",
+      "step_5": "Migration 201 utført - changelog tabell + EC-003 spec"
+    },
+    "database_changes": {
+      "migration_file": "04_DATABASE/MIGRATIONS/201_ec003_changelog_and_update.sql",
+      "tables_created": ["fhq_meta.agent_instruction_changelog"],
+      "columns_added": ["fhq_meta.vega_employment_contract.claude_md_spec"],
+      "records_updated": ["EC-003 claude_md_spec"]
+    },
+    "new_protocol": {
+      "name": "Zero-Assumption Protocol (ZAP)",
+      "version": "2026.PRODUCTION.ZAP-001",
+      "rules": [
+        "Antagelse er forbudt - aldri anta at artefakt ikke eksisterer",
+        "Spør før handling - ved usikkerhet, stopp og be CEO om avklaring",
+        "Missing Artifact Event - rapporter som kritisk feil, ikke opprett nytt"
+      ],
+      "safe_mode_triggers": [
+        "Manglende EC",
+        "Manglende ADR",
+        "Kritisk konfigurasjon ikke funnet"
+      ],
+      "precision_standard": "99.999999%"
+    },
+    "verification": {
+      "query_1": "SELECT contract_number, claude_md_spec FROM fhq_meta.vega_employment_contract WHERE contract_number = 'EC-003'",
+      "result_1": "claude_md_spec.version = 2026.PRODUCTION.ZAP-001",
+      "query_2": "SELECT * FROM fhq_meta.agent_instruction_changelog WHERE agent_ec_id = 'EC-003'",
+      "result_2": "1 row (change_type=UPDATE, changed_by=CEO)"
+    },
+    "status": "COMPLETE"
+  },
 
   "CEO_DIR_2026_115_LIVE_PAPER": {
     "_directive": "CEO-DIR-2026-115",
@@ -349,6 +399,12 @@
   },
 
   "DIRECTIVES_STATUS": [
+    {
+      "id": "CEO-DIR-2026-116",
+      "title": "Zero-Assumption Protocol Activation",
+      "status": "COMPLETE",
+      "activated_at": "2026-01-20T16:49:17.567Z"
+    },
     {
       "id": "CEO-DIR-2026-111",
       "title": "Canonical Signal Pipeline Activation",
