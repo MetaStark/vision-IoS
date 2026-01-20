@@ -5,12 +5,16 @@ PRICE FRESHNESS HEARTBEAT
 CEO-DIR-2026-0YC: Heartbeat Policy Alignment (2026-01-11)
 (Supersedes CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P2)
 
-Scheduled heartbeat task that monitors price staleness for CRYPTO, EQUITY, FX.
+Scheduled heartbeat task that monitors price staleness for CRYPTO and FX.
 Runs every 30 minutes via orchestrator.
+
+CEO-DIR-2026-116: SPY/QQQ REMOVED from monitoring (2026-01-20)
+- They are not in daily_ingest_worker.py asset universe
+- Regime data comes from fhq_perception.regime_daily, not price data
+- Monitoring non-ingested assets created persistent false alerts
 
 Thresholds aligned to DAILY BAR granularity (yfinance ~1 bar/day):
 - CRYPTO: max_ok=24h, warn=36h, blackout=48h
-- EQUITY: max_ok=36h, warn=48h, blackout=72h (weekend gaps)
 - FX:     max_ok=36h, warn=48h, blackout=72h (weekend closure)
 
 Previous thresholds (6h/12h) were too aggressive for daily bars and caused
@@ -76,8 +80,11 @@ PRICE_STALENESS_FX = {
 }
 
 # Assets to monitor
+# CEO-DIR-2026-116: Only monitor assets that are actively ingested
+# SPY/QQQ removed - not in daily_ingest_worker.py, only used for regime reference
+# Regime data comes from fhq_perception.regime_daily, not price data
 CANONICAL_CRYPTO = ['BTC-USD', 'ETH-USD', 'SOL-USD']
-CANONICAL_EQUITY = ['SPY', 'QQQ']
+CANONICAL_EQUITY = []  # Empty - equity prices not ingested, regime from separate pipeline
 CANONICAL_FX = ['EURUSD=X']
 
 
