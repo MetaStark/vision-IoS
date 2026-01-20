@@ -1,0 +1,207 @@
+{
+  "report_id": "DAILY_REPORT_DAY21_20260121",
+  "report_date": "2026-01-21",
+  "day_number": 21,
+  "generated_at": "2026-01-21T00:25:00+01:00",
+  "updated_at": "2026-01-21T00:25:00Z",
+  "db_clock_verified": "2026-01-21T00:25:00Z",
+  "generated_by": "STIG",
+  "report_status": "ACTIVE",
+
+  "opening_summary": "DAY 21 STARTED: (1) CEO-DIR-2026-117 IoS-013 Signal Chain Audit COMPLETE with VEGA attestation. (2) Signal health at 75% (3/4 fresh). (3) 4 wrong-fundament positions still OPEN at broker (closure orders pending market open). (4) VALKYRIE (EC-016) activated for first strategic narrative. (5) fhq_signal_context schema G2_APPROVED - weighting methodology implementation pending.",
+
+  "DAY21_TODO_LIST": {
+    "_classification": "OPERATIONAL_TRACKING",
+    "_priority_legend": "P0=Critical, P1=High, P2=Medium, P3=Low",
+
+    "todos": [
+      {
+        "id": "TODO-DAY21-001",
+        "priority": "P0",
+        "task": "Verify position closures executed at market open",
+        "description": "4 SELL orders pending for ADBE, GIS, INTU, NOW - submitted by LINE (EC-005) on Day 20",
+        "owner": "LINE (EC-005)",
+        "status": "PENDING_MARKET_OPEN",
+        "market_opens": "2026-01-21T09:30:00-05:00",
+        "positions_to_close": [
+          {"symbol": "ADBE", "qty": 7, "unrealized_pl": -16.39},
+          {"symbol": "GIS", "qty": 46, "unrealized_pl": -6.44},
+          {"symbol": "INTU", "qty": 3, "unrealized_pl": -35.99},
+          {"symbol": "NOW", "qty": 15, "unrealized_pl": -37.56}
+        ],
+        "total_unrealized_pl": -96.38
+      },
+      {
+        "id": "TODO-DAY21-002",
+        "priority": "P1",
+        "task": "Implement weighting methodology in fhq_signal_context.weighted_signal_plan",
+        "description": "IoS-013 infrastructure is VEGA-attested (G2_APPROVED). Next step: implement actual signal weighting logic per IoS-013 specification",
+        "owner": "STIG (EC-003)",
+        "status": "PENDING",
+        "dependencies": ["IoS-013 document", "ADR-013"],
+        "deliverables": [
+          "Weighting formula implementation",
+          "Regime-samsvar alignment function",
+          "Forecast skill integration (1.0 - brier_score)",
+          "Redundancy filter logic",
+          "Event proximity damper"
+        ]
+      },
+      {
+        "id": "TODO-DAY21-003",
+        "priority": "P1",
+        "task": "Verify scheduled tasks execute correctly",
+        "description": "3 new scheduled tasks registered on Day 20 - verify first execution",
+        "owner": "STIG (EC-003)",
+        "status": "PENDING",
+        "tasks_to_verify": [
+          {"task_id": "BRIER-SCORE-DAILY-001", "schedule": "00:05 UTC", "first_run": "2026-01-21"},
+          {"task_id": "GOLDEN-NEEDLES-DAILY-001", "schedule": "06:00 UTC", "first_run": "2026-01-21"},
+          {"task_id": "LVI-REFRESH-DAILY-001", "schedule": "07:00 UTC", "first_run": "2026-01-21"}
+        ]
+      },
+      {
+        "id": "TODO-DAY21-004",
+        "priority": "P1",
+        "task": "VALKYRIE first strategic narrative",
+        "description": "EC-016 activated - generate first CEO briefing based on Day 19-20-21 data",
+        "owner": "VALKYRIE (EC-016)",
+        "status": "COMPLETE",
+        "completed_at": "2026-01-21T00:35:00Z",
+        "deliverable": "VALKYRIE_EC016_NARRATIVE_001_20260121.md"
+      },
+      {
+        "id": "TODO-DAY21-005",
+        "priority": "P2",
+        "task": "Implement broker_state_reconciliation_daemon as scheduled task",
+        "description": "Continuous sync between database and Alpaca to prevent state divergence",
+        "owner": "STIG (EC-003)",
+        "status": "PENDING"
+      },
+      {
+        "id": "TODO-DAY21-006",
+        "priority": "P2",
+        "task": "Resume paper trading with proper governance chain",
+        "description": "LINE (EC-005) authority only - no manual dashboard operations",
+        "owner": "LINE (EC-005)",
+        "status": "PENDING",
+        "prerequisite": "TODO-DAY21-001 complete (positions closed)"
+      }
+    ]
+  },
+
+  "INHERITED_FROM_DAY20": {
+    "completed_attestations": [
+      {
+        "target": "fhq_signal_context schema",
+        "attestation_id": "134bac6b-2cbb-412f-9541-f6f1a212bb5e",
+        "status": "G2_APPROVED",
+        "attested_by": "VEGA (EC-001)",
+        "timestamp": "2026-01-21T00:12:26.970Z"
+      }
+    ],
+    "signal_infrastructure": {
+      "ios013_ready": true,
+      "schema": "fhq_signal_context",
+      "tables": ["weighted_signal_plan", "signal_conflict_registry"],
+      "views": ["v_signal_context_summary"]
+    },
+    "scheduled_tasks_registered": [
+      "BRIER-SCORE-DAILY-001",
+      "GOLDEN-NEEDLES-DAILY-001",
+      "LVI-REFRESH-DAILY-001"
+    ]
+  },
+
+  "SIGNAL_STATUS_DAY21": {
+    "timestamp": "2026-01-21T00:25:00Z",
+    "signals": {
+      "brier_score_ledger": {"rows": 4831, "staleness_hours": 0.5, "status": "FRESH"},
+      "lvi_canonical": {"rows": 474, "staleness_hours": 0.9, "status": "FRESH"},
+      "regime_daily": {"rows": 145736, "staleness_hours": 0.6, "status": "FRESH"},
+      "golden_needles": {"rows": 1804, "staleness_hours": 152.2, "status": "VOL_GATED"}
+    },
+    "operational_percentage": 75,
+    "note": "Golden Needles VOL-GATED (volatility < 25% threshold) - pipeline operational"
+  },
+
+  "BROKER_STATE_DAY21": {
+    "snapshot_time": "2026-01-20T22:52:07Z",
+    "portfolio_value": 104807.67,
+    "cash": 97260.12,
+    "buying_power": 202067.79,
+    "positions_count": 4,
+    "positions": [
+      {"symbol": "ADBE", "qty": 7, "unrealized_pl": -16.39, "status": "PENDING_CLOSURE"},
+      {"symbol": "GIS", "qty": 46, "unrealized_pl": -6.44, "status": "PENDING_CLOSURE"},
+      {"symbol": "INTU", "qty": 3, "unrealized_pl": -35.99, "status": "PENDING_CLOSURE"},
+      {"symbol": "NOW", "qty": 15, "unrealized_pl": -37.56, "status": "PENDING_CLOSURE"}
+    ],
+    "total_unrealized_pl": -96.38,
+    "note": "Positions are wrong-fundament (inversion universe) - SELL orders submitted Day 20, awaiting market open"
+  },
+
+  "VALKYRIE_EC016_ACTIVATION": {
+    "_directive": "CEO-DIR-2026-118",
+    "_title": "VALKYRIE First Strategic Narrative",
+    "_classification": "AGENT_ACTIVATION",
+    "activation_timestamp": "2026-01-21T00:25:00Z",
+    "activated_by": "STIG (EC-003_2026_PRODUCTION)",
+    "ceo_authorization": "Granted",
+
+    "agent_profile": {
+      "ec_id": "EC-016",
+      "codename": "VALKYRIE",
+      "role": "Strategic Storyteller",
+      "reports_to": "CEO",
+      "status": "ACTIVE",
+      "effective_date": "2026-01-19"
+    },
+
+    "first_run_parameters": {
+      "data_window": "Day 19-21 (3-day rolling)",
+      "output_format": "Markdown strategic narrative",
+      "max_length": "800 words",
+      "sections": ["SITUASJON", "KOMPLIKASJONER", "LØSNING", "UTSIKTER"],
+      "evidence_requirement": "All claims must have database verification"
+    },
+
+    "status": "COMPLETE",
+    "completed_at": "2026-01-21T00:35:00Z",
+    "narrative_file": "03_FUNCTIONS/evidence/VALKYRIE_EC016_NARRATIVE_001_20260121.md",
+    "telegram_delivery": {
+      "sent_at": "2026-01-21T00:40:00Z",
+      "chat_id": "6194473125",
+      "chunks_sent": 3,
+      "status": "DELIVERED"
+    },
+    "key_findings": {
+      "signal_health": "3 of 4 critical signals FRESH (up from 1 of 4 two days ago)",
+      "brier_skill": "0.5010 on Jan 19 - first statistical skill detected since reset",
+      "lvi_top_learner": "ZM with 0.622 LVI in BEAR regime",
+      "pending_actions": ["Position closures at market open", "Weighting methodology implementation"]
+    }
+  },
+
+  "DIRECTIVES_STATUS": [
+    {
+      "id": "CEO-DIR-2026-117",
+      "title": "IoS-013 Signal Chain Audit & Infrastructure",
+      "status": "COMPLETE",
+      "completed_at": "2026-01-21T00:12:26.970Z"
+    },
+    {
+      "id": "CEO-DIR-2026-118",
+      "title": "VALKYRIE First Strategic Narrative",
+      "status": "COMPLETE",
+      "started_at": "2026-01-21T00:25:00Z",
+      "completed_at": "2026-01-21T00:35:00Z"
+    },
+    {
+      "id": "CEO-DIR-2026-115",
+      "title": "LIVE-PAPER Trading",
+      "status": "ACTIVE",
+      "note": "Awaiting position closures at market open"
+    }
+  ]
+}
