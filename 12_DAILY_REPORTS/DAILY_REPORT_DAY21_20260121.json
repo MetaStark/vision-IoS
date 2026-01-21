@@ -3,12 +3,12 @@
   "report_date": "2026-01-21",
   "day_number": 21,
   "generated_at": "2026-01-21T00:25:00+01:00",
-  "updated_at": "2026-01-21T00:25:00Z",
-  "db_clock_verified": "2026-01-21T00:25:00Z",
+  "updated_at": "2026-01-21T22:15:00Z",
+  "db_clock_verified": "2026-01-21T21:10:28Z",
   "generated_by": "STIG",
   "report_status": "ACTIVE",
 
-  "opening_summary": "DAY 21 STARTED: (1) CEO-DIR-2026-117 IoS-013 Signal Chain Audit COMPLETE with VEGA attestation. (2) Signal health at 75% (3/4 fresh). (3) 4 wrong-fundament positions still OPEN at broker (closure orders pending market open). (4) VALKYRIE (EC-016) activated for first strategic narrative. (5) fhq_signal_context schema G2_APPROVED - weighting methodology implementation pending.",
+  "opening_summary": "DAY 21 COMPLETE: (1) 4 WRONG_FUNDAMENT positions CLOSED at Alpaca - CEO verified. Total realized loss: -$102.50. (2) CRITICAL LEARNING: TP/SL aldri satt - må implementere bracket orders. (3) Options trading læring påbegynt for bearish 2026 outlook. (4) FX ingest pipeline reparert (TwelveData date range fix).",
 
   "DAY21_TODO_LIST": {
     "_classification": "OPERATIONAL_TRACKING",
@@ -21,15 +21,18 @@
         "task": "Verify position closures executed at market open",
         "description": "4 SELL orders pending for ADBE, GIS, INTU, NOW - submitted by LINE (EC-005) on Day 20",
         "owner": "LINE (EC-005)",
-        "status": "PENDING_MARKET_OPEN",
-        "market_opens": "2026-01-21T09:30:00-05:00",
-        "positions_to_close": [
-          {"symbol": "ADBE", "qty": 7, "unrealized_pl": -16.39},
-          {"symbol": "GIS", "qty": 46, "unrealized_pl": -6.44},
-          {"symbol": "INTU", "qty": 3, "unrealized_pl": -35.99},
-          {"symbol": "NOW", "qty": 15, "unrealized_pl": -37.56}
+        "status": "COMPLETE",
+        "completed_at": "2026-01-21T21:00:00Z",
+        "verified_by": "CEO",
+        "positions_closed": [
+          {"symbol": "ADBE", "qty": 7, "entry_price": 293.34, "exit_price": 289.44, "realized_pl": -27.31},
+          {"symbol": "GIS", "qty": 46, "entry_price": 44.60, "exit_price": 44.22, "realized_pl": -17.63},
+          {"symbol": "INTU", "qty": 3, "entry_price": 540.18, "exit_price": 528.63, "realized_pl": -34.63},
+          {"symbol": "NOW", "qty": 15, "entry_price": 127.89, "exit_price": 126.37, "realized_pl": -22.93}
         ],
-        "total_unrealized_pl": -96.38
+        "total_realized_pl": -102.50,
+        "canonical_table": "fhq_governance.paper_ledger",
+        "critical_learning": "TP/SL IKKE SATT - posisjoner ble lukket uten stop loss eller take profit"
       },
       {
         "id": "TODO-DAY21-002",
@@ -126,19 +129,14 @@
   },
 
   "BROKER_STATE_DAY21": {
-    "snapshot_time": "2026-01-20T22:52:07Z",
-    "portfolio_value": 104807.67,
-    "cash": 97260.12,
-    "buying_power": 202067.79,
-    "positions_count": 4,
-    "positions": [
-      {"symbol": "ADBE", "qty": 7, "unrealized_pl": -16.39, "status": "PENDING_CLOSURE"},
-      {"symbol": "GIS", "qty": 46, "unrealized_pl": -6.44, "status": "PENDING_CLOSURE"},
-      {"symbol": "INTU", "qty": 3, "unrealized_pl": -35.99, "status": "PENDING_CLOSURE"},
-      {"symbol": "NOW", "qty": 15, "unrealized_pl": -37.56, "status": "PENDING_CLOSURE"}
-    ],
-    "total_unrealized_pl": -96.38,
-    "note": "Positions are wrong-fundament (inversion universe) - SELL orders submitted Day 20, awaiting market open"
+    "snapshot_time": "2026-01-21T21:00:00Z",
+    "portfolio_value": 104705.17,
+    "cash": 104705.17,
+    "buying_power": 209410.34,
+    "positions_count": 0,
+    "positions": [],
+    "total_realized_pl": -102.50,
+    "note": "All WRONG_FUNDAMENT positions CLOSED. Clean slate for proper paper trading with TP/SL governance."
   },
 
   "VALKYRIE_EC016_ACTIVATION": {
@@ -201,7 +199,170 @@
       "id": "CEO-DIR-2026-115",
       "title": "LIVE-PAPER Trading",
       "status": "ACTIVE",
-      "note": "Awaiting position closures at market open"
+      "note": "Position closures COMPLETE. Ready for proper paper trading with TP/SL."
+    },
+    {
+      "id": "CEO-DIR-2026-DBV-003",
+      "title": "Wrong Fundament Position Closure",
+      "status": "COMPLETE",
+      "completed_at": "2026-01-21T21:00:00Z",
+      "verified_by": "CEO"
     }
-  ]
+  ],
+
+  "CRITICAL_LEARNINGS_DAY21": {
+    "_classification": "INSTITUTIONAL_LEARNING",
+    "_directive": "CEO-DIR-2026-119",
+    "_title": "Order Execution Governance & Options Readiness",
+    "timestamp": "2026-01-21T22:15:00Z",
+
+    "LEARNING_001_TP_SL_GOVERNANCE": {
+      "id": "LEARN-DAY21-001",
+      "category": "ORDER_EXECUTION_FAILURE",
+      "severity": "CRITICAL",
+      "title": "TP/SL Never Set on Orders",
+
+      "root_cause_analysis": {
+        "how_positions_were_opened": {
+          "method": "Market orders via submit_paper_orders.py",
+          "broker_api": "Alpaca TradingClient.submit_order()",
+          "order_type": "market",
+          "tp_sl_attached": false,
+          "governance_failure": "Orders submitted without bracket order structure"
+        },
+        "how_positions_were_closed": {
+          "method": "close_wrong_fundament_positions.py",
+          "broker_api": "Alpaca TradingClient.close_position(ticker)",
+          "order_type": "market",
+          "governance_note": "Emergency closure - no TP/SL possible on close"
+        },
+        "database_evidence": {
+          "paper_orders_table": "fhq_execution.paper_orders",
+          "orders_found": "All orders show order_type='market', limit_price=NULL",
+          "no_bracket_orders": true
+        }
+      },
+
+      "alpaca_bracket_order_solution": {
+        "documentation_source": "https://docs.alpaca.markets/docs/working-with-orders",
+        "solution": "BRACKET orders attach TP/SL to every position",
+        "python_implementation": {
+          "import": "from alpaca.trading.requests import MarketOrderRequest, TakeProfitRequest, StopLossRequest",
+          "example": "MarketOrderRequest(symbol='SPY', qty=5, side=OrderSide.BUY, time_in_force=TimeInForce.DAY, order_class=OrderClass.BRACKET, take_profit=TakeProfitRequest(limit_price=400), stop_loss=StopLossRequest(stop_price=300))"
+        },
+        "order_types": {
+          "BRACKET": "Primary order with both TP and SL legs",
+          "OTO": "One-Triggers-Other - primary triggers secondary",
+          "OCO": "One-Cancels-Other - two exit orders, one cancels when other fills"
+        },
+        "required_parameters": {
+          "take_profit": {"limit_price": "Target exit price"},
+          "stop_loss": {"stop_price": "Activation price", "limit_price": "Optional execution price"}
+        }
+      },
+
+      "action_required": {
+        "P0": "Modify LINE (EC-005) to ALWAYS use bracket orders",
+        "implementation": "Every order MUST have TP/SL attached via OrderClass.BRACKET",
+        "validation": "Reject any order submission without TP/SL parameters",
+        "owner": "STIG (EC-003)"
+      }
+    },
+
+    "LEARNING_002_OPTIONS_TRADING_2026": {
+      "id": "LEARN-DAY21-002",
+      "category": "STRATEGIC_CAPABILITY",
+      "severity": "HIGH",
+      "title": "Options Trading for Bearish 2026 Outlook",
+
+      "rationale": {
+        "market_outlook": "2026 expected to be bearish per macro signals",
+        "current_limitation": "Only LONG equity positions - cannot profit from falling markets",
+        "solution": "Options trading enables profit from downward moves via PUT options"
+      },
+
+      "alpaca_options_capability": {
+        "documentation_source": "https://docs.alpaca.markets/docs/options-trading",
+        "status": "Available on Live accounts",
+        "api_endpoint": "/v2/options/contracts",
+
+        "trading_levels": {
+          "Level_0": "Disabled",
+          "Level_1": "Covered calls and cash-secured puts",
+          "Level_2": "Buy calls and puts - REQUIRED for bearish bets",
+          "Level_3": "Spreads for advanced strategies"
+        },
+
+        "bearish_strategies": {
+          "buy_put": {
+            "description": "Buy PUT option to profit when asset price declines",
+            "required_level": "Level 2",
+            "risk": "Limited to premium paid",
+            "profit_potential": "Significant if asset falls below strike"
+          },
+          "put_spread": {
+            "description": "Buy PUT at higher strike, sell PUT at lower strike",
+            "required_level": "Level 3",
+            "risk": "Limited to net premium",
+            "profit_potential": "Capped but defined"
+          }
+        },
+
+        "risk_management": {
+          "auto_exercise": "ITM contracts exercised automatically at expiry if >= $0.01 ITM",
+          "buying_power_protection": "Alpaca sells positions 1 hour before expiry if insufficient funds"
+        }
+      },
+
+      "action_required": {
+        "P1": "Verify Alpaca paper account options level",
+        "P2": "Implement options order capability in LINE (EC-005)",
+        "P3": "Develop PUT-based strategy for inversion universe assets",
+        "owner": "STIG (EC-003)"
+      }
+    },
+
+    "LEARNING_003_ORDER_EXECUTION_FORENSICS": {
+      "id": "LEARN-DAY21-003",
+      "category": "EXECUTION_AUDIT",
+      "severity": "MEDIUM",
+      "title": "Position Open/Close Method Documentation",
+
+      "forensic_analysis": {
+        "position_origin": {
+          "source": "Unknown - orphan positions not tracked in ios012b_paper_positions",
+          "hypothesis": "Opened via manual dashboard or earlier script without governance",
+          "evidence": "ADBE, INTU, NOW NOT in ios012b_paper_positions (only GIS found)"
+        },
+
+        "closure_method": {
+          "script_used": "03_FUNCTIONS/close_wrong_fundament_positions.py",
+          "directive": "CEO-DIR-2026-DBV-003",
+          "broker_api_call": "TradingClient.close_position(ticker)",
+          "database_update": "fhq_alpha.ios012b_paper_positions SET status='CLOSED'",
+          "evidence_logging": "fhq_meta.cognitive_engine_evidence"
+        },
+
+        "limit_order_question": {
+          "ceo_question": "Hvordan klarte du å sette en limit order?",
+          "answer": "Limit order IKKE brukt. close_position() sender market order for å likvidere posisjon. Dette er en enkel market sell, ikke limit order.",
+          "alpaca_docs": "TradingClient.close_position() liquidates at market price"
+        }
+      },
+
+      "governance_gap_identified": {
+        "problem": "Positions can exist at broker without database tracking",
+        "solution": "broker_state_reconciliation_daemon must run continuously",
+        "implementation_status": "TODO-DAY21-005 (P2)"
+      }
+    }
+  },
+
+  "FX_INGEST_FIX_DAY21": {
+    "issue": "FX pairs showing stale after BULLETPROOF_INGEST",
+    "root_cause": "TwelveData returns 'No data available' for current date (Jan 21) when market data not yet available",
+    "fix_applied": "Use date range Jan 15-21 to capture Jan 20 close prices",
+    "result": "All 24 FX pairs updated with Jan 20 data",
+    "database_timezone_note": "DB timezone is Europe/Oslo - '2026-01-19T23:00:00Z' UTC = '2026-01-20 00:00:00' Oslo"
+  }
 }
