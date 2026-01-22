@@ -1,0 +1,76 @@
+{
+  "runbook_id": "RB-IOS-013-001",
+  "title": "Signal Implementation - Real Calculations",
+  "gate": "G3",
+  "ios_reference": "IoS-013",
+  "adr_reference": "ADR-004",
+  "owner": "EC-003",
+  "timestamp": "2026-01-22T18:52:39.476824+00:00",
+  "g3_implementation_results": {
+    "views_replaced": 5,
+    "signals_with_real_calculations": 4,
+    "signals_remaining_placeholder": 1,
+    "placeholder_reason": "sentiment_divergence - no sentiment data in fhq_research.sentiment"
+  },
+  "view_statistics": {
+    "v_regime_transition_risk": {
+      "row_count": 137850,
+      "calculation_status": "CALCULATED"
+    },
+    "v_sector_relative_strength": {
+      "row_count": 102781,
+      "calculation_status": "CALCULATED"
+    },
+    "v_market_relative_strength": {
+      "row_count": 632973,
+      "calculation_status": "CALCULATED"
+    },
+    "v_stop_loss_heatmap": {
+      "row_count": 27,
+      "calculation_status": "CALCULATED"
+    },
+    "v_sentiment_divergence": {
+      "row_count": 0,
+      "calculation_status": "EMPTY"
+    }
+  },
+  "methodology_applied": {
+    "regime_transition_risk": "Shannon entropy H(p) = -SUM(p_i * log2(p_i)) normalized to [0,1]",
+    "sector_relative_strength": "Sector Return / Market Return - 1",
+    "market_relative_strength": "Asset 20d Return / SPY 20d Return",
+    "stop_loss_heatmap": "Position clustering risk = (count/100) * (1-confidence) * (1+changes/10)",
+    "sentiment_divergence": "PLACEHOLDER - awaiting data"
+  },
+  "expert_references": {
+    "entropy_method": "De Prado - Advances in Financial Machine Learning",
+    "relative_strength": "Murphy - Technical Analysis of the Financial Markets",
+    "clustering_risk": "Chan - Algorithmic Trading"
+  },
+  "signals_resolved": [
+    "regime_transition_risk",
+    "sector_relative_strength",
+    "market_relative_strength",
+    "stop_loss_heatmap"
+  ],
+  "signals_blocked": [
+    "sentiment_divergence"
+  ],
+  "g3_exit_criteria": {
+    "all_placeholder_views_have_real_or_documented_placeholder": true,
+    "each_view_has_evidence_pointer": true,
+    "calculation_methodology_documented": true,
+    "data_dependencies_verified": true
+  },
+  "g3_overall_status": "PASS",
+  "g4_readiness": {
+    "ready": true,
+    "pending_items": [
+      "Populate fhq_research.sentiment for sentiment_divergence"
+    ]
+  },
+  "stig_attestation": {
+    "ec_id": "EC-003",
+    "attestation": "G3 Implementation phase complete. 4/5 signals have real calculations. Status: PASS",
+    "timestamp": "2026-01-22T18:52:39.476824+00:00"
+  }
+}
