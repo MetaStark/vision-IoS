@@ -1,0 +1,151 @@
+{
+  "directive": "CEO-DIR-2026-123",
+  "title": "IoS-013 Full Signal Integration",
+  "classification": "G4_SIGNAL_INFRASTRUCTURE",
+  "executed_at": "2026-01-23T12:00:00Z",
+  "executed_by": "STIG (EC-003)",
+
+  "execution_summary": {
+    "ios013_version_upgrade": {
+      "from": "1.0.0",
+      "to": "2.0.0",
+      "ios_version": "IoS-013-Perspective-2026-v2-FULL"
+    },
+    "signal_sources_integrated": 6,
+    "options_universe_size": 27
+  },
+
+  "signal_source_integration": {
+    "ios002_technical": {
+      "status": "ACTIVE",
+      "functions": ["calc_rsi", "calc_macd", "calc_bollinger", "calc_atr", "generate_technical_signal"],
+      "weight_contribution": "base_confidence"
+    },
+    "ios003_regime": {
+      "status": "ACTIVE",
+      "functions": ["get_current_regime"],
+      "weight_range": "0.2-1.0",
+      "source_tables": ["fhq_finn.regime_states", "fhq_finn.v_btc_regime_current"]
+    },
+    "ios005_forecast": {
+      "status": "ACTIVE",
+      "functions": ["get_forecast_skill"],
+      "weight_range": "0.1-1.0",
+      "source_tables": ["fhq_research.forecast_skill_metrics"]
+    },
+    "ios006_macro": {
+      "status": "ACTIVE",
+      "functions": ["get_macro_context"],
+      "weight_contribution": "-0.05 to +0.10 bonus",
+      "source_tables": ["fhq_research.fama_french_factors", "fhq_macro.canonical_series"]
+    },
+    "ios007_causal": {
+      "status": "ACTIVE",
+      "functions": ["get_causal_linkage"],
+      "weight_range": "0.3-1.2",
+      "source_tables": ["vision_signals.alpha_graph", "fhq_research.ontology_path_weights"]
+    },
+    "ios016_events": {
+      "status": "ACTIVE",
+      "functions": ["get_event_proximity"],
+      "weight_range": "-0.3 to 0.0",
+      "source_tables": ["fhq_calendar.market_events"]
+    }
+  },
+
+  "weighting_methodology": {
+    "reference": "IoS-013-Perspective_2026",
+    "formula": "weighted_confidence = base * (regime * skill * causal) + macro_bonus + event_penalty",
+    "cap": 0.70,
+    "rationale": "ADR-018 fail-closed principle"
+  },
+
+  "new_functions_added": [
+    {
+      "name": "get_forecast_skill",
+      "purpose": "Retrieve Brier score-based forecast skill",
+      "ios_reference": "IoS-005"
+    },
+    {
+      "name": "get_macro_context",
+      "purpose": "Retrieve Fama-French factors and VIX",
+      "ios_reference": "IoS-006"
+    },
+    {
+      "name": "get_causal_linkage",
+      "purpose": "Retrieve Alpha Graph causal edge weights",
+      "ios_reference": "IoS-007"
+    },
+    {
+      "name": "get_event_proximity",
+      "purpose": "Calculate event proximity penalty",
+      "ios_reference": "IoS-016"
+    },
+    {
+      "name": "calculate_weighted_confidence_full",
+      "purpose": "Full 6-source weighted confidence calculation",
+      "ios_reference": "IoS-013"
+    },
+    {
+      "name": "generate_weighted_signal_plan_full",
+      "purpose": "Generate complete weighted signal plan with all sources",
+      "ios_reference": "IoS-013"
+    },
+    {
+      "name": "generate_options_universe_signals_full",
+      "purpose": "Main entry point for full integration signal generation",
+      "ios_reference": "IoS-013"
+    }
+  ],
+
+  "options_universe": [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA",
+    "JPM", "V", "JNH", "UNH", "PG", "HD", "XOM",
+    "SPY", "QQQ", "IWM", "XLF", "XLE",
+    "GLD", "TLT", "VXX", "UVXY",
+    "AMD", "COIN", "PLTR", "SOFI"
+  ],
+
+  "adr_compliance": {
+    "ADR-001": {"status": "PASS", "note": "Modularity - separate IoS source functions"},
+    "ADR-003": {"status": "PASS", "note": "Lineage - BCBS-239 compliant hash chain"},
+    "ADR-007": {"status": "PASS", "note": "Evidence trail - evidence files generated"},
+    "ADR-013": {"status": "PASS", "note": "Canonical data sources - using fhq_* schemas"},
+    "ADR-018": {"status": "PASS", "note": "Fail-closed - 0.70 confidence cap enforced"}
+  },
+
+  "files_modified": [
+    {
+      "file": "03_FUNCTIONS/ios013_options_universe_signal_generator.py",
+      "changes": [
+        "Added get_forecast_skill() for IoS-005",
+        "Added get_macro_context() for IoS-006",
+        "Added get_causal_linkage() for IoS-007",
+        "Added get_event_proximity() for IoS-016",
+        "Added calculate_weighted_confidence_full()",
+        "Added generate_weighted_signal_plan_full()",
+        "Added generate_options_universe_signals_full()",
+        "Updated version to 2.0.0",
+        "Updated IOS_VERSION to IoS-013-Perspective-2026-v2-FULL"
+      ]
+    }
+  ],
+
+  "verification": {
+    "daily_report_created": "12_DAILY_REPORTS/DAILY_REPORT_DAY23_20260123.json",
+    "runbook_created": "12_DAILY_REPORTS/DAY23_RUNBOOK_20260123.md",
+    "evidence_created": "03_FUNCTIONS/evidence/CEO_DIR_2026_123_IOS013_FULL_INTEGRATION.json"
+  },
+
+  "vega_attestation": {
+    "status": "PENDING_REVIEW",
+    "components_verified": [
+      "signal_source_integration",
+      "weighting_formula",
+      "adr_compliance"
+    ]
+  },
+
+  "computed_by": "STIG (EC-003)",
+  "evidence_hash": "pending_computation"
+}

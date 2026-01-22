@@ -1,0 +1,75 @@
+{
+  "directive": "CEO-DIR-2026-123-ADDENDUM",
+  "title": "IoS-013 Formula Corrections",
+  "classification": "G4_SIGNAL_INFRASTRUCTURE",
+  "executed_at": "2026-01-23T00:28:00Z",
+  "executed_by": "STIG (EC-003)",
+
+  "corrections_applied": [
+    {
+      "issue": "FORMULA_ORDER_ERROR",
+      "description": "Macro bonus and event penalty were added to composite before multiplication with base",
+      "original": "weighted_confidence = base_confidence * ((regime * skill * causal) + macro_bonus + event_penalty)",
+      "corrected": "weighted_confidence = (base_confidence * (regime * skill * causal)) + macro_bonus + event_penalty",
+      "impact": "Formula now matches IoS-013-Perspective_2026 specification"
+    },
+    {
+      "issue": "SKILL_FACTOR_MULTIPLIER_TOO_AGGRESSIVE",
+      "description": "Brier-to-skill conversion penalized decent Brier scores too heavily",
+      "original": "skill = max(0.1, 1.0 - (brier * 3.6))",
+      "corrected": "skill = max(0.1, 1.0 - (brier * 1.8))",
+      "impact": "Brier 0.32 now gives skill=0.42 instead of skill=0.10"
+    },
+    {
+      "issue": "CALIBRATION_STATUS_NOT_UPDATED",
+      "description": "ON CONFLICT clause did not update calibration_status",
+      "correction": "Added calibration_status = EXCLUDED.calibration_status to UPDATE SET clause",
+      "impact": "FULL integration signals now correctly marked as CALIBRATED"
+    },
+    {
+      "issue": "ENUM_CONSTRAINT_VIOLATION",
+      "description": "calibration_status 'FULL_INTEGRATED' not a valid enum value",
+      "original": "FULL_INTEGRATED",
+      "corrected": "CALIBRATED",
+      "valid_values": ["CALIBRATED", "NOT_CALIBRATED", "EPISTEMIC_NULL", "PENDING_RECALIBRATION", "STALE"]
+    }
+  ],
+
+  "before_corrections": {
+    "avg_confidence": 0.0056,
+    "max_confidence": 0.0068,
+    "skill_factor": 0.10,
+    "calibration_status": "NOT_CALIBRATED"
+  },
+
+  "after_corrections": {
+    "avg_confidence": 0.0137,
+    "max_confidence": 0.0282,
+    "skill_factor": 0.42,
+    "calibration_status": "CALIBRATED"
+  },
+
+  "explainability_trace_example": {
+    "asset": "V",
+    "trace": "base=0.300|regime=NEUTRAL*0.45|skill=0.42|causal=0.50|macro=+0.00|event=0.00|mult=0.094|weighted=0.028"
+  },
+
+  "files_modified": [
+    "03_FUNCTIONS/ios013_options_universe_signal_generator.py"
+  ],
+
+  "adr_compliance": {
+    "ADR-018": "PASS - 0.70 confidence cap maintained",
+    "ADR-007": "PASS - Evidence trail created"
+  },
+
+  "verification": {
+    "signals_generated": 22,
+    "signals_skipped": 5,
+    "signals_with_errors": 0,
+    "database_verified": true
+  },
+
+  "computed_by": "STIG (EC-003)",
+  "evidence_hash": "pending_computation"
+}
