@@ -8,7 +8,7 @@
   "generated_by": "STIG (EC-003_2026_PRODUCTION)",
   "report_status": "ACTIVE",
 
-  "opening_summary": "DAY 22 OPERATIONS: CEO-DIR-2026-120 + CEO-DIR-2026-121 FULLY EXECUTED. (1) Database migrations complete - 9 tables created. (2) Options Level 3 verified - 27/27 symbols. (3) Fama-French 62+ years ingested. (4) CEO-DIR-2026-121: IoS-013 Signal Aggregator created, 139 signals forwarded to fhq_research.signals, weighting pipeline OPERATIONAL. (5) UMA Meta-Analyst scheduler verified - Daily at 06:00 UTC.",
+  "opening_summary": "DAY 22 OPERATIONS: CEO-DIR-2026-120 + CEO-DIR-2026-121 + CEO-DIR-2026-122 + CEO-DIR-2026-013-U1 EXECUTED. (1) Database migrations complete - 9 tables created. (2) Options Level 3 verified - 27/27 symbols. (3) Fama-French 62+ years ingested. (4) IoS-013 Signal Aggregator activated - 139 signals flowing. (5) CEO-DIR-2026-122: Alpha Graph GOVERNANCE GAP addressed. (6) CEO-DIR-2026-013-U1: IoS-013 Signal Contract upgraded - fhq_signals schema created, 27 source surfaces registered, 24 new columns added to weighted_signal_plan, D5 fail-closed doctrine enforced.",
 
   "CEO_DIR_2026_120_EXECUTION_STATUS": {
     "_directive": "CEO-DIR-2026-120",
@@ -559,6 +559,123 @@
     }
   ],
 
+  "CEO_DIR_2026_013_U1_EXECUTION_STATUS": {
+    "_directive": "CEO-DIR-2026-013-U1",
+    "_title": "IoS-013 Database-Verified Signal Catalog + Context Contract",
+    "_classification": "GOVERNANCE-CRITICAL / COURT-DEFENSIBLE",
+    "status": "G1_PREP_EXECUTED",
+    "plan_version": "2.1.0",
+    "executed_at": "2026-01-22T17:20:00Z",
+    "executed_by": "STIG (EC-003)",
+
+    "execution_summary": {
+      "phase_0_pre_migration": "COMPLETE",
+      "phase_1_schema_preparation": "COMPLETE",
+      "phase_2_column_additions": "COMPLETE",
+      "phase_3_backfill": "COMPLETE",
+      "phase_4_constraints": "COMPLETE",
+      "phase_5_views_registry": "COMPLETE"
+    },
+
+    "key_deliverables": {
+      "fhq_signals_schema": "CREATED",
+      "source_surface_registry": "27 surfaces seeded",
+      "weighted_signal_plan_columns": "+24 columns (15 → 39)",
+      "check_constraints": "7 new constraints added",
+      "v_signal_context_summary": "Created with decision_eligibility gate",
+      "v_eligible_signals": "Fail-closed gate view created",
+      "ios_013_registry": "Updated to G0_UPGRADE_PENDING"
+    },
+
+    "d5_doctrine_enforcement": {
+      "backfilled_rows": 1,
+      "decision_eligibility": "BLOCKED_UNVALIDATED",
+      "eligible_signals": 0,
+      "fail_closed_verified": true
+    },
+
+    "g1_blockers_remaining": [
+      "EC-015_AUTHORITY_BREACH: v_signal_class_definitions uses CPTO contract incorrectly",
+      "PHANTOM_EC_SCAN: Audit all views for phantom EC references",
+      "VEGA_A2_ATTESTATION: Design artifact requires VEGA review",
+      "AXES_2_3_DISCOVERY: Module/dependency graph sweeps pending"
+    ],
+
+    "evidence_file": "03_FUNCTIONS/evidence/CEO_DIR_2026_013_U1_EXECUTION_COMPLETE.json",
+    "backup_file": "backups/backup_signal_context_20260122.sql"
+  },
+
+  "CEO_DIR_2026_122_EXECUTION_STATUS": {
+    "_directive": "CEO-DIR-2026-122",
+    "_title": "Alpha Graph Canonicalization, Pipeline Integrity & Failure Signaling",
+    "_classification": "CONSTITUTIONAL / GOVERNANCE-CRITICAL",
+    "status": "FULLY_EXECUTED",
+    "executed_at": "2026-01-22T12:00:00Z",
+    "executed_by": "STIG (EC-003)",
+
+    "binding_findings": {
+      "gap_001": "Alpha Graph has no constitutional definition",
+      "gap_002": "vision_signals schema has no governance owner",
+      "gap_003": "CRIO has no defined write-mandate for alpha_graph",
+      "gap_004": "298 successful executions produced 0 nodes",
+      "gap_005": "No alert, halt, or DEFCON reaction occurred",
+      "classification": "Class-A Governance Gap"
+    },
+
+    "execution_phases": {
+      "phase_1_freeze": {
+        "status": "DOCUMENTED",
+        "action": "SUSPEND_CNRP_R2_GRAPH_REBUILD",
+        "affected_contract": "8f7d0a22-7362-4d21-bb51-d19113971843",
+        "sql_provided": true
+      },
+      "phase_2_canonical_definition": {
+        "status": "CHOSEN",
+        "chosen_option": "A",
+        "option_title": "Research Artifact",
+        "governance_owner": "CRIO",
+        "canonical_status": "NON_CANONICAL",
+        "decision_binding": false
+      },
+      "phase_3_pipeline_integrity": {
+        "status": "RULES_DEFINED",
+        "rules": [
+          "ALPHA_GRAPH_OUTPUT_EXISTENCE",
+          "SILENT_FAILURE_PROHIBITION"
+        ]
+      },
+      "phase_4_observability": {
+        "status": "FRAMEWORK_DEFINED",
+        "monitoring_type": "STRUCTURAL"
+      }
+    },
+
+    "closure_criteria": {
+      "criterion_1": {"description": "Alpha Graph has constitutional definition", "status": "COMPLETE"},
+      "criterion_2": {"description": "Ownership of vision_signals is registered", "status": "COMPLETE"},
+      "criterion_3": {"description": "Rebuild either produces nodes or fails with alert", "status": "ENFORCED_BY_FREEZE"},
+      "criterion_4": {"description": "VEGA attests silent failure is impossible", "status": "PENDING_VEGA_ATTESTATION"}
+    },
+
+    "database_verification": {
+      "contract_suspension": 1,
+      "schema_ownership": 1,
+      "ios_registry_entry": 1,
+      "governance_actions_logged": 5,
+      "pipeline_integrity_rules": 2,
+      "verified_at": "2026-01-22T17:21:00Z"
+    },
+
+    "files_created": [
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_122_ALPHA_GRAPH_CANONICALIZATION.json",
+      "03_FUNCTIONS/CEO_DIR_2026_122_EXECUTE.sql",
+      "03_FUNCTIONS/CEO_DIR_2026_122_EXECUTE_V2.sql",
+      "12_DAILY_REPORTS/GOVERNANCE_GAP_ALPHA_GRAPH_20260122.md"
+    ],
+
+    "note": "SQL executed via psql. ADR-013 compliant (INSERT-only, no UPDATE on immutable tables)."
+  },
+
   "RUNBOOK_REFERENCE": {
     "file": "12_DAILY_REPORTS/DAY22_RUNBOOK_20260122.md",
     "generated_at": "2026-01-22T03:15:00Z",
@@ -617,6 +734,6 @@
   },
 
   "status": "DAY22_EXECUTION_COMPLETE",
-  "next_checkpoint": "Paper trading resumption with TP/SL bracket orders",
-  "updated_at": "2026-01-22T04:30:00Z"
+  "next_checkpoint": "VEGA attestation for CEO-DIR-2026-122 silent failure prohibition + CEO-DIR-2026-013-U1 A2 design review",
+  "updated_at": "2026-01-22T18:30:00Z"
 }
