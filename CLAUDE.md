@@ -97,3 +97,41 @@ Hvis systemet ikke finner seg selv (manglende EC, ADR, eller kritisk konfigurasj
 3. **VENT** på G4-godkjenning før neste handling
 
 **Ingen improvisasjon. Ingen antagelser. Kun verifiserbar sannhet.**
+
+---
+
+## Daily Reports & Runbook Protocol (MANDATORY)
+
+### Filnavn-format
+```
+DAY{N}_RUNBOOK_{YYYYMMDD}.md
+```
+Eksempel: `DAY23_RUNBOOK_20260123.md`
+
+### Lokasjon
+```
+C:\fhq-market-system\vision-ios\12_DAILY_REPORTS\
+```
+
+### Verifisering mot database-klokke (KRITISK)
+Før oppdatering av runbook, ALLTID verifiser dato:
+```sql
+SELECT NOW() AT TIME ZONE 'Europe/Oslo' as oslo_time;
+```
+
+### Innhold som skal inn i dagens runbook
+- Alle CEO-direktiver utført
+- Alle migrasjoner kjørt
+- Database state changes
+- Evidence files generert
+- Daemon execution log
+- System status oppdateringer
+
+### Session Summaries
+Ved slutt av hver arbeidsøkt, lag session summary i:
+```
+12_DAILY_REPORTS/CEO_DIR_{directive}_SESSION_SUMMARY.md
+```
+
+### Regel
+**ALT vi gjør i systemet skal dokumenteres i dagens runbook, verifisert mot database-klokken.**
