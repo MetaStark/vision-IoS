@@ -27,6 +27,7 @@ import {
   Server,
   Crosshair,
   BookOpen,
+  Gauge,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -151,6 +152,14 @@ const ccoSection: NavItemType = {
   badge: 'W17',
 }
 
+// CEO-DIR-2026-024: IoS-013 Signal Overview
+const ios013Section: NavItemType = {
+  name: 'IoS-013 – Signals',
+  href: '/ios-signals',
+  icon: Gauge,
+  badge: 'D24',
+}
+
 export function Navigation() {
   const pathname = usePathname()
 
@@ -217,6 +226,7 @@ export function Navigation() {
           {navigationItems.map((item) => (
             <NavItem key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
           ))}
+          <NavItem item={ios013Section} pathname={pathname} collapsed={collapsed} />
         </ul>
 
         {/* Cinematic Separator */}

@@ -1,0 +1,134 @@
+{
+  "directive": "CEO-DIR-2026-025",
+  "title": "Dashboard IoS-013 Database Reconciliation",
+  "generated_at": "2026-01-23T01:45:00.000Z",
+  "generated_by": "STIG",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "order_1_reconciliation": {
+    "status": "VERIFIED",
+    "dashboard_data_source": "fhq_signal_context.weighted_signal_plan",
+    "query_used": "SELECT asset_id, calibration_status, direction, confidence_score, regime_context, weighted_signals FROM fhq_signal_context.weighted_signal_plan WHERE computation_date = (SELECT MAX(computation_date) FROM fhq_signal_context.weighted_signal_plan)",
+    "db_row_count": 23,
+    "dashboard_row_count": 23,
+    "row_count_match": true,
+    "calibration_distribution": {
+      "CALIBRATED": 22,
+      "NOT_CALIBRATED": 1
+    },
+    "direction_distribution": {
+      "UNDEFINED": 23,
+      "LONG": 0,
+      "SHORT": 0
+    },
+    "latest_computation_date": "2026-01-22",
+    "latest_created_at": "2026-01-23T00:28:13.378Z",
+    "divergence_analysis": {
+      "found_divergences": false,
+      "divergence_type": null,
+      "explanation": "Dashboard renders identical data to DB for same timestamp window"
+    }
+  },
+
+  "order_2_factor_breakdown": {
+    "status": "IMPLEMENTED",
+    "factors_exposed": [
+      "base_confidence (IoS-002 technical baseline)",
+      "regime_factor (IoS-003)",
+      "skill_factor (IoS-005, Brier-derived)",
+      "causal_factor (IoS-007)",
+      "macro_bonus (IoS-006)",
+      "event_penalty (IoS-016)",
+      "composite_multiplier"
+    ],
+    "source_column": "weighted_signals JSONB",
+    "data_path": "weighted_signals[0].factors",
+    "db_view_created": false,
+    "explanation": "Factor breakdown extracted from existing weighted_signals JSONB column - no new view needed as data already stored per-asset"
+  },
+
+  "order_3_brier_surface": {
+    "status": "IMPLEMENTED",
+    "data_sources": [
+      "fhq_research.forecast_skill_metrics (GLOBAL scope)",
+      "fhq_ops.v_brier_summary"
+    ],
+    "current_values": {
+      "forecast_skill_metrics_brier": 0.3233,
+      "v_brier_summary_brier": 0.3125,
+      "skill_factor_used": 0.4376,
+      "skill_formula": "max(0.1, 1.0 - (brier * 1.8))",
+      "forecast_count": 17656
+    },
+    "discrepancy_tracking": {
+      "discrepancy_exists": true,
+      "delta": 0.0108,
+      "flag_visible_in_dashboard": true,
+      "explanation": "DISCREPANCY badge shown when forecast_skill_metrics.brier != v_brier_summary.brier"
+    },
+    "murphy_decomposition": {
+      "source": "fhq_governance.brier_decomposition",
+      "accessible_via_drilldown": true,
+      "metrics_exposed": ["reliability", "resolution", "uncertainty", "sample_count"]
+    }
+  },
+
+  "order_4_lvi_status": {
+    "status": "ACTIVE",
+    "option_selected": "A",
+    "data_sources": [
+      "fhq_governance.v_system_lvi",
+      "fhq_governance.lvi_canonical",
+      "fhq_governance.v_lvi_rolling_7d"
+    ],
+    "current_values": {
+      "is_active": true,
+      "system_avg_lvi": 0.1677,
+      "regime_avg_lvi": 0.2066,
+      "total_assets_with_lvi": 324,
+      "last_computed": "2026-01-20T22:32:47.190Z"
+    },
+    "visibility": "Shown in IoS-013 tab as dedicated panel",
+    "missing_reason": null
+  },
+
+  "mandatory_queries_executed": [
+    {
+      "query_id": "Q1A",
+      "purpose": "Latest IoS-013 signals count and timestamp",
+      "result": "23 rows, latest 2026-01-23 00:28:13"
+    },
+    {
+      "query_id": "Q1B",
+      "purpose": "Calibration status distribution",
+      "result": "22 CALIBRATED, 1 NOT_CALIBRATED"
+    },
+    {
+      "query_id": "Q1C",
+      "purpose": "Direction distribution",
+      "result": "23 UNDEFINED"
+    },
+    {
+      "query_id": "Q3",
+      "purpose": "Brier/skill factor values",
+      "result": "brier=0.3233 (FSM), 0.3125 (summary), skill=0.4376"
+    },
+    {
+      "query_id": "Q4",
+      "purpose": "LVI status",
+      "result": "ACTIVE, 324 assets, avg=0.1677"
+    }
+  ],
+
+  "acceptance_criteria": {
+    "ios013_db_faithful": true,
+    "factor_breakdown_visible": true,
+    "brier_skill_traceable": true,
+    "lvi_status_visible": true
+  },
+
+  "attestation_required": {
+    "VEGA": "PENDING",
+    "LARS": "PENDING"
+  }
+}
