@@ -2,17 +2,21 @@
 """
 IoS-013 SIGNAL AGGREGATOR DAEMON
 ================================
-Directive: CEO-DIR-2026-121
+Directive: CEO-DIR-2026-121 + CEO-DIR-2026-META-ANALYSIS Phase 3
 Classification: G4_SIGNAL_INFRASTRUCTURE
-Date: 2026-01-22
+Date: 2026-01-23 (Updated for Phase 3 - Sentiment Integration)
 
 Aggregates signals from all IoS modules and forwards to fhq_research.signals
 for unified weighting by IoS-013 Signal Weighting Engine.
 
-Signal Sources:
+Signal Sources (6/6 active - Phase 3 complete):
 1. Golden Needles (fhq_canonical.golden_needles) - Wave 12 high-EQS hypotheses
 2. G1 Validated Signals (fhq_alpha.g1_validated_signals) - IoS-001 validated
 3. Brier Score Enrichment (fhq_research.forecast_skill_metrics) - Skill metrics
+4. IoS-003 Regime Context (fhq_research.market_regime) - PHASE 2
+5. IoS-006 Macro Indicators (fhq_research.macro_indicators) - PHASE 2
+6. IoS-016 Event Proximity (fhq_calendar.calendar_events) - PHASE 2
+7. Sentiment Analysis (fhq_research.sentiment_timeseries) - PHASE 3 NEW
 
 Authority: CEO, LARS (Strategy), STIG (Technical)
 Employment Contract: EC-003
@@ -111,7 +115,7 @@ class IoS013SignalAggregator:
     to fhq_research.signals for unified weighting.
     """
 
-    VERSION = "1.0.0"
+    VERSION = "2.0.0"  # Phase 3: 6/6 signal sources with sentiment
 
     def __init__(self):
         self.conn = None
@@ -366,6 +370,378 @@ class IoS013SignalAggregator:
 
         return signals
 
+    # =========================================================================
+    # PHASE 2: IoS-003 REGIME CONTEXT
+    # =========================================================================
+
+    def get_current_regime_context(self) -> Dict[str, Any]:
+        """
+        Get current regime context from IoS-003.
+        Source: fhq_research.market_regime
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    effective_date,
+                    regime,
+                    regime_score,
+                    trinity_1_score,
+                    trinity_2_score,
+                    sp500_signal,
+                    dxy_signal,
+                    vix_signal,
+                    stablecoin_signal,
+                    calculated_at
+                FROM fhq_research.market_regime
+                ORDER BY effective_date DESC
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+
+        if row:
+            logger.info(f"Current regime: {row['regime']} (score: {row['regime_score']})")
+            return dict(row)
+        return {}
+
+    def apply_regime_context(self, signals: List[AggregatedSignal], regime: Dict) -> List[AggregatedSignal]:
+        """
+        Apply regime context to signals.
+        Adjusts signal strength based on regime alignment.
+        """
+        if not regime:
+            return signals
+
+        regime_type = regime.get('regime', 'NEUTRAL')
+        regime_score = float(regime.get('regime_score', 0.5))
+
+        for signal in signals:
+            # Update market regime
+            signal.market_regime = regime_type
+            signal.regime_confidence = regime_score
+
+            # Adjust signal strength for regime alignment
+            alignment_bonus = 0.0
+            if regime_type in ('BULLISH', 'STRONG_BULL') and signal.direction == 'UP':
+                alignment_bonus = 0.05
+            elif regime_type in ('BEARISH', 'STRONG_BEAR') and signal.direction == 'DOWN':
+                alignment_bonus = 0.05
+            elif regime_type == 'NEUTRAL':
+                alignment_bonus = 0.0
+            else:
+                # Regime-signal mismatch penalty
+                alignment_bonus = -0.03
+
+            signal.signal_strength = min(1.0, signal.signal_strength + alignment_bonus)
+            signal.reason_codes['regime_alignment_bonus'] = alignment_bonus
+            signal.reason_codes['regime_context'] = {
+                'regime': regime_type,
+                'regime_score': regime_score,
+                'trinity_1': float(regime.get('trinity_1_score', 0)),
+                'trinity_2': float(regime.get('trinity_2_score', 0))
+            }
+
+        return signals
+
+    # =========================================================================
+    # PHASE 2: IoS-006 MACRO INDICATORS
+    # =========================================================================
+
+    def get_macro_context(self) -> Dict[str, Any]:
+        """
+        Get current macro context from IoS-006.
+        Source: fhq_research.macro_indicators
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get latest macro indicators
+            cur.execute("""
+                SELECT
+                    indicator_name,
+                    value,
+                    date,
+                    indicator_type
+                FROM fhq_research.macro_indicators
+                WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+                ORDER BY date DESC
+            """)
+            rows = cur.fetchall()
+
+        macro_context = {
+            'indicators': {},
+            'macro_regime': 'NEUTRAL',
+            'risk_level': 'MODERATE'
+        }
+
+        for row in rows:
+            name = row['indicator_name']
+            if name not in macro_context['indicators']:
+                macro_context['indicators'][name] = {
+                    'value': float(row['value']) if row['value'] else None,
+                    'date': str(row['date']),
+                    'type': row['indicator_type']
+                }
+
+        # Derive macro regime from key indicators
+        if macro_context['indicators']:
+            vix = macro_context['indicators'].get('VIX', {}).get('value')
+            if vix:
+                if vix > 30:
+                    macro_context['risk_level'] = 'HIGH'
+                    macro_context['macro_regime'] = 'RISK_OFF'
+                elif vix < 15:
+                    macro_context['risk_level'] = 'LOW'
+                    macro_context['macro_regime'] = 'RISK_ON'
+
+        logger.info(f"Macro context: {macro_context['macro_regime']} (risk: {macro_context['risk_level']})")
+        return macro_context
+
+    def apply_macro_context(self, signals: List[AggregatedSignal], macro: Dict) -> List[AggregatedSignal]:
+        """
+        Apply macro context to signals.
+        Adjusts for macro risk environment.
+        """
+        if not macro:
+            return signals
+
+        risk_level = macro.get('risk_level', 'MODERATE')
+        macro_regime = macro.get('macro_regime', 'NEUTRAL')
+
+        for signal in signals:
+            # Apply risk adjustment
+            risk_factor = 1.0
+            if risk_level == 'HIGH':
+                risk_factor = 0.85  # Reduce confidence in high-risk
+            elif risk_level == 'LOW':
+                risk_factor = 1.05  # Boost in low-risk
+
+            # Apply to signal
+            signal.signal_strength = min(1.0, signal.signal_strength * risk_factor)
+            signal.reason_codes['macro_context'] = {
+                'macro_regime': macro_regime,
+                'risk_level': risk_level,
+                'risk_factor': risk_factor
+            }
+
+        return signals
+
+    # =========================================================================
+    # PHASE 2: IoS-016 EVENT PROXIMITY
+    # =========================================================================
+
+    def get_event_proximity(self) -> Dict[str, Any]:
+        """
+        Get upcoming events that may impact signals.
+        Source: fhq_calendar.calendar_events via tag_event_proximity()
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    event_id,
+                    event_type,
+                    event_timestamp,
+                    impact_level,
+                    consensus_estimate,
+                    EXTRACT(EPOCH FROM (event_timestamp - NOW())) / 3600 as hours_until
+                FROM fhq_calendar.calendar_events
+                WHERE event_timestamp > NOW()
+                  AND event_timestamp < NOW() + INTERVAL '48 hours'
+                ORDER BY event_timestamp
+                LIMIT 10
+            """)
+            rows = cur.fetchall()
+
+        events = []
+        high_impact_imminent = False
+
+        for row in rows:
+            event = dict(row)
+            hours_until = float(event.get('hours_until', 999))
+
+            if hours_until < 24 and event.get('impact_level') in ('HIGH', 'CRITICAL'):
+                high_impact_imminent = True
+
+            events.append(event)
+
+        context = {
+            'events': events,
+            'event_count': len(events),
+            'high_impact_imminent': high_impact_imminent,
+            'next_event_hours': float(events[0]['hours_until']) if events else None
+        }
+
+        logger.info(f"Event proximity: {len(events)} events in next 48h, high_impact_imminent={high_impact_imminent}")
+        return context
+
+    def apply_event_proximity(self, signals: List[AggregatedSignal], event_context: Dict) -> List[AggregatedSignal]:
+        """
+        Apply event proximity adjustment to signals.
+        Reduce confidence near high-impact events.
+        """
+        if not event_context or not event_context.get('events'):
+            return signals
+
+        high_impact_imminent = event_context.get('high_impact_imminent', False)
+        next_event_hours = event_context.get('next_event_hours')
+
+        for signal in signals:
+            # Reduce confidence before high-impact events
+            event_factor = 1.0
+            if high_impact_imminent and next_event_hours and next_event_hours < 4:
+                event_factor = 0.75  # Significant reduction near events
+            elif high_impact_imminent:
+                event_factor = 0.90
+
+            signal.signal_strength = min(1.0, signal.signal_strength * event_factor)
+            signal.reason_codes['event_proximity'] = {
+                'high_impact_imminent': high_impact_imminent,
+                'next_event_hours': next_event_hours,
+                'event_factor': event_factor,
+                'event_count': event_context.get('event_count', 0)
+            }
+
+        return signals
+
+    # =========================================================================
+    # PHASE 3: SENTIMENT ANALYSIS INTEGRATION
+    # =========================================================================
+
+    def get_sentiment_context(self, symbol: str = None) -> Dict[str, Any]:
+        """
+        Get sentiment context from fhq_research.sentiment_timeseries.
+        Source: fhq_research.sentiment_timeseries (Phase 3)
+
+        Args:
+            symbol: Optional symbol filter. If None, gets aggregate sentiment.
+
+        Returns:
+            Dict with sentiment metrics
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            if symbol:
+                # Get sentiment for specific symbol
+                cur.execute("""
+                    SELECT
+                        symbol,
+                        sentiment_score,
+                        sentiment_label,
+                        sentiment_confidence,
+                        source_count,
+                        analyzed_at,
+                        EXTRACT(EPOCH FROM (NOW() - analyzed_at)) / 3600 as hours_since
+                    FROM fhq_research.sentiment_timeseries
+                    WHERE symbol = %s
+                    ORDER BY analyzed_at DESC
+                    LIMIT 1
+                """, (symbol,))
+            else:
+                # Get aggregate market sentiment (across all symbols)
+                cur.execute("""
+                    SELECT
+                        'AGGREGATE' as symbol,
+                        AVG(sentiment_score) as sentiment_score,
+                        MODE() WITHIN GROUP (ORDER BY sentiment_label) as sentiment_label,
+                        AVG(sentiment_confidence) as sentiment_confidence,
+                        COUNT(*) as source_count,
+                        MAX(analyzed_at) as analyzed_at,
+                        EXTRACT(EPOCH FROM (NOW() - MAX(analyzed_at))) / 3600 as hours_since
+                    FROM fhq_research.sentiment_timeseries
+                    WHERE analyzed_at >= NOW() - INTERVAL '24 hours'
+                """)
+
+            row = cur.fetchone()
+
+        if row and row.get('sentiment_score') is not None:
+            context = {
+                'symbol': row['symbol'],
+                'sentiment_score': float(row['sentiment_score']),
+                'sentiment_label': row['sentiment_label'],
+                'sentiment_confidence': float(row['sentiment_confidence']) if row['sentiment_confidence'] else 0.5,
+                'source_count': int(row['source_count']) if row['source_count'] else 0,
+                'hours_since_update': float(row['hours_since']) if row['hours_since'] else None,
+                'is_stale': (row['hours_since'] or 999) > 24  # Stale if > 24h old
+            }
+            logger.info(f"Sentiment context: {context['sentiment_label']} ({context['sentiment_score']:.3f})")
+            return context
+
+        return {
+            'symbol': symbol or 'AGGREGATE',
+            'sentiment_score': 0.0,
+            'sentiment_label': 'NEUTRAL',
+            'sentiment_confidence': 0.0,
+            'source_count': 0,
+            'hours_since_update': None,
+            'is_stale': True
+        }
+
+    def apply_sentiment_context(self, signals: List[AggregatedSignal], sentiment: Dict) -> List[AggregatedSignal]:
+        """
+        Apply sentiment context to signals.
+        Adjusts signal strength based on sentiment alignment.
+
+        Rules:
+        - Bullish sentiment + UP signal = boost
+        - Bearish sentiment + DOWN signal = boost
+        - Misaligned sentiment = penalty
+        - Stale sentiment = no adjustment
+        """
+        if not sentiment or sentiment.get('is_stale', True):
+            # No recent sentiment data - don't adjust
+            for signal in signals:
+                signal.reason_codes['sentiment_context'] = {
+                    'status': 'NO_DATA',
+                    'adjustment': 0.0
+                }
+            return signals
+
+        sentiment_score = sentiment.get('sentiment_score', 0)
+        sentiment_label = sentiment.get('sentiment_label', 'NEUTRAL')
+        sentiment_confidence = sentiment.get('sentiment_confidence', 0.5)
+
+        # Determine sentiment direction
+        if sentiment_score > 0.2:
+            sentiment_direction = 'UP'
+        elif sentiment_score < -0.2:
+            sentiment_direction = 'DOWN'
+        else:
+            sentiment_direction = 'NEUTRAL'
+
+        for signal in signals:
+            # Get symbol-specific sentiment if available
+            symbol_sentiment = self.get_sentiment_context(signal.listing_id)
+            active_sentiment = symbol_sentiment if not symbol_sentiment.get('is_stale') else sentiment
+
+            active_score = active_sentiment.get('sentiment_score', 0)
+            active_direction = 'UP' if active_score > 0.2 else ('DOWN' if active_score < -0.2 else 'NEUTRAL')
+
+            # Calculate alignment adjustment
+            sentiment_adjustment = 0.0
+
+            if active_direction == signal.direction:
+                # Aligned: boost based on sentiment strength
+                sentiment_adjustment = abs(active_score) * 0.08  # Max +8% boost
+            elif active_direction == 'NEUTRAL':
+                # Neutral sentiment: no adjustment
+                sentiment_adjustment = 0.0
+            else:
+                # Misaligned: penalty based on sentiment strength
+                sentiment_adjustment = -abs(active_score) * 0.05  # Max -5% penalty
+
+            # Apply adjustment (scaled by sentiment confidence)
+            adjustment = sentiment_adjustment * sentiment_confidence
+            signal.signal_strength = max(0.1, min(1.0, signal.signal_strength + adjustment))
+
+            # Record context
+            signal.reason_codes['sentiment_context'] = {
+                'sentiment_score': active_score,
+                'sentiment_label': active_sentiment.get('sentiment_label', 'NEUTRAL'),
+                'sentiment_direction': active_direction,
+                'signal_direction': signal.direction,
+                'alignment': 'ALIGNED' if active_direction == signal.direction else ('NEUTRAL' if active_direction == 'NEUTRAL' else 'MISALIGNED'),
+                'adjustment': round(adjustment, 4),
+                'confidence': sentiment_confidence
+            }
+
+        return signals
+
     def get_brier_score_for_signal_type(self, signal_type: str) -> Optional[float]:
         """Look up Brier score for signal type from forecast_skill_metrics."""
         type_to_model = {
@@ -503,7 +879,7 @@ class IoS013SignalAggregator:
         Returns aggregation summary.
         """
         logger.info("=" * 60)
-        logger.info("IoS-013 SIGNAL AGGREGATOR - RUNNING")
+        logger.info("IoS-013 SIGNAL AGGREGATOR - RUNNING (Phase 3: 6/6 Sources)")
         logger.info("=" * 60)
 
         start_time = datetime.now(timezone.utc)
@@ -518,13 +894,35 @@ class IoS013SignalAggregator:
 
         # Combine all signals
         all_signals = golden_signals + g1_signals
-        logger.info(f"Total signals aggregated: {len(all_signals)}")
+        logger.info(f"Base signals aggregated: {len(all_signals)}")
 
-        # Step 3: Write to fhq_research.signals
-        logger.info("STEP 3: Writing to fhq_research.signals...")
+        # Phase 2 Step 3: Get IoS-003 Regime Context
+        logger.info("STEP 3 (Phase 2): Getting IoS-003 Regime Context...")
+        regime_context = self.get_current_regime_context()
+        all_signals = self.apply_regime_context(all_signals, regime_context)
+
+        # Phase 2 Step 4: Get IoS-006 Macro Context
+        logger.info("STEP 4 (Phase 2): Getting IoS-006 Macro Context...")
+        macro_context = self.get_macro_context()
+        all_signals = self.apply_macro_context(all_signals, macro_context)
+
+        # Phase 2 Step 5: Get IoS-016 Event Proximity
+        logger.info("STEP 5 (Phase 2): Getting IoS-016 Event Proximity...")
+        event_context = self.get_event_proximity()
+        all_signals = self.apply_event_proximity(all_signals, event_context)
+
+        # Phase 3 Step 6: Get Sentiment Context
+        logger.info("STEP 6 (Phase 3): Getting Sentiment Context...")
+        sentiment_context = self.get_sentiment_context()
+        all_signals = self.apply_sentiment_context(all_signals, sentiment_context)
+
+        logger.info(f"Total signals after Phase 3 enrichment: {len(all_signals)}")
+
+        # Step 7: Write to fhq_research.signals
+        logger.info("STEP 7: Writing to fhq_research.signals...")
         written = self.write_signals_to_research(all_signals)
 
-        # Step 4: Verify
+        # Step 8: Verify
         with self.conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM fhq_research.signals WHERE status = 'ACTIVE'")
             active_count = cur.fetchone()[0]
@@ -543,7 +941,24 @@ class IoS013SignalAggregator:
             'signals_updated': self.stats['signals_skipped'],
             'errors': self.stats['errors'],
             'active_signals_in_table': active_count,
-            'version': self.VERSION
+            'version': self.VERSION,
+            # Phase 2+3: Context enrichment
+            'context_enrichment': {
+                'regime_context': regime_context,
+                'macro_regime': macro_context.get('macro_regime'),
+                'macro_risk_level': macro_context.get('risk_level'),
+                'event_proximity': {
+                    'events_48h': event_context.get('event_count', 0),
+                    'high_impact_imminent': event_context.get('high_impact_imminent', False)
+                },
+                'sentiment_context': {
+                    'sentiment_label': sentiment_context.get('sentiment_label', 'NO_DATA'),
+                    'sentiment_score': sentiment_context.get('sentiment_score', 0),
+                    'source_count': sentiment_context.get('source_count', 0),
+                    'is_stale': sentiment_context.get('is_stale', True)
+                },
+                'sources_active': '6/6'
+            }
         }
 
         logger.info("=" * 60)

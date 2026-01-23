@@ -17,27 +17,77 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { HeroPanel } from '@/components/dashboard/HeroPanel'
 import { SignalGrid } from '@/components/dashboard/SignalGrid'
 import { IndicatorMatrix } from '@/components/dashboard/IndicatorMatrix'
-import { RefreshCw } from 'lucide-react'
+import { ACITrianglePanel } from '@/components/dashboard/ACITrianglePanel'
+import { RefreshCw, Play, Pause } from 'lucide-react'
+
+// Auto-refresh configuration
+const REFRESH_INTERVAL_MS = 30000 // 30 seconds
+const REFRESH_INTERVALS = [
+  { label: '15s', value: 15000 },
+  { label: '30s', value: 30000 },
+  { label: '1m', value: 60000 },
+  { label: '5m', value: 300000 },
+  { label: 'Off', value: 0 },
+]
 
 export default function DashboardPage() {
   const [listingId, setListingId] = useState('LST_BTC_XCRYPTO')
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const [mounted, setMounted] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [refreshInterval, setRefreshInterval] = useState(REFRESH_INTERVAL_MS)
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL_MS / 1000)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Only show timestamp on client-side to avoid hydration mismatch
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const handleRefresh = () => {
+  // Manual refresh handler
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true)
+    setRefreshKey(prev => prev + 1)
     setLastRefresh(new Date())
-    // Force re-render of all components by changing key
-    window.location.reload()
-  }
+    setCountdown(refreshInterval / 1000)
+    // Brief visual feedback
+    setTimeout(() => setIsRefreshing(false), 500)
+  }, [refreshInterval])
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh || refreshInterval === 0) return
+
+    const interval = setInterval(() => {
+      handleRefresh()
+    }, refreshInterval)
+
+    return () => clearInterval(interval)
+  }, [autoRefresh, refreshInterval, handleRefresh])
+
+  // Countdown timer
+  useEffect(() => {
+    if (!autoRefresh || refreshInterval === 0) return
+
+    const ticker = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) return refreshInterval / 1000
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(ticker)
+  }, [autoRefresh, refreshInterval])
+
+  // Reset countdown when interval changes
+  useEffect(() => {
+    setCountdown(refreshInterval / 1000)
+  }, [refreshInterval])
 
   return (
     <div className="min-h-screen bg-black">
@@ -79,12 +129,52 @@ export default function DashboardPage() {
                 </select>
               </div>
 
-              {/* Refresh button */}
+              {/* Auto-refresh controls */}
+              <div className="flex items-center gap-2 border-l border-gray-800 pl-4">
+                {/* Auto-refresh toggle */}
+                <button
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${
+                    autoRefresh
+                      ? 'bg-green-900/50 text-green-400 border border-green-800'
+                      : 'bg-gray-900 text-gray-500 border border-gray-700'
+                  }`}
+                  title={autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+                >
+                  {autoRefresh ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                  Auto
+                </button>
+
+                {/* Interval selector */}
+                <select
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                  className="bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-blue-600"
+                >
+                  {REFRESH_INTERVALS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Countdown */}
+                {autoRefresh && refreshInterval > 0 && (
+                  <div className="text-xs text-gray-500 tabular-nums w-8">
+                    {countdown}s
+                  </div>
+                )}
+              </div>
+
+              {/* Manual refresh button */}
               <button
                 onClick={handleRefresh}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded text-sm text-gray-300 hover:bg-gray-800 hover:border-gray-600 transition-colors"
+                disabled={isRefreshing}
+                className={`flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded text-sm text-gray-300 hover:bg-gray-800 hover:border-gray-600 transition-colors ${
+                  isRefreshing ? 'opacity-50' : ''
+                }`}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
 
@@ -107,7 +197,7 @@ export default function DashboardPage() {
               Zone 1: What's Happening Now? (3 seconds)
             </h2>
           </div>
-          <HeroPanel listingId={listingId} />
+          <HeroPanel listingId={listingId} refreshKey={refreshKey} />
         </section>
 
         {/* ZONE 2: Signal Grid (30-second comprehension) */}
@@ -118,7 +208,7 @@ export default function DashboardPage() {
               Zone 2: Why Is This Happening? (30 seconds)
             </h2>
           </div>
-          <SignalGrid listingId={listingId} />
+          <SignalGrid listingId={listingId} refreshKey={refreshKey} />
         </section>
 
         {/* ZONE 3: Indicator Matrix (3-minute verification) */}
@@ -129,7 +219,18 @@ export default function DashboardPage() {
               Zone 3: How Can I Verify This? (3 minutes)
             </h2>
           </div>
-          <IndicatorMatrix listingId={listingId} />
+          <IndicatorMatrix listingId={listingId} refreshKey={refreshKey} />
+        </section>
+
+        {/* ZONE 4: ACI Constraint Triangle (Governance) */}
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-purple-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Zone 4: Cognitive Governance (ACI Triangle)
+            </h2>
+          </div>
+          <ACITrianglePanel refreshKey={refreshKey} />
         </section>
 
         {/* Footer */}

@@ -30,6 +30,7 @@ import {
 interface SignalGridProps {
   listingId?: string
   className?: string
+  refreshKey?: number
 }
 
 interface FamilySignal {
@@ -60,7 +61,7 @@ interface FamiliesResponse {
   }
 }
 
-export function SignalGrid({ listingId = 'LST_BTC_XCRYPTO', className }: SignalGridProps) {
+export function SignalGrid({ listingId = 'LST_BTC_XCRYPTO', className, refreshKey = 0 }: SignalGridProps) {
   const [data, setData] = useState<FamiliesResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -88,7 +89,7 @@ export function SignalGrid({ listingId = 'LST_BTC_XCRYPTO', className }: SignalG
     }
 
     fetchData()
-  }, [listingId])
+  }, [listingId, refreshKey])
 
   const getFamilyIcon = (iconName: string) => {
     switch (iconName) {

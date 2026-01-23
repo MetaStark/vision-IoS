@@ -69,9 +69,10 @@ interface ACITriangleTelemetry {
 
 interface ACITrianglePanelProps {
   className?: string
+  refreshKey?: number
 }
 
-export function ACITrianglePanel({ className }: ACITrianglePanelProps) {
+export function ACITrianglePanel({ className, refreshKey = 0 }: ACITrianglePanelProps) {
   const [data, setData] = useState<ACITriangleTelemetry | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +99,7 @@ export function ACITrianglePanel({ className }: ACITrianglePanelProps) {
     // Refresh every 60 seconds
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [refreshKey])
 
   const getHealthStatus = (rate: number, threshold: number, inverse = false) => {
     const isHealthy = inverse ? rate < threshold : rate >= threshold
