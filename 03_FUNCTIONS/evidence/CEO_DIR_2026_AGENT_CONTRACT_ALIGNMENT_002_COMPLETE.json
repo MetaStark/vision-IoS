@@ -1,0 +1,66 @@
+{
+  "directive": "CEO-DIR-2026-AGENT-CONTRACT-ALIGNMENT-002",
+  "executed_by": "STIG",
+  "completed_at": "2026-01-23T19:25:15.920Z",
+
+  "phase_ia": {
+    "name": "Immediate Repair",
+    "status": "COMPLETE",
+    "actions": [
+      "Fixed agent_ec_mapping (19 correct rows, EC-008 removed)",
+      "Fixed vega_employment_contract (5 rows: EC-006, EC-007, EC-010, EC-011, EC-012)",
+      "Added missing agents to agent_mandates (CODE, CPTO, META_ALPHA, HUMAN_GOV)",
+      "Added EC-016 VALKYRIE to agent_ec_mapping",
+      "Activated EC-019 HUMAN_GOVERNOR"
+    ],
+    "pre_state_evidence": "03_FUNCTIONS/evidence/MIGRATION_PATCH_001_PRE_STATE_20260123.json",
+    "register_hash_post": "2a3399fd4704db82312d49065c6c88e7"
+  },
+
+  "phase_ib": {
+    "name": "Hardening - Prevent Recurrence",
+    "status": "COMPLETE",
+    "guardrails_deployed": {
+      "unique_constraint": "ALREADY_EXISTS on vega_employment_contract.contract_number",
+      "content_hash_column": "ALREADY_EXISTS as content_hash",
+      "effective_to_column": "ADDED for versioning semantics",
+      "reconciliation_function": "fhq_governance.reconcile_contract_registers()",
+      "gate_function": "fhq_governance.contract_reconciliation_gate()",
+      "hash_verification_function": "fhq_governance.verify_contract_content_hash()"
+    }
+  },
+
+  "final_gate": {
+    "gate_name": "CONTRACT_RECONCILIATION_GATE",
+    "total_contracts": 20,
+    "ok_count": 20,
+    "mismatch_count": 0,
+    "gate_status": "PASS"
+  },
+
+  "three_way_alignment": {
+    "contract_files": "20 contract files in /10_EMPLOYMENT CONTRACTS/",
+    "agent_ec_mapping": "20 rows (EC-008 excluded - is charter not agent)",
+    "vega_employment_contract": "21 rows (includes EC-008 as FRAMEWORK_CHARTER)",
+    "alignment_status": "SYNCHRONIZED"
+  },
+
+  "runbook_day23_integration": {
+    "recommended_check": "SELECT * FROM fhq_governance.contract_reconciliation_gate();",
+    "pass_condition": "mismatch_count = 0",
+    "fail_action": "HALT - Escalate to CEO"
+  },
+
+  "migration_files": [
+    "04_DATABASE/MIGRATION_AGENT_CONTRACT_ALIGNMENT_PATCH_001.sql",
+    "04_DATABASE/MIGRATION_PATCH_001_STEP3_4_FIX.sql",
+    "04_DATABASE/MIGRATION_PHASE_IA_VEGA_REGISTER_FIX.sql",
+    "04_DATABASE/MIGRATION_PHASE_IB_HARDENING.sql",
+    "04_DATABASE/FIX_RECONCILE_FUNCTION.sql"
+  ],
+
+  "signatures": {
+    "STIG": "Migration executed and verified",
+    "timestamp": "2026-01-23T19:25:15.920Z"
+  }
+}
