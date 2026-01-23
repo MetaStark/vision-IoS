@@ -1,0 +1,140 @@
+{
+  "directive": "CEO-DIR-2026-HYPOTHESIS-ECONOMY-001",
+  "addendum": "A",
+  "title": "Epistemic Hardening, Incentive Safety & Context Integrity",
+  "status": "DEPLOYED",
+  "timestamp": "2026-01-24T00:00:00.000Z",
+  "signed_by": "STIG (EC-003)",
+  "migration": "338",
+
+  "executive_intent": "Convert FjordHQ from 'Hard and correct' to 'Hard, self-aware, and self-correcting'",
+
+  "failure_modes_addressed": [
+    "Over-hard Tier-1 falsification (Type I error dominance)",
+    "Narrative seduction via unconstrained context vectors",
+    "Antithesis leakage destabilizing learning economics",
+    "Reward hacking (Cobra Effect) in EC-022",
+    "Context isolation from Prediction Ledger (IoS-010)"
+  ],
+
+  "directive_1_symmetry_watch": {
+    "status": "DEPLOYED",
+    "table": "shadow_tier_registry",
+    "function": "sample_for_shadow_tier()",
+    "executor": "LARS",
+    "environment": "NON_CANONICAL (isolated)",
+    "sample_rate": "5%",
+    "metrics_added": [
+      "false_negative_indicator",
+      "shadow_survival_rate",
+      "hardening_bias_flag"
+    ],
+    "fail_closed": "Shadow Tier must NEVER re-promote hypotheses. Cross-contamination = halt Phase III",
+    "current_samples": 0
+  },
+
+  "directive_2_context_dominance": {
+    "status": "DEPLOYED",
+    "dominance_hierarchy": [
+      "1. Temporal Alignment (VETO)",
+      "2. Statistical Lift",
+      "3. Cross-Event Recurrence"
+    ],
+    "veto_rule": "If context timestamp > outcome timestamp: Context Confidence = 0, no further evaluation",
+    "columns_added": ["temporal_veto", "effective_confidence"],
+    "trigger": "trg_context_dominance",
+    "audit_view": "v_context_rejection_audit",
+    "no_weighted_averaging": true
+  },
+
+  "directive_3_cseo_boundary": {
+    "status": "DEPLOYED",
+    "boundary_rule": "antithesis_experiments can only target status IN ('WEAKENED', 'CANDIDATE')",
+    "explicit_prohibitions": [
+      "Cannot attack INCUBATION hypotheses",
+      "Cannot attack Tier-1 FALSIFIED hypotheses",
+      "Cannot spawn new hypotheses from antithesis output"
+    ],
+    "trigger": "trg_antithesis_boundary",
+    "audit_view": "v_antithesis_boundary_audit",
+    "fail_closed": "Boundary violation raises exception, revokes CSEO execution"
+  },
+
+  "directive_4_cobra_effect_prevention": {
+    "status": "DEPLOYED",
+    "columns_added": ["complexity_score", "causal_graph_depth", "cobra_effect_test", "trivial_kill_net_reward"],
+    "functions": [
+      "calculate_hypothesis_complexity()",
+      "calculate_complexity_adjusted_reward()",
+      "validate_ec022_g1_gate_v2()"
+    ],
+    "complexity_formula": "(causal_depth * 0.4) + (dof * 0.3) + (regime_count * 0.3)",
+    "trivial_threshold": 1.5,
+    "trivial_reward_reduction": "90%",
+    "g1_test_added": "cobra_effect_test",
+    "fail_closed": "If trivial-kill yields positive reward: EC-022 remains disabled"
+  },
+
+  "directive_5_ios010_integration": {
+    "status": "DEPLOYED",
+    "column_added": "evaluation_id",
+    "trigger": "trg_context_evaluation_link",
+    "view": "v_context_brier_impact",
+    "enables": "Direct attribution of context impact on Brier Score deltas",
+    "fail_closed": "Evaluation-type context without evaluation_id = reject insert"
+  },
+
+  "readiness_checklist": {
+    "tier1_death_rate": "50.00% (target ≥70%, n=2)",
+    "symmetry_watch": "OPERATIONAL (0 samples, awaiting falsifications)",
+    "context_dominance": "ENFORCED (temporal veto active)",
+    "cseo_boundary": "ENFORCED (trigger active)",
+    "ec022_g1": "PENDING (Cobra test required)",
+    "ios010_bridge": "READY (evaluation_id column active)"
+  },
+
+  "tables_created": [
+    "shadow_tier_registry"
+  ],
+
+  "columns_added": [
+    "context_annotations.temporal_veto",
+    "context_annotations.effective_confidence",
+    "context_annotations.evaluation_id",
+    "antithesis_experiments.boundary_validated",
+    "hypothesis_canon.complexity_score",
+    "hypothesis_canon.causal_graph_depth",
+    "reward_logic_registry.cobra_effect_test",
+    "reward_logic_registry.trivial_kill_net_reward"
+  ],
+
+  "functions_created": [
+    "sample_for_shadow_tier()",
+    "validate_context_dominance()",
+    "validate_antithesis_boundary()",
+    "calculate_hypothesis_complexity()",
+    "calculate_complexity_adjusted_reward()",
+    "validate_ec022_g1_gate_v2()",
+    "validate_context_evaluation_link()"
+  ],
+
+  "views_created": [
+    "v_tier1_calibration_status (extended)",
+    "v_context_rejection_audit",
+    "v_antithesis_boundary_audit",
+    "v_context_brier_impact",
+    "v_addendum_a_readiness"
+  ],
+
+  "triggers_created": [
+    "trg_context_dominance",
+    "trg_antithesis_boundary",
+    "trg_context_evaluation_link"
+  ],
+
+  "phase_status_unchanged": {
+    "phase_iii": "ACTIVE (calibrating)",
+    "phase_iv": "ACTIVE (read-only)",
+    "phase_v": "FROZEN"
+  }
+}
