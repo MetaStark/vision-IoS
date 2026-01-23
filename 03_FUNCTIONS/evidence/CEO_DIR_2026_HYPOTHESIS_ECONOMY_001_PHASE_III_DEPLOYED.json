@@ -1,0 +1,95 @@
+{
+  "directive": "CEO-DIR-2026-HYPOTHESIS-ECONOMY-001",
+  "phase": "III",
+  "status": "DEPLOYED",
+  "timestamp": "2026-01-23T23:00:00.000Z",
+  "signed_by": "STIG (EC-003)",
+
+  "ceo_authorizations_executed": {
+    "finn_write_mandate": {
+      "status": "GRANTED",
+      "scope": "fhq_learning.hypothesis_canon",
+      "restrictions": [
+        "Can create hypotheses",
+        "Can mutate hypotheses (with parent_id)",
+        "Can update confidence/state",
+        "Cannot create experiments",
+        "Cannot affect execution, sizing, or signals",
+        "Cannot change canonical truth"
+      ],
+      "fail_closed": "Writes without error_id, system_state_hash, regime_snapshot → REJECT + ASRP escalation"
+    }
+  },
+
+  "phase_iii_deliverables": {
+    "migration_336": "DEPLOYED",
+    "experiment_registry_table": "CREATED",
+    "experiment_runner_daemon": "OPERATIONAL",
+    "tiered_architecture": {
+      "tier_1_falsification_sweep": {
+        "status": "ACTIVE",
+        "max_params": 3,
+        "target_death_rate": "80-90%",
+        "focus": ["direction", "sign_consistency", "regime_breach"]
+      },
+      "tier_2_robustness_validation": {
+        "status": "READY",
+        "max_params": 10,
+        "focus": ["walk_forward", "regime_segmentation", "sensitivity"]
+      },
+      "tier_3_promotion_candidate": {
+        "status": "READY",
+        "output": "ELIGIBLE_FOR_PAPER (flag only)"
+      }
+    },
+    "asrp_guardrails": {
+      "dataset_signature_enforcement": "ACTIVE",
+      "degree_of_freedom_counter": "ACTIVE",
+      "state_aware_execution": "ACTIVE",
+      "regime_snapshot_required": true,
+      "error_link_required": true
+    },
+    "stop_conditions": {
+      "v_phacking_drift_monitor": "DEPLOYED",
+      "low_death_rate_alert": "ACTIVE",
+      "volume_vs_death_rate_check": "ACTIVE"
+    }
+  },
+
+  "test_results": {
+    "tier_1_experiments": 2,
+    "falsified": 1,
+    "weakened": 1,
+    "current_death_rate": "50%",
+    "hypotheses_tested": ["HYP-2026-0002 (FALSIFIED)", "HYP-2026-0003 (WEAKENED)"]
+  },
+
+  "acceptance_tests": {
+    "can_answer_tier1_deaths": true,
+    "can_answer_error_types": true,
+    "death_rate_tracking": true,
+    "no_experiments_without_error_link": true,
+    "replay_determinism": "IMPLEMENTED (dataset_signature enforcement)"
+  },
+
+  "views_created": [
+    "v_tier_statistics",
+    "v_daily_experiment_summary",
+    "v_hypothesis_dof_summary",
+    "v_phacking_drift_monitor"
+  ],
+
+  "functions_created": [
+    "generate_experiment_code()",
+    "validate_experiment_asrp()",
+    "check_dataset_reuse()",
+    "calculate_dof_penalty()",
+    "create_experiment()",
+    "record_experiment_result()"
+  ],
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/336_phase3_tiered_experimentation.sql",
+    "03_FUNCTIONS/experiment_runner_daemon.py"
+  ]
+}
