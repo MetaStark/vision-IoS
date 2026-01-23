@@ -1,0 +1,117 @@
+{
+  "directive": "CEO-DIR-2026-HYPOTHESIS-ECONOMY-001",
+  "phase": "IV",
+  "status": "ACTIVATED (READ-ONLY LEARNING MODE)",
+  "timestamp": "2026-01-23T23:35:00.000Z",
+  "signed_by": "STIG (EC-003)",
+
+  "ceo_authorization": {
+    "phase_iv_authorized": true,
+    "phase_v_frozen": true,
+    "mode": "READ-ONLY LEARNING",
+    "restrictions": [
+      "Cannot create new hypotheses",
+      "Cannot change confidence directly",
+      "Cannot affect execution",
+      "Can only: annotate, group, explain"
+    ]
+  },
+
+  "phase_iv_infrastructure": {
+    "migration": "337",
+    "status": "DEPLOYED",
+
+    "ec_020_sitc": {
+      "status": "READY",
+      "trigger_types": ["FALSIFIED", "WEAKENED", "REGIME_BREACH"],
+      "table": "sitc_triggers",
+      "output": "Time-bound, traceable context"
+    },
+
+    "ec_021_inforage": {
+      "status": "READY",
+      "mode": "BATCH (not real-time)",
+      "themes_registered": 8,
+      "themes": [
+        "BANK_STRESS",
+        "GEOPOLITICS",
+        "AI_REGULATION",
+        "FED_POLICY",
+        "EARNINGS_SURPRISE",
+        "MACRO_SHOCK",
+        "REGIME_TRANSITION",
+        "LIQUIDITY_EVENT"
+      ],
+      "output": "Tags and groups ONLY (not causation)"
+    },
+
+    "ec_022_reward_logic": {
+      "status": "INACTIVE (requires G1 Gate)",
+      "reward_types_registered": 4,
+      "g1_validated": false,
+      "g1_gate_required_by": "STIG (EC-003)",
+      "incentive_tests_required": [
+        "Incentive Alignment Test",
+        "Asymmetry Test",
+        "Delayed Reward Test"
+      ],
+      "never_reward": ["good story", "right narrative", "sounded smart"]
+    }
+  },
+
+  "mbb_addons_implemented": {
+    "cseo_antithesis_experiments": {
+      "status": "READY",
+      "table": "antithesis_experiments",
+      "classes": [
+        "MECHANISM_BREAK (invert causal chain)",
+        "REGIME_STRESS (test in neighbor regimes)",
+        "BOUNDARY_VIOLATION (tail stress)"
+      ],
+      "guardrail": "Can ONLY execute in Tier 2 or Tier 3"
+    },
+
+    "context_confidence_score": {
+      "status": "READY",
+      "table": "context_annotations",
+      "components": [
+        "confidence_temporal_alignment (came before outcome?)",
+        "confidence_cross_event_recurrence (explains multiple errors?)",
+        "confidence_statistical_lift (better than baseline?)",
+        "confidence_out_of_sample (holds in other periods?)"
+      ],
+      "note": "Vector score, NOT scalar - per MBB directive"
+    },
+
+    "g1_gate_for_ec022": {
+      "status": "ENFORCED",
+      "function": "validate_ec022_g1_gate()",
+      "validator_required": "STIG",
+      "tests_required": 3
+    }
+  },
+
+  "acceptance_tests": {
+    "context_theme_falsification_correlation": "v_context_falsification_correlation (READY)",
+    "cross_regime_error_patterns": "v_cross_regime_error_patterns (READY)",
+    "hypothesis_failure_patterns": "v_hypothesis_failure_patterns (READY)",
+    "phase_iv_independence": "v_phase4_independence_test (PASS - Phase III unaffected)"
+  },
+
+  "tables_created": [
+    "tier1_falsification_criteria",
+    "context_annotations",
+    "sitc_triggers",
+    "inforage_themes",
+    "reward_logic_registry",
+    "antithesis_experiments"
+  ],
+
+  "views_created": [
+    "v_tier1_calibration_status",
+    "v_context_falsification_correlation",
+    "v_cross_regime_error_patterns",
+    "v_hypothesis_failure_patterns",
+    "v_phase4_independence_test"
+  ]
+}
