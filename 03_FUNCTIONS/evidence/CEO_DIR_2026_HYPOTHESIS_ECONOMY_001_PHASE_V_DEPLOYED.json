@@ -1,0 +1,159 @@
+{
+  "directive": "CEO-DIR-2026-HYPOTHESIS-ECONOMY-001",
+  "phase": "V",
+  "title": "Autonomous Execution Eligibility (Shadow Only) + Learning Velocity Governor",
+  "status": "DEPLOYED",
+  "timestamp": "2026-01-24T00:06:00.000Z",
+  "signed_by": "STIG (EC-003)",
+  "migration": "339",
+
+  "execution_mode": "SHADOW_ONLY",
+
+  "hard_constraints": {
+    "shadow_mode_enforced": true,
+    "live_capital_blocked": true,
+    "leverage_blocked": true,
+    "ec022_dependency_blocked": true
+  },
+
+  "tables_created": [
+    {
+      "name": "execution_eligibility_registry",
+      "schema": "fhq_learning",
+      "columns": 20,
+      "purpose": "Eligibility scoring for hypothesis execution readiness"
+    },
+    {
+      "name": "killswitch_registry",
+      "schema": "fhq_learning",
+      "columns": 17,
+      "purpose": "Emergency halt mechanisms"
+    },
+    {
+      "name": "capital_simulation_ledger",
+      "schema": "fhq_learning",
+      "columns": 21,
+      "purpose": "Paper trading risk models"
+    },
+    {
+      "name": "learning_velocity_metrics",
+      "schema": "fhq_learning",
+      "columns": 21,
+      "purpose": "Velocity tracking and auto-brake"
+    },
+    {
+      "name": "observation_window",
+      "schema": "fhq_learning",
+      "columns": 15,
+      "purpose": "30-day window tracking for activation eligibility"
+    }
+  ],
+
+  "views_created": [
+    "v_phase5_readiness",
+    "v_learning_velocity_dashboard"
+  ],
+
+  "killswitches_armed": [
+    {
+      "code": "KS-GLOBAL-001",
+      "name": "Global Emergency Halt",
+      "trigger_type": "MANUAL",
+      "threshold": null,
+      "is_armed": true
+    },
+    {
+      "code": "KS-DRAWDOWN-001",
+      "name": "Drawdown Limit",
+      "trigger_type": "DRAWDOWN",
+      "threshold": "5.0%",
+      "is_armed": true
+    },
+    {
+      "code": "KS-VELOCITY-001",
+      "name": "Learning Velocity Spike",
+      "trigger_type": "VELOCITY_SPIKE",
+      "threshold": 50,
+      "is_armed": true
+    },
+    {
+      "code": "KS-REGIME-001",
+      "name": "Regime Breach Halt",
+      "trigger_type": "REGIME_BREACH",
+      "threshold": 0.5,
+      "is_armed": true
+    },
+    {
+      "code": "KS-CORRELATION-001",
+      "name": "Correlation Break",
+      "trigger_type": "CORRELATION_BREAK",
+      "threshold": 0.3,
+      "is_armed": true
+    }
+  ],
+
+  "ec022_observation_window": {
+    "window_name": "EC-022 Activation Eligibility Window",
+    "window_type": "EC022_ELIGIBILITY",
+    "start_date": "2026-01-24",
+    "required_market_days": 30,
+    "current_market_days": 0,
+    "status": "ACTIVE",
+    "acceptance_criteria": {
+      "ios010_bridge_operational": true,
+      "tier1_calibration": {
+        "death_rate_min": 0.7,
+        "death_rate_max": 0.9,
+        "min_experiments": 30
+      },
+      "context_confidence_lift": {
+        "macro_regimes_tested": 2,
+        "drawdown_phases_tested": 1,
+        "minimum_lift_vs_baseline": 0.05
+      }
+    }
+  },
+
+  "learning_velocity_governor": {
+    "metrics_tracked": [
+      "hypotheses_born_today",
+      "hypotheses_killed_today",
+      "mean_time_to_falsification",
+      "velocity_7d_avg",
+      "velocity_30d_avg"
+    ],
+    "auto_brake_trigger": "velocity_spike > historical_band",
+    "prevents": [
+      "Hypothesis spam",
+      "AI thrashing",
+      "Narrative-driven cascades"
+    ]
+  },
+
+  "phase5_readiness": {
+    "eligible_hypotheses": 0,
+    "evaluated_hypotheses": 0,
+    "active_killswitches": 5,
+    "triggered_killswitches": 0,
+    "open_simulations": 0,
+    "shadow_mode_enforced": true,
+    "live_capital_blocked": true,
+    "leverage_blocked": true,
+    "ec022_frozen": true
+  },
+
+  "allowed_components": [
+    "Eligibility Scoring",
+    "Kill-Switch Wiring",
+    "Capital-at-Risk Simulation",
+    "Options Payoff Evaluation"
+  ],
+
+  "forbidden_components": [
+    "Live Capital Routing",
+    "Automatic Leverage Scaling",
+    "EC-022 Dependency"
+  ],
+
+  "compliance": "ASRP/ADR-018"
+}
