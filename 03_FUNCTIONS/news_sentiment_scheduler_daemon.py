@@ -88,21 +88,34 @@ class NewsSentimentDaemon:
         return self.serper_wrapper
 
     def register_heartbeat(self):
-        """Register daemon heartbeat."""
+        """Register daemon heartbeat in fhq_governance.agent_heartbeats."""
         try:
             with self.conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO fhq_ops.daemon_heartbeats (daemon_name, last_heartbeat, health_score, metadata)
-                    VALUES (%s, NOW(), 1.0, %s)
-                    ON CONFLICT (daemon_name) DO UPDATE SET
+                    INSERT INTO fhq_governance.agent_heartbeats (
+                        agent_id, component, current_task, health_score,
+                        events_processed, errors_count, last_heartbeat, created_at,
+                        health_source, liveness_basis, liveness_metadata
+                    ) VALUES (
+                        %s, %s, %s, 1.0,
+                        0, 0, NOW(), NOW(),
+                        'DAEMON', 'SENTIMENT_CYCLE', %s
+                    )
+                    ON CONFLICT (agent_id) DO UPDATE SET
                         last_heartbeat = NOW(),
                         health_score = 1.0,
-                        metadata = EXCLUDED.metadata
-                """, (DAEMON_NAME, json.dumps({
-                    'version': '1.0.0',
-                    'directive': 'CEO-DIR-2026-META-ANALYSIS',
-                    'phase': 'Phase 3'
-                })))
+                        current_task = EXCLUDED.current_task,
+                        liveness_metadata = EXCLUDED.liveness_metadata
+                """, (
+                    DAEMON_NAME,
+                    'NEWS_SENTIMENT',
+                    'Running sentiment analysis cycle',
+                    json.dumps({
+                        'version': '1.0.0',
+                        'directive': 'CEO-DIR-2026-META-ANALYSIS',
+                        'phase': 'Phase 3'
+                    })
+                ))
                 self.conn.commit()
         except Exception as e:
             logger.warning(f"Failed to register heartbeat: {e}")
@@ -112,41 +125,50 @@ class NewsSentimentDaemon:
         Get symbols to analyze from various sources.
 
         Sources:
-        1. Active positions (fhq_capital.positions)
-        2. Watchlist symbols (fhq_research.watchlist)
-        3. Golden Needle symbols (fhq_canonical.golden_needles)
+        1. Active paper positions (fhq_execution.paper_positions)
+        2. Golden Needle symbols (fhq_canonical.golden_needles)
 
         Returns:
             List of dicts with symbol, asset_class
         """
         symbols = []
+        seen = set()
 
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get active position symbols
+            # Get active paper position symbols
             cur.execute("""
                 SELECT DISTINCT symbol,
-                       CASE WHEN symbol ~ '^[A-Z]{3}(USD|EUR|GBP)$' THEN 'FOREX'
-                            WHEN symbol IN ('BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'LINK', 'MATIC') THEN 'CRYPTO'
-                            WHEN symbol IN ('GLD', 'SLV', 'USO', 'UNG') THEN 'COMMODITY'
-                            ELSE 'EQUITY' END as asset_class
-                FROM fhq_capital.positions
-                WHERE status = 'OPEN'
+                       COALESCE(asset_class,
+                           CASE WHEN symbol ~ '-USD$' OR symbol IN ('BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'LINK', 'MATIC') THEN 'CRYPTO'
+                                WHEN symbol ~ '^[A-Z]{3}(USD|EUR|GBP)$' THEN 'FOREX'
+                                WHEN symbol IN ('GLD', 'SLV', 'USO', 'UNG') THEN 'COMMODITY'
+                                ELSE 'EQUITY' END) as asset_class
+                FROM fhq_execution.paper_positions
+                WHERE quantity > 0
                 ORDER BY symbol
             """)
             for row in cur.fetchall():
-                symbols.append({'symbol': row['symbol'], 'asset_class': row['asset_class']})
+                sym = row['symbol']
+                if sym not in seen:
+                    symbols.append({'symbol': sym, 'asset_class': row['asset_class']})
+                    seen.add(sym)
 
-            # Get golden needle symbols
+            # Get golden needle target assets
             cur.execute("""
-                SELECT DISTINCT symbol,
-                       COALESCE(asset_class, 'EQUITY') as asset_class
+                SELECT DISTINCT target_asset as symbol,
+                       CASE WHEN target_asset ~ '-USD$' THEN 'CRYPTO'
+                            WHEN target_asset ~ '^[A-Z]{3}(USD|EUR|GBP)$' THEN 'FOREX'
+                            WHEN target_asset IN ('GLD', 'SLV', 'USO', 'UNG') THEN 'COMMODITY'
+                            ELSE 'EQUITY' END as asset_class
                 FROM fhq_canonical.golden_needles
-                WHERE status = 'ACTIVE'
-                  AND symbol NOT IN (SELECT DISTINCT symbol FROM fhq_capital.positions WHERE status = 'OPEN')
-                ORDER BY symbol
+                WHERE is_current = true AND target_asset IS NOT NULL
+                ORDER BY target_asset
             """)
             for row in cur.fetchall():
-                symbols.append({'symbol': row['symbol'], 'asset_class': row['asset_class']})
+                sym = row['symbol']
+                if sym and sym not in seen:
+                    symbols.append({'symbol': sym, 'asset_class': row['asset_class']})
+                    seen.add(sym)
 
         logger.info(f"Found {len(symbols)} symbols to analyze")
         return symbols
@@ -615,9 +637,9 @@ def main():
         with daemon.conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Check daemon heartbeat
             cur.execute("""
-                SELECT daemon_name, last_heartbeat, health_score
-                FROM fhq_ops.daemon_heartbeats
-                WHERE daemon_name = %s
+                SELECT agent_id, component, last_heartbeat, health_score, current_task
+                FROM fhq_governance.agent_heartbeats
+                WHERE agent_id = %s
             """, (DAEMON_NAME,))
             heartbeat = cur.fetchone()
 
@@ -639,9 +661,11 @@ def main():
         print(f"{'='*60}")
 
         if heartbeat:
-            print(f"Daemon:       {heartbeat['daemon_name']}")
+            print(f"Daemon:       {heartbeat['agent_id']}")
+            print(f"Component:    {heartbeat['component']}")
             print(f"Last Beat:    {heartbeat['last_heartbeat']}")
             print(f"Health:       {heartbeat['health_score']}")
+            print(f"Task:         {heartbeat['current_task']}")
         else:
             print("Daemon:       NOT REGISTERED")
 
