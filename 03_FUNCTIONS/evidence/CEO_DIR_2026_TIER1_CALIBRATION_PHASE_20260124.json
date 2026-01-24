@@ -1,0 +1,89 @@
+{
+  "directive": "CEO-DIR-2026-LEARNING-ACTIVATION-001",
+  "phase": "Tier-1 Brutality Calibration - Learning Stability Phase",
+  "test_code": "TEST-TIER1-CAL-001",
+  "registered_at": "2026-01-24T20:34:53+01:00",
+  "registered_by": "STIG (EC-003)",
+
+  "calendar_event": {
+    "test_name": "Tier-1 Brutality Calibration (Target Death Rate 60-90%)",
+    "display_name": "Tier-1 Brutality Calibration - Learning Stability Phase",
+    "owner": "FINN (EC-004)",
+    "monitoring_agent": "STIG (EC-003)",
+    "status": "ACTIVE",
+    "calendar_category": "ACTIVE_TEST"
+  },
+
+  "timestamps_immutable": {
+    "start_ts": "2026-01-24T20:34:53+01:00",
+    "end_ts": "2026-01-27T20:34:53+01:00",
+    "duration_hours": 72,
+    "timestamps_locked": true,
+    "lock_reason": "Immutable per CEO-DIR-2026-LEARNING-ACTIVATION-001"
+  },
+
+  "hypothesis_under_test": {
+    "code": "SYS-TIER1-DEATH-RATE",
+    "statement": "Tier-1 death rate outside [60%, 90%] destroys learning efficiency"
+  },
+
+  "baseline_definition": {
+    "tier1_death_rate": 100.0,
+    "hypotheses_per_day": 3,
+    "experiments_per_day": 2,
+    "trigger_timestamp": "2026-01-24T18:10:00+01:00",
+    "trigger_reason": "DEATH_TOO_BRUTAL (100% > 95%)"
+  },
+
+  "target_metrics": {
+    "tier1_death_rate": {"min": 60, "max": 90, "unit": "percent"},
+    "experiments_per_day": {"min": 3},
+    "duplicate_semantic_hashes": {"max": 0}
+  },
+
+  "expected_trajectory": {
+    "hour_0": {"death_rate": 100},
+    "hour_24": {"death_rate_target": "80-90"},
+    "hour_48": {"death_rate_target": "70-85"},
+    "hour_72": {"death_rate_target": "60-90"}
+  },
+
+  "success_criteria": {
+    "primary": "Death rate in [60%, 90%] for 24 consecutive hours",
+    "secondary": "Throughput >= minimums (3 hypo/day, 3 exp/day)",
+    "tertiary": "No duplicate semantic hashes"
+  },
+
+  "failure_criteria": {
+    "primary": "Death rate remains >95% after 72h",
+    "secondary": "Throughput < minimum after escalation",
+    "auto_fail": "Death rate <50% (too soft) for 24h"
+  },
+
+  "finn_allowed_actions": [
+    "Increase sample windows",
+    "Relax regime filters slightly",
+    "Delay hard kill until confidence decay crosses threshold"
+  ],
+
+  "finn_forbidden_actions": [
+    "Lowering hypothesis count",
+    "Manual hypothesis curation",
+    "Soft-passing weak ideas"
+  ],
+
+  "escalation_rules": {
+    "auto_escalate_if": "No improvement in death rate after 24h",
+    "escalation_target": "CEO"
+  },
+
+  "ceo_action_required": false,
+  "auto_exit_condition": "Criteria met before 72h",
+
+  "checkpoints": {
+    "mid_test": "2026-01-25 (~36h)",
+    "end_test": "2026-01-27 20:34 CET"
+  },
+
+  "hash": "e8f4a2c1b9d7406e5f8a4c3b2d9e7f4a"
+}
