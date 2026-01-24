@@ -1,0 +1,268 @@
+{
+  "directive": "CEO Execution Mandate Post EC-022 E2E Verification",
+  "execution_ts": "2026-01-24T17:02:00+01:00",
+  "executed_by": "STIG (EC-003)",
+  "db_verified_time": "2026-01-24T17:01:58 CET",
+  "classification": "DB-VERIFIED EXECUTION MANDATE RESPONSE",
+
+  "DELIVERABLE_1_LEARNING_PRODUCTION_STATUS": {
+    "hypothesis_production": {
+      "total": 3,
+      "by_source": {
+        "ERROR_DRIVEN": 3,
+        "CONTEXT_DRIVEN": 0,
+        "MANUAL": 0,
+        "OTHER": 0
+      },
+      "rate_per_day": 3.0,
+      "last_24h": 0,
+      "last_7d": 3,
+      "status": "BLOCKING - NO NEW HYPOTHESES IN 24H"
+    },
+    "lifecycle_states": {
+      "INCUBATION": 0,
+      "WEAKENED": 2,
+      "FALSIFIED": 1,
+      "CANDIDATE": 0,
+      "PROMOTED": 0,
+      "ACTIVE": 0,
+      "status": "BLOCKING - NO HYPOTHESES IN INCUBATION OR CANDIDATE"
+    },
+    "golden_needles": {
+      "total": 1804,
+      "active_is_current_true": 39,
+      "last_7d": 0,
+      "last_needle_created": "2026-01-14T15:13:36Z",
+      "days_since_last": 10,
+      "tier_distribution": {
+        "S": 11,
+        "A": 56,
+        "B": 20,
+        "C": 1085
+      },
+      "operational_definition": "Golden Needles are high-signal discoveries with EQS (Eligibility Quality Score) stored in fhq_canonical.golden_needles. Tiered S/A/B/C based on predictive value. is_current=true means actively valid.",
+      "status": "BLOCKING - DETECTION NOT ACTIVE (10 DAYS SILENT)"
+    },
+    "error_to_hypothesis_linkage": {
+      "query": "SELECT * FROM fhq_learning.v_error_learning_summary",
+      "total_errors": 100,
+      "direction_errors": 92,
+      "magnitude_errors": 8,
+      "hypotheses_generated": 3,
+      "conversion_rate_pct": 3.0,
+      "high_priority_unconverted": 97,
+      "status": "PARTIAL - 97% OF HIGH-PRIORITY ERRORS NOT CONVERTED"
+    },
+    "blocking_summary": [
+      "HYPO-GEN-STOPPED: 0 hypotheses generated in last 24h",
+      "GOLDEN-NEEDLE-SILENT: No new needles for 10 days",
+      "LIFECYCLE-STALL: No hypotheses in INCUBATION or CANDIDATE",
+      "ERROR-LEAK: 97 high-priority errors not converted to hypotheses"
+    ]
+  },
+
+  "DELIVERABLE_2_HYPOTHESIS_THROUGHPUT_TARGETS": {
+    "statistical_basis": {
+      "current_brier_samples": 5602,
+      "stddev_squared_error": 0.39,
+      "for_95pct_confidence": {
+        "margin_of_error": 0.05,
+        "z_score": 1.96,
+        "minimum_n": 234,
+        "formula": "n = (z * stddev / margin)^2 = (1.96 * 0.39 / 0.05)^2 = 234"
+      }
+    },
+    "minimum_hypotheses_per_day": {
+      "target": 3,
+      "rationale": "Based on 3% error-to-hypothesis conversion rate with ~100 errors/day. 3 hypotheses/day maintains learning velocity.",
+      "current": 0,
+      "status": "BELOW_MINIMUM"
+    },
+    "minimum_experiments_per_day": {
+      "target": 3,
+      "rationale": "1:1 hypothesis-to-experiment ratio required. Each hypothesis must be tested.",
+      "current": 0,
+      "status": "BELOW_MINIMUM"
+    },
+    "minimum_brier_samples_per_day": {
+      "target": 234,
+      "rationale": "Statistical significance for 95% CI with observed variance",
+      "current": 771,
+      "status": "ABOVE_MINIMUM - SUFFICIENT"
+    }
+  },
+
+  "DELIVERABLE_3_CONTINUOUS_EXECUTION_WITHOUT_REWARD_LEAKAGE": {
+    "execution_mode": {
+      "experiment_tier": 1,
+      "mode_name": "SHADOW",
+      "experiments_running": 0,
+      "experiments_completed": 2,
+      "status": "CONFIRMED - SHADOW MODE"
+    },
+    "volume_scaling": {
+      "brier_samples_last_7d": 2377,
+      "brier_samples_last_1d": 771,
+      "daily_average": 340,
+      "status": "ACTIVE - 771 samples today"
+    },
+    "reward_exploitation_paths": {
+      "hypothesis_linkage": {
+        "HYP-2026-0001": "NO_EXPERIMENT (ORPHAN)",
+        "HYP-2026-0002": "LINKED_TO_EXPERIMENT (FALSIFIED)",
+        "HYP-2026-0003": "LINKED_TO_EXPERIMENT (WEAKENED)"
+      },
+      "orphan_detected": true,
+      "orphan_count": 1,
+      "status": "WARNING - 1 HYPOTHESIS WITHOUT EXPERIMENT"
+    },
+    "lvg_state": {
+      "metric_date": "2026-01-24",
+      "hypotheses_born": 0,
+      "hypotheses_killed": 0,
+      "death_rate_pct": 0.0,
+      "net_hypothesis_change": 0,
+      "velocity_status": "NORMAL",
+      "entropy_score": null,
+      "thrashing_index": null,
+      "status": "BLOCKING - ENTROPY_SCORE=NULL, THRASHING_INDEX=NULL"
+    }
+  },
+
+  "DELIVERABLE_4_CANONICAL_VISIBILITY_GUARANTEE": {
+    "entity_counts": {
+      "hypothesis_canon": {"total": 3, "last_7d": 3},
+      "experiment_registry": {"total": 2, "last_7d": 2},
+      "context_annotations": {"total": 0, "last_7d": 0},
+      "golden_needles": {"total": 1804, "last_7d": 0}
+    },
+    "orphan_process_detection": {
+      "context_annotations_zero": true,
+      "hypothesis_without_experiment": 1,
+      "golden_needle_generation_stopped": true,
+      "status": "SYSTEM_FAULT - 3 ORPHAN CONDITIONS DETECTED"
+    },
+    "visibility_sql": {
+      "hypotheses": "SELECT * FROM fhq_learning.hypothesis_canon",
+      "experiments": "SELECT * FROM fhq_learning.experiment_registry",
+      "annotations": "SELECT * FROM fhq_learning.context_annotations",
+      "needles": "SELECT * FROM fhq_canonical.golden_needles WHERE is_current = true",
+      "lvg": "SELECT * FROM fhq_learning.learning_velocity_metrics"
+    }
+  },
+
+  "DELIVERABLE_5_NEXT_7_DAY_EXECUTION_PLAN": {
+    "calendar_events": [
+      {"date": "2026-01-24", "event": "BOJ_RATE", "consensus": "0.75"},
+      {"date": "2026-01-24", "event": "US_ISM_SVC", "consensus": "54.2"},
+      {"date": "2026-01-27", "event": "US_RETAIL", "consensus": "-0.3"},
+      {"date": "2026-01-28", "event": "US_FOMC", "consensus": "3.50"},
+      {"date": "2026-01-29", "event": "US_FOMC", "consensus": "PENDING"},
+      {"date": "2026-01-30", "event": "ECB_RATE", "consensus": "2.00"},
+      {"date": "2026-01-30", "event": "US_GDP", "consensus": "2.4"},
+      {"date": "2026-01-30", "event": "US_CLAIMS", "consensus": "218000"}
+    ],
+    "active_tests": [
+      {
+        "test_code": "TEST-EC022-OBS-001",
+        "display_name": "EC-022 Reward Logic Freeze (Context Lift Validation)",
+        "status": "ACTIVE",
+        "track_status": "AHEAD",
+        "start": "2026-01-24",
+        "end": "2026-02-23",
+        "baseline_captured": true
+      }
+    ],
+    "auto_execution_plan": [
+      {
+        "day": "Day 25 (2026-01-25)",
+        "actions": [
+          "Run compute_daily_lvg_metrics()",
+          "Verify hypothesis generation resumed",
+          "Check Golden Needle detection daemon"
+        ]
+      },
+      {
+        "day": "Day 26 (2026-01-26)",
+        "actions": [
+          "LVG trending check (need 2+ data points)",
+          "Error-to-hypothesis conversion audit"
+        ]
+      },
+      {
+        "day": "Day 27 (2026-01-27)",
+        "actions": [
+          "US_RETAIL event - capture forecast vs actual",
+          "Context lift mid-test checkpoint"
+        ]
+      },
+      {
+        "day": "Day 28-29 (2026-01-28-29)",
+        "actions": [
+          "US_FOMC event - HIGH IMPORTANCE",
+          "Full LVG state with entropy computation"
+        ]
+      },
+      {
+        "day": "Day 30 (2026-01-30)",
+        "actions": [
+          "ECB_RATE + US_GDP + US_CLAIMS triple event day",
+          "Week 4 summary compilation"
+        ]
+      },
+      {
+        "day": "Day 31 (2026-01-31)",
+        "actions": [
+          "7-day LVG trend analysis",
+          "EC-022 Week 1 progress report"
+        ]
+      }
+    ]
+  },
+
+  "CEO_FAST_ANSWER": {
+    "question": "Is FjordHQ learning faster today than yesterday - and why?",
+    "answer": "UNKNOWN - Insufficient LVI data (1 row). LVG entropy_score=NULL, thrashing_index=NULL.",
+    "blocking_reasons": [
+      "Hypothesis generation STOPPED (0 in 24h)",
+      "Golden Needle detection INACTIVE (10 days)",
+      "Context annotations = 0 (no context capture)",
+      "LVG metrics incomplete (entropy/thrashing NULL)"
+    ],
+    "what_is_working": [
+      "Brier sampling ACTIVE (771/day)",
+      "EC-022 baseline captured with 20.65% lift",
+      "Orchestrator execution SUCCESS",
+      "Sample size governance ON_TRACK"
+    ]
+  },
+
+  "BLOCKING_ITEMS_REQUIRING_ACTION": [
+    {
+      "code": "BLOCK-001",
+      "item": "Hypothesis Generation Daemon",
+      "status": "NOT_RUNNING",
+      "impact": "No new learning input"
+    },
+    {
+      "code": "BLOCK-002",
+      "item": "Golden Needle Detection",
+      "status": "INACTIVE_10_DAYS",
+      "impact": "High-signal discoveries not captured"
+    },
+    {
+      "code": "BLOCK-003",
+      "item": "Context Annotation Pipeline",
+      "status": "ZERO_ANNOTATIONS",
+      "impact": "No context enrichment for learning"
+    },
+    {
+      "code": "BLOCK-004",
+      "item": "LVG Entropy/Thrashing Computation",
+      "status": "NULL_VALUES",
+      "impact": "Cannot assess learning health"
+    }
+  ],
+
+  "hash": "a7c3e1f9b2d8406e5f1a4c3b2d9e8f4a"
+}
