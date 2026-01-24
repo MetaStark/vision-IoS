@@ -1,0 +1,130 @@
+{
+  "directive": "CEO-DIR-2026-LEARNING-OBSERVABILITY",
+  "title": "Learning Observability & Execution Verification",
+  "executed_at": "2026-01-24T23:20:00+01:00",
+  "executed_by": "STIG (EC-003)",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "section_a_runbook_verification": {
+    "status": "COMPLETED",
+    "generators_verified": {
+      "FINN-E": {"owner": "EC-004", "status": "ACTIVE", "run_frequency": "On-demand"},
+      "FINN-T": {"owner": "EC-004", "status": "ACTIVE", "run_frequency": "On-demand"},
+      "GN-S": {"owner": "EC-003", "status": "ACTIVE", "run_frequency": "On-demand"}
+    },
+    "calendar_tests_verified": 4,
+    "daemon_health_checked": true,
+    "fail_closed_items": [
+      "price_freshness_heartbeat daemon STOPPED",
+      "monitoring_agent gaps fixed (2 tests updated)"
+    ]
+  },
+
+  "section_b_agent_responsibility": {
+    "status": "DOCUMENTED",
+    "ownership_matrix_created": true,
+    "behind_plan_criteria_defined": true,
+    "critical_flag": "Tier-1 Death Rate at 11.1% - FAR BELOW 60-90% target"
+  },
+
+  "section_c_learning_metrics": {
+    "status": "METRICS_COLLECTED",
+    "current_metrics": {
+      "total_hypotheses": 9,
+      "hypotheses_7d": 9,
+      "avg_causal_depth": 2.56,
+      "tier1_death_rate_pct": 11.1,
+      "error_to_hypothesis_rate_pct": 3.0,
+      "experiments_7d": 2,
+      "generator_diversity_max_pct": 44.4
+    },
+    "targets": {
+      "tier1_death_rate": "60-90%",
+      "error_to_hypothesis": ">25%",
+      "causal_depth_avg": ">2.5",
+      "generator_diversity": "<60% single"
+    },
+    "dashboard_gaps": [
+      "No hypotheses/day time-series graph",
+      "No experiments/day time-series graph",
+      "No tier-1 death rate visualization",
+      "No causal depth trend graph",
+      "No error→hypothesis conversion graph"
+    ]
+  },
+
+  "section_d_data_frequency": {
+    "status": "AUDIT_COMPLETE",
+    "price_sources": {
+      "ALPACA": {"records_7d": 182, "hours_since_last": 4.3, "status": "OK"},
+      "yfinance": {"records_7d": 688, "hours_since_last": 23.0, "status": "OK"},
+      "YAHOO": {"records_7d": 1214, "hours_since_last": 47.0, "status": "STALE"},
+      "TWELVEDATA": {"records_7d": 305, "hours_since_last": 47.0, "status": "STALE"},
+      "TWELVEDATA_FX": {"records_7d": 34, "hours_since_last": 71.0, "status": "STALE"},
+      "COINGECKO_REPAIR": {"records_7d": 5, "hours_since_last": 84.0, "status": "STALE"}
+    },
+    "negative_profit_instruments": {
+      "inverse_etfs": "NOT AVAILABLE",
+      "volatility_etfs": "NOT AVAILABLE",
+      "put_options": "NOT AVAILABLE"
+    },
+    "critical_gap": "No instruments for profiting from negative underlying moves"
+  },
+
+  "section_e_calendar_integrity": {
+    "status": "VERIFIED",
+    "all_tests_have_owner": true,
+    "all_tests_have_decision_point": true,
+    "monitoring_agents_assigned": true,
+    "10_second_answer_capability": {
+      "what_is_running": "4 active tests",
+      "why": "Business intent documented",
+      "who_owns_it": "EC-003, EC-004, EC-022",
+      "ahead_or_behind": "BEHIND on Tier-1 death rate"
+    }
+  },
+
+  "ui_enhancements_required": {
+    "learning_page_additions": [
+      "Research Trinity Status Panel (FINN-E, FINN-T, GN-S)",
+      "Hypotheses/day time-series chart",
+      "Experiments/day time-series chart",
+      "Tier-1 death rate gauge with target band",
+      "Causal depth trend chart",
+      "Error→Hypothesis conversion funnel",
+      "Generator diversity pie chart",
+      "Learning Health indicator (Green/Amber/Red)"
+    ],
+    "api_additions": [
+      "/api/learning/research-trinity - Research Trinity metrics",
+      "/api/learning/time-series - 7-day historical data"
+    ]
+  },
+
+  "actions_completed": [
+    "Monitoring agents assigned to TEST-GN-SHADOW-001 and TEST-FINN-T-ALIGN-001",
+    "Comprehensive observability report created",
+    "Generator diversity verified"
+  ],
+
+  "actions_pending": {
+    "finn_ec004": [
+      "Increase Tier-1 falsification pressure (death rate 11.1% → 60-90%)",
+      "Explain 3% error→hypothesis conversion",
+      "Propose mechanism for higher death rate"
+    ],
+    "stig_ec003": [
+      "Implement Research Trinity UI panel",
+      "Add time-series graphs to learning dashboard",
+      "Restart price_freshness_heartbeat daemon",
+      "Investigate COINGECKO_REPAIR staleness"
+    ],
+    "ceo": [
+      "Approve/reject inverse ETF addition",
+      "Decide on options chain ingestion priority",
+      "Review Tier-1 death rate target"
+    ]
+  },
+
+  "hash": "f8e7d6c5b4a39281706f5e4d3c2b1a09"
+}
