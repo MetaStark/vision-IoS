@@ -1,0 +1,435 @@
+/**
+ * FjordHQ Calendar Dashboard - CEO-DIR-2026-CALENDAR-GOVERNED-TESTING-001
+ *
+ * Calendar-as-Law Doctrine: If something matters, it exists as a canonical calendar event.
+ * CEO must understand system state in <30 seconds.
+ *
+ * Section 2: FjordHQ Calendar - Dashboard Authority Layer
+ */
+
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { RefreshCw, Calendar as CalendarIcon, AlertCircle, CheckCircle, XCircle, Eye } from 'lucide-react'
+import {
+  CalendarGrid,
+  ActiveTestsPanel,
+  CEOAlertsPanel,
+  LVGStatusPanel,
+} from '@/components/calendar'
+
+interface CalendarEvent {
+  id: string
+  name: string
+  category: string
+  date: string
+  endDate?: string
+  status: string
+  owner: string
+  details: any
+  color: string
+  day: number
+  month: number
+  year: number
+}
+
+interface CalendarData {
+  events: CalendarEvent[]
+  activeTests: any[]
+  alerts: any[]
+  observationWindows: any[]
+  lvgStatus: any
+  shadowTier: any
+  governanceChecks: any[]
+  currentDate: {
+    today: string
+    year: number
+    month: number
+    monthName: string
+  }
+  lastUpdated: string
+  source: string
+}
+
+export default function CalendarPage() {
+  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<CalendarData | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/calendar')
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      const json = await response.json()
+      if (json.error) {
+        throw new Error(json.details || json.error)
+      }
+      setData(json)
+    } catch (err) {
+      console.error('Failed to fetch calendar data:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    setMounted(true)
+    fetchData()
+  }, [fetchData])
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event)
+  }
+
+  const handleAlertClick = (alert: any) => {
+    // TODO: Implement alert modal/drawer
+    console.log('Alert clicked:', alert)
+  }
+
+  // Default values
+  const currentYear = data?.currentDate?.year || new Date().getFullYear()
+  const currentMonth = data?.currentDate?.month || new Date().getMonth() + 1
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b border-gray-800 bg-gray-950/50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Left: Title */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-6 w-6 text-purple-400" />
+                <h1 className="text-xl font-bold text-white">FjordHQ Calendar</h1>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-600">CEO-DIR-2026-CGT-001</span>
+                {data?.source === 'database' && (
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
+                    LIVE DATA
+                  </span>
+                )}
+                {data?.source === 'error' && (
+                  <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full">
+                    ERROR
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Controls */}
+            <div className="flex items-center gap-4">
+              {/* Governance Status */}
+              {data?.governanceChecks && (
+                <div className="flex items-center gap-2">
+                  {data.governanceChecks.map((check: any) => (
+                    <div
+                      key={check.name}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                        check.status === 'PASS'
+                          ? 'bg-green-500/10 text-green-400'
+                          : check.status === 'WARNING'
+                          ? 'bg-yellow-500/10 text-yellow-400'
+                          : 'bg-red-500/10 text-red-400'
+                      }`}
+                      title={check.discrepancy || check.name}
+                    >
+                      {check.status === 'PASS' ? (
+                        <CheckCircle className="h-3 w-3" />
+                      ) : check.status === 'WARNING' ? (
+                        <AlertCircle className="h-3 w-3" />
+                      ) : (
+                        <XCircle className="h-3 w-3" />
+                      )}
+                      <span className="hidden sm:inline">{check.name.split(' ')[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded text-sm text-gray-300 hover:bg-gray-800 hover:border-gray-600 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <div className="text-xs text-gray-600">
+                {mounted && data?.lastUpdated
+                  ? `Updated: ${new Date(data.lastUpdated).toLocaleTimeString()}`
+                  : 'Loading...'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="max-w-[1800px] mx-auto px-6 pt-4">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-red-400 font-medium">Failed to load calendar data</p>
+              <p className="text-xs text-red-400/70 mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-8 space-y-8">
+        {/* Executive Summary Banner */}
+        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-500/20 rounded-lg">
+              <Eye className="h-6 w-6 text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Calendar-as-Law Doctrine</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                If something matters, it exists as a canonical calendar event.
+                CEO understanding target: &lt;30 seconds.
+              </p>
+            </div>
+            <div className="ml-auto flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">{data?.activeTests?.length || 0}</p>
+                <p className="text-xs text-gray-500">Active Tests</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-yellow-400">{data?.alerts?.length || 0}</p>
+                <p className="text-xs text-gray-500">Pending Alerts</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-400">
+                  {data?.observationWindows?.length || 0}
+                </p>
+                <p className="text-xs text-gray-500">Obs. Windows</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Calendar Grid (2/3 width) */}
+          <div className="xl:col-span-2">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-purple-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Monthly Calendar View (Section 2)
+              </h2>
+            </div>
+            <CalendarGrid
+              events={data?.events || []}
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              onEventClick={handleEventClick}
+            />
+          </div>
+
+          {/* Right Sidebar (1/3 width) */}
+          <div className="space-y-6">
+            {/* CEO Alerts */}
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-yellow-500" />
+                <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  CEO Action Required (Section 4.3)
+                </h2>
+              </div>
+              <CEOAlertsPanel
+                alerts={data?.alerts || []}
+                onAlertClick={handleAlertClick}
+              />
+            </div>
+
+            {/* LVG Status */}
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-purple-500" />
+                <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  LVG Status (Section 5.5)
+                </h2>
+              </div>
+              <LVGStatusPanel
+                lvg={data?.lvgStatus || {
+                  hypothesesBornToday: 0,
+                  hypothesesKilledToday: 0,
+                  entropyScore: null,
+                  thrashingIndex: null,
+                  governorAction: 'NORMAL',
+                  velocityBrakeActive: false,
+                }}
+                shadowTier={data?.shadowTier || {
+                  totalSamples: 0,
+                  survivedCount: 0,
+                  survivalRate: 0,
+                  calibrationStatus: 'NORMAL',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Active Tests Section */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-blue-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Active Canonical Tests (Section 3)
+            </h2>
+          </div>
+          <ActiveTestsPanel tests={data?.activeTests || []} />
+        </div>
+
+        {/* Observation Windows */}
+        {data?.observationWindows && data.observationWindows.length > 0 && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-purple-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Observation Windows (Section 8)
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.observationWindows.map((window: any) => (
+                <div
+                  key={window.name}
+                  className="bg-gray-900/50 border border-purple-500/20 rounded-xl p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-white">{window.name}</h3>
+                    {window.volumeScaling && (
+                      <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                        Volume Scaling Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500">Progress</p>
+                      <p className="text-lg font-mono text-white">
+                        {window.currentDays}/{window.requiredDays}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Criteria Met</p>
+                      <p className={`text-lg font-mono ${window.criteriaMet ? 'text-green-400' : 'text-gray-400'}`}>
+                        {window.criteriaMet ? 'YES' : 'NO'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Drift Alerts</p>
+                      <p className={`text-lg font-mono ${window.driftAlerts > 0 ? 'text-yellow-400' : 'text-gray-400'}`}>
+                        {window.driftAlerts}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500 rounded-full transition-all"
+                      style={{
+                        width: `${(window.currentDays / window.requiredDays) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="border-t border-gray-900 pt-8 pb-4">
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center gap-4">
+              <span>CEO-DIR-2026-CALENDAR-GOVERNED-TESTING-001</span>
+              <span className="text-gray-800">|</span>
+              <span>FjordHQ Calendar Dashboard</span>
+              <span className="text-gray-800">|</span>
+              <span>STIG Implementation (EC-003)</span>
+              {data?.source === 'database' && (
+                <>
+                  <span className="text-gray-800">|</span>
+                  <span className="text-green-500">Connected to PostgreSQL</span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <span>
+                Events: {data?.events?.length || 0} | Tests: {data?.activeTests?.length || 0}
+              </span>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="bg-gray-900 border border-gray-700 rounded-xl max-w-lg w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{selectedEvent.name}</h3>
+                <p className="text-sm text-gray-400">{selectedEvent.category}</p>
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-gray-500 hover:text-white"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Date:</span>
+                <span className="text-sm text-white">
+                  {new Date(selectedEvent.date).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Status:</span>
+                <span
+                  className="px-2 py-0.5 rounded text-xs font-medium"
+                  style={{
+                    backgroundColor: selectedEvent.color + '30',
+                    color: selectedEvent.color,
+                  }}
+                >
+                  {selectedEvent.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Owner:</span>
+                <span className="text-sm text-white font-mono">{selectedEvent.owner}</span>
+              </div>
+              {selectedEvent.details && (
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                  <p className="text-xs text-gray-500 mb-2">Details:</p>
+                  <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-3 overflow-auto">
+                    {JSON.stringify(selectedEvent.details, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -28,6 +28,7 @@ import {
   Crosshair,
   BookOpen,
   Gauge,
+  Calendar,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -160,6 +161,14 @@ const ios013Section: NavItemType = {
   badge: 'D24',
 }
 
+// CEO-DIR-2026-CALENDAR-GOVERNED-TESTING-001: FjordHQ Calendar
+const calendarSection: NavItemType = {
+  name: 'FjordHQ Calendar',
+  href: '/calendar',
+  icon: Calendar,
+  badge: 'CGT',
+}
+
 export function Navigation() {
   const pathname = usePathname()
 
@@ -227,6 +236,7 @@ export function Navigation() {
             <NavItem key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
           ))}
           <NavItem item={ios013Section} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={calendarSection} pathname={pathname} collapsed={collapsed} />
         </ul>
 
         {/* Cinematic Separator */}
