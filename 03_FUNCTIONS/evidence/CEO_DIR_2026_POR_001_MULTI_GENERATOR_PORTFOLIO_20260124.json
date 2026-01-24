@@ -1,0 +1,176 @@
+{
+  "directive": "CEO-DIR-2026-POR-001",
+  "title": "Transition to Multi-Generator Research Portfolio",
+  "status": "INFRASTRUCTURE_DEPLOYED",
+  "deployed_at": "2026-01-24T22:17:00+01:00",
+  "deployed_by": "STIG (EC-003)",
+  "classification": "STRATEGIC-CRITICAL / GOVERNANCE-MANDATED",
+
+  "governing_authority": [
+    "ADR-014",
+    "ADR-018 (ASRP fail-closed)",
+    "ADR-004 (change gates)",
+    "ADR-013 (canonical truth)",
+    "IoS-016 (calendar as law)"
+  ],
+
+  "migration": {
+    "file": "04_DATABASE/MIGRATIONS/346_multi_generator_research_portfolio.sql",
+    "status": "SUCCESS",
+    "objects_created": {
+      "tables": [
+        "fhq_learning.generator_registry",
+        "fhq_learning.hypothesis_provenance",
+        "fhq_learning.experiment_provenance",
+        "fhq_learning.promotion_gate_audit"
+      ],
+      "columns_added": [
+        "hypothesis_canon.mechanism_graph",
+        "hypothesis_canon.generator_id",
+        "hypothesis_canon.input_artifacts_hash",
+        "hypothesis_canon.trial_count",
+        "hypothesis_canon.parameter_search_breadth",
+        "hypothesis_canon.family_inflation_risk",
+        "hypothesis_canon.deflated_sharpe_computed",
+        "hypothesis_canon.pbo_probability",
+        "learning_velocity_metrics.generator_distribution",
+        "learning_velocity_metrics.similarity_score",
+        "learning_velocity_metrics.throttle_active",
+        "learning_velocity_metrics.throttle_reason"
+      ],
+      "functions": [
+        "fhq_learning.compute_deflated_sharpe()",
+        "fhq_learning.check_promotion_eligibility()",
+        "fhq_learning.enforce_provenance_on_insert()",
+        "fhq_learning.check_generator_diversity()"
+      ],
+      "views": [
+        "fhq_learning.v_generator_diversity",
+        "fhq_learning.v_promotion_gate_status",
+        "fhq_learning.v_research_trinity_status"
+      ],
+      "triggers": [
+        "trg_enforce_provenance ON hypothesis_canon (fail-closed on NULL generator_id)"
+      ]
+    }
+  },
+
+  "research_trinity": {
+    "generators_registered": 3,
+    "generator_a": {
+      "id": "FINN-E",
+      "name": "FINN Error Repair",
+      "type": "ERROR_REPAIR",
+      "purpose": "Convert classified HIGH errors into falsification sweeps",
+      "constraint": "Cannot be sole generator",
+      "target_causal_depth": 1,
+      "owner": "EC-004",
+      "status": "ACTIVE",
+      "current_hypotheses": 3
+    },
+    "generator_b": {
+      "id": "FINN-T",
+      "name": "FINN Theory/World-Model",
+      "type": "WORLD_MODEL",
+      "purpose": "Generate hypotheses from G3 Golden Features with N-tier mechanism chains",
+      "constraint": "Requires mechanism chains (depth >= 2)",
+      "target_causal_depth": 2,
+      "owner": "EC-004",
+      "status": "ACTIVE",
+      "current_hypotheses": 0
+    },
+    "generator_c": {
+      "id": "GN-S",
+      "name": "Golden Needles Shadow",
+      "type": "SHADOW_DISCOVERY",
+      "purpose": "Orthogonal discovery and Symmetry Watch benchmark",
+      "constraint": "Shadow-tier only, no reward, no execution eligibility",
+      "target_causal_depth": 2,
+      "owner": "EC-003",
+      "status": "ACTIVE",
+      "current_hypotheses": 0
+    }
+  },
+
+  "calendar_events_active": {
+    "TEST-EC022-OBS-001": {
+      "name": "EC-022 Reward Logic Freeze",
+      "owner": "EC-022",
+      "duration_days": 30,
+      "end_date": "2026-02-23"
+    },
+    "TEST-TIER1-CAL-001": {
+      "name": "Tier-1 Brutality Calibration",
+      "owner": "EC-004 (FINN)",
+      "duration_days": 3,
+      "end_date": "2026-01-27"
+    },
+    "TEST-GN-SHADOW-001": {
+      "name": "Golden Needles Shadow-Tier",
+      "owner": "EC-003 (STIG)",
+      "duration_days": 14,
+      "end_date": "2026-02-07"
+    },
+    "TEST-FINN-T-ALIGN-001": {
+      "name": "FINN-T World-Model Alignment",
+      "owner": "EC-004 (FINN)",
+      "duration_days": 14,
+      "end_date": "2026-02-07"
+    }
+  },
+
+  "current_state": {
+    "generator_diversity": {
+      "diverse": false,
+      "dominant_generator": "FINN-E",
+      "dominant_pct": 100.0,
+      "target": "<60%"
+    },
+    "causal_depth": {
+      "current_avg": 1.0,
+      "target_avg": ">1.5 within 5 market days",
+      "variance": 0
+    },
+    "provenance_coverage": {
+      "hypotheses_with_generator_id": 3,
+      "total_hypotheses": 3,
+      "coverage_pct": 100.0
+    },
+    "promotion_gate_status": {
+      "eligible": 0,
+      "blocked_no_overfitting_metrics": 2,
+      "falsified": 1
+    }
+  },
+
+  "anti_overfitting_guardrails": {
+    "deflated_sharpe_function": "DEPLOYED",
+    "promotion_eligibility_check": "DEPLOYED",
+    "fail_closed_trigger": "DEPLOYED",
+    "gates_enforced": [
+      "PROVENANCE_MISSING: generator_id NULL -> BLOCKED",
+      "FALSIFICATION_MISSING: No criteria -> BLOCKED",
+      "OVERFITTING_METRICS_MISSING: No inflation risk/PBO -> BLOCKED",
+      "INFLATION_RISK_HIGH: >0.30 -> BLOCKED",
+      "PBO_TOO_HIGH: >0.50 -> BLOCKED"
+    ]
+  },
+
+  "success_metrics_target_7d": {
+    "generator_diversity": "No single generator > 60%",
+    "causal_depth": "Average > 2.5",
+    "error_conversion": ">25% HIGH errors converted",
+    "calibration_stability": "Tier-1 death rate 60-90%",
+    "overfitting_defense": "100% promoted candidates have metrics"
+  },
+
+  "non_negotiables_status": {
+    "provenance_always_known": "ENFORCED (fail-closed trigger active)",
+    "multiple_testing_defenses": "DEPLOYED (DSR/PBO style)",
+    "falsification_mandatory": "ENFORCED (promotion gate checks)",
+    "reward_decoupling": "ENFORCED (EC-022 frozen)",
+    "calendar_governs": "ENFORCED (4 active test events)"
+  },
+
+  "hash": "c9f6e4d3b2a1708f5e9a7c4b3d2e1f8a"
+}
