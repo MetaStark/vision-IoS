@@ -58,7 +58,7 @@ export async function GET() {
       SELECT * FROM fhq_calendar.check_calendar_sync()
     `)
 
-    // Fetch active tests summary
+    // Fetch active tests summary with ALL Section 3 fields
     const activeTestsResult = await client.query(`
       SELECT
         test_name,
@@ -70,10 +70,51 @@ export async function GET() {
         current_sample_size,
         target_sample_size,
         sample_trajectory_status,
-        calendar_category
+        calendar_category,
+        -- Section 3 required fields
+        business_intent,
+        beneficiary_system,
+        baseline_definition,
+        target_metrics,
+        expected_trajectory,
+        hypothesis_code,
+        success_criteria,
+        failure_criteria,
+        escalation_rules,
+        mid_test_checkpoint,
+        outcome,
+        start_date,
+        end_date
       FROM fhq_calendar.canonical_test_events
       WHERE status IN ('ACTIVE', 'SCHEDULED')
       ORDER BY start_date ASC
+    `)
+
+    // Fetch economic events from IoS-016 (Section 2)
+    const economicEventsResult = await client.query(`
+      SELECT
+        ce.event_id,
+        etr.event_name,
+        ce.event_type_code,
+        ce.event_timestamp,
+        ce.consensus_estimate,
+        ce.previous_value,
+        ce.actual_value,
+        ce.surprise_score,
+        etr.impact_rank,
+        etr.event_category as economic_category,
+        CASE
+          WHEN ce.actual_value IS NOT NULL THEN 'RELEASED'
+          WHEN ce.event_timestamp < NOW() THEN 'PENDING'
+          ELSE 'SCHEDULED'
+        END as status
+      FROM fhq_calendar.calendar_events ce
+      JOIN fhq_calendar.event_type_registry etr
+        ON ce.event_type_code = etr.event_type_code
+      WHERE ce.event_timestamp >= CURRENT_DATE - INTERVAL '7 days'
+        AND ce.event_timestamp <= CURRENT_DATE + INTERVAL '60 days'
+        AND ce.is_canonical = TRUE
+      ORDER BY ce.event_timestamp ASC
     `)
 
     // Fetch pending CEO alerts
@@ -100,7 +141,7 @@ export async function GET() {
         created_at ASC
     `)
 
-    // Fetch observation windows
+    // Fetch observation windows with rich details (Section 8)
     const observationResult = await client.query(`
       SELECT
         window_name,
@@ -112,7 +153,10 @@ export async function GET() {
         status,
         criteria_met,
         volume_scaling_active,
-        metric_drift_alerts
+        metric_drift_alerts,
+        expected_improvement,
+        improvement_metrics,
+        starting_consensus_state
       FROM fhq_learning.observation_window
       WHERE status = 'ACTIVE'
     `)
@@ -148,7 +192,7 @@ export async function GET() {
         dayName: e.day_name,
       })),
 
-      // Active tests
+      // Active tests with ALL Section 3 fields
       activeTests: activeTestsResult.rows.map((t: any) => ({
         name: t.test_name,
         code: t.test_code,
@@ -160,6 +204,35 @@ export async function GET() {
         targetSamples: t.target_sample_size,
         sampleStatus: t.sample_trajectory_status,
         category: t.calendar_category,
+        // Section 3 required fields
+        businessIntent: t.business_intent,
+        beneficiarySystem: t.beneficiary_system,
+        baselineDefinition: t.baseline_definition,
+        targetMetrics: t.target_metrics,
+        expectedTrajectory: t.expected_trajectory,
+        hypothesisCode: t.hypothesis_code,
+        successCriteria: t.success_criteria,
+        failureCriteria: t.failure_criteria,
+        escalationRules: t.escalation_rules,
+        midTestCheckpoint: t.mid_test_checkpoint,
+        outcome: t.outcome,
+        startDate: t.start_date,
+        endDate: t.end_date,
+      })),
+
+      // Economic events from IoS-016 (Section 2)
+      economicEvents: economicEventsResult.rows.map((e: any) => ({
+        id: e.event_id,
+        name: e.event_name,
+        typeCode: e.event_type_code,
+        timestamp: e.event_timestamp,
+        consensus: e.consensus_estimate,
+        previous: e.previous_value,
+        actual: e.actual_value,
+        surprise: e.surprise_score,
+        impactRank: e.impact_rank,
+        category: e.economic_category,
+        status: e.status,
       })),
 
       // CEO Alerts
@@ -175,7 +248,7 @@ export async function GET() {
         createdAt: a.created_at,
       })),
 
-      // Observation windows
+      // Observation windows with rich details (Section 8)
       observationWindows: observationResult.rows.map((w: any) => ({
         name: w.window_name,
         type: w.window_type,
@@ -187,6 +260,10 @@ export async function GET() {
         criteriaMet: w.criteria_met,
         volumeScaling: w.volume_scaling_active,
         driftAlerts: w.metric_drift_alerts,
+        // Rich details (Section 8 required)
+        expectedImprovement: w.expected_improvement,
+        improvementMetrics: w.improvement_metrics,
+        startingConsensusState: w.starting_consensus_state,
       })),
 
       // LVG Status (Section 5.5)

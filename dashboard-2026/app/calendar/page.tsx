@@ -16,6 +16,7 @@ import {
   ActiveTestsPanel,
   CEOAlertsPanel,
   LVGStatusPanel,
+  EconomicEventsPanel,
 } from '@/components/calendar'
 
 interface CalendarEvent {
@@ -33,11 +34,26 @@ interface CalendarEvent {
   year: number
 }
 
+interface EconomicEvent {
+  id: string
+  name: string
+  typeCode: string
+  timestamp: string
+  consensus: number | null
+  previous: number | null
+  actual: number | null
+  surprise: number | null
+  impactRank: number
+  category: string
+  status: string
+}
+
 interface CalendarData {
   events: CalendarEvent[]
   activeTests: any[]
   alerts: any[]
   observationWindows: any[]
+  economicEvents: EconomicEvent[]
   lvgStatus: any
   shadowTier: any
   governanceChecks: any[]
@@ -205,6 +221,10 @@ export default function CalendarPage() {
                 <p className="text-xs text-gray-500">Active Tests</p>
               </div>
               <div className="text-center">
+                <p className="text-2xl font-bold text-amber-400">{data?.economicEvents?.length || 0}</p>
+                <p className="text-xs text-gray-500">Economic Events</p>
+              </div>
+              <div className="text-center">
                 <p className="text-2xl font-bold text-yellow-400">{data?.alerts?.length || 0}</p>
                 <p className="text-xs text-gray-500">Pending Alerts</p>
               </div>
@@ -280,6 +300,17 @@ export default function CalendarPage() {
           </div>
         </div>
 
+        {/* Economic Calendar Section (IoS-016) */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-amber-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Economic Calendar (Section 2 - IoS-016)
+            </h2>
+          </div>
+          <EconomicEventsPanel events={data?.economicEvents || []} />
+        </div>
+
         {/* Active Tests Section */}
         <div>
           <div className="mb-3 flex items-center gap-2">
@@ -342,6 +373,36 @@ export default function CalendarPage() {
                       }}
                     />
                   </div>
+
+                  {/* Rich Details (Section 8 Required) */}
+                  {window.expectedImprovement && (
+                    <div className="mt-4 pt-4 border-t border-gray-700/50">
+                      <p className="text-xs text-gray-500 mb-1">Expected Improvement</p>
+                      <p className="text-sm text-white">{window.expectedImprovement}</p>
+                    </div>
+                  )}
+
+                  {window.improvementMetrics && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500 mb-1">Improvement Metrics</p>
+                      <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-2 overflow-auto max-h-24">
+                        {typeof window.improvementMetrics === 'object'
+                          ? JSON.stringify(window.improvementMetrics, null, 2)
+                          : window.improvementMetrics}
+                      </pre>
+                    </div>
+                  )}
+
+                  {window.startingConsensusState && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500 mb-1">Starting Consensus State</p>
+                      <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-2 overflow-auto max-h-24">
+                        {typeof window.startingConsensusState === 'object'
+                          ? JSON.stringify(window.startingConsensusState, null, 2)
+                          : window.startingConsensusState}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -366,7 +427,7 @@ export default function CalendarPage() {
             </div>
             <div className="flex items-center gap-4">
               <span>
-                Events: {data?.events?.length || 0} | Tests: {data?.activeTests?.length || 0}
+                Events: {data?.events?.length || 0} | Economic: {data?.economicEvents?.length || 0} | Tests: {data?.activeTests?.length || 0}
               </span>
             </div>
           </div>
