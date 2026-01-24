@@ -1,0 +1,130 @@
+{
+  "verification_type": "EC-022 End-to-End Wiring Verification",
+  "verification_ts": "2026-01-24T16:50:00+01:00",
+  "executed_by": "STIG (EC-003)",
+  "directive": "CEO Fast Verify Pack A-D",
+
+  "A_ORCHESTRATOR_EXECUTION_LOG": {
+    "query": "SELECT execution_id, execution_ts, tests_processed, tests_escalated, tests_halted, execution_status FROM fhq_calendar.orchestrator_execution_log ORDER BY execution_ts DESC LIMIT 5",
+    "result": [
+      {
+        "execution_id": "0fa54903-1d16-4ec3-8e63-0d1db1f37be1",
+        "execution_ts": "2026-01-24T15:03:18.267Z",
+        "tests_processed": 1,
+        "tests_escalated": 0,
+        "tests_halted": 0,
+        "execution_status": "SUCCESS"
+      },
+      {
+        "execution_id": "592cfc12-98ae-48be-a30d-1f7b541daf08",
+        "execution_ts": "2026-01-24T15:01:43.868Z",
+        "tests_processed": 0,
+        "tests_escalated": 0,
+        "tests_halted": 0,
+        "execution_status": "FAILED"
+      }
+    ],
+    "acceptance": "PASS - Latest run SUCCESS with 1 test processed"
+  },
+
+  "B_CANONICAL_TEST_RECORD": {
+    "query": "SELECT test_code, display_name, status, owning_agent, monitoring_agent, start_ts, end_ts, baseline_captured, baseline_hash, track_status, escalation_state, ceo_action_required FROM fhq_calendar.canonical_test_events WHERE test_code = 'TEST-EC022-OBS-001'",
+    "result": [
+      {
+        "test_code": "TEST-EC022-OBS-001",
+        "display_name": "EC-022 — Reward Logic Freeze (Context Lift Validation)",
+        "status": "ACTIVE",
+        "owning_agent": "EC-022",
+        "monitoring_agent": "EC-003",
+        "start_ts": "2026-01-24T00:00:00+01:00",
+        "end_ts": "2026-02-23T00:00:00+01:00",
+        "baseline_captured": true,
+        "baseline_hash": "1f2bcb0ef04b86e8c33071e21aafa7ca",
+        "track_status": "AHEAD",
+        "escalation_state": "NONE",
+        "ceo_action_required": false
+      }
+    ],
+    "acceptance": "PASS - start_ts + end_ts + baseline_captured TRUE + baseline_hash NOT NULL"
+  },
+
+  "B2_BASELINE_SNAPSHOT": {
+    "query": "SELECT test_code, baseline_captured, baseline_captured_at, baseline_hash, baseline_definition FROM fhq_calendar.canonical_test_events WHERE test_code = 'TEST-EC022-OBS-001'",
+    "result": [
+      {
+        "test_code": "TEST-EC022-OBS-001",
+        "baseline_captured": true,
+        "baseline_captured_at": "2026-01-24T15:40:34.967Z",
+        "baseline_hash": "1f2bcb0ef04b86e8c33071e21aafa7ca",
+        "baseline_definition": {
+          "lvi": 0,
+          "brier_score": 0.2777261834707646,
+          "captured_at": "2026-01-24T16:40:34.967147+01:00",
+          "context_lift": 0,
+          "sample_count": 2668,
+          "tier1_death_rate": 50
+        }
+      }
+    ],
+    "acceptance": "PASS - Baseline stored as JSONB row in baseline_definition column"
+  },
+
+  "C1_LVG_METRICS": {
+    "query": "SELECT COUNT(*) AS n, MIN(metric_date) AS first_ts, MAX(metric_date) AS last_ts FROM fhq_learning.learning_velocity_metrics",
+    "result": [
+      {
+        "n": "1",
+        "first_ts": "2026-01-24",
+        "last_ts": "2026-01-24"
+      }
+    ],
+    "acceptance": "PASS - COUNT(*) = 1 > 0"
+  },
+
+  "C2_CONTEXT_LIFT_VIEW": {
+    "query": "SELECT * FROM fhq_learning.v_context_brier_impact ORDER BY asof_ts DESC LIMIT 5",
+    "result": [
+      {
+        "test_id": "fadbbc8d-c5c4-4da7-a379-4fbe890a8010",
+        "test_code": "TEST-EC022-OBS-001",
+        "baseline_brier": "0.35",
+        "current_brier": "0.2777261834707646",
+        "sample_count": 2668,
+        "lift_pct": "20.65",
+        "brier_delta": "0.0722738165292354",
+        "annotation_count": "0",
+        "asof_ts": "2026-01-24T13:39:23.026Z",
+        "lift_status": "POSITIVE_LIFT"
+      }
+    ],
+    "acceptance": "PASS - Returns non-empty with POSITIVE_LIFT"
+  },
+
+  "D_RUNBOOK_ENTRIES": {
+    "query": "SELECT entry_id, canonical_test_id, entry_date, runbook_file_path, db_verified, created_at FROM fhq_calendar.test_runbook_entries ORDER BY created_at DESC LIMIT 10",
+    "result": [
+      {
+        "entry_id": "2a4e7163-1d4d-40d2-b7a0-a41773c6509d",
+        "canonical_test_id": "fadbbc8d-c5c4-4da7-a379-4fbe890a8010",
+        "entry_date": "2026-01-24",
+        "runbook_file_path": "C:\\fhq-market-system\\vision-ios\\12_DAILY_REPORTS\\DAY24_RUNBOOK_20260124.md",
+        "db_verified": true,
+        "created_at": "2026-01-24T15:03:18.259Z"
+      }
+    ],
+    "acceptance": "PASS - Contains today's entry for TEST-EC022-OBS-001"
+  },
+
+  "ACCEPTANCE_SUMMARY": {
+    "A_orchestrator_latest_success": "PASS",
+    "B_canonical_test_wired": "PASS",
+    "B2_baseline_as_row": "PASS",
+    "C1_lvg_metrics_populated": "PASS",
+    "C2_context_lift_non_empty": "PASS",
+    "D_runbook_entry_exists": "PASS",
+    "OVERALL": "ALL ACCEPTANCE CRITERIA PASS",
+    "VERDICT": "EC-022 IS WIRED END-TO-END - PROCEED TO DAY 25"
+  },
+
+  "hash": "e8f4a2c1b9d7306e5f8a4c2b1d9e7f3a"
+}
