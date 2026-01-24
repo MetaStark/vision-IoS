@@ -33,9 +33,10 @@ interface CalendarGridProps {
   onEventClick?: (event: CalendarEvent) => void
 }
 
-// Category labels for legend
+// Category labels for legend (CEO-facing, no internal names)
 const CATEGORY_LABELS: Record<string, string> = {
-  ACTIVE_TEST: 'Active Tests',
+  CANONICAL_TEST: 'Tests',
+  ACTIVE_TEST: 'Tests',
   OBSERVATION_WINDOW: 'Observation Windows',
   CEO_ACTION_REQUIRED: 'CEO Action Required',
   DIVERGENCE_POINT: 'Divergence Points',
