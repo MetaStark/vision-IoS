@@ -200,6 +200,68 @@ export async function GET() {
       WHERE status = 'ACTIVE'
     `)
 
+    // CEO-DIR-2026-DAY25-SESSION11: Test Progress Metrics (database-verified)
+    // Fetch window-specific metrics for each canonical test
+    const testProgressResult = await client.query(`
+      WITH test_windows AS (
+        SELECT
+          test_code,
+          start_ts,
+          end_ts,
+          hypothesis_code
+        FROM fhq_calendar.canonical_test_events
+        WHERE status = 'ACTIVE'
+      ),
+      window_metrics AS (
+        SELECT
+          tw.test_code,
+          tw.start_ts,
+          tw.end_ts,
+          tw.hypothesis_code,
+          COUNT(*) FILTER (WHERE hc.created_at >= tw.start_ts AND hc.created_at <= COALESCE(tw.end_ts, NOW())) as hypotheses_in_window,
+          COUNT(*) FILTER (WHERE hc.created_at >= tw.start_ts AND hc.created_at <= COALESCE(tw.end_ts, NOW()) AND hc.status = 'FALSIFIED') as falsified_in_window,
+          COUNT(*) FILTER (WHERE hc.created_at >= tw.start_ts AND hc.created_at <= COALESCE(tw.end_ts, NOW()) AND hc.status = 'ACTIVE') as active_in_window,
+          COUNT(*) FILTER (WHERE hc.created_at >= tw.start_ts AND hc.created_at <= COALESCE(tw.end_ts, NOW()) AND hc.status = 'DRAFT') as draft_in_window,
+          MAX(hc.created_at) FILTER (WHERE hc.created_at >= tw.start_ts) as last_hypothesis_in_window
+        FROM test_windows tw
+        CROSS JOIN fhq_learning.hypothesis_canon hc
+        GROUP BY tw.test_code, tw.start_ts, tw.end_ts, tw.hypothesis_code
+      )
+      SELECT
+        test_code,
+        start_ts as window_start,
+        end_ts as window_end,
+        hypothesis_code as linked_hypothesis,
+        hypotheses_in_window,
+        falsified_in_window,
+        active_in_window,
+        draft_in_window,
+        last_hypothesis_in_window,
+        CASE
+          WHEN (falsified_in_window + active_in_window) = 0 THEN NULL
+          ELSE ROUND(falsified_in_window::numeric / (falsified_in_window + active_in_window) * 100, 1)
+        END as death_rate_in_window,
+        NOW() as verified_at
+      FROM window_metrics
+    `)
+
+    // Build test progress map for easy lookup
+    const testProgressMap: Record<string, any> = {}
+    testProgressResult.rows.forEach((row: any) => {
+      testProgressMap[row.test_code] = {
+        windowStart: row.window_start,
+        windowEnd: row.window_end,
+        linkedHypothesis: row.linked_hypothesis,
+        hypothesesInWindow: parseInt(row.hypotheses_in_window) || 0,
+        falsifiedInWindow: parseInt(row.falsified_in_window) || 0,
+        activeInWindow: parseInt(row.active_in_window) || 0,
+        draftInWindow: parseInt(row.draft_in_window) || 0,
+        lastHypothesisInWindow: row.last_hypothesis_in_window,
+        deathRateInWindow: row.death_rate_in_window ? parseFloat(row.death_rate_in_window) : null,
+        verifiedAt: row.verified_at,
+      }
+    })
+
     // CEO-DIR-2026-DAY25: Learning Visibility Metrics (time-series for graphs)
     const learningMetricsResult = await client.query(`
       SELECT
@@ -260,38 +322,67 @@ export async function GET() {
       })),
 
       // Canonical tests with CEO-required fields (Migration 342)
-      canonicalTests: canonicalTestsResult.rows.map((t: any) => ({
-        id: t.test_id,
-        code: t.test_code,
-        name: t.test_name,
-        owner: t.owning_agent,
-        status: t.status,
-        category: t.calendar_category,
-        // Timestamps (immutable)
-        startDate: t.start_ts,
-        endDate: t.end_ts,
-        // Progress (computed from storage - CEO Mod 3)
-        daysElapsed: parseInt(t.days_elapsed) || 0,
-        daysRemaining: parseInt(t.days_remaining) || 0,
-        requiredDays: parseInt(t.required_days) || 30,
-        progressPct: parseFloat(t.progress_pct) || 0,
-        // Purpose & Logic
-        businessIntent: t.business_intent,
-        beneficiarySystem: t.beneficiary_system,
-        hypothesisCode: t.hypothesis_code,
-        // Measurement
-        baselineDefinition: t.baseline_definition,
-        targetMetrics: t.target_metrics,
-        successCriteria: t.success_criteria,
-        failureCriteria: t.failure_criteria,
-        // Governance (CEO Mod 5)
-        monitoringAgent: t.monitoring_agent_ec,
-        escalationState: t.escalation_state,
-        ceoActionRequired: t.ceo_action_required || false,
-        recommendedActions: t.recommended_actions || [],
-        midTestCheckpoint: t.mid_test_checkpoint,
-        verdict: t.verdict,
-      })),
+      // CEO-DIR-2026-DAY25-SESSION11: Now includes test progress metrics
+      canonicalTests: canonicalTestsResult.rows.map((t: any) => {
+        const progress = testProgressMap[t.test_code] || null
+        return {
+          id: t.test_id,
+          code: t.test_code,
+          name: t.test_name,
+          owner: t.owning_agent,
+          status: t.status,
+          category: t.calendar_category,
+          // Timestamps (immutable)
+          startDate: t.start_ts,
+          endDate: t.end_ts,
+          // Progress (computed from storage - CEO Mod 3)
+          daysElapsed: parseInt(t.days_elapsed) || 0,
+          daysRemaining: parseInt(t.days_remaining) || 0,
+          requiredDays: parseInt(t.required_days) || 30,
+          progressPct: parseFloat(t.progress_pct) || 0,
+          // Purpose & Logic
+          businessIntent: t.business_intent,
+          beneficiarySystem: t.beneficiary_system,
+          hypothesisCode: t.hypothesis_code,
+          // Measurement
+          baselineDefinition: t.baseline_definition,
+          targetMetrics: t.target_metrics,
+          successCriteria: t.success_criteria,
+          failureCriteria: t.failure_criteria,
+          // Governance (CEO Mod 5)
+          monitoringAgent: t.monitoring_agent_ec,
+          escalationState: t.escalation_state,
+          ceoActionRequired: t.ceo_action_required || false,
+          recommendedActions: t.recommended_actions || [],
+          midTestCheckpoint: t.mid_test_checkpoint,
+          verdict: t.verdict,
+          // CEO-DIR-2026-DAY25-SESSION11: Test Progress (database-verified)
+          testProgress: progress ? {
+            hypothesesInWindow: progress.hypothesesInWindow,
+            falsifiedInWindow: progress.falsifiedInWindow,
+            activeInWindow: progress.activeInWindow,
+            draftInWindow: progress.draftInWindow,
+            deathRateInWindow: progress.deathRateInWindow,
+            lastHypothesisInWindow: progress.lastHypothesisInWindow,
+            verifiedAt: progress.verifiedAt,
+            // Trajectory calculation
+            trajectory: (() => {
+              if (progress.deathRateInWindow === null) return 'INSUFFICIENT_DATA'
+              // For Tier-1 Brutality/Calibration test: target is 60-90%
+              if (t.test_code === 'TEST-TIER1-CAL-001' || t.test_code?.includes('TIER1')) {
+                if (progress.deathRateInWindow >= 60 && progress.deathRateInWindow <= 90) return 'ON_TARGET'
+                if (progress.deathRateInWindow > 90) return 'TOO_BRUTAL'
+                return 'TOO_MILD'
+              }
+              // Default: just check if within reasonable bounds
+              if (progress.deathRateInWindow >= 60 && progress.deathRateInWindow <= 90) return 'ON_TARGET'
+              if (progress.deathRateInWindow > 90) return 'TOO_BRUTAL'
+              if (progress.deathRateInWindow < 60) return 'TOO_MILD'
+              return 'UNKNOWN'
+            })(),
+          } : null,
+        }
+      }),
 
       // Legacy activeTests mapping (for backwards compatibility)
       activeTests: canonicalTestsResult.rows

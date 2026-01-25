@@ -29,6 +29,8 @@ import {
   Shield,
   Lightbulb,
   BarChart3,
+  Activity,
+  Database,
 } from 'lucide-react'
 
 interface CanonicalTest {
@@ -60,6 +62,17 @@ interface CanonicalTest {
   recommendedActions?: string[]
   verdict?: string
   monitoringAgent?: string
+  // CEO-DIR-2026-DAY25-SESSION11: Test Progress (database-verified)
+  testProgress?: {
+    hypothesesInWindow: number
+    falsifiedInWindow: number
+    activeInWindow: number
+    draftInWindow: number
+    deathRateInWindow: number | null
+    lastHypothesisInWindow: string | null
+    verifiedAt: string
+    trajectory: 'ON_TARGET' | 'TOO_BRUTAL' | 'TOO_MILD' | 'INSUFFICIENT_DATA' | 'UNKNOWN'
+  } | null
 }
 
 interface CanonicalTestCardProps {
@@ -114,6 +127,88 @@ function ProgressBar({ elapsed, total, status }: { elapsed: number; total: numbe
           }`}
           style={{ width: `${pct}%` }}
         />
+      </div>
+    </div>
+  )
+}
+
+// CEO-DIR-2026-DAY25-SESSION11: Death Rate Gauge for Tier-1 Brutality Test
+function DeathRateGauge({
+  value,
+  minTarget = 60,
+  maxTarget = 90,
+  trajectory
+}: {
+  value: number | null
+  minTarget?: number
+  maxTarget?: number
+  trajectory: string
+}) {
+  const displayValue = value ?? 0
+  const isOnTarget = value !== null && value >= minTarget && value <= maxTarget
+  const isTooHigh = value !== null && value > maxTarget
+  const isTooLow = value !== null && value < minTarget
+  const hasData = value !== null
+
+  const trajectoryConfig: Record<string, { bg: string; text: string; label: string }> = {
+    ON_TARGET: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'ON TARGET' },
+    TOO_BRUTAL: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'TOO BRUTAL' },
+    TOO_MILD: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'TOO MILD' },
+    INSUFFICIENT_DATA: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'INSUFFICIENT DATA' },
+    UNKNOWN: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'UNKNOWN' },
+  }
+
+  const config = trajectoryConfig[trajectory] || trajectoryConfig.UNKNOWN
+
+  return (
+    <div className="space-y-3">
+      {/* Trajectory Badge */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-400">Death Rate (Test Window)</span>
+        <span className={`px-2 py-1 ${config.bg} ${config.text} rounded text-xs font-semibold`}>
+          {config.label}
+        </span>
+      </div>
+
+      {/* Visual Gauge */}
+      <div className="relative h-8 bg-gray-800 rounded-lg overflow-hidden">
+        {/* Target Zone (60-90%) */}
+        <div
+          className="absolute h-full bg-green-500/20 border-l border-r border-green-500/50"
+          style={{ left: `${minTarget}%`, width: `${maxTarget - minTarget}%` }}
+        />
+
+        {/* Labels */}
+        <div className="absolute inset-0 flex items-center justify-between px-2 text-xs text-gray-500">
+          <span>0%</span>
+          <span className="text-green-400/70">{minTarget}-{maxTarget}% target</span>
+          <span>100%</span>
+        </div>
+
+        {/* Current Value Marker */}
+        {hasData && (
+          <div
+            className={`absolute top-0 bottom-0 w-1 ${
+              isOnTarget ? 'bg-green-400' : isTooHigh ? 'bg-red-400' : 'bg-yellow-400'
+            }`}
+            style={{ left: `${Math.min(100, displayValue)}%` }}
+          >
+            <div className={`absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full ${
+              isOnTarget ? 'bg-green-400' : isTooHigh ? 'bg-red-400' : 'bg-yellow-400'
+            }`} />
+          </div>
+        )}
+      </div>
+
+      {/* Value Display */}
+      <div className="flex items-center justify-center">
+        <span className={`text-3xl font-bold ${
+          !hasData ? 'text-gray-500' :
+          isOnTarget ? 'text-green-400' :
+          isTooHigh ? 'text-red-400' : 'text-yellow-400'
+        }`}>
+          {hasData ? `${displayValue.toFixed(1)}%` : 'N/A'}
+        </span>
       </div>
     </div>
   )
@@ -253,6 +348,98 @@ export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProp
         </div>
       </div>
 
+      {/* CEO-DIR-2026-DAY25-SESSION11: Test Progress (Database-Verified) */}
+      {test.testProgress && (
+        <div className="px-6 pb-4">
+          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-5 w-5 text-purple-400" />
+              <h4 className="font-semibold text-white">Test Progress (Live)</h4>
+              <div className="flex items-center gap-1 ml-auto text-xs text-gray-500">
+                <Database className="h-3 w-3" />
+                <span>DB-Verified: {new Date(test.testProgress.verifiedAt).toLocaleTimeString()}</span>
+              </div>
+            </div>
+
+            {/* Death Rate Gauge */}
+            <DeathRateGauge
+              value={test.testProgress.deathRateInWindow}
+              minTarget={60}
+              maxTarget={90}
+              trajectory={test.testProgress.trajectory}
+            />
+
+            {/* Window Metrics Grid */}
+            <div className="grid grid-cols-4 gap-3 mt-4">
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-white">{test.testProgress.hypothesesInWindow}</p>
+                <p className="text-xs text-gray-400 mt-1">In Window</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-red-400">{test.testProgress.falsifiedInWindow}</p>
+                <p className="text-xs text-gray-400 mt-1">Falsified</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-blue-400">{test.testProgress.activeInWindow}</p>
+                <p className="text-xs text-gray-400 mt-1">Active</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-gray-400">{test.testProgress.draftInWindow}</p>
+                <p className="text-xs text-gray-400 mt-1">Draft</p>
+              </div>
+            </div>
+
+            {/* Last Hypothesis Timestamp */}
+            {test.testProgress.lastHypothesisInWindow && (
+              <div className="mt-4 flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-400">Last hypothesis:</span>
+                <span className="text-white font-medium">
+                  {new Date(test.testProgress.lastHypothesisInWindow).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
+                </span>
+              </div>
+            )}
+
+            {/* CEO Recommendation based on trajectory */}
+            {test.testProgress.trajectory === 'TOO_BRUTAL' && (
+              <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                <p className="text-sm text-red-400">
+                  <strong>Recommendation:</strong> Death rate exceeds 90% target. Consider loosening Tier-1 falsification criteria to allow more hypotheses to survive initial testing.
+                </p>
+              </div>
+            )}
+            {test.testProgress.trajectory === 'TOO_MILD' && (
+              <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                <p className="text-sm text-yellow-400">
+                  <strong>Recommendation:</strong> Death rate below 60% target. Consider tightening Tier-1 falsification criteria to filter out low-quality hypotheses.
+                </p>
+              </div>
+            )}
+            {test.testProgress.trajectory === 'ON_TARGET' && (
+              <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                <p className="text-sm text-green-400">
+                  <strong>Status:</strong> Death rate within 60-90% target band. Tier-1 calibration appears optimal.
+                </p>
+              </div>
+            )}
+            {test.testProgress.trajectory === 'INSUFFICIENT_DATA' && (
+              <div className="mt-4 bg-gray-500/10 border border-gray-500/30 rounded-lg p-3">
+                <p className="text-sm text-gray-400">
+                  <strong>Note:</strong> No hypotheses have been promoted from DRAFT to ACTIVE status yet. Death rate cannot be calculated until hypotheses are tested.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Collapsible Sections */}
       <div className="px-6 pb-6 space-y-4">
         {/* Purpose & Logic */}
@@ -272,7 +459,7 @@ export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProp
             <InfoRow
               label="Baseline (what 'normal' means)"
               value={typeof test.baselineDefinition === 'object'
-                ? test.baselineDefinition.description || 'Defined'
+                ? test.baselineDefinition.beskrivelse || test.baselineDefinition.description || 'Defined'
                 : test.baselineDefinition
               }
             />
@@ -281,7 +468,7 @@ export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProp
             <InfoRow
               label="Target metrics & expected trajectory"
               value={typeof test.targetMetrics === 'object'
-                ? test.targetMetrics.description || 'Defined'
+                ? test.targetMetrics.beskrivelse || test.targetMetrics.description || 'Defined'
                 : test.targetMetrics
               }
             />
@@ -307,7 +494,7 @@ export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProp
                 <p className="text-xs text-gray-500">Success if:</p>
                 <p className="text-sm text-white">
                   {typeof test.successCriteria === 'object'
-                    ? test.successCriteria.description || 'Criteria defined'
+                    ? test.successCriteria.beskrivelse || test.successCriteria.description || 'Criteria defined'
                     : test.successCriteria
                   }
                 </p>
@@ -321,7 +508,7 @@ export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProp
                 <p className="text-xs text-gray-500">Failure if:</p>
                 <p className="text-sm text-white">
                   {typeof test.failureCriteria === 'object'
-                    ? test.failureCriteria.description || 'Criteria defined'
+                    ? test.failureCriteria.beskrivelse || test.failureCriteria.description || 'Criteria defined'
                     : test.failureCriteria
                   }
                 </p>
