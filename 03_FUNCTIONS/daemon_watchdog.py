@@ -39,33 +39,37 @@ DB_CONFIG = {
 }
 
 # Critical daemons to monitor
+# has_heartbeat: True = check DB heartbeat, False = only check process alive
 DAEMONS = {
     'finn_brain_scheduler': {
         'script': '03_FUNCTIONS/finn_brain_scheduler.py',
         'max_stale_minutes': 35,  # 30min cycle + 5min buffer
-        'process': None
+        'process': None,
+        'has_heartbeat': True  # Has heartbeat code
     },
     'finn_crypto_scheduler': {
         'script': '03_FUNCTIONS/finn_crypto_scheduler.py',
         'max_stale_minutes': 35,
-        'process': None
+        'process': None,
+        'has_heartbeat': True  # Has heartbeat code
     },
     'economic_outcome_daemon': {
         'script': '03_FUNCTIONS/economic_outcome_daemon.py',
         'max_stale_minutes': 10,
         'process': None,
-        'heartbeat_table': 'agent_heartbeats',
-        'heartbeat_id': 'CEIO'
+        'has_heartbeat': False  # Uses agent_heartbeats (CEIO) - complex table, just check process
     },
     'g2c_continuous_forecast_engine': {
         'script': '03_FUNCTIONS/g2c_continuous_forecast_engine.py',
         'max_stale_minutes': 15,
-        'process': None
+        'process': None,
+        'has_heartbeat': False  # NO heartbeat code - only check process
     },
     'ios003b_intraday_regime_delta': {
         'script': '03_FUNCTIONS/ios003b_intraday_regime_delta.py',
         'max_stale_minutes': 20,  # 15min cycle + buffer
-        'process': None
+        'process': None,
+        'has_heartbeat': False  # NO heartbeat code - only check process
     }
 }
 
@@ -162,11 +166,21 @@ def check_and_restart_daemons():
         # Check if process is running
         process_alive = process is not None and process.poll() is None
 
-        # Check heartbeat
-        heartbeat_fresh = check_daemon_heartbeat(daemon_name)
+        # Determine if we need to restart
+        needs_restart = False
+        reason = ""
 
-        if not process_alive or not heartbeat_fresh:
-            reason = "no process" if not process_alive else "stale heartbeat"
+        if not process_alive:
+            needs_restart = True
+            reason = "process dead"
+        elif config.get('has_heartbeat', False):
+            # Only check heartbeat for daemons that have heartbeat code
+            heartbeat_fresh = check_daemon_heartbeat(daemon_name)
+            if not heartbeat_fresh:
+                needs_restart = True
+                reason = "stale heartbeat"
+
+        if needs_restart:
             logger.warning(f"{daemon_name}: {reason} - restarting...")
 
             # Kill existing process if any
@@ -185,9 +199,12 @@ def check_and_restart_daemons():
 
 def main():
     logger.info("=" * 60)
-    logger.info("FjordHQ Daemon Watchdog Starting")
+    logger.info("FjordHQ Daemon Watchdog Starting - VERSION 2.0 (FIXED)")
     logger.info(f"Monitoring {len(DAEMONS)} daemons")
     logger.info(f"Check interval: {CHECK_INTERVAL_SECONDS} seconds")
+    # Debug: log heartbeat settings
+    for name, cfg in DAEMONS.items():
+        logger.info(f"  {name}: has_heartbeat={cfg.get('has_heartbeat', 'NOT SET')}")
     logger.info("=" * 60)
 
     # Initial startup of all daemons
