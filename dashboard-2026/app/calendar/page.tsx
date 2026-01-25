@@ -108,6 +108,12 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<CalendarData | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
+  const [selectedDay, setSelectedDay] = useState<{
+    day: number
+    month: number
+    year: number
+    events: CalendarEvent[]
+  } | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -142,6 +148,10 @@ export default function CalendarPage() {
   const handleAlertClick = (alert: any) => {
     // TODO: Implement alert modal/drawer
     console.log('Alert clicked:', alert)
+  }
+
+  const handleDayClick = (day: number, month: number, year: number, events: CalendarEvent[]) => {
+    setSelectedDay({ day, month, year, events })
   }
 
   // Default values
@@ -292,6 +302,7 @@ export default function CalendarPage() {
               currentYear={currentYear}
               currentMonth={currentMonth}
               onEventClick={handleEventClick}
+              onDayClick={handleDayClick}
             />
           </div>
 
@@ -618,6 +629,102 @@ export default function CalendarPage() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Day Detail Modal - Corporate Standard: Click date to see all events */}
+      {selectedDay && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedDay(null)}
+        >
+          <div
+            className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  {new Date(selectedDay.year, selectedDay.month - 1, selectedDay.day).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  {selectedDay.events.length} event{selectedDay.events.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedDay(null)}
+                className="text-gray-500 hover:text-white text-2xl leading-none p-2"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Events List */}
+            <div className="overflow-y-auto flex-1 p-4">
+              {selectedDay.events.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No events scheduled for this day.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {selectedDay.events.map((event) => (
+                    <button
+                      key={event.id}
+                      onClick={() => {
+                        setSelectedDay(null)
+                        setSelectedEvent(event)
+                      }}
+                      className="w-full text-left bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-lg p-4 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-1 h-full min-h-[40px] rounded-full flex-shrink-0"
+                          style={{ backgroundColor: event.color }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-white truncate">{event.name}</span>
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: event.color + '30', color: event.color }}
+                            >
+                              {event.category.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                            <span>{event.owner}</span>
+                            <span className="text-gray-600">•</span>
+                            <span
+                              className="font-medium"
+                              style={{ color: event.color }}
+                            >
+                              {event.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          →
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-800 px-6 py-3 bg-gray-900/50">
+              <p className="text-xs text-gray-500 text-center">
+                Click an event for full details
+              </p>
             </div>
           </div>
         </div>

@@ -31,6 +31,7 @@ interface CalendarGridProps {
   currentYear: number
   currentMonth: number
   onEventClick?: (event: CalendarEvent) => void
+  onDayClick?: (day: number, month: number, year: number, events: CalendarEvent[]) => void
 }
 
 // Category labels for legend (CEO-facing, no internal names)
@@ -50,6 +51,7 @@ export function CalendarGrid({
   currentYear,
   currentMonth,
   onEventClick,
+  onDayClick,
 }: CalendarGridProps) {
   const [viewYear, setViewYear] = useState(currentYear)
   const [viewMonth, setViewMonth] = useState(currentMonth)
@@ -198,14 +200,17 @@ export function CalendarGrid({
                       today ? 'text-blue-400' : 'text-gray-400'
                     )}
                   >
-                    <span
+                    <button
+                      onClick={() => onDayClick?.(day, viewMonth, viewYear, dayEvents)}
                       className={cn(
-                        'inline-flex items-center justify-center w-7 h-7 rounded-full',
-                        today && 'bg-blue-500 text-white'
+                        'inline-flex items-center justify-center w-7 h-7 rounded-full transition-colors',
+                        today && 'bg-blue-500 text-white',
+                        !today && 'hover:bg-gray-700'
                       )}
+                      title={`View all ${dayEvents.length} event${dayEvents.length !== 1 ? 's' : ''} for ${monthNames[viewMonth - 1]} ${day}`}
                     >
                       {day}
-                    </span>
+                    </button>
                   </div>
                   <div className="space-y-1">
                     {dayEvents.slice(0, 3).map((event) => (
@@ -220,9 +225,12 @@ export function CalendarGrid({
                       </button>
                     ))}
                     {dayEvents.length > 3 && (
-                      <div className="text-xs text-gray-500 px-2">
+                      <button
+                        onClick={() => onDayClick?.(day, viewMonth, viewYear, dayEvents)}
+                        className="text-xs text-blue-400 px-2 hover:text-blue-300 transition-colors cursor-pointer"
+                      >
                         +{dayEvents.length - 3} more
-                      </div>
+                      </button>
                     )}
                   </div>
                 </>
