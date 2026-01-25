@@ -19,6 +19,7 @@ import {
   EconomicEventsPanel,
   CanonicalTestCard,
   LearningVisibilityPanel,
+  G15ProgressionPanel,
 } from '@/components/calendar'
 
 interface CalendarEvent {
@@ -92,6 +93,11 @@ interface CalendarData {
   learningMetrics?: any[]
   learningSummary?: any
   generatorPerformance?: any[]
+  // CEO-VEDTAK-2026-ALPHA-FACTORY: G1.5 Experiment Progression
+  g15Experiment?: any
+  g15Generators?: any[]
+  g15Quartiles?: any[]
+  g15Validators?: any[]
   currentDate: {
     today: string
     year: number
@@ -286,6 +292,24 @@ export default function CalendarPage() {
             </div>
           </div>
         </div>
+
+        {/* CEO-VEDTAK-2026-ALPHA-FACTORY: G1.5 Experiment Progression Panel */}
+        {data?.g15Experiment && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-purple-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                G1.5 Experiment Progression (CEO-VEDTAK-2026-ALPHA-FACTORY)
+              </h2>
+            </div>
+            <G15ProgressionPanel
+              experiment={data.g15Experiment}
+              generators={data.g15Generators || []}
+              quartiles={data.g15Quartiles || []}
+              validators={data.g15Validators || []}
+            />
+          </div>
+        )}
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">

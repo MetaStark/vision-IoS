@@ -290,6 +290,40 @@ export async function GET() {
       SELECT * FROM fhq_learning.v_generator_performance
     `)
 
+    // CEO-VEDTAK-2026-ALPHA-FACTORY: G1.5 Experiment Progression
+    const g15ProgressionResult = await client.query(`
+      SELECT * FROM fhq_learning.v_g1_5_throughput_tracker
+    `)
+
+    // G1.5 Generator Performance
+    const g15GeneratorsResult = await client.query(`
+      SELECT * FROM fhq_learning.v_g1_5_generator_performance
+    `)
+
+    // G1.5 Quartile Survival (for visual)
+    const g15QuartilesResult = await client.query(`
+      SELECT * FROM fhq_learning.v_g1_5_quartile_survival
+    `)
+
+    // G1.5 Spearman Correlation Status
+    const g15SpearmanResult = await client.query(`
+      SELECT * FROM fhq_learning.calculate_g1_5_spearman()
+    `)
+
+    // G1.5 Stale Candidates Count
+    const g15StaleCandidatesResult = await client.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE freshness_status = 'FRESH') as fresh_count,
+        COUNT(*) FILTER (WHERE freshness_status = 'WARNING') as warning_count,
+        COUNT(*) FILTER (WHERE freshness_status = 'STALE_CANDIDATE') as stale_count
+      FROM fhq_learning.v_stale_candidates
+    `)
+
+    // G1.5 Validator Authority
+    const g15ValidatorsResult = await client.query(`
+      SELECT * FROM fhq_learning.v_authorized_validators
+    `)
+
     // Get current date info
     const dateResult = await client.query(`
       SELECT
@@ -550,6 +584,103 @@ export async function GET() {
         month: parseInt(dateInfo.month),
         monthName: dateInfo.month_name?.trim(),
       },
+
+      // CEO-VEDTAK-2026-ALPHA-FACTORY: G1.5 Experiment Progression
+      g15Experiment: (() => {
+        const prog = g15ProgressionResult.rows[0] || {}
+        const spearman = g15SpearmanResult.rows[0] || {}
+        const stale = g15StaleCandidatesResult.rows[0] || {}
+        return {
+          experimentId: prog.experiment_id || 'FHQ-EXP-PRETIER-G1.5',
+          experimentStatus: prog.experiment_status || 'UNKNOWN',
+          startTs: prog.start_ts,
+          endTs: prog.end_ts,
+          daysElapsed: parseInt(prog.days_elapsed) || 0,
+          daysRemaining: parseInt(prog.days_remaining) || 0,
+          // Throughput metrics
+          todayHypotheses: parseInt(prog.today_hypotheses) || 0,
+          todayGenerators: parseInt(prog.today_generators) || 0,
+          todayAvgDepth: parseFloat(prog.today_avg_depth) || 0,
+          totalHypotheses: parseInt(prog.total_hypotheses) || 0,
+          avgDailyRate: parseFloat(prog.avg_daily_rate) || 0,
+          avgDailyGenerators: parseFloat(prog.avg_daily_generators) || 0,
+          avgCausalDepth: parseFloat(prog.avg_causal_depth) || 0,
+          // Targets
+          baselineRate: parseFloat(prog.baseline_rate) || 15,
+          targetRate: parseFloat(prog.target_rate) || 30,
+          rateStatus: prog.rate_status || 'BELOW_TARGET',
+          targetGenerators: parseFloat(prog.target_generators) || 3,
+          generatorStatus: prog.generator_status || 'BELOW_TARGET',
+          // Death progress (primary trigger)
+          deathsWithScore: parseInt(prog.deaths_with_score) || 0,
+          targetDeaths: prog.target_deaths || 30,
+          deathProgressPct: parseFloat(prog.death_progress_pct) || 0,
+          calibrationTriggerMet: prog.calibration_trigger_met || false,
+          endTriggerStatus: prog.end_trigger_status || 'IN_PROGRESS',
+          // Freeze compliance
+          weightsFrozen: prog.weights_frozen ?? true,
+          thresholdsFrozen: prog.thresholds_frozen ?? true,
+          agentRolesFrozen: prog.agent_roles_frozen ?? true,
+          oxygenCriteriaFrozen: prog.oxygen_criteria_frozen ?? true,
+          // Validator capacity
+          activeValidators: parseInt(prog.active_validators) || 0,
+          targetValidators: prog.target_validators || 5,
+          validatorCapacityStatus: prog.validator_capacity_status || 'UNKNOWN',
+          // Spearman correlation
+          spearman: {
+            sampleSize: parseInt(spearman.sample_size) || 0,
+            rho: spearman.spearman_rho ? parseFloat(spearman.spearman_rho) : null,
+            dataStatus: spearman.data_status || 'INSUFFICIENT_DATA',
+            interpretation: spearman.interpretation || 'Awaiting data',
+          },
+          // Stale candidates
+          staleCandidates: {
+            fresh: parseInt(stale.fresh_count) || 0,
+            warning: parseInt(stale.warning_count) || 0,
+            stale: parseInt(stale.stale_count) || 0,
+          },
+          // Computed timestamp
+          computedAt: prog.computed_at || new Date().toISOString(),
+        }
+      })(),
+
+      // G1.5 Generators
+      g15Generators: g15GeneratorsResult.rows.map((g: any) => ({
+        generatorId: g.generator_id,
+        totalHypotheses: parseInt(g.total_hypotheses) || 0,
+        last24h: parseInt(g.last_24h) || 0,
+        last7d: parseInt(g.last_7d) || 0,
+        avgDepth: parseFloat(g.avg_depth) || 0,
+        avgBirthScore: parseFloat(g.avg_birth_score) || null,
+        deaths: parseInt(g.deaths) || 0,
+        activeDrafts: parseInt(g.active_drafts) || 0,
+        lastHypothesisAt: g.last_hypothesis_at,
+        volumeSharePct: parseFloat(g.volume_share_pct) || 0,
+      })),
+
+      // G1.5 Quartile Survival
+      g15Quartiles: g15QuartilesResult.rows.map((q: any) => ({
+        quartile: parseInt(q.score_quartile) || 0,
+        label: q.quartile_label,
+        totalHypotheses: parseInt(q.total_hypotheses) || 0,
+        deaths: parseInt(q.deaths) || 0,
+        survivors: parseInt(q.survivors) || 0,
+        avgBirthScore: parseFloat(q.avg_birth_score) || 0,
+        avgSurvivalHours: parseFloat(q.avg_survival_hours) || null,
+        minSurvivalHours: parseFloat(q.min_survival_hours) || null,
+        maxSurvivalHours: parseFloat(q.max_survival_hours) || null,
+      })),
+
+      // G1.5 Validators
+      g15Validators: g15ValidatorsResult.rows.map((v: any) => ({
+        ec: v.validator_ec,
+        name: v.validator_name,
+        role: v.validator_role,
+        wave: v.registration_wave,
+        isActive: v.is_active,
+        totalValidations: parseInt(v.total_validations) || 0,
+        lastValidation: v.last_validation,
+      })),
 
       // Metadata
       lastUpdated: new Date().toISOString(),

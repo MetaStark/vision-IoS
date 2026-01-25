@@ -49,6 +49,25 @@ DB_CONFIG = {
 }
 
 
+def update_daemon_heartbeat(status: str = 'HEALTHY'):
+    """Update daemon health heartbeat."""
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
+                VALUES ('finn_brain_scheduler', %s, NOW(), '{"source": "scheduler"}'::jsonb)
+                ON CONFLICT (daemon_name) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    last_heartbeat = NOW(),
+                    metadata = EXCLUDED.metadata
+            """, (status,))
+            conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Failed to update heartbeat: {e}")
+
+
 def defcon_gate_check() -> Tuple[bool, str, str]:
     """
     DEFCON Hard Gate Check - MUST be called BEFORE any cycle starts.
@@ -190,6 +209,9 @@ class FINNScheduler:
 
         self.setup_signal_handlers()
 
+        # Initial heartbeat on startup
+        update_daemon_heartbeat('HEALTHY')
+
         while not self.shutdown_requested:
             try:
                 self.reset_daily_counter()
@@ -223,25 +245,34 @@ class FINNScheduler:
 
                 # Run cognitive cycle
                 logger.info(f"Starting cycle (#{self.cycles_today + 1} today, DEFCON: {defcon_level})...")
+                update_daemon_heartbeat('HEALTHY')  # Heartbeat before cycle
                 results = self.run_cycle()
                 self.log_results(results)
+                update_daemon_heartbeat('HEALTHY')  # Heartbeat after cycle
 
                 # Wait for next interval
                 if not self.shutdown_requested:
                     logger.info(f"Next cycle in {INTERVAL_MINUTES} minutes...")
+                    wait_seconds = 0
                     for _ in range(INTERVAL_MINUTES * 60):
                         if self.shutdown_requested:
                             break
                         time.sleep(1)
+                        wait_seconds += 1
+                        # Update heartbeat every 5 minutes during wait
+                        if wait_seconds % 300 == 0:
+                            update_daemon_heartbeat('HEALTHY')
 
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
+                update_daemon_heartbeat('ERROR')
                 import traceback
                 traceback.print_exc()
                 # Wait before retry
                 time.sleep(60)
 
         # Cleanup
+        update_daemon_heartbeat('STOPPED')
         if self.brain:
             self.brain.close()
         logger.info("FINN Scheduler shutdown complete")
