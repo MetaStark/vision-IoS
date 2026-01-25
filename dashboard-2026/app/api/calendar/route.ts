@@ -48,6 +48,22 @@ export async function GET() {
       SELECT * FROM fhq_calendar.v_lvg_daily_status
     `)
 
+    // CEO-DIR-2026-DAY25: Fetch cumulative hypothesis totals
+    const cumulativeResult = await client.query(`
+      SELECT
+        COUNT(*) as total_hypotheses,
+        COUNT(*) FILTER (WHERE status = 'FALSIFIED') as total_falsified,
+        COUNT(*) FILTER (WHERE status NOT IN ('FALSIFIED', 'DRAFT')) as total_active,
+        CASE
+          WHEN COUNT(*) FILTER (WHERE status != 'DRAFT') = 0 THEN 0
+          ELSE ROUND(COUNT(*) FILTER (WHERE status = 'FALSIFIED')::numeric /
+               NULLIF(COUNT(*) FILTER (WHERE status != 'DRAFT'), 0) * 100, 1)
+        END as death_rate_pct,
+        MAX(created_at) as last_hypothesis_time
+      FROM fhq_learning.hypothesis_canon
+    `)
+    const cumulative = cumulativeResult.rows[0] || {}
+
     // Fetch shadow tier status
     const shadowTierResult = await client.query(`
       SELECT * FROM fhq_calendar.v_shadow_tier_calendar_status
@@ -58,36 +74,44 @@ export async function GET() {
       SELECT * FROM fhq_calendar.check_calendar_sync()
     `)
 
-    // Fetch active tests summary with ALL Section 3 fields
-    const activeTestsResult = await client.query(`
+    // Fetch canonical tests with ALL CEO-required fields (Migration 342)
+    const canonicalTestsResult = await client.query(`
       SELECT
-        test_name,
+        test_id,
         test_code,
+        COALESCE(display_name, test_name) as test_name,
         owning_agent,
         status,
+        -- Timestamps (immutable once ACTIVE)
+        start_ts,
+        end_ts,
+        -- Progress (computed from storage)
         days_elapsed,
         days_remaining,
-        current_sample_size,
-        target_sample_size,
-        sample_trajectory_status,
-        calendar_category,
+        required_days,
+        ROUND((COALESCE(days_elapsed, 0)::NUMERIC / NULLIF(required_days, 0)) * 100, 1) as progress_pct,
         -- Section 3 required fields
         business_intent,
         beneficiary_system,
         baseline_definition,
         target_metrics,
-        expected_trajectory,
         hypothesis_code,
         success_criteria,
         failure_criteria,
-        escalation_rules,
+        -- Governance (CEO Modification 5)
+        monitoring_agent_ec,
+        escalation_state,
+        ceo_action_required,
+        recommended_actions,
         mid_test_checkpoint,
-        outcome,
-        start_date,
-        end_date
+        verdict,
+        -- Calendar
+        calendar_category
       FROM fhq_calendar.canonical_test_events
-      WHERE status IN ('ACTIVE', 'SCHEDULED')
-      ORDER BY start_date ASC
+      WHERE status IN ('ACTIVE', 'SCHEDULED', 'COMPLETED')
+      ORDER BY
+        CASE WHEN ceo_action_required THEN 0 ELSE 1 END,
+        start_ts ASC
     `)
 
     // Fetch economic events from IoS-016 (Section 2)
@@ -161,6 +185,34 @@ export async function GET() {
       WHERE status = 'ACTIVE'
     `)
 
+    // CEO-DIR-2026-DAY25: Learning Visibility Metrics (time-series for graphs)
+    const learningMetricsResult = await client.query(`
+      SELECT
+        metric_date,
+        hypotheses_total,
+        hypotheses_falsified,
+        death_rate_pct,
+        from_errors,
+        avg_causal_depth,
+        gen_finn_e,
+        gen_finn_t,
+        gen_gn_s,
+        gen_other
+      FROM fhq_learning.v_daily_learning_metrics
+      ORDER BY metric_date ASC
+      LIMIT 30
+    `)
+
+    // CEO-DIR-2026-DAY25: Learning Status Summary
+    const learningSummaryResult = await client.query(`
+      SELECT * FROM fhq_learning.v_learning_status_summary
+    `)
+
+    // CEO-DIR-2026-DAY25: Generator Performance
+    const generatorPerfResult = await client.query(`
+      SELECT * FROM fhq_learning.v_generator_performance
+    `)
+
     // Get current date info
     const dateResult = await client.query(`
       SELECT
@@ -186,39 +238,73 @@ export async function GET() {
         owner: e.owning_agent,
         details: e.event_details,
         color: e.color_code,
-        year: e.year,
-        month: e.month,
-        day: e.day,
-        dayName: e.day_name,
+        year: parseInt(e.year),
+        month: parseInt(e.month),
+        day: parseInt(e.day),
+        dayName: e.day_name?.trim(),
       })),
 
-      // Active tests with ALL Section 3 fields
-      activeTests: activeTestsResult.rows.map((t: any) => ({
-        name: t.test_name,
+      // Canonical tests with CEO-required fields (Migration 342)
+      canonicalTests: canonicalTestsResult.rows.map((t: any) => ({
+        id: t.test_id,
         code: t.test_code,
+        name: t.test_name,
         owner: t.owning_agent,
         status: t.status,
-        daysElapsed: t.days_elapsed,
-        daysRemaining: t.days_remaining,
-        currentSamples: t.current_sample_size,
-        targetSamples: t.target_sample_size,
-        sampleStatus: t.sample_trajectory_status,
         category: t.calendar_category,
-        // Section 3 required fields
+        // Timestamps (immutable)
+        startDate: t.start_ts,
+        endDate: t.end_ts,
+        // Progress (computed from storage - CEO Mod 3)
+        daysElapsed: parseInt(t.days_elapsed) || 0,
+        daysRemaining: parseInt(t.days_remaining) || 0,
+        requiredDays: parseInt(t.required_days) || 30,
+        progressPct: parseFloat(t.progress_pct) || 0,
+        // Purpose & Logic
         businessIntent: t.business_intent,
         beneficiarySystem: t.beneficiary_system,
+        hypothesisCode: t.hypothesis_code,
+        // Measurement
         baselineDefinition: t.baseline_definition,
         targetMetrics: t.target_metrics,
-        expectedTrajectory: t.expected_trajectory,
-        hypothesisCode: t.hypothesis_code,
         successCriteria: t.success_criteria,
         failureCriteria: t.failure_criteria,
-        escalationRules: t.escalation_rules,
+        // Governance (CEO Mod 5)
+        monitoringAgent: t.monitoring_agent_ec,
+        escalationState: t.escalation_state,
+        ceoActionRequired: t.ceo_action_required || false,
+        recommendedActions: t.recommended_actions || [],
         midTestCheckpoint: t.mid_test_checkpoint,
-        outcome: t.outcome,
-        startDate: t.start_date,
-        endDate: t.end_date,
+        verdict: t.verdict,
       })),
+
+      // Legacy activeTests mapping (for backwards compatibility)
+      activeTests: canonicalTestsResult.rows
+        .filter((t: any) => t.status === 'ACTIVE' || t.status === 'SCHEDULED')
+        .map((t: any) => ({
+          name: t.test_name,
+          code: t.test_code,
+          owner: t.owning_agent,
+          status: t.status,
+          daysElapsed: parseInt(t.days_elapsed) || 0,
+          daysRemaining: parseInt(t.days_remaining) || 0,
+          currentSamples: 0,
+          targetSamples: 0,
+          sampleStatus: 'ON_TRACK',
+          category: t.calendar_category,
+          businessIntent: t.business_intent,
+          beneficiarySystem: t.beneficiary_system,
+          baselineDefinition: t.baseline_definition,
+          targetMetrics: t.target_metrics,
+          hypothesisCode: t.hypothesis_code,
+          successCriteria: t.success_criteria,
+          failureCriteria: t.failure_criteria,
+          escalationRules: t.recommended_actions,
+          midTestCheckpoint: t.mid_test_checkpoint,
+          outcome: t.verdict,
+          startDate: t.start_ts,
+          endDate: t.end_ts,
+        })),
 
       // Economic events from IoS-016 (Section 2)
       economicEvents: economicEventsResult.rows.map((e: any) => ({
@@ -266,7 +352,7 @@ export async function GET() {
         startingConsensusState: w.starting_consensus_state,
       })),
 
-      // LVG Status (Section 5.5)
+      // LVG Status (Section 5.5) + Cumulative Totals (CEO-DIR-2026-DAY25)
       lvgStatus: {
         hypothesesBornToday: lvg.hypotheses_born_today || 0,
         hypothesesKilledToday: lvg.hypotheses_killed_today || 0,
@@ -274,6 +360,12 @@ export async function GET() {
         thrashingIndex: lvg.thrashing_index,
         governorAction: lvg.governor_action || 'NORMAL',
         velocityBrakeActive: lvg.velocity_brake_active || false,
+        // Cumulative totals (CEO-DIR-2026-DAY25)
+        totalHypotheses: parseInt(cumulative.total_hypotheses) || 0,
+        totalFalsified: parseInt(cumulative.total_falsified) || 0,
+        totalActive: parseInt(cumulative.total_active) || 0,
+        deathRatePct: parseFloat(cumulative.death_rate_pct) || 0,
+        lastHypothesisTime: cumulative.last_hypothesis_time || null,
       },
 
       // Shadow Tier Status (Section 6.3)
@@ -289,6 +381,58 @@ export async function GET() {
         name: g.check_name,
         status: g.check_status,
         discrepancy: g.discrepancy,
+      })),
+
+      // CEO-DIR-2026-DAY25: Learning Visibility (time-series for graphs)
+      learningMetrics: learningMetricsResult.rows.map((m: any) => ({
+        date: m.metric_date,
+        hypothesesTotal: parseInt(m.hypotheses_total) || 0,
+        hypothesesFalsified: parseInt(m.hypotheses_falsified) || 0,
+        deathRatePct: parseFloat(m.death_rate_pct) || 0,
+        fromErrors: parseInt(m.from_errors) || 0,
+        avgCausalDepth: parseFloat(m.avg_causal_depth) || 0,
+        genFinnE: parseInt(m.gen_finn_e) || 0,
+        genFinnT: parseInt(m.gen_finn_t) || 0,
+        genGnS: parseInt(m.gen_gn_s) || 0,
+        genOther: parseInt(m.gen_other) || 0,
+      })),
+
+      // CEO-DIR-2026-DAY25: Learning Summary with status sentence
+      learningSummary: (() => {
+        const s = learningSummaryResult.rows[0] || {}
+        const deathRate = parseFloat(s.death_rate_pct) || 0
+        let statusSentence = ''
+        if (deathRate >= 60 && deathRate <= 90) {
+          statusSentence = 'ON TRACK: Death rate within target band (60-90%).'
+        } else if (deathRate > 90) {
+          statusSentence = 'BEHIND: Death rate too high - hypotheses dying too fast, need more robust generation.'
+        } else {
+          statusSentence = 'BEHIND: Death rate too low - Tier-1 not brutal enough, tighten falsification criteria.'
+        }
+        return {
+          totalHypotheses: parseInt(s.total_hypotheses) || 0,
+          totalFalsified: parseInt(s.total_falsified) || 0,
+          totalActive: parseInt(s.total_active) || 0,
+          deathRatePct: deathRate,
+          deathRateStatus: s.death_rate_status || 'UNKNOWN',
+          avgCausalDepth: parseFloat(s.avg_causal_depth) || 0,
+          finnECount: parseInt(s.finn_e_count) || 0,
+          finnTCount: parseInt(s.finn_t_count) || 0,
+          gnSCount: parseInt(s.gn_s_count) || 0,
+          lastHypothesisTime: s.last_hypothesis_time,
+          todayCount: parseInt(s.today_count) || 0,
+          statusSentence,
+        }
+      })(),
+
+      // CEO-DIR-2026-DAY25: Generator Performance
+      generatorPerformance: generatorPerfResult.rows.map((g: any) => ({
+        name: g.generator_name,
+        totalGenerated: parseInt(g.total_generated) || 0,
+        falsified: parseInt(g.falsified) || 0,
+        surviving: parseInt(g.surviving) || 0,
+        deathRatePct: parseFloat(g.death_rate_pct) || 0,
+        avgDepth: parseFloat(g.avg_depth) || 0,
       })),
 
       // Current date

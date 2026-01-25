@@ -1,0 +1,126 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-DAY25",
+  "title": "Learning Visibility, Process Integrity, and Daemon Recovery",
+  "timestamp": "2026-01-25T00:08:00Z",
+  "final_update": "2026-01-25T01:08:00Z",
+  "executor": "STIG",
+  "status": "COMPLETE",
+  "sessions_completed": 3,
+  "deliverables": {
+    "learning_visibility_dashboard": {
+      "status": "COMPLETE",
+      "component": "LearningVisibilityPanel.tsx",
+      "graphs": [
+        "Tier-1 Death Rate Gauge (60-90% target band)",
+        "Generator Distribution (FINN-E/FINN-T/GN-S)",
+        "Hypotheses/Day (7d time-series)",
+        "Causal Depth Trend (7d time-series)"
+      ],
+      "status_sentence_generated": true,
+      "db_views_created": [
+        "v_daily_learning_metrics",
+        "v_learning_status_summary",
+        "v_generator_performance"
+      ]
+    },
+    "heartbeat_fail_closed": {
+      "status": "COMPLETE",
+      "functions_created": [
+        "fn_check_daemon_staleness",
+        "fn_get_operational_status",
+        "fn_check_promotion_gate"
+      ],
+      "views_created": [
+        "v_operational_status",
+        "v_daemon_staleness"
+      ],
+      "enforcement": "Stale > 2 cycles → DEGRADED → Block promotions"
+    },
+    "daemon_recovery": {
+      "status": "COMPLETE",
+      "daemons_started": 4,
+      "operational_status": "OPERATIONAL",
+      "running_processes": [
+        {"name": "finn_brain_scheduler.py", "pid": 76824, "schedule": "30min"},
+        {"name": "economic_outcome_daemon.py", "pid": 25012, "schedule": "continuous"},
+        {"name": "g2c_continuous_forecast_engine.py", "pid": 52832, "schedule": "continuous"},
+        {"name": "ios003b_intraday_regime_delta.py", "pid": 46196, "schedule": "15min"}
+      ]
+    },
+    "runbook_updated": {
+      "status": "COMPLETE",
+      "file": "12_DAILY_REPORTS/DAY25_RUNBOOK_20260125.md",
+      "includes": [
+        "Running processes with PIDs",
+        "Daemon status",
+        "Learning cadence documentation",
+        "Migration list"
+      ]
+    }
+  },
+  "fixes_applied": [
+    {
+      "issue": "DeepSeek Reasoner expired API",
+      "migration": 343,
+      "configs_updated": 5,
+      "new_endpoint": "https://api.deepseek.com/v1"
+    },
+    {
+      "issue": "FINN UUID format error",
+      "files_modified": [
+        "finn_cognitive_brain.py",
+        "inforage_cost_controller.py"
+      ],
+      "change": "String session_id → proper UUID with WARN on malformed"
+    },
+    {
+      "issue": "Daemon heartbeats stale",
+      "migration": 344,
+      "daemons_registered": 4
+    }
+  ],
+  "migrations_executed": [343, 344, 345, 346],
+  "learning_status": {
+    "total_hypotheses": 34,
+    "total_falsified": 32,
+    "death_rate_pct": 94.1,
+    "status_sentence": "BEHIND: Death rate too high - hypotheses dying too fast, need more robust generation."
+  },
+  "ceo_can_answer_in_10_seconds": {
+    "question": "How many learning cycles did we complete since market open, and what changed because of it?",
+    "answer": "0 cycles completed (market closed). FINN scheduler running, will execute on next market open. 34 hypotheses tested total, 94% death rate (too brutal - need to relax falsification criteria or generate stronger hypotheses)."
+  },
+  "session_3_dashboard_fix": {
+    "issue": "Dashboard 404 error",
+    "root_cause": "Next.js dev server not running",
+    "resolution": "Started dev server on port 3006",
+    "typescript_fixes": [
+      {"file": "MechanismPanel.tsx", "issue": "Arrow -> interpreted as JSX", "fix": "Unicode arrows →"},
+      {"file": "ios-signals/page.tsx", "issue": "title prop on Lucide icons", "fix": "Wrapped in span with title"}
+    ],
+    "dashboard_url": "http://localhost:3006",
+    "pages_verified": ["/calendar", "/learning", "/ios-signals", "/dashboard"]
+  },
+  "learning_status_final": {
+    "total_hypotheses": 34,
+    "total_falsified": 32,
+    "total_active": 0,
+    "death_rate_pct": 100.0,
+    "avg_causal_depth": 1.41,
+    "generator_distribution": {
+      "finn_e": {"count": 28, "pct": 82.4},
+      "finn_t": {"count": 4, "pct": 11.8},
+      "gn_s": {"count": 2, "pct": 5.9}
+    },
+    "status_sentence": "BEHIND: Death rate at 100% (target 60-90%). All hypotheses dying. Generator mix: FINN-E dominant (82%). No new hypotheses today. System in fail-closed calibration state."
+  },
+  "verification": {
+    "all_tasks_completed": true,
+    "task_count": 6,
+    "evidence_json_created": true,
+    "runbook_updated": true,
+    "dashboard_accessible": true,
+    "all_sessions_complete": true
+  }
+}

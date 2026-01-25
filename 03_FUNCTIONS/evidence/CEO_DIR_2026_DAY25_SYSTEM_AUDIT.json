@@ -1,0 +1,58 @@
+{
+  "evidence_type": "SYSTEM_AUDIT",
+  "directive": "CEO-DIR-2026-DAY25",
+  "timestamp": "2026-01-25T01:16:08Z",
+  "audit_summary": {
+    "critical_processes": {
+      "total": 10,
+      "reporting": 0,
+      "not_reporting": 10,
+      "status": "CRITICAL"
+    },
+    "daemon_health": {
+      "recent_heartbeats": 2,
+      "stale_heartbeats": 7,
+      "oldest_heartbeat_days": 49
+    },
+    "llm_configuration": {
+      "deepseek_chat_configs": 6,
+      "deepseek_reasoner_configs": 15,
+      "expired_configs_fixed": 5
+    }
+  },
+  "fixes_applied": [
+    {
+      "fix_id": "MIGRATION-343",
+      "description": "Fixed 5 expired deepseek-reasoner configs",
+      "details": {
+        "old_base_url": "https://api.deepseek.com/v3.2_speciale_expires_on_20251215",
+        "new_base_url": "https://api.deepseek.com/v1",
+        "speciale_expires_removed": true
+      },
+      "affected_use_cases": [
+        "ios007_causal_inference",
+        "ios009_strategy_reasoning",
+        "aci_adr020_reasoning",
+        "finn_methodology_reasoning",
+        "ceio_market_reasoning"
+      ]
+    }
+  ],
+  "finn_scheduler_status": {
+    "running": true,
+    "cycle_completed": 0,
+    "defcon": "GREEN",
+    "strategy": "STATARB",
+    "session": "CLOSED",
+    "capital_usd": 104801.51,
+    "known_issue": "UUID format error in cost tracking (FINN_CYCLE_0)"
+  },
+  "deepseek_balance_usd": 11.41,
+  "recommendations": [
+    "Start critical daemons: regime_hmm_processor, ios003b_intraday_regime_delta, g2c_continuous_forecast_engine",
+    "Fix FINN cost tracking UUID format",
+    "Investigate process_inventory reporting mechanism"
+  ],
+  "executed_by": "STIG",
+  "verified": true
+}

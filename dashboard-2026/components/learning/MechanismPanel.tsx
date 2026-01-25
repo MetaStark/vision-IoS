@@ -61,7 +61,7 @@ export function MechanismPanel({ mechanisms }: MechanismPanelProps) {
             How Did We Learn It?
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Causality Chain | Signal -> Reasoning -> Test -> Outcome
+            Causality Chain | Signal → Reasoning → Test → Outcome
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">

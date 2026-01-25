@@ -17,6 +17,8 @@ import {
   CEOAlertsPanel,
   LVGStatusPanel,
   EconomicEventsPanel,
+  CanonicalTestCard,
+  LearningVisibilityPanel,
 } from '@/components/calendar'
 
 interface CalendarEvent {
@@ -48,15 +50,48 @@ interface EconomicEvent {
   status: string
 }
 
+interface CanonicalTest {
+  id: string
+  code: string
+  name: string
+  owner: string
+  status: string
+  category: string
+  startDate: string
+  endDate: string
+  daysElapsed: number
+  daysRemaining: number
+  requiredDays: number
+  progressPct: number
+  businessIntent?: string
+  beneficiarySystem?: string
+  hypothesisCode?: string
+  baselineDefinition?: any
+  targetMetrics?: any
+  successCriteria?: any
+  failureCriteria?: any
+  monitoringAgent?: string
+  escalationState?: string
+  ceoActionRequired?: boolean
+  recommendedActions?: string[]
+  midTestCheckpoint?: string
+  verdict?: string
+}
+
 interface CalendarData {
   events: CalendarEvent[]
   activeTests: any[]
+  canonicalTests: CanonicalTest[]
   alerts: any[]
   observationWindows: any[]
   economicEvents: EconomicEvent[]
   lvgStatus: any
   shadowTier: any
   governanceChecks: any[]
+  // CEO-DIR-2026-DAY25: Learning Visibility
+  learningMetrics?: any[]
+  learningSummary?: any
+  generatorPerformance?: any[]
   currentDate: {
     today: string
     year: number
@@ -217,8 +252,10 @@ export default function CalendarPage() {
             </div>
             <div className="ml-auto flex items-center gap-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{data?.activeTests?.length || 0}</p>
-                <p className="text-xs text-gray-500">Active Tests</p>
+                <p className="text-2xl font-bold text-white">
+                  {data?.canonicalTests?.filter(t => t.status === 'ACTIVE').length || 0}
+                </p>
+                <p className="text-xs text-gray-500">Canonical Tests</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-amber-400">{data?.economicEvents?.length || 0}</p>
@@ -228,12 +265,14 @@ export default function CalendarPage() {
                 <p className="text-2xl font-bold text-yellow-400">{data?.alerts?.length || 0}</p>
                 <p className="text-xs text-gray-500">Pending Alerts</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-purple-400">
-                  {data?.observationWindows?.length || 0}
-                </p>
-                <p className="text-xs text-gray-500">Obs. Windows</p>
-              </div>
+              {data?.canonicalTests?.some(t => t.ceoActionRequired) && (
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-400">
+                    {data.canonicalTests.filter(t => t.ceoActionRequired).length}
+                  </p>
+                  <p className="text-xs text-gray-500">Action Required</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -300,6 +339,23 @@ export default function CalendarPage() {
           </div>
         </div>
 
+        {/* CEO-DIR-2026-DAY25: Learning Visibility Section */}
+        {data?.learningSummary && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-purple-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Learning Visibility (CEO-DIR-2026-DAY25)
+              </h2>
+            </div>
+            <LearningVisibilityPanel
+              metrics={data.learningMetrics || []}
+              summary={data.learningSummary}
+              generators={data.generatorPerformance || []}
+            />
+          </div>
+        )}
+
         {/* Economic Calendar Section (IoS-016) */}
         <div>
           <div className="mb-3 flex items-center gap-2">
@@ -311,15 +367,34 @@ export default function CalendarPage() {
           <EconomicEventsPanel events={data?.economicEvents || []} />
         </div>
 
-        {/* Active Tests Section */}
+        {/* Canonical Tests Section (CEO Modification - No JSON) */}
         <div>
           <div className="mb-3 flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-blue-500" />
             <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Active Canonical Tests (Section 3)
+              Canonical Tests (Migration 342)
             </h2>
+            <span className="ml-2 text-xs text-gray-600">
+              {data?.canonicalTests?.filter(t => t.status === 'ACTIVE').length || 0} active
+            </span>
           </div>
-          <ActiveTestsPanel tests={data?.activeTests || []} />
+          <div className="space-y-4">
+            {data?.canonicalTests && data.canonicalTests.length > 0 ? (
+              data.canonicalTests.map((test) => (
+                <CanonicalTestCard
+                  key={test.id}
+                  test={test}
+                  onActionClick={(action) => {
+                    console.log('CEO Action:', action, 'for test:', test.code)
+                  }}
+                />
+              ))
+            ) : (
+              <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 text-center">
+                <p className="text-gray-500 text-sm">No canonical tests registered.</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Observation Windows */}
@@ -434,57 +509,113 @@ export default function CalendarPage() {
         </footer>
       </div>
 
-      {/* Event Detail Modal */}
+      {/* Event Detail Modal - No JSON for CEO view */}
       {selectedEvent && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="bg-gray-900 border border-gray-700 rounded-xl max-w-lg w-full p-6"
+            className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-white">{selectedEvent.name}</h3>
-                <p className="text-sm text-gray-400">{selectedEvent.category}</p>
-              </div>
+            {/* Close button */}
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+              <span className="text-sm text-gray-400">Event Details</span>
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="text-gray-500 hover:text-white"
+                className="text-gray-500 hover:text-white text-2xl leading-none"
               >
                 &times;
               </button>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Date:</span>
-                <span className="text-sm text-white">
-                  {new Date(selectedEvent.date).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Status:</span>
-                <span
-                  className="px-2 py-0.5 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: selectedEvent.color + '30',
-                    color: selectedEvent.color,
-                  }}
-                >
-                  {selectedEvent.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Owner:</span>
-                <span className="text-sm text-white font-mono">{selectedEvent.owner}</span>
-              </div>
-              {selectedEvent.details && (
-                <div className="mt-4 pt-4 border-t border-gray-800">
-                  <p className="text-xs text-gray-500 mb-2">Details:</p>
-                  <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-3 overflow-auto">
-                    {JSON.stringify(selectedEvent.details, null, 2)}
-                  </pre>
+
+            <div className="p-6">
+              {/* For Canonical Tests - use CanonicalTestCard */}
+              {selectedEvent.category === 'CANONICAL_TEST' && data?.canonicalTests ? (
+                (() => {
+                  const canonicalTest = data.canonicalTests.find(t => t.id === selectedEvent.id)
+                  if (canonicalTest) {
+                    return (
+                      <CanonicalTestCard
+                        test={canonicalTest}
+                        onActionClick={(action) => {
+                          console.log('CEO Action:', action)
+                        }}
+                      />
+                    )
+                  }
+                  return null
+                })()
+              ) : (
+                /* For other event types - clean display without JSON */
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">{selectedEvent.name}</h3>
+                    <p className="text-sm text-gray-400 mt-1">{selectedEvent.owner}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800/50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500">Date</p>
+                      <p className="text-sm text-white mt-1">
+                        {new Date(selectedEvent.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500">Status</p>
+                      <p
+                        className="text-sm font-medium mt-1"
+                        style={{ color: selectedEvent.color }}
+                      >
+                        {selectedEvent.status}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Economic Event specific display */}
+                  {selectedEvent.category === 'ECONOMIC_EVENT' && selectedEvent.details && (
+                    <div className="bg-gray-800/50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">Event Time</span>
+                        <span className="text-sm text-white">{selectedEvent.details.event_time}</span>
+                      </div>
+                      {selectedEvent.details.consensus !== null && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Consensus</span>
+                          <span className="text-sm text-white">{selectedEvent.details.consensus}</span>
+                        </div>
+                      )}
+                      {selectedEvent.details.previous !== null && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Previous</span>
+                          <span className="text-sm text-white">{selectedEvent.details.previous}</span>
+                        </div>
+                      )}
+                      {selectedEvent.details.actual !== null && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Actual</span>
+                          <span className="text-sm text-white font-semibold">{selectedEvent.details.actual}</span>
+                        </div>
+                      )}
+                      {selectedEvent.details.impact_rank && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Impact</span>
+                          <span className={`text-sm font-medium ${
+                            selectedEvent.details.impact_rank >= 4 ? 'text-red-400' :
+                            selectedEvent.details.impact_rank >= 3 ? 'text-amber-400' : 'text-gray-400'
+                          }`}>
+                            {selectedEvent.details.impact_rank}/5
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

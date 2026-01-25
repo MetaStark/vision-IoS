@@ -16,6 +16,7 @@ Date: 2025-12-09
 import os
 import uuid
 import logging
+import traceback
 from typing import Optional, Tuple, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -79,7 +80,17 @@ class InForageCostController:
     """
 
     def __init__(self, session_id: Optional[str] = None):
-        self.session_id = session_id or str(uuid.uuid4())
+        # CEO-DIR-2026-DAY25: Validate UUID format with explicit WARN
+        if session_id:
+            try:
+                uuid.UUID(session_id)  # Validate format
+                self.session_id = session_id
+            except ValueError:
+                logger.warning(f"MALFORMED UUID: '{session_id}' - Generating valid UUID. "
+                              f"Traceback: {traceback.format_stack()[-3].strip()}")
+                self.session_id = str(uuid.uuid4())
+        else:
+            self.session_id = str(uuid.uuid4())
         self.step_count = 0
         self.total_cost = 0.0
         self.aborted = False
@@ -287,6 +298,195 @@ def cost_controlled(step_type: StepType = StepType.API_CALL):
 class CostAbortError(Exception):
     """Raised when cost controller aborts a search."""
     pass
+
+
+# =============================================================================
+# CEO-DIR-2026-FINN-019: TRADE DECISION ROI CHECK
+# =============================================================================
+
+@dataclass
+class TradeDecisionResult:
+    """
+    Result of trade decision ROI check.
+
+    CEO Issue #3: Deterministic expected_pnl source
+    CEO Issue #17: Include slippage in ROI calculation
+    """
+    session_id: str
+    roi: float
+    should_abort: bool
+    abort_reason: Optional[str]
+    components: Dict[str, Any]
+
+
+# R3: Configurable InForage parameters (changes require ADR amendment)
+INFORAGE_CONFIG = {
+    'expected_tp_pct': 0.05,           # 5% take profit target
+    'min_roi_threshold': 1.2,          # Minimum ROI to proceed
+    'default_slippage_bps': 15.0,      # Default slippage in basis points
+    'default_spread_bps': 5.0,         # Default spread in basis points
+    'default_commission_usd': 0.0,     # Alpaca zero commission
+}
+
+
+def calculate_trade_roi(
+    eqs_score: float,
+    position_usd: float,
+    spread_bps: float = None,
+    commission_usd: float = None,
+    slippage_estimate_bps: float = None,
+    expected_tp_pct: float = None
+) -> Tuple[float, Dict[str, Any]]:
+    """
+    Grounded ROI calculation with explicit components.
+
+    CEO Issue #3: Deterministic expected_pnl
+    CEO Issue #17: Explicit slippage
+
+    Expected Value Model:
+    - EQS 0.8 = 80% confidence of hitting TP (assume +5%)
+    - Expected return = EQS * TP%  (e.g., 0.8 * 0.05 = 4%)
+
+    Returns: (roi, components_dict)
+    """
+    # Use configured defaults if not provided
+    spread_bps = spread_bps if spread_bps is not None else INFORAGE_CONFIG['default_spread_bps']
+    slippage_estimate_bps = slippage_estimate_bps if slippage_estimate_bps is not None else INFORAGE_CONFIG['default_slippage_bps']
+    commission_usd = commission_usd if commission_usd is not None else INFORAGE_CONFIG['default_commission_usd']
+    expected_tp_pct = expected_tp_pct if expected_tp_pct is not None else INFORAGE_CONFIG['expected_tp_pct']
+
+    # Expected PnL (conservative: EQS * take_profit_pct * position * slippage_discount)
+    expected_return_pct = eqs_score * expected_tp_pct
+    slippage_factor = 1 - (slippage_estimate_bps / 10000)
+    expected_pnl = position_usd * expected_return_pct * slippage_factor
+
+    # Execution costs
+    spread_cost = position_usd * (spread_bps / 10000)
+    slippage_cost = position_usd * (slippage_estimate_bps / 10000)
+    total_cost = spread_cost + commission_usd + slippage_cost
+
+    # ROI = Expected PnL / Total Cost
+    roi = expected_pnl / max(total_cost, 0.01)
+
+    components = {
+        'expected_pnl': expected_pnl,
+        'expected_return_pct': expected_return_pct,
+        'spread_cost': spread_cost,
+        'slippage_cost': slippage_cost,
+        'commission_usd': commission_usd,
+        'total_cost': total_cost,
+        'slippage_estimate_bps': slippage_estimate_bps,
+        'spread_bps': spread_bps,
+        'eqs_score': eqs_score,
+        'position_usd': position_usd,
+        'expected_tp_pct': expected_tp_pct
+    }
+
+    return roi, components
+
+
+class InForageTradeController:
+    """
+    Trade decision controller for CEO-DIR-2026-FINN-019 Neural Bridge.
+
+    Evaluates trade ROI and enforces minimum threshold.
+    """
+
+    def __init__(self, db_conn=None, session_id: Optional[str] = None):
+        self.conn = db_conn
+        self.session_id = session_id or str(uuid.uuid4())
+
+    def check_trade_decision(
+        self,
+        needle_id: str,
+        eqs_score: float,
+        position_usd: float,
+        spread_bps: float = None,
+        slippage_bps: float = None,
+        min_roi: float = None
+    ) -> TradeDecisionResult:
+        """
+        Evaluate trade ROI with grounded calculation.
+
+        CEO Issue #3: Deterministic expected_pnl
+        CEO Issue #17: Explicit slippage
+
+        Args:
+            needle_id: Needle being evaluated
+            eqs_score: EQS score (0.0-1.0)
+            position_usd: Dollar amount for position
+            spread_bps: Current spread in basis points
+            slippage_bps: Estimated slippage in basis points
+            min_roi: Minimum ROI threshold (default 1.2)
+
+        Returns:
+            TradeDecisionResult with ROI and abort decision
+        """
+        min_roi = min_roi if min_roi is not None else INFORAGE_CONFIG['min_roi_threshold']
+
+        roi, components = calculate_trade_roi(
+            eqs_score=eqs_score,
+            position_usd=position_usd,
+            spread_bps=spread_bps,
+            slippage_estimate_bps=slippage_bps
+        )
+
+        should_abort = roi < min_roi
+        abort_reason = f'LOW_ROI: {roi:.2f} < {min_roi}' if should_abort else None
+
+        # Log to database
+        self._log_trade_decision(needle_id, roi, components, should_abort)
+
+        if should_abort:
+            logger.warning(f"INFORAGE TRADE ABORT: {abort_reason}")
+        else:
+            logger.info(f"INFORAGE TRADE APPROVED: ROI={roi:.2f}")
+
+        return TradeDecisionResult(
+            session_id=self.session_id,
+            roi=roi,
+            should_abort=should_abort,
+            abort_reason=abort_reason,
+            components=components
+        )
+
+    def _log_trade_decision(
+        self,
+        needle_id: str,
+        roi: float,
+        components: Dict,
+        aborted: bool
+    ):
+        """Log trade decision to database."""
+        if self.conn is None:
+            return
+
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute('''
+                INSERT INTO fhq_optimization.inforage_cost_log (
+                    session_id, step_type, step_number,
+                    predicted_gain, predicted_roi, decision,
+                    notes
+                ) VALUES (
+                    %s, 'TRADE_DECISION', 0,
+                    %s, %s, %s,
+                    %s
+                )
+            ''', (
+                self.session_id,
+                components.get('expected_pnl', 0),
+                roi,
+                'ABORT_LOW_ROI' if aborted else 'APPROVED',
+                str(components)
+            ))
+            self.conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to log trade decision: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
 
 
 # =============================================================================
