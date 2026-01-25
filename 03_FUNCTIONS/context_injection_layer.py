@@ -179,8 +179,16 @@ class ContextRetriever:
         if self.conn and not self.conn.closed:
             self.conn.close()
 
-    def get_market_clock(self) -> MarketClock:
-        """Retrieve market clock from LINE"""
+    def get_market_clock(self, asset_class: str = 'US_EQUITY') -> MarketClock:
+        """
+        Retrieve market clock using MIC-aware scheduling.
+
+        CEO-DIR-2026-CRYPTO-LEARNING-ACTIVATION-001:
+        Market session is now determined by asset-specific MIC, not global equity hours.
+
+        Args:
+            asset_class: 'CRYPTO', 'US_EQUITY', 'FOREX' - determines which MIC to check
+        """
         conn = self.connect()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Get time since last event
@@ -192,14 +200,42 @@ class ContextRetriever:
             row = cur.fetchone()
             time_since = row['seconds_since_event'] if row else None
 
-            # Determine market session (simplified)
-            hour = datetime.now(timezone.utc).hour
-            if 13 <= hour < 20:  # Roughly US market hours in UTC
-                session = "REGULAR"
-            elif 9 <= hour < 13:
-                session = "PRE_MARKET"
-            elif 20 <= hour < 24:
-                session = "AFTER_HOURS"
+            # CEO-DIR-2026-CRYPTO-LEARNING-ACTIVATION-001: MIC-Aware Session Detection
+            # Query the MIC-aware function instead of hardcoded UTC hours
+            mic_map = {
+                'CRYPTO': 'XCRYPTO',
+                'US_EQUITY': 'XNYS',
+                'FOREX': 'XFOREX',
+                'NO_EQUITY': 'XOSL'
+            }
+            mic = mic_map.get(asset_class, 'XNYS')
+
+            try:
+                cur.execute("""
+                    SELECT fhq_meta.fn_is_market_open(%s) as is_open
+                """, (mic,))
+                mic_result = cur.fetchone()
+                is_market_open = mic_result['is_open'] if mic_result else False
+            except Exception as e:
+                # Fallback to legacy logic if MIC function doesn't exist
+                print(f"[WARN] MIC check failed ({e}), using legacy logic")
+                hour = datetime.now(timezone.utc).hour
+                is_market_open = 13 <= hour < 20  # Roughly US market hours
+
+            # Determine session based on MIC status
+            if is_market_open:
+                # For continuous markets (crypto), always REGULAR
+                if asset_class == 'CRYPTO':
+                    session = "REGULAR"
+                else:
+                    # For session-bound markets, determine phase
+                    hour = datetime.now(timezone.utc).hour
+                    if 13 <= hour < 20:
+                        session = "REGULAR"
+                    elif 9 <= hour < 13:
+                        session = "PRE_MARKET"
+                    else:
+                        session = "AFTER_HOURS"
             else:
                 session = "CLOSED"
 
@@ -392,6 +428,34 @@ class ContextRetriever:
         ).hexdigest()[:16]
 
         return context
+
+    def get_learnable_asset_classes(self) -> List[Dict[str, Any]]:
+        """
+        CEO-DIR-2026-CRYPTO-LEARNING-ACTIVATION-001:
+        Get list of asset classes that are currently learnable based on MIC status.
+
+        Returns list of dicts with:
+        - asset_class: 'CRYPTO', 'US_EQUITY', 'FOREX'
+        - mic: Exchange MIC code
+        - is_learnable: Boolean
+        - reason: Human-readable explanation
+        """
+        conn = self.connect()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT * FROM fhq_learning.fn_get_learnable_asset_classes()
+                """)
+                return [dict(row) for row in cur.fetchall()]
+        except Exception as e:
+            print(f"[WARN] fn_get_learnable_asset_classes failed: {e}")
+            # Fallback: assume crypto is always learnable
+            return [
+                {'asset_class': 'CRYPTO', 'mic': 'XCRYPTO', 'is_learnable': True,
+                 'reason': 'Fallback: Crypto assumed 24/7'},
+                {'asset_class': 'US_EQUITY', 'mic': 'XNYS', 'is_learnable': False,
+                 'reason': 'Fallback: MIC function unavailable'}
+            ]
 
 
 # =============================================================================
