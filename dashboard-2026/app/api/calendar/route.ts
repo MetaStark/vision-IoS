@@ -64,6 +64,21 @@ export async function GET() {
     `)
     const cumulative = cumulativeResult.rows[0] || {}
 
+    // CEO-DIR-2026-DAY25: Fetch daemon health status for finn_scheduler
+    const daemonHealthResult = await client.query(`
+      SELECT daemon_name, status, last_heartbeat,
+             EXTRACT(EPOCH FROM (NOW() - last_heartbeat)) as seconds_since_heartbeat
+      FROM fhq_monitoring.daemon_health
+      WHERE daemon_name = 'finn_scheduler'
+      LIMIT 1
+    `)
+    const daemonHealth = daemonHealthResult.rows[0] || null
+    // Daemon is RUNNING if healthy and heartbeat within 24 hours (86400 seconds)
+    // Using 24h threshold since daemons run on scheduled intervals, not continuously
+    const daemonStatus = daemonHealth?.status === 'HEALTHY' &&
+                         daemonHealth?.seconds_since_heartbeat < 86400
+                         ? 'RUNNING' : 'STOPPED'
+
     // Fetch shadow tier status
     const shadowTierResult = await client.query(`
       SELECT * FROM fhq_calendar.v_shadow_tier_calendar_status
@@ -366,6 +381,8 @@ export async function GET() {
         totalActive: parseInt(cumulative.total_active) || 0,
         deathRatePct: parseFloat(cumulative.death_rate_pct) || 0,
         lastHypothesisTime: cumulative.last_hypothesis_time || null,
+        // Daemon status from fhq_monitoring.daemon_health
+        daemonStatus: daemonStatus,
       },
 
       // Shadow Tier Status (Section 6.3)

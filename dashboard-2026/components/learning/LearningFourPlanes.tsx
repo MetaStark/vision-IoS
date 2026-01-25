@@ -67,11 +67,16 @@ export interface LearningProductionData {
   monocultureRisk: boolean
 }
 
-interface Props {
+// Combined interface for API response (CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002)
+export interface LearningFourPlanesData {
   permission: LearningPermissionData | null
   engine: LearningEngineData | null
   quality: LearningQualityData | null
   production: LearningProductionData | null
+}
+
+interface Props {
+  data: LearningFourPlanesData | null
 }
 
 function PlaneHeader({ number, title, icon: Icon, color }: { number: number; title: string; icon: any; color: string }) {
@@ -428,7 +433,13 @@ function Plane4Production({ data }: { data: LearningProductionData | null }) {
   )
 }
 
-export function LearningFourPlanes({ permission, engine, quality, production }: Props) {
+export function LearningFourPlanes({ data }: Props) {
+  // Destructure from data prop (handles null case)
+  const permission = data?.permission ?? null
+  const engine = data?.engine ?? null
+  const quality = data?.quality ?? null
+  const production = data?.production ?? null
+
   return (
     <div className="space-y-6">
       {/* Visual Firebreak Banner */}
