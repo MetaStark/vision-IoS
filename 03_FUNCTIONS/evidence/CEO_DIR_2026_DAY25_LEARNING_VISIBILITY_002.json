@@ -1,0 +1,103 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002",
+  "title": "Four-Plane Learning Dashboard Separation",
+  "timestamp": "2026-01-25T14:30:00Z",
+  "executor": "STIG",
+  "status": "COMPLETE",
+  "governing_authorities": ["ADR-014", "ADR-018", "IoS-001", "IoS-010"],
+  "classification": "DASHBOARD-IMPLEMENTATION",
+
+  "problem_statement": {
+    "issue": "Dashboard misleadingly showed 'Learning Paused' when hypotheses die correctly",
+    "root_cause": "Single status conflated permission, engine state, quality, and production",
+    "impact": "CEO confusion about learning system health"
+  },
+
+  "four_plane_separation": {
+    "PLANE_1_PERMISSION": {
+      "question": "Can the system learn?",
+      "source": "fhq_learning.fn_get_learnable_asset_classes()",
+      "color_coding": {
+        "GREEN": "At least one asset class learnable",
+        "RED": "All asset classes blocked"
+      },
+      "displays": ["CRYPTO (24/7)", "US_EQUITY (session-aware)", "FOREX (session-aware)"],
+      "constraints_shown": ["allocationAllowed", "executionAllowed", "decisionRights"]
+    },
+    "PLANE_2_ENGINE": {
+      "question": "Is the learning engine running?",
+      "source": "fhq_governance.daemon_health (finn_scheduler, cnrp_orchestrator)",
+      "color_coding": {
+        "GREEN": "RUNNING - Scheduler healthy",
+        "RED": "STOPPED - Scheduler unhealthy or DEFCON blocks"
+      },
+      "terminology_correction": {
+        "old": "Learning Paused (ambiguous)",
+        "new_paused": "ONLY when scheduler STOPPED or DEFCON <=2",
+        "new_active": "Learning Active even when 100% hypotheses die"
+      }
+    },
+    "PLANE_3_QUALITY": {
+      "question": "Are hypotheses surviving at the correct rate?",
+      "source": "fhq_learning.v_tier1_death_rate_timeseries",
+      "target_range": "60-90% death rate",
+      "color_coding": {
+        "GREEN": "ON_TARGET (60-90%)",
+        "AMBER": "TOO_LENIENT (<60%) or TOO_BRUTAL (>90%)",
+        "GRAY": "NO_DATA"
+      },
+      "key_terminology": {
+        "correct_labeling": "Learning Active - No Survivors",
+        "incorrect_labeling": "Learning Paused (when hypotheses die)"
+      }
+    },
+    "PLANE_4_PRODUCTION": {
+      "question": "What is being generated?",
+      "source": "fhq_learning.v_learning_generator_distribution",
+      "generators": {
+        "FINN-E": "Error-driven hypotheses",
+        "FINN-T": "Theory-driven hypotheses",
+        "GN-S": "Synthetic/Shadow hypotheses"
+      },
+      "displays": ["count", "percentage", "dominant_generator"]
+    }
+  },
+
+  "visual_firebreak_banner": {
+    "text": "THIS PANEL SHOWS LEARNING ONLY - NO SIGNALS - NO DECISIONS - NO ALLOCATION",
+    "position": "Bottom of LearningFourPlanes component",
+    "color": "Blue border with blue text"
+  },
+
+  "files_created": [
+    "dashboard-2026/components/learning/LearningFourPlanes.tsx"
+  ],
+
+  "files_modified": [
+    "dashboard-2026/components/learning/index.ts",
+    "dashboard-2026/app/api/learning/route.ts",
+    "dashboard-2026/app/learning/page.tsx"
+  ],
+
+  "api_changes": {
+    "endpoint": "/api/learning",
+    "new_field": "fourPlanes",
+    "structure": {
+      "permission": "MIC-aware asset class learnability",
+      "engine": "Daemon health + scheduler status",
+      "quality": "Tier-1 death rate metrics",
+      "production": "Generator distribution"
+    }
+  },
+
+  "acceptance_criteria": {
+    "four_planes_visible": true,
+    "plane_separation_clear": true,
+    "terminology_corrected": true,
+    "firebreak_banner_present": true,
+    "no_misleading_paused_status": true
+  },
+
+  "ceo_summary": "Four-Plane Learning Dashboard implemented. PLANE 1 (Permission) shows MIC-aware asset learnability. PLANE 2 (Engine) shows scheduler status with corrected 'Learning Paused' terminology. PLANE 3 (Quality) shows Tier-1 death rate with 60-90% target. PLANE 4 (Production) shows generator distribution. Visual firebreak banner added. 'Learning Paused' now ONLY appears when scheduler STOPPED or DEFCON blocks."
+}

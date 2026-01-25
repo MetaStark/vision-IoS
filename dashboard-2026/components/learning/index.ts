@@ -16,3 +16,16 @@ export type {
   ReasoningIntensityData,
   LearningYieldData,
 } from './CognitiveActivityMeters'
+export { ResearchTrinityPanel } from './ResearchTrinityPanel'
+export { LearningTrajectoryCharts } from './LearningTrajectoryCharts'
+export type { LearningTrajectoryData } from './LearningTrajectoryCharts'
+
+// CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002: Four-Plane Learning Dashboard
+export { LearningFourPlanes } from './LearningFourPlanes'
+export type {
+  LearningPermissionData,
+  LearningEngineData,
+  LearningQualityData,
+  LearningProductionData,
+  LearningFourPlanesData,
+} from './LearningFourPlanes'

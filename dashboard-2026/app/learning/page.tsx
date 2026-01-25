@@ -18,7 +18,11 @@ import {
   MechanismPanel,
   CognitiveActivityMeters,
   EvidenceClock,
+  ResearchTrinityPanel,
+  LearningTrajectoryCharts,
+  LearningFourPlanes,
 } from '@/components/learning'
+import type { LearningTrajectoryData, LearningFourPlanesData } from '@/components/learning'
 import type {
   DailyLearningItem,
   LearningMechanism,
@@ -44,10 +48,24 @@ interface MarketLearningData {
   significantImprovements: number
 }
 
+interface ResearchTrinityData {
+  finnE: { count: number; share: number }
+  finnT: { count: number; share: number }
+  gnS: { count: number; share: number }
+  totalHypotheses: number
+  tier1DeathRate: number
+  errorConversionRate: number
+  avgCausalDepth: number
+  learningHealth: 'GREEN' | 'AMBER' | 'RED'
+}
+
 interface LearningData {
   progress: number
   systemMaturity: number
   marketLearning: MarketLearningData
+  researchTrinity: ResearchTrinityData | null
+  learningTrajectory: LearningTrajectoryData | null
+  fourPlanes: LearningFourPlanesData | null // CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002
   evidenceClock: EvidenceClockData
   fmclDistribution: string
   highSeverityClosed: number
@@ -212,7 +230,7 @@ export default function LearningDashboardPage() {
           <div className="mb-3 flex items-center gap-2">
             <div className="h-1 w-1 rounded-full bg-blue-500" />
             <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-              Dual-Track Progress (CEO-DIR-2026-058)
+              Dual-Track Progress (CEO-DIR-2026-046/058)
             </h2>
             {data?.fmclDistribution && (
               <span className="text-xs text-gray-600 font-mono ml-2">
@@ -231,6 +249,39 @@ export default function LearningDashboardPage() {
               ? new Date(data.lastUpdated).toLocaleDateString()
               : undefined}
           />
+        </section>
+
+        {/* Zone 1.2: Four-Plane Learning Dashboard (CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002) */}
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-amber-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Four-Plane Learning State (CEO-DIR-2026-DAY25-LEARNING-VISIBILITY-002)
+            </h2>
+          </div>
+          <LearningFourPlanes data={data?.fourPlanes ?? null} />
+        </section>
+
+        {/* Zone 1.5: Research Trinity Panel (CEO-DIR-2026-LEARNING-OBSERVABILITY) */}
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-indigo-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Research Trinity (CEO-DIR-2026-LEARNING-OBSERVABILITY)
+            </h2>
+          </div>
+          <ResearchTrinityPanel data={data?.researchTrinity ?? null} />
+        </section>
+
+        {/* Zone 1.6: Learning Trajectory Charts (CEO-DIR-2026-DAY25-VISUAL-TRUTH) */}
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-emerald-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              Learning Trajectory (CEO-DIR-2026-DAY25-VISUAL-TRUTH)
+            </h2>
+          </div>
+          <LearningTrajectoryCharts data={data?.learningTrajectory ?? null} />
         </section>
 
         {/* Zone 2: Two-column layout */}
