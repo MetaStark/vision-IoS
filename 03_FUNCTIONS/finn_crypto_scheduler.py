@@ -227,9 +227,16 @@ def generate_crypto_hypothesis(theory: Dict[str, Any], context: Dict[str, Any]) 
         theory_code = theory['theory_type'][:4].upper()
         hypothesis_code = f"CRYPTO-{theory_code}-{timestamp}"
 
+        # Serialize mechanism chain for hashing and storage
+        mechanism_str = json.dumps(theory['causal_mechanism']) if isinstance(theory['causal_mechanism'], dict) else str(theory['causal_mechanism'])
+
         # Generate semantic hash
-        hash_input = f"{theory['theory_type']}:{theory['causal_mechanism']}:{timestamp}"
+        hash_input = f"{theory['theory_type']}:{mechanism_str}:{timestamp}"
         semantic_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
+
+        # Prepare asset_universe as PostgreSQL array literal
+        target_assets = theory.get('target_assets', ['BTC-USD', 'ETH-USD'])
+        asset_universe_sql = '{' + ','.join(target_assets) + '}'
 
         with conn.cursor() as cur:
             cur.execute("""
@@ -239,32 +246,46 @@ def generate_crypto_hypothesis(theory: Dict[str, Any], context: Dict[str, Any]) 
                     origin_rationale,
                     economic_rationale,
                     causal_mechanism,
+                    counterfactual_scenario,
                     expected_direction,
+                    expected_timeframe_hours,
+                    regime_validity,
+                    regime_conditional_confidence,
+                    falsification_criteria,
+                    initial_confidence,
                     asset_universe,
                     causal_graph_depth,
                     status,
                     created_by,
+                    generator_id,
                     semantic_hash,
                     asset_class,
                     learning_only
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, 'DRAFT', %s, %s, 'CRYPTO', TRUE
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE
                 )
                 RETURNING canon_id
             """, (
                 hypothesis_code,
                 'ECONOMIC_THEORY',  # FINN-T origin
                 f"Generated from crypto theory: {theory['theory_name']}",
-                theory['causal_mechanism'],
+                mechanism_str,  # economic_rationale
                 json.dumps({
                     'theory_type': theory['theory_type'],
                     'mechanism': theory['causal_mechanism'],
                     'context': context
-                }),
-                theory['expected_direction'],
-                theory.get('target_assets', ['BTC-USD', 'ETH-USD']),
+                }, default=str),  # causal_mechanism
+                f"If {theory['theory_type']} fails, expect mean reversion or regime continuation",  # counterfactual_scenario
+                'NEUTRAL',  # expected_direction (valid: BULLISH, BEARISH, NEUTRAL)
+                24,  # expected_timeframe_hours (24h for crypto)
+                '{CRYPTO_24_7}',  # regime_validity (text[] array)
+                json.dumps({'base': 0.6, 'regime': 'CRYPTO_24_7'}),  # regime_conditional_confidence (jsonb)
+                json.dumps({'criteria': f"Price movement contradicts {theory['theory_type']} within 24h", 'threshold': 0.3}),  # falsification_criteria (jsonb)
+                0.5,  # initial_confidence (start neutral)
+                asset_universe_sql,  # PostgreSQL array literal
                 theory.get('causal_depth', 3),
-                DAEMON_NAME,
+                DAEMON_NAME,  # created_by
+                DAEMON_NAME,  # generator_id
                 semantic_hash
             ))
 
