@@ -3,9 +3,16 @@
 FjordHQ Daemon Watchdog
 =======================
 CEO-DIR-2026-DAEMON-WATCHDOG
+CEO-DIR-2026-DAEMON-HYGIENE-001 (Lifecycle Classification)
 
 Monitors and restarts critical daemons if they crash.
 Run this script to keep all daemons alive continuously.
+
+Lifecycle Policy:
+- ACTIVE: Managed by watchdog (start/restart/monitor)
+- DEPRECATED: Ignored - replaced by newer daemon
+- SUSPENDED_BY_DESIGN: Ignored - experiment paused or periodic task
+- ORPHANED: ESCALATE - red flag requiring CEO attention
 """
 
 import os
@@ -13,6 +20,7 @@ import sys
 import time
 import subprocess
 import psycopg2
+from psycopg2.extras import Json
 import logging
 from datetime import datetime, timezone
 
@@ -83,18 +91,8 @@ DAEMONS = {
         'process': None,
         'has_heartbeat': False  # Uses agent_heartbeats (CEIO) - complex table, just check process
     },
-    'g2c_continuous_forecast_engine': {
-        'script': '03_FUNCTIONS/g2c_continuous_forecast_engine.py',
-        'max_stale_minutes': 15,
-        'process': None,
-        'has_heartbeat': False  # NO heartbeat code - only check process
-    },
-    'ios003b_intraday_regime_delta': {
-        'script': '03_FUNCTIONS/ios003b_intraday_regime_delta.py',
-        'max_stale_minutes': 20,  # 15min cycle + buffer
-        'process': None,
-        'has_heartbeat': False  # NO heartbeat code - only check process
-    },
+    # SUSPENDED_BY_DESIGN: g2c_continuous_forecast_engine - Integrated into FINN schedulers
+    # SUSPENDED_BY_DESIGN: ios003b_intraday_regime_delta - On-demand, not continuous
     'pre_tier_scoring_daemon': {
         'script': '03_FUNCTIONS/pre_tier_scoring_daemon.py',
         'max_stale_minutes': 10,  # 5min cycle + 5min buffer
@@ -114,17 +112,56 @@ def update_watchdog_heartbeat():
         conn = psycopg2.connect(**DB_CONFIG)
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
-                VALUES ('daemon_watchdog', 'HEALTHY', NOW(), '{"managed_daemons": 10}'::jsonb)
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata, lifecycle_status)
+                VALUES ('daemon_watchdog', 'HEALTHY', NOW(), %s, 'ACTIVE')
                 ON CONFLICT (daemon_name) DO UPDATE SET
                     status = 'HEALTHY',
                     last_heartbeat = NOW(),
-                    metadata = '{"managed_daemons": 10}'::jsonb
-            """)
+                    metadata = %s,
+                    lifecycle_status = 'ACTIVE'
+            """, (Json({'managed_daemons': len(DAEMONS)}), Json({'managed_daemons': len(DAEMONS)})))
             conn.commit()
         conn.close()
     except Exception as e:
         logger.error(f"Failed to update watchdog heartbeat: {e}")
+
+
+def check_orphaned_daemons():
+    """
+    CEO-DIR-2026-DAEMON-HYGIENE-001: Escalate ORPHANED daemons.
+    These are red flags requiring CEO attention.
+    """
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT daemon_name, lifecycle_reason, lifecycle_updated_at
+                FROM fhq_monitoring.daemon_health
+                WHERE lifecycle_status = 'ORPHANED'
+            """)
+            orphans = cur.fetchall()
+
+            if orphans:
+                logger.warning("=" * 60)
+                logger.warning("🚨 ORPHANED DAEMONS DETECTED - CEO ATTENTION REQUIRED")
+                for daemon_name, reason, updated_at in orphans:
+                    logger.warning(f"  ⚠️  {daemon_name}")
+                    logger.warning(f"      Reason: {reason}")
+                    logger.warning(f"      Flagged: {updated_at}")
+                logger.warning("=" * 60)
+
+                # Log escalation to control_room_alerts
+                cur.execute("""
+                    INSERT INTO fhq_monitoring.control_room_alerts
+                        (alert_type, severity, title, message, source_daemon, acknowledged)
+                    VALUES ('DAEMON_ORPHAN', 'WARNING', 'Orphaned Daemon Detected',
+                            %s, 'daemon_watchdog', false)
+                    ON CONFLICT DO NOTHING
+                """, (f"{len(orphans)} orphaned daemon(s) require CEO disposition: {', '.join([o[0] for o in orphans])}",))
+                conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Failed to check orphaned daemons: {e}")
 
 
 def check_daemon_heartbeat(daemon_name):
@@ -231,23 +268,38 @@ def check_and_restart_daemons():
 
 def main():
     logger.info("=" * 60)
-    logger.info("FjordHQ Daemon Watchdog Starting - VERSION 2.0 (FIXED)")
-    logger.info(f"Monitoring {len(DAEMONS)} daemons")
+    logger.info("FjordHQ Daemon Watchdog - VERSION 3.0 (LIFECYCLE-AWARE)")
+    logger.info("CEO-DIR-2026-DAEMON-HYGIENE-001")
+    logger.info(f"Monitoring {len(DAEMONS)} ACTIVE daemons")
     logger.info(f"Check interval: {CHECK_INTERVAL_SECONDS} seconds")
-    # Debug: log heartbeat settings
+    logger.info("-" * 60)
+    logger.info("Lifecycle Policy:")
+    logger.info("  ACTIVE: Managed | DEPRECATED/SUSPENDED: Ignored | ORPHANED: Escalate")
+    logger.info("-" * 60)
     for name, cfg in DAEMONS.items():
-        logger.info(f"  {name}: has_heartbeat={cfg.get('has_heartbeat', 'NOT SET')}")
+        logger.info(f"  [ACTIVE] {name}")
     logger.info("=" * 60)
+
+    # Check for orphaned daemons at startup
+    check_orphaned_daemons()
 
     # Initial startup of all daemons
     for daemon_name in DAEMONS:
         start_daemon(daemon_name)
 
     # Main monitoring loop
+    orphan_check_counter = 0
     while True:
         try:
             update_watchdog_heartbeat()
             check_and_restart_daemons()
+
+            # Check for orphaned daemons every 10 cycles (10 minutes)
+            orphan_check_counter += 1
+            if orphan_check_counter >= 10:
+                check_orphaned_daemons()
+                orphan_check_counter = 0
+
             time.sleep(CHECK_INTERVAL_SECONDS)
         except KeyboardInterrupt:
             logger.info("Watchdog shutdown requested")

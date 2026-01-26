@@ -1,0 +1,72 @@
+ {                                                                                                              +
+     "owner": "STIG (CTO, Tier-1)",                                                                             +
+     "title": "Autonomous Orchestration Layer (Logical Control Plane)",                                         +
+     "status": "ACTIVE",                                                                                        +
+     "spec_id": "IoS-014_PROD_2026",                                                                            +
+     "version": "2026.PROD.G1",                                                                                 +
+     "file_path": "02_IOS/IoS-014_PROD_2026_Autonomous_Orchestration_Layer.md",                                 +
+     "supersedes": "IoS-014 (2026.DRAFT.G0) - ios014_orchestrator daemon",                                      +
+     "approved_at": "2026-01-27T00:01:39.135551+01:00",                                                         +
+     "approved_by": "CEO (Tier-0)",                                                                             +
+     "archived_specs": [                                                                                        +
+         "02_IOS/ARCHIVE/IoS-014_DRAFT_G0_ARCHIVED.md",                                                         +
+         "02_IOS/ARCHIVE/IoS-014_DRAFT_G0_COPY_ARCHIVED.md"                                                     +
+     ],                                                                                                         +
+     "runtime_mapping": [                                                                                       +
+         {                                                                                                      +
+             "type": "ACTIVE_DAEMON",                                                                           +
+             "function": "Scheduling / cadence",                                                                +
+             "implementation": "finn_brain_scheduler, finn_crypto_scheduler, finn_e_scheduler, finn_t_scheduler"+
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "ACTIVE_DAEMON",                                                                           +
+             "function": "Pre-Tier scoring",                                                                    +
+             "implementation": "pre_tier_scoring_daemon"                                                        +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "ACTIVE_DAEMON",                                                                           +
+             "function": "Tier-1 hypothesis testing",                                                           +
+             "implementation": "tier1_execution_daemon"                                                         +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "ACTIVE_DAEMON",                                                                           +
+             "function": "Hypothesis lifecycle & death",                                                        +
+             "implementation": "hypothesis_death_daemon"                                                        +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "ACTIVE_DAEMON",                                                                           +
+             "function": "Health & heartbeat",                                                                  +
+             "implementation": "daemon_watchdog"                                                                +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "TABLE",                                                                                   +
+             "function": "DEFCON enforcement",                                                                  +
+             "implementation": "fhq_governance.defcon_state"                                                    +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "HYBRID",                                                                                  +
+             "function": "Economic safety",                                                                     +
+             "implementation": "vendor_guard + daemon_watchdog"                                                 +
+         },                                                                                                     +
+         {                                                                                                      +
+             "type": "FILESYSTEM",                                                                              +
+             "function": "Audit & evidence",                                                                    +
+             "implementation": "evidence/*.json + fortress_anchors"                                             +
+         }                                                                                                      +
+     ],                                                                                                         +
+     "active_components": [                                                                                     +
+         "daemon_watchdog",                                                                                     +
+         "finn_brain_scheduler",                                                                                +
+         "finn_crypto_scheduler",                                                                               +
+         "finn_e_scheduler",                                                                                    +
+         "finn_t_scheduler",                                                                                    +
+         "hypothesis_death_daemon",                                                                             +
+         "pre_tier_scoring_daemon",                                                                             +
+         "tier1_execution_daemon"                                                                               +
+     ],                                                                                                         +
+     "deprecated_components": [                                                                                 +
+         "ios014_orchestrator"                                                                                  +
+     ],                                                                                                         +
+     "architectural_decision": "Distributed daemon architecture over monolithic orchestrator"                   +
+ }
+
