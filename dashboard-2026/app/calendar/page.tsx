@@ -20,6 +20,7 @@ import {
   CanonicalTestCard,
   LearningVisibilityPanel,
   G15ProgressionPanel,
+  SurvivalAnalysisPanel,
 } from '@/components/calendar'
 
 interface CalendarEvent {
@@ -310,6 +311,17 @@ export default function CalendarPage() {
             />
           </div>
         )}
+
+        {/* CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001 Section 5: Survival Analysis */}
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-amber-500" />
+            <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+              G1.5 Survival Analysis (CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001)
+            </h2>
+          </div>
+          <SurvivalAnalysisPanel />
+        </div>
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
