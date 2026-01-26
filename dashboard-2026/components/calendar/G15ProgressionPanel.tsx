@@ -46,6 +46,7 @@ interface G15Experiment {
   totalHypotheses: number
   avgDailyRate: number
   avgDailyGenerators: number
+  totalUniqueGenerators?: number
   avgCausalDepth: number
   baselineRate: number
   targetRate: number
@@ -466,7 +467,7 @@ export function G15ProgressionPanel({
           />
           <ThroughputMeter
             label="Generator Diversity"
-            current={experiment.avgDailyGenerators}
+            current={experiment.totalUniqueGenerators || experiment.avgDailyGenerators}
             baseline={2}
             target={experiment.targetGenerators}
             status={experiment.generatorStatus}

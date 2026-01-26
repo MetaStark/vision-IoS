@@ -604,6 +604,7 @@ export async function GET() {
           totalHypotheses: parseInt(prog.total_hypotheses) || 0,
           avgDailyRate: parseFloat(prog.avg_daily_rate) || 0,
           avgDailyGenerators: parseFloat(prog.avg_daily_generators) || 0,
+          totalUniqueGenerators: parseInt(prog.total_unique_generators) || 0,
           avgCausalDepth: parseFloat(prog.avg_causal_depth) || 0,
           // Targets
           baselineRate: parseFloat(prog.baseline_rate) || 15,
