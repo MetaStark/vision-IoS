@@ -3,10 +3,16 @@
  *
  * Calendar-as-Law Doctrine: If something matters, it exists as a canonical calendar event.
  * CEO must understand system state in <30 seconds.
+ *
+ * CEO-DIR-2026-DASHBOARD-FRESHNESS: Disable all caching for real-time data
  */
 
 import { NextResponse } from 'next/server'
 import { Pool } from 'pg'
+
+// Disable Next.js caching - always fetch fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 const pool = new Pool({
   host: process.env.PGHOST || '127.0.0.1',
