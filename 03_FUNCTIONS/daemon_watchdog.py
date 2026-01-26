@@ -101,6 +101,8 @@ DAEMONS = {
         'process': None,
         'has_heartbeat': True  # Has heartbeat code - CEO-DIR-2026-PRE-TIER-SCORING-DAEMON-001
     }
+    # SUSPENDED: wave15_autonomous_hunter - Reactivate after G1.5 (2026-02-07)
+    # See control_room_alerts for reminder
 }
 
 CHECK_INTERVAL_SECONDS = 60  # Check every minute

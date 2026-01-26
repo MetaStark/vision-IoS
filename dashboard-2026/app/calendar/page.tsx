@@ -21,6 +21,7 @@ import {
   LearningVisibilityPanel,
   G15ProgressionPanel,
   SurvivalAnalysisPanel,
+  // Wave15StatusPanel - SUSPENDED until G1.5 completes (2026-02-07)
 } from '@/components/calendar'
 
 interface CalendarEvent {
@@ -90,6 +91,16 @@ interface CalendarData {
   lvgStatus: any
   shadowTier: any
   governanceChecks: any[]
+  // CEO-DIR-2026-WAVE15-DAEMON-WATCHDOG-001: Wave15 Alpha Hunter Status
+  wave15Status?: {
+    status: 'RUNNING' | 'STOPPED'
+    lastHeartbeat: string | null
+    secondsSinceHeartbeat: number | null
+    huntsCompleted: number
+    needlesFound: number
+    totalCostUsd: number
+    mode: string
+  }
   // CEO-DIR-2026-DAY25: Learning Visibility
   learningMetrics?: any[]
   learningSummary?: any
@@ -335,6 +346,13 @@ export default function CalendarPage() {
             </div>
             <CalendarGrid
               events={data?.events || []}
+              testPeriods={(data?.canonicalTests || []).map(t => ({
+                id: t.code,
+                name: t.name,
+                startDate: t.startDate,
+                endDate: t.endDate,
+                color: '#60a5fa'
+              }))}
               currentYear={currentYear}
               currentMonth={currentMonth}
               onEventClick={handleEventClick}
@@ -383,6 +401,8 @@ export default function CalendarPage() {
                 }}
               />
             </div>
+
+            {/* Wave15 Alpha Discovery - SUSPENDED until G1.5 completes (2026-02-07) */}
           </div>
         </div>
 

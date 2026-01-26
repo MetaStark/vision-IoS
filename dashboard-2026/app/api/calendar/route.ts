@@ -88,6 +88,27 @@ export async function GET() {
                          daemonHealth?.seconds_since_heartbeat < 3600
                          ? 'RUNNING' : 'STOPPED'
 
+    // CEO-DIR-2026-WAVE15-DAEMON-WATCHDOG-001: Fetch Wave15 Alpha Hunter status
+    const wave15Result = await client.query(`
+      SELECT
+        daemon_name,
+        status,
+        last_heartbeat,
+        EXTRACT(EPOCH FROM (NOW() - last_heartbeat)) as seconds_since_heartbeat,
+        metadata->>'hunts_completed' as hunts_completed,
+        metadata->>'needles_found' as needles_found,
+        metadata->>'total_cost_usd' as total_cost_usd,
+        metadata->>'mode' as mode
+      FROM fhq_monitoring.daemon_health
+      WHERE daemon_name = 'wave15_autonomous_hunter'
+      LIMIT 1
+    `)
+    const wave15Health = wave15Result.rows[0] || null
+    // Wave15 is healthy if heartbeat within 4.5 hours (16200 seconds) - THROTTLED mode interval
+    const wave15Status = wave15Health?.status === 'HEALTHY' &&
+                         wave15Health?.seconds_since_heartbeat < 16200
+                         ? 'RUNNING' : 'STOPPED'
+
     // Fetch shadow tier status
     const shadowTierResult = await client.query(`
       SELECT * FROM fhq_calendar.v_shadow_tier_calendar_status
@@ -99,6 +120,7 @@ export async function GET() {
     `)
 
     // Fetch canonical tests with ALL CEO-required fields (Migration 342)
+    // CEO-DIR-2026-CALENDAR-FIX-001: Compute days from database clock, not stored values
     const canonicalTestsResult = await client.query(`
       SELECT
         test_id,
@@ -109,11 +131,15 @@ export async function GET() {
         -- Timestamps (immutable once ACTIVE)
         start_ts,
         end_ts,
-        -- Progress (computed from storage)
-        days_elapsed,
-        days_remaining,
+        -- Progress (computed LIVE from database clock - CEO-DIR-2026-CALENDAR-FIX-001)
+        GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - start_ts)) / 86400))::INTEGER as days_elapsed,
+        GREATEST(0, CEIL(EXTRACT(EPOCH FROM (end_ts - NOW())) / 86400))::INTEGER as days_remaining,
         required_days,
-        ROUND((COALESCE(days_elapsed, 0)::NUMERIC / NULLIF(required_days, 0)) * 100, 1) as progress_pct,
+        ROUND(
+          LEAST(100, GREATEST(0,
+            (EXTRACT(EPOCH FROM (NOW() - start_ts)) / NULLIF(EXTRACT(EPOCH FROM (end_ts - start_ts)), 0)) * 100
+          ))::NUMERIC, 1
+        ) as progress_pct,
         -- Section 3 required fields
         business_intent,
         beneficiary_system,
@@ -525,6 +551,17 @@ export async function GET() {
         survivedCount: shadowTier.survived_count || 0,
         survivalRate: shadowTier.shadow_survival_rate || 0,
         calibrationStatus: shadowTier.calibration_status || 'NORMAL',
+      },
+
+      // CEO-DIR-2026-WAVE15-DAEMON-WATCHDOG-001: Alpha Discovery Engine Status
+      wave15Status: {
+        status: wave15Status,
+        lastHeartbeat: wave15Health?.last_heartbeat || null,
+        secondsSinceHeartbeat: wave15Health?.seconds_since_heartbeat ? Math.round(wave15Health.seconds_since_heartbeat) : null,
+        huntsCompleted: parseInt(wave15Health?.hunts_completed) || 0,
+        needlesFound: parseInt(wave15Health?.needles_found) || 0,
+        totalCostUsd: parseFloat(wave15Health?.total_cost_usd) || 0,
+        mode: wave15Health?.mode || 'UNKNOWN',
       },
 
       // Governance checks (Section 9)

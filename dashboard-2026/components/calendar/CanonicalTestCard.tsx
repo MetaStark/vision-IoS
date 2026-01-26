@@ -1,27 +1,20 @@
 /**
- * Canonical Test Card - CEO-DIR-2026-CGT-001 (CEO Modifications)
+ * Canonical Test Card - CEO-DIR-2026-CALENDAR-VISUAL-ENHANCEMENT
  *
- * Renders a single canonical test as a human-readable card.
- * NO JSON visible. NO raw field names. CEO understands in <30 seconds.
- *
- * Required Sections:
- * 1. Header (name, owner, status badges)
- * 2. Timeline (start, end, progress bar)
- * 3. Purpose & Logic (collapsible)
- * 4. Measurement (baseline, target, current)
- * 5. Governance (checkpoint, escalation)
+ * Modern, human-readable test cards with:
+ * - Unique pleasant color per test
+ * - 2-sentence max explanations
+ * - Clear start/end timestamps with local timezone
+ * - Subtle animations for engagement
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   FlaskConical,
   Clock,
   Target,
-  Users,
-  TrendingUp,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   ChevronDown,
@@ -31,6 +24,10 @@ import {
   BarChart3,
   Activity,
   Database,
+  AlertTriangle,
+  Sparkles,
+  Play,
+  Flag,
 } from 'lucide-react'
 
 interface CanonicalTest {
@@ -41,28 +38,23 @@ interface CanonicalTest {
   category: string
   startDate: string
   endDate: string
-  // Progress (computed from storage)
   daysElapsed: number
   daysRemaining: number
   requiredDays: number
   progressPct: number
-  // Purpose & Logic
   businessIntent?: string
   beneficiarySystem?: string
   hypothesisCode?: string
-  // Measurement
   baselineDefinition?: any
   targetMetrics?: any
   successCriteria?: any
   failureCriteria?: any
-  // Governance
   midTestCheckpoint?: string
   escalationState?: string
   ceoActionRequired?: boolean
   recommendedActions?: string[]
   verdict?: string
   monitoringAgent?: string
-  // CEO-DIR-2026-DAY25-SESSION11: Test Progress (database-verified)
   testProgress?: {
     hypothesesInWindow: number
     falsifiedInWindow: number
@@ -80,134 +72,177 @@ interface CanonicalTestCardProps {
   onActionClick?: (action: string) => void
 }
 
-function StatusBadge({ status, ceoActionRequired }: { status: string; ceoActionRequired?: boolean }) {
-  if (ceoActionRequired) {
-    return (
-      <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-semibold flex items-center gap-1">
-        <AlertTriangle className="h-3 w-3" />
-        ACTION REQUIRED
-      </span>
-    )
-  }
-
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    ACTIVE: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'ACTIVE' },
-    ON_TRACK: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'ON TRACK' },
-    BEHIND: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'BEHIND' },
-    COMPLETED: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'COMPLETED' },
-    SUCCESS: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'SUCCESS' },
-    FAILURE: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'FAILURE' },
-  }
-
-  const config = statusConfig[status] || statusConfig.ACTIVE
-
-  return (
-    <span className={`px-2 py-1 ${config.bg} ${config.text} rounded text-xs font-semibold`}>
-      {config.label}
-    </span>
-  )
+// CEO-DIR-2026-CALENDAR-VISUAL: Unique pleasant colors for each test type
+const TEST_COLORS: Record<string, { primary: string; bg: string; border: string; glow: string }> = {
+  'EC-022': { primary: '#a78bfa', bg: 'from-violet-500/20 to-purple-500/10', border: 'border-violet-500/40', glow: 'shadow-violet-500/20' },  // Violet - Reward Logic
+  'Tier-1': { primary: '#60a5fa', bg: 'from-blue-500/20 to-cyan-500/10', border: 'border-blue-500/40', glow: 'shadow-blue-500/20' },          // Blue - Brutality Calibration
+  'Golden': { primary: '#fbbf24', bg: 'from-amber-500/20 to-yellow-500/10', border: 'border-amber-500/40', glow: 'shadow-amber-500/20' },     // Gold - Golden Needles
+  'FINN-T': { primary: '#34d399', bg: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-500/40', glow: 'shadow-emerald-500/20' }, // Emerald - World Model
+  'G1.5':   { primary: '#f472b6', bg: 'from-pink-500/20 to-rose-500/10', border: 'border-pink-500/40', glow: 'shadow-pink-500/20' },          // Pink - Calibration Freeze
 }
 
-function ProgressBar({ elapsed, total, status }: { elapsed: number; total: number; status: string }) {
-  const pct = Math.min(100, Math.round((elapsed / total) * 100))
-  const isOnTrack = elapsed <= total
+// 2-sentence human explanations for each test
+const TEST_SUMMARIES: Record<string, string> = {
+  'EC-022': 'Tester at kontekst-integrering forbedrer prediksjoner før vi aktiverer belønning. Uten bevis risikerer vi å belønne tilfeldigheter.',
+  'Tier-1': 'Kalibrerer hvor streng falsifisering skal være. Målet er 60-90% dødsrate: balansen mellom å drepe dårlige ideer og å la gode overleve.',
+  'Golden': 'Skaper mangfold i idékildene ved å jakte på gullkorn i markedsdata. Kontrasterer FINN-genererte hypoteser for bedre kalibrering.',
+  'FINN-T': 'Genererer hypoteser basert på økonomiske drivere (renter, kreditt, likviditet). Hver idé må forklare hvorfor, ikke bare at.',
+  'G1.5': 'Beviser at pre-tier scoring faktisk predikerer overlevelse. Høyere fødselsscore skal gi lengre levetid for hypoteser.',
+}
+
+function getTestColorKey(testName: string): string {
+  if (testName.includes('Reward') || testName.includes('EC-022')) return 'EC-022'
+  if (testName.includes('Tier-1') || testName.includes('Brutality')) return 'Tier-1'
+  if (testName.includes('Golden') || testName.includes('Shadow')) return 'Golden'
+  if (testName.includes('FINN-T') || testName.includes('World-Model')) return 'FINN-T'
+  if (testName.includes('G1.5') || testName.includes('Calibration Freeze')) return 'G1.5'
+  return 'Tier-1' // default
+}
+
+function AnimatedProgressBar({ elapsed, total, color, startDate, endDate }: {
+  elapsed: number
+  total: number
+  color: string
+  startDate?: string
+  endDate?: string
+}) {
+  const pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)))
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-400">Day {elapsed} of {total}</span>
-        <span className={isOnTrack ? 'text-blue-400' : 'text-yellow-400'}>{pct}%</span>
-      </div>
-      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${
-            status === 'SUCCESS' ? 'bg-green-500' :
-            status === 'FAILURE' ? 'bg-red-500' :
-            isOnTrack ? 'bg-blue-500' : 'bg-yellow-500'
-          }`}
-          style={{ width: `${pct}%` }}
+      {/* Modern progress track */}
+      <div className="relative h-4 bg-gray-800/80 rounded-xl overflow-hidden backdrop-blur-sm">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `repeating-linear-gradient(90deg, ${color}20 0px, ${color}20 2px, transparent 2px, transparent 8px)`,
+          }}
         />
+
+        {/* Progress fill with glow */}
+        <div
+          className="absolute inset-y-0 left-0 rounded-xl transition-all duration-700 ease-out"
+          style={{
+            width: `${pct}%`,
+            background: `linear-gradient(90deg, ${color}60, ${color}, ${color}60)`,
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 3s ease-in-out infinite',
+            boxShadow: `0 0 20px ${color}40, inset 0 1px 0 rgba(255,255,255,0.2)`,
+          }}
+        />
+
+        {/* Day markers */}
+        {total <= 30 && Array.from({ length: total - 1 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute top-0 bottom-0 w-px bg-gray-600/30"
+            style={{ left: `${((i + 1) / total) * 100}%` }}
+          />
+        ))}
+
+        {/* Current position indicator */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white shadow-xl transition-all duration-700 z-10"
+          style={{
+            left: `calc(${pct}% - 10px)`,
+            backgroundColor: color,
+            boxShadow: `0 0 16px ${color}, 0 0 32px ${color}60`,
+          }}
+        >
+          <div className="absolute inset-1 rounded-full bg-white/30" />
+        </div>
+
+        {/* Percentage label */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[10px] font-bold text-white/90 drop-shadow-lg">
+            {pct}%
+          </span>
+        </div>
+      </div>
+
+      {/* Timeline markers */}
+      <div className="flex justify-between text-[10px] text-gray-500">
+        <span className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color + '60' }} />
+          Start
+        </span>
+        <span className="text-gray-400 font-medium">Dag {elapsed} av {total}</span>
+        <span className="flex items-center gap-1">
+          Slutt
+          <div className="w-2 h-2 rounded-full bg-gray-600" />
+        </span>
       </div>
     </div>
   )
 }
 
-// CEO-DIR-2026-DAY25-SESSION11: Death Rate Gauge for Tier-1 Brutality Test
 function DeathRateGauge({
   value,
   minTarget = 60,
   maxTarget = 90,
-  trajectory
+  trajectory,
+  accentColor
 }: {
   value: number | null
   minTarget?: number
   maxTarget?: number
   trajectory: string
+  accentColor: string
 }) {
   const displayValue = value ?? 0
   const isOnTarget = value !== null && value >= minTarget && value <= maxTarget
   const isTooHigh = value !== null && value > maxTarget
-  const isTooLow = value !== null && value < minTarget
   const hasData = value !== null
-
-  const trajectoryConfig: Record<string, { bg: string; text: string; label: string }> = {
-    ON_TARGET: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'ON TARGET' },
-    TOO_BRUTAL: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'TOO BRUTAL' },
-    TOO_MILD: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'TOO MILD' },
-    INSUFFICIENT_DATA: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'INSUFFICIENT DATA' },
-    UNKNOWN: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'UNKNOWN' },
-  }
-
-  const config = trajectoryConfig[trajectory] || trajectoryConfig.UNKNOWN
 
   return (
     <div className="space-y-3">
-      {/* Trajectory Badge */}
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-400">Death Rate (Test Window)</span>
-        <span className={`px-2 py-1 ${config.bg} ${config.text} rounded text-xs font-semibold`}>
-          {config.label}
+        <span className="text-sm text-gray-400">Death Rate</span>
+        <span
+          className="px-2 py-1 rounded text-xs font-semibold"
+          style={{
+            backgroundColor: trajectory === 'ON_TARGET' ? '#22c55e20' :
+                            trajectory === 'TOO_BRUTAL' ? '#ef444420' : '#eab30820',
+            color: trajectory === 'ON_TARGET' ? '#22c55e' :
+                   trajectory === 'TOO_BRUTAL' ? '#ef4444' : '#eab308'
+          }}
+        >
+          {trajectory === 'ON_TARGET' ? '✓ På mål' :
+           trajectory === 'TOO_BRUTAL' ? '⚠ For streng' :
+           trajectory === 'INSUFFICIENT_DATA' ? '◌ Venter data' : '⚠ For mild'}
         </span>
       </div>
 
-      {/* Visual Gauge */}
       <div className="relative h-8 bg-gray-800 rounded-lg overflow-hidden">
-        {/* Target Zone (60-90%) */}
         <div
           className="absolute h-full bg-green-500/20 border-l border-r border-green-500/50"
           style={{ left: `${minTarget}%`, width: `${maxTarget - minTarget}%` }}
         />
-
-        {/* Labels */}
         <div className="absolute inset-0 flex items-center justify-between px-2 text-xs text-gray-500">
           <span>0%</span>
-          <span className="text-green-400/70">{minTarget}-{maxTarget}% target</span>
+          <span className="text-green-400/70">{minTarget}-{maxTarget}%</span>
           <span>100%</span>
         </div>
-
-        {/* Current Value Marker */}
         {hasData && (
           <div
-            className={`absolute top-0 bottom-0 w-1 ${
-              isOnTarget ? 'bg-green-400' : isTooHigh ? 'bg-red-400' : 'bg-yellow-400'
-            }`}
-            style={{ left: `${Math.min(100, displayValue)}%` }}
+            className="absolute top-0 bottom-0 w-1 transition-all duration-500"
+            style={{
+              left: `${Math.min(100, displayValue)}%`,
+              backgroundColor: isOnTarget ? '#22c55e' : isTooHigh ? '#ef4444' : '#eab308'
+            }}
           >
-            <div className={`absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full ${
-              isOnTarget ? 'bg-green-400' : isTooHigh ? 'bg-red-400' : 'bg-yellow-400'
-            }`} />
+            <div
+              className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full animate-pulse"
+              style={{ backgroundColor: isOnTarget ? '#22c55e' : isTooHigh ? '#ef4444' : '#eab308' }}
+            />
           </div>
         )}
       </div>
 
-      {/* Value Display */}
-      <div className="flex items-center justify-center">
-        <span className={`text-3xl font-bold ${
-          !hasData ? 'text-gray-500' :
-          isOnTarget ? 'text-green-400' :
-          isTooHigh ? 'text-red-400' : 'text-yellow-400'
-        }`}>
-          {hasData ? `${displayValue.toFixed(1)}%` : 'N/A'}
+      <div className="text-center">
+        <span className={`text-3xl font-bold ${!hasData ? 'text-gray-500' : ''}`}
+              style={{ color: hasData ? (isOnTarget ? '#22c55e' : isTooHigh ? '#ef4444' : '#eab308') : undefined }}>
+          {hasData ? `${displayValue.toFixed(1)}%` : '—'}
         </span>
       </div>
     </div>
@@ -218,12 +253,14 @@ function Section({
   title,
   icon: Icon,
   children,
-  defaultOpen = false
+  defaultOpen = false,
+  accentColor
 }: {
   title: string
   icon: any
   children: React.ReactNode
   defaultOpen?: boolean
+  accentColor: string
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -233,7 +270,7 @@ function Section({
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 w-full text-left text-sm text-gray-400 hover:text-white transition-colors"
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="h-4 w-4" style={{ color: accentColor }} />
         <span className="font-medium">{title}</span>
         <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -242,311 +279,246 @@ function Section({
   )
 }
 
-function InfoRow({ label, value, fallback }: { label: string; value?: string | null; fallback?: string }) {
-  const displayValue = value || fallback
-  if (!displayValue) return null
-  return (
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm text-white mt-0.5">{displayValue}</p>
-    </div>
-  )
-}
-
 export function CanonicalTestCard({ test, onActionClick }: CanonicalTestCardProps) {
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'Not set'
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+  const [mounted, setMounted] = useState(false)
 
-  // Full timestamp display for CEO-required immutable timestamps
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const colorKey = getTestColorKey(test.name)
+  const colors = TEST_COLORS[colorKey]
+  const summary = TEST_SUMMARIES[colorKey]
+
+  // Format timestamp with Oslo timezone
   const formatTimestamp = (dateStr: string) => {
-    if (!dateStr) return 'Not set'
+    if (!dateStr) return 'Ikke satt'
     const date = new Date(dateStr)
-    return date.toLocaleString('en-US', {
-      month: 'short',
+    return date.toLocaleString('nb-NO', {
       day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZoneName: 'short'
-    })
+      timeZone: 'Europe/Oslo'
+    }) + ' CET'
   }
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
+    <div
+      className={`
+        relative overflow-hidden rounded-2xl border transition-all duration-500
+        ${colors.border} ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        hover:shadow-xl ${colors.glow}
+      `}
+      style={{
+        background: `linear-gradient(135deg, rgba(17,24,39,0.95), rgba(17,24,39,0.8))`,
+      }}
+    >
+      {/* Animated gradient border effect */}
+      <div
+        className="absolute inset-0 opacity-30 pointer-events-none"
+        style={{
+          background: `linear-gradient(135deg, ${colors.primary}10, transparent 50%, ${colors.primary}05)`,
+        }}
+      />
+
       {/* CEO Action Required Banner */}
       {test.ceoActionRequired && (
-        <div className="bg-red-500/10 border-b border-red-500/30 px-6 py-3">
+        <div className="relative bg-red-500/10 border-b border-red-500/30 px-6 py-3">
           <div className="flex items-center gap-2 text-red-400">
-            <AlertTriangle className="h-5 w-5" />
-            <span className="font-semibold">CEO Decision Required</span>
+            <AlertTriangle className="h-5 w-5 animate-pulse" />
+            <span className="font-semibold">CEO-handling påkrevd</span>
           </div>
-          {test.recommendedActions && test.recommendedActions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {test.recommendedActions.map((action, i) => (
-                <button
-                  key={i}
-                  onClick={() => onActionClick?.(action)}
-                  className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm rounded transition-colors"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
-      {/* Header - Human-readable test name, no internal IDs */}
-      <div className="px-6 py-4">
+      {/* Header with color accent */}
+      <div className="relative px-6 py-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <FlaskConical className="h-5 w-5 text-blue-400 flex-shrink-0" />
-              <h3 className="text-lg font-semibold text-white">{test.name}</h3>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${colors.primary}20` }}
+              >
+                <FlaskConical className="h-5 w-5" style={{ color: colors.primary }} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">{test.name}</h3>
+                <p className="text-sm text-gray-400">
+                  {test.owner} · {test.monitoringAgent || 'STIG'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-400 mt-1">
-              Owner: <span className="text-white">{test.owner}</span>
-              {test.monitoringAgent && (
-                <> · Monitoring: <span className="text-white">{test.monitoringAgent}</span></>
-              )}
-            </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <StatusBadge status={test.verdict || test.status} ceoActionRequired={test.ceoActionRequired} />
-          </div>
+          <span
+            className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide animate-pulse"
+            style={{
+              backgroundColor: `${colors.primary}20`,
+              color: colors.primary,
+            }}
+          >
+            {test.verdict || test.status}
+          </span>
+        </div>
+
+        {/* 2-sentence summary */}
+        <div className="mt-4 p-4 rounded-xl bg-gray-800/50 border border-gray-700/50">
+          <p className="text-sm text-gray-300 leading-relaxed">
+            {summary}
+          </p>
         </div>
       </div>
 
-      {/* Timeline - Immutable Timestamps (CEO Mod 2) */}
+      {/* Timeline with clear start/end */}
       <div className="px-6 pb-4">
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          {/* Explicit Timestamps - First-class fields per CEO requirement */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4 text-green-400" />
-                <p className="text-xs text-gray-400 font-medium">START (Immutable)</p>
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: `${colors.primary}08` }}>
+          {/* Start/End dates - prominently displayed */}
+          <div className="grid grid-cols-2 gap-0 border-b" style={{ borderColor: `${colors.primary}20` }}>
+            <div className="p-4 border-r" style={{ borderColor: `${colors.primary}20` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Play className="h-4 w-4" style={{ color: colors.primary }} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Start</span>
               </div>
-              <p className="text-sm text-white font-semibold">{formatTimestamp(test.startDate)}</p>
+              <p className="text-sm font-bold text-white">{formatTimestamp(test.startDate)}</p>
             </div>
-            <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700/50">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-red-400" />
-                <p className="text-xs text-gray-400 font-medium">END (Immutable)</p>
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Flag className="h-4 w-4" style={{ color: colors.primary }} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Slutt</span>
               </div>
-              <p className="text-sm text-white font-semibold">{formatTimestamp(test.endDate)}</p>
+              <p className="text-sm font-bold text-white">{formatTimestamp(test.endDate)}</p>
             </div>
           </div>
-          <ProgressBar
-            elapsed={test.daysElapsed || 0}
-            total={test.requiredDays || 30}
-            status={test.verdict || test.status}
-          />
+
+          {/* Progress - CEO-DIR-2026-CALENDAR-FIX-001: Database-verified calculation */}
+          <div className="p-4">
+            <AnimatedProgressBar
+              elapsed={test.daysElapsed}
+              total={test.requiredDays}
+              color={colors.primary}
+              startDate={test.startDate}
+              endDate={test.endDate}
+            />
+          </div>
         </div>
       </div>
 
-      {/* CEO-DIR-2026-DAY25-SESSION11: Test Progress (Database-Verified) */}
+      {/* Test Progress (Database-Verified) */}
       {test.testProgress && (
         <div className="px-6 pb-4">
-          <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-xl p-4">
+          <div
+            className="rounded-xl p-4 border"
+            style={{
+              background: `linear-gradient(135deg, ${colors.primary}10, transparent)`,
+              borderColor: `${colors.primary}30`,
+            }}
+          >
             <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-5 w-5 text-purple-400" />
-              <h4 className="font-semibold text-white">Test Progress (Live)</h4>
+              <Activity className="h-5 w-5" style={{ color: colors.primary }} />
+              <h4 className="font-semibold text-white">Live Fremgang</h4>
               <div className="flex items-center gap-1 ml-auto text-xs text-gray-500">
                 <Database className="h-3 w-3" />
-                <span>DB-Verified: {new Date(test.testProgress.verifiedAt).toLocaleTimeString()}</span>
+                <span>Verifisert: {new Date(test.testProgress.verifiedAt).toLocaleTimeString('nb-NO')}</span>
               </div>
             </div>
 
-            {/* Death Rate Gauge */}
             <DeathRateGauge
               value={test.testProgress.deathRateInWindow}
-              minTarget={60}
-              maxTarget={90}
               trajectory={test.testProgress.trajectory}
+              accentColor={colors.primary}
             />
 
-            {/* Window Metrics Grid */}
-            <div className="grid grid-cols-4 gap-3 mt-4">
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-white">{test.testProgress.hypothesesInWindow}</p>
-                <p className="text-xs text-gray-400 mt-1">In Window</p>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-red-400">{test.testProgress.falsifiedInWindow}</p>
-                <p className="text-xs text-gray-400 mt-1">Falsified</p>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-blue-400">{test.testProgress.activeInWindow}</p>
-                <p className="text-xs text-gray-400 mt-1">Active</p>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-gray-400">{test.testProgress.draftInWindow}</p>
-                <p className="text-xs text-gray-400 mt-1">Draft</p>
-              </div>
+            {/* Metrics grid */}
+            <div className="grid grid-cols-4 gap-2 mt-4">
+              {[
+                { value: test.testProgress.hypothesesInWindow, label: 'I vindu', color: 'white' },
+                { value: test.testProgress.falsifiedInWindow, label: 'Falsifisert', color: '#ef4444' },
+                { value: test.testProgress.activeInWindow, label: 'Aktive', color: colors.primary },
+                { value: test.testProgress.draftInWindow, label: 'Utkast', color: '#6b7280' },
+              ].map((m, i) => (
+                <div key={i} className="bg-gray-800/50 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold" style={{ color: m.color }}>{m.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{m.label}</p>
+                </div>
+              ))}
             </div>
 
-            {/* Last Hypothesis Timestamp */}
             {test.testProgress.lastHypothesisInWindow && (
-              <div className="mt-4 flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-400">Last hypothesis:</span>
+              <div className="mt-4 flex items-center gap-2 text-sm text-gray-400">
+                <Clock className="h-4 w-4" />
+                <span>Siste hypotese: </span>
                 <span className="text-white font-medium">
-                  {new Date(test.testProgress.lastHypothesisInWindow).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
+                  {new Date(test.testProgress.lastHypothesisInWindow).toLocaleString('nb-NO', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
                   })}
                 </span>
               </div>
             )}
-
-            {/* CEO Recommendation based on trajectory */}
-            {test.testProgress.trajectory === 'TOO_BRUTAL' && (
-              <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                <p className="text-sm text-red-400">
-                  <strong>Recommendation:</strong> Death rate exceeds 90% target. Consider loosening Tier-1 falsification criteria to allow more hypotheses to survive initial testing.
-                </p>
-              </div>
-            )}
-            {test.testProgress.trajectory === 'TOO_MILD' && (
-              <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                <p className="text-sm text-yellow-400">
-                  <strong>Recommendation:</strong> Death rate below 60% target. Consider tightening Tier-1 falsification criteria to filter out low-quality hypotheses.
-                </p>
-              </div>
-            )}
-            {test.testProgress.trajectory === 'ON_TARGET' && (
-              <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-                <p className="text-sm text-green-400">
-                  <strong>Status:</strong> Death rate within 60-90% target band. Tier-1 calibration appears optimal.
-                </p>
-              </div>
-            )}
-            {test.testProgress.trajectory === 'INSUFFICIENT_DATA' && (
-              <div className="mt-4 bg-gray-500/10 border border-gray-500/30 rounded-lg p-3">
-                <p className="text-sm text-gray-400">
-                  <strong>Note:</strong> No hypotheses have been promoted from DRAFT to ACTIVE status yet. Death rate cannot be calculated until hypotheses are tested.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* Collapsible Sections */}
+      {/* Collapsible sections */}
       <div className="px-6 pb-6 space-y-4">
-        {/* Purpose & Logic */}
-        <Section title="Purpose & Logic" icon={Lightbulb} defaultOpen={true}>
-          <InfoRow label="Why are we doing this?" value={test.businessIntent} />
-          <InfoRow label="Who benefits if successful?" value={test.beneficiarySystem} />
-          <InfoRow
-            label="Hypothesis under test"
-            value={test.hypothesisCode}
-            fallback="System-level validation: Context → Reward causality"
-          />
+        <Section title="Formål" icon={Lightbulb} defaultOpen={false} accentColor={colors.primary}>
+          <p className="text-sm text-gray-300">{test.businessIntent}</p>
+          {test.beneficiarySystem && (
+            <p className="text-xs text-gray-500 mt-2">
+              Gevinst for: <span className="text-white">{test.beneficiarySystem}</span>
+            </p>
+          )}
         </Section>
 
-        {/* Measurement */}
-        <Section title="Measurement" icon={BarChart3}>
-          {test.baselineDefinition && (
-            <InfoRow
-              label="Baseline (what 'normal' means)"
-              value={typeof test.baselineDefinition === 'object'
-                ? test.baselineDefinition.beskrivelse || test.baselineDefinition.description || 'Defined'
-                : test.baselineDefinition
-              }
-            />
-          )}
-          {test.targetMetrics && (
-            <InfoRow
-              label="Target metrics & expected trajectory"
-              value={typeof test.targetMetrics === 'object'
-                ? test.targetMetrics.beskrivelse || test.targetMetrics.description || 'Defined'
-                : test.targetMetrics
-              }
-            />
-          )}
-          <div className="bg-gray-800/30 rounded p-3 mt-2">
-            <p className="text-xs text-gray-500 mb-2">Current Status</p>
+        <Section title="Måling" icon={BarChart3} accentColor={colors.primary}>
+          <div className="bg-gray-800/30 rounded-lg p-3">
             <p className="text-sm text-white">
-              Day {test.daysElapsed} of {test.requiredDays} — {' '}
-              {test.daysElapsed === 0
-                ? 'Baseline capture in progress'
-                : `${test.daysRemaining} days remaining`
-              }
+              Dag {test.daysElapsed} av {test.requiredDays} — {' '}
+              {test.daysRemaining > 0 ? `${test.daysRemaining} dager igjen` : 'Ferdig'}
             </p>
           </div>
         </Section>
 
-        {/* Success/Failure Criteria */}
-        <Section title="Success & Failure Criteria" icon={Target}>
+        <Section title="Suksess/Fiasko" icon={Target} accentColor={colors.primary}>
           {test.successCriteria && (
             <div className="flex items-start gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500">Success if:</p>
-                <p className="text-sm text-white">
-                  {typeof test.successCriteria === 'object'
-                    ? test.successCriteria.beskrivelse || test.successCriteria.description || 'Criteria defined'
-                    : test.successCriteria
-                  }
-                </p>
-              </div>
+              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5" />
+              <p className="text-sm text-gray-300">
+                {typeof test.successCriteria === 'object'
+                  ? test.successCriteria.beskrivelse || test.successCriteria.description
+                  : test.successCriteria}
+              </p>
             </div>
           )}
           {test.failureCriteria && (
             <div className="flex items-start gap-2">
-              <XCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500">Failure if:</p>
-                <p className="text-sm text-white">
-                  {typeof test.failureCriteria === 'object'
-                    ? test.failureCriteria.beskrivelse || test.failureCriteria.description || 'Criteria defined'
-                    : test.failureCriteria
-                  }
-                </p>
-              </div>
+              <XCircle className="h-4 w-4 text-red-400 mt-0.5" />
+              <p className="text-sm text-gray-300">
+                {typeof test.failureCriteria === 'object'
+                  ? test.failureCriteria.beskrivelse || test.failureCriteria.description
+                  : test.failureCriteria}
+              </p>
             </div>
           )}
         </Section>
 
-        {/* Governance */}
-        <Section title="Governance" icon={Shield}>
-          {test.midTestCheckpoint && (
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-purple-400" />
-              <div>
-                <p className="text-xs text-gray-500">Next Review Checkpoint</p>
-                <p className="text-sm text-white">{formatDate(test.midTestCheckpoint)}</p>
-              </div>
-            </div>
-          )}
+        <Section title="Governance" icon={Shield} accentColor={colors.primary}>
           <div className="flex items-center gap-2">
-            <AlertTriangle className={`h-4 w-4 ${
-              test.escalationState === 'ACTION_REQUIRED' ? 'text-red-400' :
-              test.escalationState === 'WARNING' ? 'text-yellow-400' :
-              'text-gray-400'
-            }`} />
-            <div>
-              <p className="text-xs text-gray-500">Escalation State</p>
-              <p className={`text-sm font-medium ${
-                test.escalationState === 'ACTION_REQUIRED' ? 'text-red-400' :
-                test.escalationState === 'WARNING' ? 'text-yellow-400' :
-                'text-green-400'
-              }`}>
-                {test.escalationState === 'NONE' ? 'No escalation' : test.escalationState}
-              </p>
-            </div>
+            <Calendar className="h-4 w-4" style={{ color: colors.primary }} />
+            <span className="text-sm text-gray-400">Neste checkpoint:</span>
+            <span className="text-sm text-white">{test.midTestCheckpoint || 'Ved avslutning'}</span>
           </div>
         </Section>
       </div>
+
+      {/* Add shimmer keyframe animation */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   )
 }
