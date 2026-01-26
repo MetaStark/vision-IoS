@@ -70,19 +70,22 @@ export async function GET() {
     `)
     const cumulative = cumulativeResult.rows[0] || {}
 
-    // CEO-DIR-2026-DAY25: Fetch daemon health status for finn_scheduler
+    // CEO-DIR-2026-DAY26: Fetch daemon health status for FINN schedulers
+    // FIX: Check for actual scheduler names (finn_brain_scheduler, finn_e_scheduler, etc.)
     const daemonHealthResult = await client.query(`
       SELECT daemon_name, status, last_heartbeat,
              EXTRACT(EPOCH FROM (NOW() - last_heartbeat)) as seconds_since_heartbeat
       FROM fhq_monitoring.daemon_health
-      WHERE daemon_name = 'finn_scheduler'
+      WHERE daemon_name LIKE 'finn_%_scheduler'
+        AND status = 'HEALTHY'
+      ORDER BY last_heartbeat DESC
       LIMIT 1
     `)
     const daemonHealth = daemonHealthResult.rows[0] || null
-    // Daemon is RUNNING if healthy and heartbeat within 24 hours (86400 seconds)
-    // Using 24h threshold since daemons run on scheduled intervals, not continuously
+    // Daemon is RUNNING if healthy and heartbeat within 1 hour (3600 seconds)
+    // FINN schedulers run frequently - if no heartbeat in 1 hour, something is wrong
     const daemonStatus = daemonHealth?.status === 'HEALTHY' &&
-                         daemonHealth?.seconds_since_heartbeat < 86400
+                         daemonHealth?.seconds_since_heartbeat < 3600
                          ? 'RUNNING' : 'STOPPED'
 
     // Fetch shadow tier status
