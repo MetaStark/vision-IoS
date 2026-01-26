@@ -60,7 +60,13 @@ CEO_GATEWAY_ENABLED = os.getenv('CEO_GATEWAY_ENABLED', '0') == '1'
 
 # Market-aware price staleness thresholds
 # CEO-DIR-2026-0YC: Aligned to DAILY BAR granularity (yfinance provides ~1 bar/day)
-# Previous thresholds (6h/12h) triggered false alerts because daily bars arrive once/day
+# CEO-DIR-2026-EURUSD-PERMANENT-FIX: FX weekend awareness
+#
+# FX MARKET HOURS: Sun 5PM ET to Fri 5PM ET (continuous)
+# FX WEEKEND CLOSURE: Fri 5PM ET to Sun 5PM ET = 48h gap
+# yfinance daily bars: Available after market close (Fri 5PM ET)
+# On Monday morning ET, Friday's bar is ~60h old - this is EXPECTED
+#
 PRICE_STALENESS_CRYPTO = {
     'max_ok_hours': 24,      # Full confidence: within 24h of last daily bar
     'warn_hours': 36,        # Warn: 1.5x daily cadence
@@ -74,9 +80,9 @@ PRICE_STALENESS_EQUITY = {
 }
 
 PRICE_STALENESS_FX = {
-    'max_ok_hours': 36,      # FX closes Fri 17:00 ET -> Sun 17:00 ET
-    'warn_hours': 48,        # Warn: weekend gap starting
-    'blackout_hours': 72     # Blackout: missed full weekend
+    'max_ok_hours': 60,      # FX weekend: Fri 5PM -> Mon 5PM ET = 72h max expected
+    'warn_hours': 72,        # Warn: past Monday open without data
+    'blackout_hours': 96     # Blackout: missed Monday entirely
 }
 
 # Assets to monitor
@@ -228,7 +234,7 @@ def check_price_freshness(conn) -> List[AssetHealth]:
     return results
 
 
-def log_heartbeat(conn, results: List[AssetHealth]) -> str:
+def log_heartbeat(conn, results: List[AssetHealth], alert_sent: bool = False) -> str:
     """Log heartbeat to system_heartbeats table."""
     # Determine overall status
     statuses = [r.status for r in results]
@@ -241,9 +247,10 @@ def log_heartbeat(conn, results: List[AssetHealth]) -> str:
     else:
         overall_status = 'HEALTHY'
 
-    # Build metadata
+    # Build metadata (including alert deduplication state)
+    now_iso = datetime.now(timezone.utc).isoformat()
     metadata = {
-        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'timestamp': now_iso,
         'assets': [
             {
                 'asset_id': r.asset_id,
@@ -261,6 +268,37 @@ def log_heartbeat(conn, results: List[AssetHealth]) -> str:
             'blackout': sum(1 for r in results if r.status == HealthStatus.BLACKOUT)
         }
     }
+
+    # CEO-DIR-2026-EURUSD-PERMANENT-FIX: Alert deduplication state
+    # Preserve existing last_alert_status when suppressing duplicate alerts
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT metadata->>'last_alert_status', metadata->>'last_alert_time'
+                FROM fhq_governance.system_heartbeats
+                WHERE component_name = 'PRICE_FRESHNESS'
+            """)
+            row = cur.fetchone()
+            prev_alert_status = row[0] if row else None
+            prev_alert_time = row[1] if row else None
+    except:
+        prev_alert_status = None
+        prev_alert_time = None
+
+    # Update logic:
+    # 1. Alert sent -> record new alert state
+    # 2. HEALTHY -> reset dedup state
+    # 3. WARNING/CRITICAL/BLACKOUT but no alert -> preserve previous state
+    if alert_sent:
+        metadata['last_alert_status'] = overall_status
+        metadata['last_alert_time'] = now_iso
+    elif overall_status == 'HEALTHY':
+        metadata['last_alert_status'] = 'HEALTHY'
+        metadata['last_alert_time'] = None
+    else:
+        # Preserve previous alert state (for dedup)
+        metadata['last_alert_status'] = prev_alert_status
+        metadata['last_alert_time'] = prev_alert_time
 
     with conn.cursor() as cur:
         # Upsert heartbeat
@@ -322,11 +360,60 @@ def generate_alert_message(results: List[AssetHealth]) -> Optional[str]:
     return "\n".join(lines)
 
 
+def get_last_alert_status(conn) -> Optional[str]:
+    """Get last alerted status to prevent duplicate alerts."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT metadata->>'last_alert_status', metadata->>'last_alert_time'
+                FROM fhq_governance.system_heartbeats
+                WHERE component_name = 'PRICE_FRESHNESS'
+            """)
+            row = cur.fetchone()
+            if row and row[0]:
+                return row[0]
+    except Exception as e:
+        logger.warning(f"Could not get last alert status: {e}")
+    return None
+
+
+def should_send_alert(conn, current_status: str, results: List[AssetHealth]) -> bool:
+    """
+    Determine if alert should be sent (deduplication logic).
+
+    CEO-DIR-2026-EURUSD-PERMANENT-FIX: Alert deduplication
+    - Only alert on status CHANGE (e.g., HEALTHY -> WARNING)
+    - OR if critical/blackout and >4h since last alert
+    - Prevents spam during expected weekend staleness
+    """
+    if current_status == 'HEALTHY':
+        return False
+
+    last_status = get_last_alert_status(conn)
+
+    # First alert for this condition
+    if last_status is None or last_status == 'HEALTHY':
+        logger.info(f"Alert dedup: Status changed from {last_status} to {current_status} - SENDING")
+        return True
+
+    # Status escalation (e.g., WARNING -> CRITICAL)
+    severity_order = ['HEALTHY', 'WARNING', 'CRITICAL', 'BLACKOUT']
+    if current_status in severity_order and last_status in severity_order:
+        if severity_order.index(current_status) > severity_order.index(last_status):
+            logger.info(f"Alert dedup: Escalated from {last_status} to {current_status} - SENDING")
+            return True
+
+    # Same status - don't spam
+    logger.info(f"Alert dedup: Status unchanged ({current_status}) - SUPPRESSING duplicate alert")
+    return False
+
+
 def run_heartbeat() -> Dict[str, Any]:
     """Execute price freshness heartbeat check."""
     logger.info("=" * 60)
     logger.info("PRICE FRESHNESS HEARTBEAT")
     logger.info("CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P2")
+    logger.info("CEO-DIR-2026-EURUSD-PERMANENT-FIX: With alert deduplication")
     logger.info("=" * 60)
 
     conn = psycopg2.connect(**DB_CONFIG)
@@ -345,16 +432,30 @@ def run_heartbeat() -> Dict[str, Any]:
             }.get(r.status, "?")
             logger.info(f"  [{icon}] {r.asset_id}: {r.staleness_hours:.1f}h ({r.status.value})")
 
-        # Log heartbeat to database
-        overall_status = log_heartbeat(conn, results)
+        # Determine overall status first
+        statuses = [r.status for r in results]
+        if HealthStatus.BLACKOUT in statuses:
+            overall_status = 'BLACKOUT'
+        elif HealthStatus.CRITICAL in statuses:
+            overall_status = 'CRITICAL'
+        elif HealthStatus.WARNING in statuses:
+            overall_status = 'WARNING'
+        else:
+            overall_status = 'HEALTHY'
+
         logger.info(f"\nOverall Status: {overall_status}")
 
-        # Send alert if needed
+        # Send alert if needed (with deduplication)
         alert_sent = False
-        if overall_status in ('WARNING', 'CRITICAL', 'BLACKOUT'):
+        if should_send_alert(conn, overall_status, results):
             message = generate_alert_message(results)
             if message:
                 alert_sent = send_telegram_alert(message)
+                if alert_sent:
+                    logger.info("Telegram alert sent successfully")
+
+        # Log heartbeat to database (after alert decision, to store dedup state)
+        log_heartbeat(conn, results, alert_sent=alert_sent)
 
         # Build result
         result = {
@@ -366,6 +467,7 @@ def run_heartbeat() -> Dict[str, Any]:
             'critical': sum(1 for r in results if r.status == HealthStatus.CRITICAL),
             'blackout': sum(1 for r in results if r.status == HealthStatus.BLACKOUT),
             'alert_sent': alert_sent,
+            'alert_suppressed': overall_status != 'HEALTHY' and not alert_sent,
             'details': [
                 {
                     'asset_id': r.asset_id,
@@ -377,6 +479,8 @@ def run_heartbeat() -> Dict[str, Any]:
         }
 
         logger.info(f"\nHeartbeat complete: {result['healthy']}/{len(results)} healthy")
+        if result.get('alert_suppressed'):
+            logger.info("(Alert suppressed - duplicate condition)")
 
         return result
 
