@@ -65,6 +65,12 @@ DAEMONS = {
         'process': None,
         'has_heartbeat': True  # Has heartbeat code - CEO-DIR-2026-FINN-E-SCHEDULER-001
     },
+    'hypothesis_death_daemon': {
+        'script': '03_FUNCTIONS/hypothesis_death_daemon.py',
+        'max_stale_minutes': 20,  # 15min cycle + 5min buffer
+        'process': None,
+        'has_heartbeat': True  # Has heartbeat code - CEO-DIR-2026-HYPOTHESIS-DEATH-001
+    },
     'economic_outcome_daemon': {
         'script': '03_FUNCTIONS/economic_outcome_daemon.py',
         'max_stale_minutes': 10,
@@ -95,11 +101,11 @@ def update_watchdog_heartbeat():
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
-                VALUES ('daemon_watchdog', 'HEALTHY', NOW(), '{"managed_daemons": 7}'::jsonb)
+                VALUES ('daemon_watchdog', 'HEALTHY', NOW(), '{"managed_daemons": 8}'::jsonb)
                 ON CONFLICT (daemon_name) DO UPDATE SET
                     status = 'HEALTHY',
                     last_heartbeat = NOW(),
-                    metadata = '{"managed_daemons": 7}'::jsonb
+                    metadata = '{"managed_daemons": 8}'::jsonb
             """)
             conn.commit()
         conn.close()
