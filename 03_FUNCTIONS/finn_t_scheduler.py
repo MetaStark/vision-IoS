@@ -3,6 +3,7 @@
 FINN-T WORLD-MODEL SCHEDULER
 =============================
 CEO-DIR-2026-FINN-T-SCHEDULER-001
+CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001 (Amendment)
 
 PURPOSE: Continuous hypothesis generation from G3 Golden Features.
          Theory-driven learning with N-tier mechanism chains.
@@ -12,6 +13,11 @@ CONSTRAINTS:
 - Min causal depth: 2
 - Output: hypothesis_canon with generator_id='FINN-T'
 - Rotation across LIQUIDITY, CREDIT, FACTOR, VOLATILITY clusters
+
+G1.5 VARIANCE DIRECTIVE (2026-01-26):
+- 20% of output targets causal_depth >= 4 (HIGH_CAUSAL_PRESSURE)
+- Tagged with generation_regime='HIGH_CAUSAL_PRESSURE', causal_depth_target=4+
+- G1.5 freeze on evaluative logic PRESERVED
 
 Authority: ADR-020 (ACI), ADR-016 (DEFCON), Migration 353
 Classification: G4_PRODUCTION_SCHEDULER
@@ -25,6 +31,7 @@ import time
 import signal
 import logging
 import hashlib
+import random
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, timezone
@@ -46,6 +53,12 @@ DAEMON_NAME = 'finn_t_scheduler'
 GENERATOR_ID = 'FINN-T'
 MIN_CAUSAL_DEPTH = 2
 
+# G1.5 VARIANCE DIRECTIVE (CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001)
+HIGH_CAUSAL_PRESSURE_RATIO = 0.20  # 20% of output targets depth >= 4
+HIGH_CAUSAL_PRESSURE_MIN_DEPTH = 4
+GENERATION_REGIME_STANDARD = 'STANDARD'
+GENERATION_REGIME_HIGH_PRESSURE = 'HIGH_CAUSAL_PRESSURE'
+
 # Setup logging
 log_dir = 'C:/fhq-market-system/vision-ios/logs'
 os.makedirs(log_dir, exist_ok=True)
@@ -60,7 +73,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Mechanism chain templates for G3 clusters
+# Mechanism chain templates for G3 clusters (STANDARD depth 2-3)
 MECHANISM_CHAINS = {
     'LIQUIDITY': {
         'causal_chain': [
@@ -102,6 +115,58 @@ MECHANISM_CHAINS = {
         'behavioral_basis': 'Volatility clustering and mean reversion',
         'regime_validity': ['HIGH_VOL', 'LOW_VOL', 'TRANSITION'],
         'assets': ['SPY', 'VXX', 'UVXY']
+    }
+}
+
+# HIGH_CAUSAL_PRESSURE mechanism chains (depth 4+) - G1.5 VARIANCE DIRECTIVE
+HIGH_PRESSURE_MECHANISM_CHAINS = {
+    'LIQUIDITY': {
+        'causal_chain': [
+            'Fed policy changes liquidity conditions',
+            'Interbank lending rates adjust',
+            'Liquidity flows into/out of risk assets',
+            'Market makers widen spreads in response',
+            'Asset prices adjust to new liquidity equilibrium'
+        ],
+        'behavioral_basis': 'Multi-tier liquidity transmission mechanism',
+        'regime_validity': ['RISK_ON', 'RISK_OFF', 'EXPANSION', 'TRANSITION'],
+        'assets': ['SPY', 'QQQ', 'TLT', 'LQD']
+    },
+    'CREDIT': {
+        'causal_chain': [
+            'Credit conditions tighten or loosen',
+            'Corporate borrowing costs change',
+            'Capital expenditure plans adjust',
+            'Earnings guidance revisions follow',
+            'Equity valuations re-rate'
+        ],
+        'behavioral_basis': 'Full credit-to-equity transmission chain',
+        'regime_validity': ['CONTRACTION', 'EXPANSION', 'TRANSITION'],
+        'assets': ['SPY', 'XLF', 'HYG', 'LQD']
+    },
+    'FACTOR': {
+        'causal_chain': [
+            'Factor exposure concentrations build',
+            'Risk parity funds begin rebalancing',
+            'Regime shift triggers factor rotation',
+            'Crowded positions unwind creating momentum',
+            'Cross-asset correlations spike'
+        ],
+        'behavioral_basis': 'Factor crowding cascade with cross-asset contagion',
+        'regime_validity': ['TRANSITION', 'RISK_OFF', 'HIGH_VOL'],
+        'assets': ['SPY', 'IWM', 'QQQ', 'EFA']
+    },
+    'VOLATILITY': {
+        'causal_chain': [
+            'Volatility regime shifts detected',
+            'Options market reprices risk',
+            'Vol-targeting funds reduce exposure',
+            'Delta hedging flows impact spot prices',
+            'Realized vol validates implied shift'
+        ],
+        'behavioral_basis': 'Vol regime feedback loop with hedging amplification',
+        'regime_validity': ['HIGH_VOL', 'LOW_VOL', 'TRANSITION'],
+        'assets': ['SPY', 'VXX', 'UVXY', 'VIXY']
     }
 }
 
@@ -220,11 +285,31 @@ def map_direction(direction: str) -> str:
     return mapping.get(direction.upper() if direction else 'NEUTRAL', 'NEUTRAL')
 
 
+def should_apply_high_causal_pressure() -> bool:
+    """
+    Determine if this hypothesis should use HIGH_CAUSAL_PRESSURE regime.
+    CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001: 20% of output targets depth >= 4
+    """
+    return random.random() < HIGH_CAUSAL_PRESSURE_RATIO
+
+
 def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
     """Generate a hypothesis from a G3 Golden Feature."""
     try:
         conn = get_db_connection()
-        chain_template = MECHANISM_CHAINS.get(cluster, MECHANISM_CHAINS['LIQUIDITY'])
+
+        # G1.5 VARIANCE DIRECTIVE: 20% chance of HIGH_CAUSAL_PRESSURE
+        use_high_pressure = should_apply_high_causal_pressure()
+
+        if use_high_pressure:
+            chain_template = HIGH_PRESSURE_MECHANISM_CHAINS.get(cluster, HIGH_PRESSURE_MECHANISM_CHAINS['LIQUIDITY'])
+            generation_regime = GENERATION_REGIME_HIGH_PRESSURE
+            causal_depth_target = HIGH_CAUSAL_PRESSURE_MIN_DEPTH
+            logger.info(f"HIGH_CAUSAL_PRESSURE activated for {cluster} (depth={len(chain_template['causal_chain'])})")
+        else:
+            chain_template = MECHANISM_CHAINS.get(cluster, MECHANISM_CHAINS['LIQUIDITY'])
+            generation_regime = GENERATION_REGIME_STANDARD
+            causal_depth_target = None
 
         # Generate hypothesis code
         timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
@@ -289,10 +374,13 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                     semantic_hash,
                     created_at,
                     created_by,
-                    asset_class
+                    asset_class,
+                    generation_regime,
+                    causal_depth_target
                 ) VALUES (
                     %s, 'ECONOMIC_THEORY', %s, %s, %s, %s, %s, %s, %s, 'MEDIUM',
-                    72, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'EQUITY'
+                    72, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'EQUITY',
+                    %s, %s
                 )
                 RETURNING hypothesis_code
             """, (
@@ -315,14 +403,17 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                 json.dumps(mechanism_graph),
                 mechanism_graph['depth'],
                 semantic_hash,
-                DAEMON_NAME
+                DAEMON_NAME,
+                generation_regime,
+                causal_depth_target
             ))
 
             result = cur.fetchone()
             conn.commit()
 
             if result:
-                logger.info(f"Generated {hypothesis_code} from {feature['feature_id']} (depth={mechanism_graph['depth']})")
+                regime_tag = f" [{generation_regime}]" if generation_regime != GENERATION_REGIME_STANDARD else ""
+                logger.info(f"Generated {hypothesis_code} from {feature['feature_id']} (depth={mechanism_graph['depth']}){regime_tag}")
                 return result[0]
 
         conn.close()
@@ -426,10 +517,12 @@ class FINNTScheduler:
         logger.info("=" * 70)
         logger.info("FINN-T WORLD-MODEL SCHEDULER ACTIVATED")
         logger.info("CEO-DIR-2026-FINN-T-SCHEDULER-001")
+        logger.info("CEO-DIR-2026-G1.5-GENERATION-VARIANCE-001 (ACTIVE)")
         logger.info(f"  Interval: {INTERVAL_MINUTES} minutes")
         logger.info(f"  Generator: {GENERATOR_ID}")
         logger.info(f"  Input: G3 Golden Features")
         logger.info(f"  Min Causal Depth: {MIN_CAUSAL_DEPTH}")
+        logger.info(f"  HIGH_CAUSAL_PRESSURE: {HIGH_CAUSAL_PRESSURE_RATIO*100:.0f}% @ depth {HIGH_CAUSAL_PRESSURE_MIN_DEPTH}+")
         logger.info("=" * 70)
 
         self.setup_signal_handlers()
