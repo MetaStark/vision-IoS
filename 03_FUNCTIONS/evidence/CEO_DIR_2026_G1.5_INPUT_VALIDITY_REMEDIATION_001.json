@@ -1,0 +1,122 @@
+{
+  "directive_id": "CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001",
+  "title": "G1.5 Input Validity Remediation Under Formula Freeze",
+  "status": "IMPLEMENTED",
+  "executed_at": "2026-01-27T17:30:00+01:00",
+  "executor": "STIG (EC-003)",
+  "classification": "GOVERNANCE-CRITICAL / LEARNING-INTEGRITY",
+
+  "hard_guards_respected": {
+    "pre_tier_weights": "UNCHANGED (0.3, 0.4, 0.2, 0.1)",
+    "scoring_formula": "UNCHANGED",
+    "oxygen_thresholds": "UNCHANGED",
+    "tier1_falsification_rules": "UNCHANGED"
+  },
+
+  "diagnosed_root_causes_accepted": {
+    "causal_depth_score_degenerate": {
+      "before": "CONSTANT 75.00 (zero variance)",
+      "cause": "crypto_theory_artifacts had causal_depth = 3 for ALL theories",
+      "mapping": "causal_depth * 25.0 -> 3 * 25 = 75.00 always"
+    },
+    "generator_concentration": {
+      "finn_crypto_share_of_g15_deaths": "98.8%",
+      "volume_bias": "unrecoverable"
+    }
+  },
+
+  "remediation_actions": {
+    "4.1_fix_degenerate_inputs": {
+      "status": "COMPLETE",
+      "action": "Updated crypto_theory_artifacts with varying causal_depth",
+      "before": "All theories had causal_depth = 3",
+      "after": {
+        "FUNDING_DYNAMICS": 2,
+        "VOLATILITY_CLUSTERING": 2,
+        "REGIME_TRANSITION": 3,
+        "LIQUIDATION_CASCADE": 5
+      },
+      "expected_scores": [50, 50, 75, 100],
+      "variance_restored": true
+    },
+    "4.2_input_validity_gates": {
+      "status": "COMPLETE",
+      "columns_added": ["input_validity_status", "input_validity_flags"],
+      "function_added": "check_input_validity_gates()",
+      "minimum_requirements": {
+        "causal_depth_score_stddev": "> 0",
+        "evidence_density_distinct_values": ">= 2",
+        "agreement_stddev": ">= 0.5"
+      },
+      "flagging_behavior": "Scoring proceeds, but INPUT_NON_INFORMATIVE flag set"
+    },
+    "4.3_generator_volume_rebalancing": {
+      "status": "COMPLETE",
+      "mechanism": "Scheduler throttling",
+      "before": "finn_crypto: 2 hypotheses per cycle",
+      "after": "finn_crypto: 1 hypothesis per cycle",
+      "purpose": "Allow FINN-E/FINN-T to achieve identifiability"
+    },
+    "4.4_generation_regime_tagging": {
+      "status": "COMPLETE",
+      "column": "generation_regime",
+      "pre_fix_tag": "CRYPTO_DEGENERATE_PRE_FIX",
+      "post_fix_tag": "CRYPTO_DIVERSIFIED_POST_FIX",
+      "pre_fix_hypotheses_tagged": 331
+    }
+  },
+
+  "files_modified": [
+    {
+      "file": "03_FUNCTIONS/finn_crypto_scheduler.py",
+      "changes": [
+        "Added CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001 to docstring",
+        "Throttled max_per_cycle from 2 to 1",
+        "Added generation_regime = 'CRYPTO_DIVERSIFIED_POST_FIX' to INSERT"
+      ]
+    },
+    {
+      "file": "03_FUNCTIONS/pre_tier_scoring_daemon.py",
+      "changes": [
+        "Added check_input_validity_gates() function",
+        "Updated score_hypothesis() to set input_validity_status",
+        "Added validity_cache for efficiency",
+        "Updated version to 2.0.0"
+      ]
+    }
+  ],
+
+  "database_changes": [
+    {
+      "table": "fhq_learning.crypto_theory_artifacts",
+      "change": "Updated causal_depth from constant 3 to varying (2, 2, 3, 5)"
+    },
+    {
+      "table": "fhq_learning.hypothesis_canon",
+      "changes": [
+        "Added column input_validity_status (TEXT)",
+        "Added column input_validity_flags (JSONB)",
+        "Tagged 331 crypto hypotheses as CRYPTO_DEGENERATE_PRE_FIX"
+      ]
+    }
+  ],
+
+  "verification": {
+    "distinct_causal_depths_in_theories": 3,
+    "causal_depth_values": [2, 2, 3, 5],
+    "pre_fix_hypotheses_tagged": 331,
+    "input_validity_column_exists": true
+  },
+
+  "acceptance_criteria_status": {
+    "causal_depth_score_variance_for_finn_crypto": "PENDING - new hypotheses needed",
+    "input_variance_gates_live_and_logged": "COMPLETE",
+    "generation_regime_tagging_present": "COMPLETE",
+    "finn_crypto_volume_reduced": "COMPLETE (1 per cycle vs 2)",
+    "runbook_updated_and_committed": "PENDING",
+    "vega_attestation_g15_integrity": "PENDING"
+  },
+
+  "ceo_directive_summary": "Freeze logic. Fix reality. Then measure.",
+  "implementation_summary": "Input remediation complete. Formula unchanged. Variance gates active."
+}

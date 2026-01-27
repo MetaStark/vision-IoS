@@ -3,9 +3,14 @@
 Pre-Tier Scoring Daemon
 =======================
 CEO-DIR-2026-PRE-TIER-SCORING-DAEMON-001
+CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001 (v2.0)
 
 Scores hypotheses at birth with pre_tier_score_at_birth for G1.5 experiment.
 This is the MISSING component that was never implemented after Migration 350.
+
+REMEDIATION v2.0 (2026-01-27):
+- Added Input Validity Gates to flag INPUT_NON_INFORMATIVE hypotheses
+- Scoring proceeds but results are marked when variance insufficient
 
 Root Cause Analysis (Day 26):
 - Migration 350 created the calculate_pre_tier_score() function
@@ -140,6 +145,78 @@ def calculate_pre_tier_score(
     }
 
 
+def check_input_validity_gates(conn, generator_id: str) -> Dict[str, Any]:
+    """
+    CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001: Input Validity Gates.
+
+    Check if generator's recent hypotheses have sufficient variance in components.
+    Returns validity status and flags.
+
+    Minimum requirements:
+    - causal_depth_score stddev > 0 (cannot be constant)
+    - count(distinct evidence_density_score) >= 2
+    - cross_agent_agreement stddev >= 0.5
+    """
+    MIN_DISTINCT_EVIDENCE = 2
+    MIN_AGREEMENT_STDDEV = 0.5
+
+    try:
+        with conn.cursor() as cur:
+            # Check variance of recent hypotheses from this generator
+            cur.execute("""
+                SELECT
+                    COALESCE(STDDEV(causal_depth_score), 0) as cds_stddev,
+                    COUNT(DISTINCT ROUND(evidence_density_score::numeric, 1)) as eds_distinct,
+                    COALESCE(STDDEV(cross_agent_agreement_score), 0) as caa_stddev,
+                    COUNT(*) as sample_size
+                FROM fhq_learning.hypothesis_canon
+                WHERE generator_id = %s
+                AND pre_tier_score_at_birth IS NOT NULL
+                AND created_at > NOW() - INTERVAL '7 days'
+            """, (generator_id,))
+            row = cur.fetchone()
+
+            if not row or row[3] < 10:  # Need at least 10 samples
+                return {
+                    'status': 'INSUFFICIENT_DATA',
+                    'sample_size': row[3] if row else 0,
+                    'flags': {'reason': 'Need at least 10 scored hypotheses for validation'}
+                }
+
+            cds_stddev, eds_distinct, caa_stddev, sample_size = row
+
+            flags = {}
+            is_valid = True
+
+            # Check causal_depth_score variance
+            if cds_stddev == 0:
+                flags['causal_depth_constant'] = True
+                is_valid = False
+
+            # Check evidence_density_score cardinality
+            if eds_distinct < MIN_DISTINCT_EVIDENCE:
+                flags['evidence_density_low_cardinality'] = eds_distinct
+                is_valid = False
+
+            # Check cross_agent_agreement variance
+            if caa_stddev < MIN_AGREEMENT_STDDEV:
+                flags['agreement_low_variance'] = float(caa_stddev)
+                is_valid = False
+
+            return {
+                'status': 'VALID' if is_valid else 'INPUT_NON_INFORMATIVE',
+                'sample_size': sample_size,
+                'cds_stddev': float(cds_stddev),
+                'eds_distinct': eds_distinct,
+                'caa_stddev': float(caa_stddev),
+                'flags': flags
+            }
+
+    except Exception as e:
+        logger.warning(f"Input validity check failed for {generator_id}: {e}")
+        return {'status': 'CHECK_FAILED', 'flags': {'error': str(e)}}
+
+
 def get_unscored_hypotheses(conn) -> List[Dict[str, Any]]:
     """Get DRAFT hypotheses without pre_tier_score_at_birth."""
     with conn.cursor() as cur:
@@ -165,9 +242,15 @@ def get_unscored_hypotheses(conn) -> List[Dict[str, Any]]:
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
 
-def score_hypothesis(conn, hypothesis: Dict[str, Any]) -> bool:
-    """Score a single hypothesis and set pre_tier_score_at_birth."""
+def score_hypothesis(conn, hypothesis: Dict[str, Any], validity_cache: Dict[str, Dict] = None) -> bool:
+    """Score a single hypothesis and set pre_tier_score_at_birth.
+
+    CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001:
+    - Also sets input_validity_status based on generator's variance characteristics
+    - Uses validity_cache to avoid repeated queries for same generator
+    """
     from decimal import Decimal
+    import json as json_module
     try:
         # Get component values with defaults, converting Decimal to float
         def to_float(val, default):
@@ -192,6 +275,18 @@ def score_hypothesis(conn, hypothesis: Dict[str, Any]) -> bool:
 
         pre_tier_score = scores['pre_tier_score']
 
+        # CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001: Check input validity
+        generator_id = hypothesis.get('generator_id', 'UNKNOWN')
+        if validity_cache is None:
+            validity_cache = {}
+
+        if generator_id not in validity_cache:
+            validity_cache[generator_id] = check_input_validity_gates(conn, generator_id)
+
+        validity = validity_cache[generator_id]
+        validity_status = validity.get('status', 'NOT_EVALUATED')
+        validity_flags = json_module.dumps(validity.get('flags', {}))
+
         # Update hypothesis with IMMUTABLE birth score
         with conn.cursor() as cur:
             cur.execute("""
@@ -206,8 +301,10 @@ def score_hypothesis(conn, hypothesis: Dict[str, Any]) -> bool:
                     cross_agent_agreement_score = COALESCE(cross_agent_agreement_score, %s),
                     pre_tier_score_status = 'SCORED',
                     pre_tier_scored_at = NOW(),
-                    pre_tier_scored_by = '{"daemon": "pre_tier_scoring_daemon", "version": "1.0.0"}'::jsonb,
-                    pre_tier_score_version = '1.0.0'
+                    pre_tier_scored_by = '{"daemon": "pre_tier_scoring_daemon", "version": "2.0.0"}'::jsonb,
+                    pre_tier_score_version = '2.0.0',
+                    input_validity_status = %s,
+                    input_validity_flags = %s::jsonb
                 WHERE canon_id = %s
                 AND pre_tier_score_at_birth IS NULL
             """, (
@@ -218,12 +315,14 @@ def score_hypothesis(conn, hypothesis: Dict[str, Any]) -> bool:
                 evidence_density,
                 data_freshness,
                 cross_agent_agreement,
+                validity_status,
+                validity_flags,
                 hypothesis['canon_id']
             ))
             conn.commit()
 
         logger.info(f"  Scored {hypothesis['hypothesis_code']}: {pre_tier_score:.2f} "
-                   f"(depth={causal_depth}, decay={scores['decay_penalty']:.2f})")
+                   f"(depth={causal_depth}, decay={scores['decay_penalty']:.2f}, validity={validity_status})")
         return True
 
     except Exception as e:
@@ -233,12 +332,17 @@ def score_hypothesis(conn, hypothesis: Dict[str, Any]) -> bool:
 
 
 def run_scoring_cycle(conn) -> Dict[str, Any]:
-    """Run one scoring cycle."""
+    """Run one scoring cycle.
+
+    CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001:
+    - Uses validity_cache for efficient generator validation
+    """
     results = {
         'scored': 0,
         'failed': 0,
         'skipped': 0,
-        'total_unscored': 0
+        'total_unscored': 0,
+        'validity_by_generator': {}
     }
 
     # Get unscored hypotheses
@@ -251,11 +355,19 @@ def run_scoring_cycle(conn) -> Dict[str, Any]:
 
     logger.info(f"Found {len(hypotheses)} unscored hypotheses")
 
+    # CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001: Cache validity per generator
+    validity_cache = {}
+
     for hypothesis in hypotheses:
-        if score_hypothesis(conn, hypothesis):
+        if score_hypothesis(conn, hypothesis, validity_cache):
             results['scored'] += 1
         else:
             results['failed'] += 1
+
+    # Report validity status per generator
+    results['validity_by_generator'] = {k: v.get('status', 'UNKNOWN') for k, v in validity_cache.items()}
+    if validity_cache:
+        logger.info(f"Input validity by generator: {results['validity_by_generator']}")
 
     return results
 
@@ -284,16 +396,18 @@ def check_g15_progress(conn) -> Dict[str, Any]:
 def main():
     """Main daemon loop."""
     logger.info("=" * 60)
-    logger.info("PRE-TIER SCORING DAEMON STARTING")
+    logger.info("PRE-TIER SCORING DAEMON STARTING - VERSION 2.0")
     logger.info(DIRECTIVE_ID)
+    logger.info("CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001")
     logger.info(f"Interval: {INTERVAL_MINUTES} minutes")
     logger.info(f"Max per cycle: {MAX_HYPOTHESES_PER_CYCLE}")
-    logger.info("FROZEN WEIGHTS (G1.5 Compliant):")
+    logger.info("FROZEN WEIGHTS (G1.5 Compliant - UNCHANGED):")
     logger.info(f"  Evidence Density: {WEIGHT_EVIDENCE_DENSITY}")
     logger.info(f"  Causal Depth: {WEIGHT_CAUSAL_DEPTH}")
     logger.info(f"  Data Freshness: {WEIGHT_DATA_FRESHNESS}")
     logger.info(f"  Cross-Agent Agreement: {WEIGHT_CROSS_AGENT_AGREEMENT}")
     logger.info(f"  Decay Rate: {DECAY_RATE_PER_HOUR}/hour (max {MAX_DECAY_PENALTY})")
+    logger.info("INPUT VALIDITY GATES: ACTIVE (v2.0)")
     logger.info("=" * 60)
 
     cycle = 0

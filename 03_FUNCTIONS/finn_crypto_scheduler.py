@@ -3,6 +3,7 @@
 FINN CRYPTO LEARNING SCHEDULER
 ==============================
 CEO-DIR-2026-CRYPTO-LEARNING-SCHEDULER-001
+CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001 (v2.0)
 
 PURPOSE: 24/7 continuous hypothesis generation for crypto assets.
          Independent of equity market session state.
@@ -14,6 +15,11 @@ CONSTRAINTS:
 - Output: hypothesis_canon (learning_only=TRUE)
 - No execution, allocation, decision rights
 - Fail-closed on missing evidence
+
+REMEDIATION v2.0 (2026-01-27):
+- generation_regime = 'CRYPTO_DIVERSIFIED_POST_FIX' for new hypotheses
+- Throttled to 1 hypothesis per cycle (was 2)
+- causal_depth now varies by theory (2, 3, 5) instead of constant 3
 
 Authority: ADR-020 (ACI), ADR-016 (DEFCON), Migration 347-348
 Classification: G4_PRODUCTION_SCHEDULER
@@ -260,9 +266,10 @@ def generate_crypto_hypothesis(theory: Dict[str, Any], context: Dict[str, Any]) 
                     generator_id,
                     semantic_hash,
                     asset_class,
-                    learning_only
+                    learning_only,
+                    generation_regime
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE, 'CRYPTO_DIVERSIFIED_POST_FIX'
                 )
                 RETURNING canon_id
             """, (
@@ -339,9 +346,11 @@ def run_learning_cycle(cycle_num: int) -> Dict[str, Any]:
         results['nodes_checked'] = len(nodes)
         logger.info(f"Found {len(nodes)} IoS-007 learning nodes")
 
-        # Generate hypotheses from theories (limit to 2 per cycle to avoid spam)
+        # Generate hypotheses from theories
+        # CEO-DIR-2026-G1.5-INPUT-VALIDITY-REMEDIATION-001: Throttled to 1 per cycle
+        # Purpose: Allow FINN-E/FINN-T to catch up for generator diversity
         hypotheses_this_cycle = 0
-        max_per_cycle = 2
+        max_per_cycle = 1  # THROTTLED from 2 to 1
 
         for theory in theories:
             if hypotheses_this_cycle >= max_per_cycle:
