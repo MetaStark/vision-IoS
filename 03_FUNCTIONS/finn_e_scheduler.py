@@ -16,7 +16,12 @@ CONSTRAINTS:
 Authority: ADR-020 (ACI), ADR-016 (DEFCON), Migration 353
 Classification: G4_PRODUCTION_SCHEDULER
 Executor: STIG (EC-003)
+
+CHANGE LOG:
+- v2.0 (2026-01-27): CEO-DIR-2026-P0-INPUT-REPAIR - Added empty symbol gate
 """
+
+FINN_E_VERSION = "2.0"
 
 import os
 import sys
@@ -251,9 +256,14 @@ def generate_hypothesis_from_error(error: Dict) -> Optional[str]:
         rationale = build_error_hypothesis_rationale(error)
         direction = map_error_to_hypothesis_direction(error)
 
-        # Determine asset universe
-        symbol = error.get('symbol', 'SPY')
-        asset_class = error.get('asset_class', 'EQUITY')
+        # Determine asset universe (CEO-DIR-2026-P0-INPUT-REPAIR: handle empty symbols)
+        symbol = error.get('symbol') or None
+        asset_class = error.get('asset_class') or 'US_EQUITY'
+
+        # HARD GATE: Reject errors without valid symbol
+        if not symbol or symbol.strip() == '':
+            logger.warning(f"Skipping error {error.get('error_code')} - no valid symbol")
+            return None
 
         # Build regime validity from error context
         regime_validity = []
