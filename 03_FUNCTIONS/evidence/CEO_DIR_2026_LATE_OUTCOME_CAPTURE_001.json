@@ -1,0 +1,86 @@
+{
+  "directive_id": "CEO-DIR-2026-LATE-OUTCOME-CAPTURE-001",
+  "title": "Late Factual Reconciliation - Economic Event Outcomes",
+  "status": "EXECUTED",
+  "executed_at": "2026-01-27T20:47:00+01:00",
+  "executor": "STIG-PANEL",
+  "classification": "DATA-INTEGRITY / AUDIT-TRAIL",
+
+  "ceo_constraints_enforced": {
+    "learning_verdict": "LATE_CAPTURED",
+    "recorded_within_24h": false,
+    "g15_calibration_excluded": true,
+    "retroactive_interpretation_prohibited": true
+  },
+
+  "permitted_usage": [
+    "IoS-010 learning completeness",
+    "Historical audit trail",
+    "Future event-handling validation"
+  ],
+
+  "prohibited_usage": [
+    "Pre-tier score calibration",
+    "Generator evaluation",
+    "Tier-1 performance metrics",
+    "G1.5 POST_FIX calibration analyses"
+  ],
+
+  "outcomes_captured": [
+    {
+      "outcome_id": "8ae017ff-1e75-4d5b-badf-bb1c50c5f51b",
+      "hypothesis_id": "1fa0ed0d-222c-4ecb-b682-b1110f84e012",
+      "event": "US Jobless Claims",
+      "event_time": "2026-01-23T14:30:00+01:00",
+      "actual_value": 212000,
+      "consensus_value": 215000,
+      "surprise_pct": -1.4,
+      "actual_direction": "BULLISH",
+      "evaluation_hours": 102,
+      "learning_verdict": "LATE_CAPTURED"
+    },
+    {
+      "outcome_id": "a695c221-2bdb-48d1-97aa-4802f0010183",
+      "hypothesis_id": "a2d1c0e1-051f-443b-85d6-bf343f411b9c",
+      "event": "BOJ Rate Decision",
+      "event_time": "2026-01-24T04:00:00+01:00",
+      "actual_value": 0.75,
+      "consensus_value": 0.75,
+      "surprise_pct": 0,
+      "actual_direction": "NEUTRAL",
+      "evaluation_hours": 89,
+      "learning_verdict": "LATE_CAPTURED"
+    },
+    {
+      "outcome_id": "9f4d0730-6f6c-47e9-a175-bf4afec5172b",
+      "hypothesis_id": "2891a041-3dc6-48ab-bc4c-e104ebae7ade",
+      "event": "ISM Services PMI",
+      "event_time": "2026-01-24T15:45:00+01:00",
+      "actual_value": 54.6,
+      "consensus_value": 54.2,
+      "surprise_pct": 0.7,
+      "actual_direction": "BULLISH",
+      "evaluation_hours": 77,
+      "learning_verdict": "LATE_CAPTURED"
+    }
+  ],
+
+  "schema_modification": {
+    "table": "fhq_learning.expectation_outcome_ledger",
+    "constraint": "expectation_outcome_ledger_learning_verdict_check",
+    "change": "Added 'LATE_CAPTURED' to valid learning_verdict values",
+    "rationale": "CEO requirement for explicit late capture classification"
+  },
+
+  "verification": {
+    "overdue_before": 3,
+    "overdue_after": 0,
+    "complete_after": 3,
+    "data_source": "fhq_calendar.calendar_events",
+    "data_integrity": "VERIFIED"
+  },
+
+  "rationale": "Capturing late but factual outcomes is strictly superior to leaving known truth unrecorded. This action repairs data completeness without contaminating the ongoing G1.5 experiment.",
+
+  "ceo_approval": "2026-01-27T20:45:00+01:00"
+}
