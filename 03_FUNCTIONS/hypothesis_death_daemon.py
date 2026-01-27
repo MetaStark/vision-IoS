@@ -3,16 +3,22 @@
 HYPOTHESIS DEATH DAEMON
 ========================
 CEO-DIR-2026-HYPOTHESIS-DEATH-001
+CEO-DIR-2026-HYPOTHESIS-DEATH-002 (ACTIVE processing)
 
 PURPOSE: Process expired hypotheses and mark them as FALSIFIED.
          This enables the G1.5 calibration experiment to accumulate
          deaths with pre_tier_score_at_birth for Spearman analysis.
 
 CONSTRAINTS:
-- Only process hypotheses where status = 'DRAFT'
-- Only kill hypotheses past their expected_timeframe_hours
+- Process hypotheses where status = 'DRAFT' OR 'ACTIVE'
+- Kill hypotheses past their expected_timeframe_hours
 - Set death_timestamp, time_to_falsification_hours
-- Count towards G1.5 experiment (0/30 deaths)
+- Count towards G1.5 experiment (30 deaths target)
+
+FIX (2026-01-27): Added ACTIVE hypothesis processing.
+- ACTIVE hypotheses that exceeded timeframe were not being falsified
+- Tier-1 promoted DRAFT → ACTIVE before time-based expiration
+- Now both DRAFT and ACTIVE expired hypotheses are processed
 
 Authority: ADR-020 (ACI), ADR-016 (DEFCON), G1.5 Experiment
 Classification: G4_PRODUCTION_DAEMON
@@ -42,7 +48,7 @@ DB_CONFIG = {
 # Daemon configuration
 INTERVAL_MINUTES = 15  # Check every 15 minutes
 DAEMON_NAME = 'hypothesis_death_daemon'
-MAX_DEATHS_PER_CYCLE = 10  # Process up to 10 deaths per cycle
+MAX_DEATHS_PER_CYCLE = 50  # Increased from 10 to clear ACTIVE backlog (CEO-DIR-2026-HYPOTHESIS-DEATH-002)
 
 # Setup logging
 log_dir = 'C:/fhq-market-system/vision-ios/logs'
@@ -122,7 +128,12 @@ def update_daemon_heartbeat(status: str = 'HEALTHY', metadata: dict = None):
 
 
 def get_expired_hypotheses() -> List[Dict[str, Any]]:
-    """Find DRAFT hypotheses that have exceeded their expected_timeframe_hours."""
+    """
+    Find DRAFT and ACTIVE hypotheses that have exceeded their expected_timeframe_hours.
+
+    CEO-DIR-2026-HYPOTHESIS-DEATH-002: Now includes ACTIVE status.
+    ACTIVE hypotheses were being promoted by Tier-1 but never falsified on expiration.
+    """
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -131,13 +142,15 @@ def get_expired_hypotheses() -> List[Dict[str, Any]]:
                     canon_id,
                     hypothesis_code,
                     generator_id,
+                    status,
+                    tier1_result,
                     created_at,
                     expected_timeframe_hours,
                     pre_tier_score_at_birth,
                     created_at + (expected_timeframe_hours || ' hours')::interval as death_time,
                     EXTRACT(EPOCH FROM (NOW() - created_at))/3600 as hours_since_creation
                 FROM fhq_learning.hypothesis_canon
-                WHERE status = 'DRAFT'
+                WHERE status IN ('DRAFT', 'ACTIVE')
                   AND expected_timeframe_hours IS NOT NULL
                   AND NOW() > created_at + (expected_timeframe_hours || ' hours')::interval
                 ORDER BY created_at ASC
@@ -160,14 +173,24 @@ def process_hypothesis_death(hypothesis: Dict[str, Any]) -> bool:
     - death_timestamp = NOW()
     - time_to_falsification_hours = hours from creation to death
     - falsified_at = NOW()
+
+    CEO-DIR-2026-HYPOTHESIS-DEATH-002: Now handles both DRAFT and ACTIVE status.
     """
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
             # Calculate time to death
             hours_lived = hypothesis['hours_since_creation']
+            prev_status = hypothesis.get('status', 'UNKNOWN')
+            tier1_result = hypothesis.get('tier1_result', 'NONE')
 
-            # Update the hypothesis
+            # Build annihilation reason based on previous status
+            if prev_status == 'ACTIVE':
+                reason = f'HORIZON_EXPIRED_ACTIVE: Was {tier1_result}, exceeded {hypothesis["expected_timeframe_hours"]}h without market validation'
+            else:
+                reason = 'HORIZON_EXPIRED: Exceeded expected_timeframe_hours without validation'
+
+            # Update the hypothesis - now accepts both DRAFT and ACTIVE
             cur.execute("""
                 UPDATE fhq_learning.hypothesis_canon
                 SET
@@ -177,22 +200,24 @@ def process_hypothesis_death(hypothesis: Dict[str, Any]) -> bool:
                     time_to_falsification_hours = %s,
                     last_updated_at = NOW(),
                     last_updated_by = 'hypothesis_death_daemon',
-                    annihilation_reason = 'HORIZON_EXPIRED: Exceeded expected_timeframe_hours without validation'
+                    annihilation_reason = %s
                 WHERE canon_id = %s
-                  AND status = 'DRAFT'
+                  AND status IN ('DRAFT', 'ACTIVE')
                 RETURNING hypothesis_code
-            """, (hours_lived, hypothesis['canon_id']))
+            """, (hours_lived, reason, hypothesis['canon_id']))
 
             result = cur.fetchone()
             if result:
                 conn.commit()
 
-                # Log the death
+                # Log the death with status transition
                 has_score = hypothesis.get('pre_tier_score_at_birth') is not None
-                score_str = f"score={hypothesis['pre_tier_score_at_birth']}" if has_score else "NO_SCORE"
+                score_str = f"score={hypothesis['pre_tier_score_at_birth']:.2f}" if has_score else "NO_SCORE"
 
                 logger.info(
                     f"DEATH: {hypothesis['hypothesis_code']} | "
+                    f"{prev_status}->FALSIFIED | "
+                    f"tier1={tier1_result} | "
                     f"generator={hypothesis['generator_id']} | "
                     f"lived={hours_lived:.1f}h | "
                     f"horizon={hypothesis['expected_timeframe_hours']}h | "
@@ -205,7 +230,7 @@ def process_hypothesis_death(hypothesis: Dict[str, Any]) -> bool:
             else:
                 conn.rollback()
                 conn.close()
-                logger.warning(f"Hypothesis {hypothesis['hypothesis_code']} already processed or not in DRAFT status")
+                logger.warning(f"Hypothesis {hypothesis['hypothesis_code']} already processed or not in DRAFT/ACTIVE status")
                 return False
 
     except Exception as e:
@@ -287,7 +312,8 @@ def run_death_cycle() -> Dict[str, Any]:
 def main():
     """Main daemon loop."""
     logger.info("=" * 60)
-    logger.info("HYPOTHESIS DEATH DAEMON STARTING")
+    logger.info("HYPOTHESIS DEATH DAEMON STARTING - VERSION 2.0")
+    logger.info("CEO-DIR-2026-HYPOTHESIS-DEATH-002: Now processes DRAFT + ACTIVE")
     logger.info(f"Interval: {INTERVAL_MINUTES} minutes")
     logger.info(f"Max deaths per cycle: {MAX_DEATHS_PER_CYCLE}")
     logger.info("Purpose: Process expired hypotheses for G1.5 calibration")
