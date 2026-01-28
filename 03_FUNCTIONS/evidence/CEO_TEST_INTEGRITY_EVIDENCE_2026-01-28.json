@@ -1,0 +1,140 @@
+{
+  "report_id": "CEO_TEST_INTEGRITY_2026-01-28",
+  "generated_at": "2026-01-28T17:44:15+01:00",
+  "generated_by": "STIG (EC-003)",
+  "database": "PostgreSQL 17.6 @ 127.0.0.1:54322",
+
+  "section_a_test_registry_inventory": {
+    "total_test_tables": 64,
+    "primary_registries": [
+      {"schema": "fhq_learning", "table": "experiment_registry", "columns": 25},
+      {"schema": "fhq_research", "table": "test_registry", "columns": 14},
+      {"schema": "fhq_calendar", "table": "test_registry", "columns": 10}
+    ],
+    "g15_formal_registration": false,
+    "g15_binding_mechanism": "implicit via generation_regime"
+  },
+
+  "section_b_cohort_binding": {
+    "binding_column": "generation_regime",
+    "has_test_id_fk": false,
+    "cohorts": [
+      {
+        "regime": "STANDARD",
+        "total": 195,
+        "scored": 163,
+        "deaths": 124,
+        "first_hypothesis": "2026-01-23T21:39:32.042Z",
+        "last_hypothesis": "2026-01-28T17:17:51.955Z",
+        "unique_generators": 4
+      },
+      {
+        "regime": "CRYPTO_DEGENERATE_PRE_FIX",
+        "total": 331,
+        "scored": 330,
+        "deaths": 170,
+        "first_hypothesis": "2026-01-25T18:14:02.233Z",
+        "last_hypothesis": "2026-01-27T16:13:42.829Z",
+        "unique_generators": 1
+      },
+      {
+        "regime": "CRYPTO_DIVERSIFIED_POST_FIX",
+        "total": 81,
+        "scored": 76,
+        "deaths": 0,
+        "first_hypothesis": "2026-01-27T20:31:13.217Z",
+        "last_hypothesis": "2026-01-28T17:35:58.599Z",
+        "unique_generators": 1
+      }
+    ]
+  },
+
+  "section_c_isolation_checks": {
+    "collision_checks": {
+      "canon_id_collisions": 0,
+      "hypothesis_code_collisions": 0,
+      "cross_regime_hypotheses": 0
+    },
+    "temporal_isolation": {
+      "prefix_end": "2026-01-27T16:13:42.829Z",
+      "postfix_start": "2026-01-27T20:31:13.217Z",
+      "gap_hours": 4.3,
+      "clean_separation": true
+    },
+    "generator_analysis": {
+      "finn_crypto_scheduler": {
+        "regimes": ["CRYPTO_DEGENERATE_PRE_FIX", "CRYPTO_DIVERSIFIED_POST_FIX", "STANDARD"],
+        "cross_regime": true,
+        "isolation_risk": "LOW - version controlled"
+      }
+    }
+  },
+
+  "section_d_metric_semantics": {
+    "g15_columns_verified": [
+      "pre_tier_score_at_birth",
+      "time_to_falsification_hours",
+      "causal_depth_score",
+      "evidence_density_score",
+      "data_freshness_score",
+      "cross_agent_agreement_score"
+    ],
+    "score_ranges": {
+      "CRYPTO_DEGENERATE_PRE_FIX": {"min": 63.96, "max": 71.00, "avg": 68.34},
+      "CRYPTO_DIVERSIFIED_POST_FIX": {"min": 60.96, "max": 81.00, "avg": 64.27},
+      "STANDARD": {"min": 49.99, "max": 81.00, "avg": 63.13}
+    },
+    "ttf_anomalies": {
+      "CRYPTO_DEGENERATE_PRE_FIX": {"dead_without_ttf": 0, "alive_with_ttf": 0},
+      "CRYPTO_DIVERSIFIED_POST_FIX": {"dead_without_ttf": 0, "alive_with_ttf": 0},
+      "STANDARD": {"dead_without_ttf": 122, "alive_with_ttf": 0}
+    },
+    "cds_variance": {
+      "postfix_unique_values": 3,
+      "postfix_stddev": 17.0236,
+      "variance_requirement": "SATISFIED"
+    }
+  },
+
+  "section_e_new_test_capability": {
+    "experiment_registry_exists": true,
+    "experiment_registry_schema": "fhq_learning",
+    "current_experiments": 2,
+    "formal_registration_possible": true,
+    "g15_not_yet_registered": true
+  },
+
+  "verdicts": {
+    "isolation": "PASS",
+    "cohort_binding": "IMPLICIT_ACCEPTABLE",
+    "metric_semantics": "PARTIAL - STANDARD anomaly, POST_FIX clean",
+    "contamination_risk": "LOW",
+    "new_test_capability": "YES",
+    "g15_operational_validity": "VALID",
+    "g15_formal_instrumentation": "NOT_INSTRUMENTED"
+  },
+
+  "recommendations": [
+    {"priority": "P1", "action": "Investigate STANDARD TTF anomaly", "rationale": "122 deaths missing TTF"},
+    {"priority": "P2", "action": "Register G1.5 in experiment_registry", "rationale": "Audit trail"},
+    {"priority": "P2", "action": "Add test_id FK to hypothesis_canon", "rationale": "Future formal binding"},
+    {"priority": "P3", "action": "Document implicit cohort pattern", "rationale": "Knowledge capture"}
+  ],
+
+  "gate2_readiness": {
+    "cohort_defined": true,
+    "isolation_verified": true,
+    "metrics_available": true,
+    "contamination_risk": "LOW",
+    "vega_infrastructure": true,
+    "can_proceed": true,
+    "blocking_requirement": "n >= 30 POST_FIX deaths"
+  },
+
+  "attestation": {
+    "queries_executed": 15,
+    "assumptions_made": 0,
+    "interpolations": 0,
+    "verdict": "G1.5 OPERATIONALLY VALID, NOT FORMALLY INSTRUMENTED"
+  }
+}
