@@ -359,6 +359,25 @@ export async function GET() {
       SELECT * FROM fhq_learning.v_authorized_validators
     `)
 
+    // CEO-DIR-2026-CALENDAR-IS-LAW: Phase 2 Alpha Satellite experiments
+    const phase2Result = await client.query(`
+      SELECT
+        experiment_code,
+        hypothesis_code,
+        calendar_status,
+        start_time,
+        expected_end_time,
+        end_time,
+        expected_timeframe_hours,
+        trigger_count,
+        outcome_count,
+        win_rate_pct,
+        experiment_status,
+        metadata
+      FROM fhq_learning.experiment_calendar
+      ORDER BY experiment_code
+    `)
+
     // Get current date info
     const dateResult = await client.query(`
       SELECT
@@ -727,6 +746,22 @@ export async function GET() {
         isActive: v.is_active,
         totalValidations: parseInt(v.total_validations) || 0,
         lastValidation: v.last_validation,
+      })),
+
+      // CEO-DIR-2026-CALENDAR-IS-LAW: Phase 2 Alpha Satellite experiments
+      phase2Experiments: phase2Result.rows.map((e: any) => ({
+        experimentCode: e.experiment_code,
+        hypothesisCode: e.hypothesis_code,
+        calendarStatus: e.calendar_status,
+        startTime: e.start_time,
+        expectedEndTime: e.expected_end_time,
+        endTime: e.end_time,
+        timeframeHours: parseInt(e.expected_timeframe_hours) || 0,
+        triggerCount: parseInt(e.trigger_count) || 0,
+        outcomeCount: parseInt(e.outcome_count) || 0,
+        winRatePct: parseFloat(e.win_rate_pct) || 0,
+        experimentStatus: e.experiment_status,
+        candidatePromotion: e.metadata?.candidate_promotion || false,
       })),
 
       // Metadata

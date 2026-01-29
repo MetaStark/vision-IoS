@@ -21,6 +21,7 @@ import {
   LearningVisibilityPanel,
   G15ProgressionPanel,
   SurvivalAnalysisPanel,
+  Phase2ExperimentsPanel,
   // Wave15StatusPanel - SUSPENDED until G1.5 completes (2026-02-07)
 } from '@/components/calendar'
 
@@ -110,6 +111,8 @@ interface CalendarData {
   g15Generators?: any[]
   g15Quartiles?: any[]
   g15Validators?: any[]
+  // CEO-DIR-2026-CALENDAR-IS-LAW: Phase 2 Alpha Satellite experiments
+  phase2Experiments?: any[]
   currentDate: {
     today: string
     year: number
@@ -333,6 +336,19 @@ export default function CalendarPage() {
           </div>
           <SurvivalAnalysisPanel />
         </div>
+
+        {/* CEO-DIR-2026-CALENDAR-IS-LAW: Phase 2 Alpha Satellite Experiments */}
+        {data?.phase2Experiments && data.phase2Experiments.length > 0 && (
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-cyan-500" />
+              <h2 className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                Phase 2 Alpha Satellite (CEO-DIR-2026-CALENDAR-IS-LAW)
+              </h2>
+            </div>
+            <Phase2ExperimentsPanel experiments={data.phase2Experiments} />
+          </div>
+        )}
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
