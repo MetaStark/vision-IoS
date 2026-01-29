@@ -1,0 +1,23 @@
+{
+  "evidence_type": "PHASE2_OUTCOME_DEADLINE_PROOF",
+  "directive": "CEO_DIR_2026_BLINDNESS_REMEDIATION",
+  "timestamp": "2026-01-29T19:44:39.673292+00:00",
+  "source_of_truth": "hypothesis_canon.expected_timeframe_hours (COLUMN, not JSONB)",
+  "code_proof": {
+    "file": "mechanism_alpha_outcome.py",
+    "line_137": "hc.expected_timeframe_hours  -- SELECT from column",
+    "line_143": "te.event_timestamp + make_interval(hours => hc.expected_timeframe_hours::int) < NOW()  -- deadline calc",
+    "line_383": "timeframe_h = int(trig[\"expected_timeframe_hours\"])  -- Python usage"
+  },
+  "timeframe_values": {
+    "TEST_A": 48,
+    "TEST_B": 24,
+    "TEST_C": 72,
+    "TEST_D": 48,
+    "TEST_E": 72,
+    "TEST_F": 24
+  },
+  "pending_triggers_all_non_null": true,
+  "pending_count": 10,
+  "verdict": "SAFE: column is populated, daemon uses column, all deadlines compute correctly"
+}
