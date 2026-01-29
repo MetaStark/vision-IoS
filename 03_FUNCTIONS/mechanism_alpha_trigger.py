@@ -431,11 +431,13 @@ def check_freshness(signal_date, historical=False):
     if signal_date is None:
         return False
     now = datetime.now(timezone.utc)
-    if hasattr(signal_date, 'tzinfo') and signal_date.tzinfo is None:
-        from datetime import timezone as tz
-        signal_date = signal_date.replace(tzinfo=tz.utc)
+    # signal_date may be date or datetime
+    if not isinstance(signal_date, datetime):
+        signal_date = datetime(signal_date.year, signal_date.month, signal_date.day, tzinfo=timezone.utc)
+    elif hasattr(signal_date, 'tzinfo') and signal_date.tzinfo is None:
+        signal_date = signal_date.replace(tzinfo=timezone.utc)
     age = now - signal_date
-    return age < timedelta(hours=48)
+    return age < timedelta(hours=24)
 
 
 def run_cycle(dry_run=False, historical=False):
@@ -475,6 +477,35 @@ def run_cycle(dry_run=False, historical=False):
             # Get crypto universe
             universe = get_crypto_universe(cur)
             logger.info(f"Asset universe: {len(universe)} crypto assets")
+
+            # DATA_LAG guard: block entire cycle if MAX(signal_date) > 24h stale
+            if not historical:
+                cur.execute("""
+                    SELECT MAX(signal_date) as max_date
+                    FROM fhq_indicators.volatility
+                    WHERE listing_id LIKE '%%-USD'
+                """)
+                max_row = cur.fetchone()
+                if max_row and max_row['max_date']:
+                    max_date = max_row['max_date']
+                    # signal_date is date type; convert to datetime for comparison
+                    if not isinstance(max_date, datetime):
+                        max_signal = datetime(max_date.year, max_date.month, max_date.day, tzinfo=timezone.utc)
+                    elif hasattr(max_date, 'tzinfo') and max_date.tzinfo is None:
+                        max_signal = max_date.replace(tzinfo=timezone.utc)
+                    else:
+                        max_signal = max_date
+                    data_age = datetime.now(timezone.utc) - max_signal
+                    if data_age > timedelta(hours=24):
+                        logger.error(f"DATA_LAG BLOCK: MAX(signal_date) = {max_row['max_date']}, "
+                                     f"age = {data_age}. Data stale > 24h. Cycle BLOCKED.")
+                        heartbeat(cur, status='DEGRADED', metadata={
+                            'reason': 'DATA_LAG',
+                            'max_signal_date': str(max_row['max_date']),
+                            'data_age_hours': round(data_age.total_seconds() / 3600, 1),
+                        })
+                        conn.commit()
+                        return 0, 0, 0
 
             # Pre-compute BBW percentiles (for TEST A + D)
             bbw_p10_cache = {}
