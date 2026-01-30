@@ -7,7 +7,7 @@ CEO-DIR-2026-BLINDNESS-REMEDIATION: Automated morning health check.
 Checks 4 critical verification points and sends results to CEO via Telegram:
 1. Indicator freshness (momentum + volatility signal_date = today or yesterday)
 2. Outcome daemon activity (overnight evaluations + pending count)
-3. Zombie daemon detection (HEALTHY/RUNNING with stale heartbeat > 2h)
+3. Zombie daemon detection (ACTIVE lifecycle, stale > 2x expected interval)
 4. Experiment pipeline summary (triggers + outcomes per experiment)
 
 Usage:
@@ -140,6 +140,84 @@ def check_indicator_freshness(conn) -> dict:
     }
 
 
+def check_indicator_pulse_health(conn) -> dict:
+    """CHECK 6: Indicator PULSE audit trail — staleness sentinel.
+
+    CEO-DIR-20260130-OPS-INDICATOR-PULSE-001 D4:
+    - Checks indicator_pulse_audit for recent successful runs
+    - Triggers governance incident on 48h breach
+    - DEFCON-aligned: staleness blocks downstream
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Last successful run
+        cur.execute("""
+            SELECT run_date, start_time, end_time, exit_code, duration_seconds
+            FROM fhq_monitoring.indicator_pulse_audit
+            WHERE exit_code = 0
+            ORDER BY start_time DESC
+            LIMIT 1
+        """)
+        last_run = cur.fetchone()
+
+        # Last run regardless of exit code
+        cur.execute("""
+            SELECT run_date, exit_code, start_time
+            FROM fhq_monitoring.indicator_pulse_audit
+            ORDER BY start_time DESC
+            LIMIT 1
+        """)
+        latest_any = cur.fetchone()
+
+        # Check Task Scheduler state (by checking last 3 runs)
+        cur.execute("""
+            SELECT exit_code, COUNT(*) as cnt
+            FROM (
+                SELECT exit_code
+                FROM fhq_monitoring.indicator_pulse_audit
+                ORDER BY start_time DESC
+                LIMIT 3
+            ) recent
+            GROUP BY exit_code
+        """)
+        recent_codes = {r['exit_code']: r['cnt'] for r in cur.fetchall()}
+
+    if not last_run:
+        return {
+            'pass': False,
+            'status': 'NO_AUDIT_DATA',
+            'last_success': None,
+            'hours_since_success': None,
+            'consecutive_failures': 0,
+            'detail': 'Ingen vellykket PULSE-kjøring funnet i audit trail'
+        }
+
+    hours_since = 0
+    if last_run['end_time']:
+        delta = datetime.now(timezone.utc) - last_run['end_time']
+        hours_since = round(delta.total_seconds() / 3600, 1)
+
+    # Consecutive failures (recent runs with non-zero exit)
+    consecutive_failures = recent_codes.get(1, 0) + recent_codes.get(2, 0) + recent_codes.get(3, 0)
+
+    # Staleness threshold: 36h = missed one daily run + buffer
+    stale = hours_since > 36
+    failing = consecutive_failures >= 3
+
+    return {
+        'pass': not stale and not failing,
+        'status': 'STALE' if stale else ('FAILING' if failing else 'HEALTHY'),
+        'last_success': str(last_run['end_time']) if last_run['end_time'] else None,
+        'hours_since_success': hours_since,
+        'last_exit_code': latest_any['exit_code'] if latest_any else None,
+        'consecutive_failures': consecutive_failures,
+        'detail': (
+            f"Siste vellykket: {hours_since}t siden"
+            if not stale else
+            f"FORELDET: {hours_since}t siden siste vellykkede kjøring (grense: 36t)"
+        )
+    }
+
+
 def check_outcome_daemon(conn) -> dict:
     """CHECK 2: Outcome daemon overnight activity."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -185,29 +263,43 @@ def check_outcome_daemon(conn) -> dict:
 
 
 def check_zombie_daemons(conn) -> dict:
-    """CHECK 3: Zombie daemon detection (HEALTHY/RUNNING but stale heartbeat)."""
+    """CHECK 3: Zombie daemon detection — truthful health model.
+
+    CEO-DIR-20260130-OPS-INDICATOR-PULSE-001 D3:
+    - Only checks daemons with lifecycle_status = 'ACTIVE'
+    - Uses expected_interval_minutes * 2 as staleness threshold (not flat 2h)
+    - Excludes RETIRED, DEPRECATED, SUSPENDED_BY_DESIGN
+    """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT daemon_name, status, last_heartbeat,
-                   EXTRACT(EPOCH FROM (NOW() - last_heartbeat))/3600 as age_hours
+                   EXTRACT(EPOCH FROM (NOW() - last_heartbeat))/3600 as age_hours,
+                   COALESCE(expected_interval_minutes, 30) as expected_minutes
             FROM fhq_monitoring.daemon_health
-            WHERE status IN ('HEALTHY', 'RUNNING')
-            AND last_heartbeat < NOW() - INTERVAL '2 hours'
+            WHERE lifecycle_status = 'ACTIVE'
+            AND status IN ('HEALTHY', 'RUNNING')
+            AND EXTRACT(EPOCH FROM (NOW() - last_heartbeat))/60
+                > COALESCE(expected_interval_minutes, 30) * 2
             ORDER BY last_heartbeat ASC
         """)
         zombies = cur.fetchall()
 
-        # Total daemon count
+        # Total daemon count (only ACTIVE lifecycle)
         cur.execute("""
             SELECT COUNT(*) as total,
                    SUM(CASE WHEN status IN ('HEALTHY', 'RUNNING') THEN 1 ELSE 0 END) as alive,
                    SUM(CASE WHEN status IN ('STOPPED', 'FAILED', 'DEGRADED') THEN 1 ELSE 0 END) as dead
             FROM fhq_monitoring.daemon_health
+            WHERE lifecycle_status = 'ACTIVE'
         """)
         counts = cur.fetchone()
 
     zombie_list = [
-        {'name': z['daemon_name'], 'age_hours': round(z['age_hours'], 1)}
+        {
+            'name': z['daemon_name'],
+            'age_hours': round(z['age_hours'], 1),
+            'expected_minutes': z['expected_minutes']
+        }
         for z in zombies
     ]
 
@@ -537,7 +629,7 @@ def build_assessment(results: dict) -> list:
     if not results['indicators']['pass']:
         lines.append(
             "⚠ Indikatordata er foreldet. "
-            "Kjør phase2_indicator_backfill.py manuelt."
+            "Verifiser FHQ_INDICATOR_PULSE i Task Scheduler."
         )
         lines.append("")
 
@@ -560,6 +652,7 @@ def build_next_best_action(results: dict) -> list:
     regime_counts = pipe.get('regime_counts', {})
     total_outcomes = pipe['total_outcomes']
     total_wins = pipe.get('total_wins', 0)
+    has_zombies = not results.get('zombies', {}).get('pass', True)
 
     # Identify the most advanced experiment
     active = [e for e in pipe['experiments'] if e['outcomes'] > 0]
@@ -626,13 +719,28 @@ def build_next_best_action(results: dict) -> list:
             )
 
     # 4. Concrete next action
+    actions = []
+    if has_zombies:
+        zombie_names = [z['name'] for z in results.get('zombies', {}).get('zombies', [])]
+        actions.append(
+            "Restart zombie-daemons: " + ", ".join(zombie_names)
+        )
     if not results['indicators']['pass']:
-        lines.append(
-            "→ Handling: Kjør indikator-backfill manuelt. "
+        actions.append(
+            "Indikatordata er foreldet. Verifiser FHQ_INDICATOR_PULSE "
+            "i Task Scheduler (06:00 daglig). "
             "Uten ferske data stopper hele pipelinen."
         )
+    pulse = results.get('indicator_pulse', {})
+    if pulse and not pulse.get('pass', True):
+        actions.append(
+            f"PULSE-sentinel: {pulse.get('status', 'UNKNOWN')}. "
+            f"{pulse.get('detail', '')}"
+        )
+
+    if actions:
+        lines.append("→ Handling: " + ". ".join(actions) + ".")
     elif total_outcomes < 30:
-        # Find the bottleneck
         lines.append(
             "→ Handling: Ingen manuell inngripen nødvendig. "
             "Systemet samler data automatisk. "
@@ -686,6 +794,14 @@ def build_telegram_message(results: dict, conn=None) -> str:
         sflag = "✓" if data['fresh'] else "✗"
         label = SOURCE_NAMES.get(src, src)
         lines.append(f"{sflag} {label}: {data['max_date']} ({data['assets']} aktiva)")
+
+    # 1b. INDICATOR PULSE
+    if 'indicator_pulse' in results:
+        pulse = results['indicator_pulse']
+        pulse_icon = "\u2713" if pulse['pass'] else "\u2717"
+        lines.append(f"{pulse_icon} Indikator-PULSE: {pulse['status']}")
+        if pulse.get('hours_since_success') is not None:
+            lines.append(f"  Siste vellykkede kjøring: {pulse['hours_since_success']}t siden")
 
     # 2. UTFALLSMOTOR
     out = results['outcomes']
@@ -761,11 +877,23 @@ def run_verification(send_tg: bool = True) -> dict:
     try:
         results = {
             'indicators': check_indicator_freshness(conn),
+            'indicator_pulse': check_indicator_pulse_health(conn),
             'outcomes': check_outcome_daemon(conn),
             'zombies': check_zombie_daemons(conn),
             'pipeline': check_experiment_pipeline(conn),
             'pipeline_health': check_pipeline_health(conn),
         }
+
+        # D5 fail-closed: if PULSE is stale, override indicator freshness to FAIL
+        if not results['indicator_pulse']['pass']:
+            if results['indicators']['pass']:
+                results['indicators']['pass'] = False
+                results['indicators']['override_reason'] = (
+                    'FAIL-CLOSED: indicator_pulse audit trail shows '
+                    + results['indicator_pulse'].get('status', 'UNKNOWN')
+                    + '. Data freshness cannot be trusted without verified pipeline.'
+                )
+                logger.warning("FAIL-CLOSED: Indicator freshness overridden by PULSE sentinel")
 
         all_pass = all(r['pass'] for r in results.values())
         results['overall'] = 'PASS' if all_pass else 'FAIL'
