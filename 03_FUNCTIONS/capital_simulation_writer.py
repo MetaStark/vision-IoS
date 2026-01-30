@@ -66,8 +66,9 @@ def find_eligible_shadow_entries(conn) -> list:
     """
     Find shadow_tier_registry entries eligible for capital simulation.
 
-    Eligible: shadow_result IN ('POSITIVE', 'AWAITING_EXIT', 'NO_TRADES_MATCHED')
-    and no existing capital_simulation_ledger entry.
+    Eligible: any terminal shadow_result (including NEGATIVE for measurement).
+    Excluded: CONTAMINATED only (broken lineage).
+    No existing capital_simulation_ledger entry.
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
@@ -89,7 +90,7 @@ def find_eligible_shadow_entries(conn) -> list:
                 ON str.source_hypothesis_id = hc.canon_id
             LEFT JOIN fhq_learning.capital_simulation_ledger csl
                 ON csl.hypothesis_id = str.source_hypothesis_id
-            WHERE str.shadow_result NOT IN ('CONTAMINATED', 'NEGATIVE')
+            WHERE str.shadow_result NOT IN ('CONTAMINATED')
             AND str.cross_contamination_detected = false
             AND csl.simulation_id IS NULL
             ORDER BY str.sampled_at
