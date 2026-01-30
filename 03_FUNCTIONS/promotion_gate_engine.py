@@ -478,7 +478,6 @@ def _create_eligibility_entry(conn, result: dict):
                 UPDATE fhq_learning.execution_eligibility_registry
                 SET confidence_score = %s,
                     risk_adjusted_score = %s,
-                    eligibility_score = %s,
                     is_eligible = false,
                     eligibility_reason = %s,
                     execution_mode = 'SHADOW',
@@ -492,7 +491,6 @@ def _create_eligibility_entry(conn, result: dict):
             """, (
                 metrics['deflated_sharpe'],
                 metrics['observed_sharpe'],
-                metrics['win_rate'],
                 f"Promotion gate PASS. DSR={metrics['deflated_sharpe']:.4f}, "
                 f"PBO={metrics['pbo_probability']:.4f}. Awaiting G4 for capital.",
                 hyp_id,
@@ -503,12 +501,12 @@ def _create_eligibility_entry(conn, result: dict):
             cur.execute("""
                 INSERT INTO fhq_learning.execution_eligibility_registry
                     (eligibility_code, hypothesis_id, tier_status,
-                     confidence_score, risk_adjusted_score, eligibility_score,
+                     confidence_score, risk_adjusted_score,
                      is_eligible, eligibility_reason,
                      execution_mode, live_capital_blocked, leverage_blocked,
                      ec022_dependency_blocked, created_by)
                 VALUES (%s, %s::uuid, 'SHADOW_CANDIDATE',
-                        %s, %s, %s,
+                        %s, %s,
                         false, %s,
                         'SHADOW', true, true,
                         true, 'STIG_PROMOTION_GATE_ENGINE')
@@ -517,7 +515,6 @@ def _create_eligibility_entry(conn, result: dict):
                 hyp_id,
                 metrics['deflated_sharpe'],
                 metrics['observed_sharpe'],
-                metrics['win_rate'],
                 f"Promotion gate PASS. DSR={metrics['deflated_sharpe']:.4f}, "
                 f"PBO={metrics['pbo_probability']:.4f}. Awaiting G4 for capital."
             ))
