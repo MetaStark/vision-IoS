@@ -91,14 +91,24 @@ def find_promoted_hypotheses(conn) -> list:
 def find_matching_shadow_trades(conn, hypothesis: dict) -> list:
     """Find shadow_trades that match a hypothesis by asset and direction."""
     asset_universe = hypothesis['asset_universe'] or []
-    direction = hypothesis['expected_direction']
+    raw_direction = hypothesis['expected_direction']
+
+    # Map hypothesis direction (BULLISH/BEARISH) to trade direction (LONG/SHORT)
+    direction_map = {
+        'BULLISH': 'LONG', 'BEARISH': 'SHORT', 'NEUTRAL': 'NEUTRAL',
+        'LONG': 'LONG', 'SHORT': 'SHORT',
+    }
+    direction = direction_map.get(raw_direction, raw_direction)
 
     if not asset_universe:
         logger.warning(f"  No asset_universe for {hypothesis['hypothesis_code']}")
         return []
 
+    hyp_id = str(hypothesis['hypothesis_id'])
+
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        # Match by asset_id IN asset_universe AND direction
+        # Match by source_hypothesis_id first (exact lineage), then
+        # fallback to asset+direction for legacy trades without lineage
         cur.execute("""
             SELECT trade_id, shadow_trade_ref, source_hypothesis_id,
                    asset_id, direction, entry_price, entry_time,
@@ -106,8 +116,9 @@ def find_matching_shadow_trades(conn, hypothesis: dict) -> list:
             FROM fhq_execution.shadow_trades
             WHERE asset_id = ANY(%s)
             AND UPPER(direction) = UPPER(%s)
+            AND (source_hypothesis_id = %s OR source_hypothesis_id IS NULL)
             ORDER BY entry_time
-        """, (asset_universe, direction))
+        """, (asset_universe, direction, hyp_id))
         return cur.fetchall()
 
 
