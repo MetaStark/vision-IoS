@@ -148,6 +148,32 @@ WHERE id = (SELECT MAX(id) FROM fhq_monitoring.indicator_pulse_audit);
 "@
         $auditSQL | & $psqlPath -h 127.0.0.1 -p 54322 -U postgres -d postgres -q 2>&1 | Out-File $LogFile -Append -Encoding utf8
         "Audit trail written to database (enriched)" | Out-File $LogFile -Append -Encoding utf8
+
+        # D3: Also write to run_ledger for unified monitoring
+        $runLedgerSQL = @"
+INSERT INTO fhq_monitoring.run_ledger
+(task_name, started_at, finished_at, exit_code, log_path,
+ rows_written_by_table, max_data_date_by_domain)
+VALUES
+('FHQ_INDICATOR_PULSE',
+ '$($startTime.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"))'::timestamptz,
+ '$($endTime.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"))'::timestamptz,
+ $exitCode,
+ '$($LogFile -replace '\\', '\\')',
+ (SELECT jsonb_build_object(
+    'momentum', (SELECT COUNT(*) FROM fhq_indicators.momentum WHERE signal_date = CURRENT_DATE),
+    'volatility', (SELECT COUNT(*) FROM fhq_indicators.volatility WHERE signal_date = CURRENT_DATE)
+ )),
+ (SELECT jsonb_build_object(
+    'latest_signal_date', GREATEST(
+        (SELECT MAX(signal_date)::text FROM fhq_indicators.momentum),
+        (SELECT MAX(signal_date)::text FROM fhq_indicators.volatility)
+    )
+ ))
+);
+"@
+        $runLedgerSQL | & $psqlPath -h 127.0.0.1 -p 54322 -U postgres -d postgres -q 2>&1 | Out-File $LogFile -Append -Encoding utf8
+        "Run ledger written" | Out-File $LogFile -Append -Encoding utf8
     } else {
         "WARNING: psql not found - audit trail not written to database" | Out-File $LogFile -Append -Encoding utf8
     }

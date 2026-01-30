@@ -362,6 +362,7 @@ def evaluate_experiment(conn, experiment: dict, dry_run: bool = False) -> dict:
     if not dry_run:
         _write_promotion_gate_audit(conn, result)
         _update_hypothesis_canon(conn, result)
+        _create_eligibility_entry(conn, result)
 
     return result
 
@@ -447,6 +448,82 @@ def _update_hypothesis_canon(conn, result: dict):
         ))
     conn.commit()
     logger.info(f"  Updated hypothesis_canon: tier1_result={tier1_result}")
+
+
+def _create_eligibility_entry(conn, result: dict):
+    """Auto-create eligibility entry when promotion gate PASS.
+
+    Fail-closed: all entries start with live_capital_blocked=true,
+    leverage_blocked=true, execution_mode='SHADOW'. G4 approval required
+    to unlock live capital.
+    """
+    if result['gate_result'] != 'PASS':
+        return
+
+    metrics = result['metrics']
+    hyp_id = result['hypothesis_id']
+    exp_code = result['experiment_code']
+    eligibility_code = f"ELIG_{exp_code}"
+
+    with conn.cursor() as cur:
+        # Check if entry already exists
+        cur.execute("""
+            SELECT eligibility_id FROM fhq_learning.execution_eligibility_registry
+            WHERE hypothesis_id = %s::uuid AND eligibility_code = %s
+        """, (hyp_id, eligibility_code))
+        existing = cur.fetchone()
+
+        if existing:
+            cur.execute("""
+                UPDATE fhq_learning.execution_eligibility_registry
+                SET confidence_score = %s,
+                    risk_adjusted_score = %s,
+                    eligibility_score = %s,
+                    is_eligible = false,
+                    eligibility_reason = %s,
+                    execution_mode = 'SHADOW',
+                    live_capital_blocked = true,
+                    leverage_blocked = true,
+                    ec022_dependency_blocked = true,
+                    evaluated_at = NOW(),
+                    expires_at = NOW() + INTERVAL '24 hours',
+                    created_by = 'STIG_PROMOTION_GATE_ENGINE'
+                WHERE hypothesis_id = %s::uuid AND eligibility_code = %s
+            """, (
+                metrics['deflated_sharpe'],
+                metrics['observed_sharpe'],
+                metrics['win_rate'],
+                f"Promotion gate PASS. DSR={metrics['deflated_sharpe']:.4f}, "
+                f"PBO={metrics['pbo_probability']:.4f}. Awaiting G4 for capital.",
+                hyp_id,
+                eligibility_code
+            ))
+            logger.info(f"  Updated eligibility entry: {eligibility_code}")
+        else:
+            cur.execute("""
+                INSERT INTO fhq_learning.execution_eligibility_registry
+                    (eligibility_code, hypothesis_id, tier_status,
+                     confidence_score, risk_adjusted_score, eligibility_score,
+                     is_eligible, eligibility_reason,
+                     execution_mode, live_capital_blocked, leverage_blocked,
+                     ec022_dependency_blocked, created_by)
+                VALUES (%s, %s::uuid, 'SHADOW_CANDIDATE',
+                        %s, %s, %s,
+                        false, %s,
+                        'SHADOW', true, true,
+                        true, 'STIG_PROMOTION_GATE_ENGINE')
+            """, (
+                eligibility_code,
+                hyp_id,
+                metrics['deflated_sharpe'],
+                metrics['observed_sharpe'],
+                metrics['win_rate'],
+                f"Promotion gate PASS. DSR={metrics['deflated_sharpe']:.4f}, "
+                f"PBO={metrics['pbo_probability']:.4f}. Awaiting G4 for capital."
+            ))
+            logger.info(f"  Created eligibility entry: {eligibility_code} (G4-blocked)")
+
+    conn.commit()
 
 
 def find_eligible_experiments(conn) -> list:

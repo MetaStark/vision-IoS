@@ -218,6 +218,166 @@ def check_indicator_pulse_health(conn) -> dict:
     }
 
 
+def check_promotion_gate_health(conn) -> dict:
+    """CHECK 7: Promotion gate daemon health — step 4 operational sentinel.
+
+    CEO-DIR-20260130-PIPELINE-UNBLOCK-001 D4:
+    - Checks run_ledger for recent FHQ_PROMOTION_GATE_PULSE runs
+    - Flags if daemon has consecutive failures or is stale (>2h)
+    - Fail-closed: if promotion gate not running, pipeline step 4 is blocked
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Check if run_ledger table exists
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'fhq_monitoring'
+                AND table_name = 'run_ledger'
+            ) as exists
+        """)
+        if not cur.fetchone()['exists']:
+            return {
+                'pass': False,
+                'status': 'NO_RUN_LEDGER',
+                'detail': 'run_ledger table does not exist'
+            }
+
+        # Last successful run
+        cur.execute("""
+            SELECT id, task_name, exit_code, started_at, finished_at,
+                   rows_written_by_table
+            FROM fhq_monitoring.run_ledger
+            WHERE task_name = 'FHQ_PROMOTION_GATE_PULSE'
+            AND exit_code = 0
+            ORDER BY started_at DESC
+            LIMIT 1
+        """)
+        last_success = cur.fetchone()
+
+        # Last 3 runs (any exit code)
+        cur.execute("""
+            SELECT exit_code
+            FROM fhq_monitoring.run_ledger
+            WHERE task_name = 'FHQ_PROMOTION_GATE_PULSE'
+            ORDER BY started_at DESC
+            LIMIT 3
+        """)
+        recent = cur.fetchall()
+
+        # Total runs today
+        cur.execute("""
+            SELECT COUNT(*) as runs_today
+            FROM fhq_monitoring.run_ledger
+            WHERE task_name = 'FHQ_PROMOTION_GATE_PULSE'
+            AND started_at::date = CURRENT_DATE
+        """)
+        runs_today = cur.fetchone()['runs_today']
+
+    if not last_success:
+        return {
+            'pass': len(recent) == 0,  # OK if no runs yet (new deployment)
+            'status': 'NO_DATA' if len(recent) == 0 else 'NO_SUCCESS',
+            'runs_today': runs_today,
+            'hours_since_success': None,
+            'consecutive_failures': len(recent),
+            'detail': 'Ingen vellykkede kjøringer registrert' if recent else 'Ny tjeneste — første kjøring venter'
+        }
+
+    hours_since = 0
+    if last_success['finished_at']:
+        delta = datetime.now(timezone.utc) - last_success['finished_at']
+        hours_since = round(delta.total_seconds() / 3600, 1)
+
+    consecutive_failures = 0
+    for r in recent:
+        if r['exit_code'] != 0:
+            consecutive_failures += 1
+        else:
+            break
+
+    stale = hours_since > 2.0  # Should run every 60 min
+    failing = consecutive_failures >= 3
+
+    return {
+        'pass': not stale and not failing,
+        'status': 'STALE' if stale else ('FAILING' if failing else 'HEALTHY'),
+        'runs_today': runs_today,
+        'hours_since_success': hours_since,
+        'consecutive_failures': consecutive_failures,
+        'detail': (
+            f"Siste vellykket: {hours_since}t siden, {runs_today} kjøringer i dag"
+            if not stale else
+            f"FORELDET: {hours_since}t siden siste vellykkede kjøring (grense: 2t)"
+        )
+    }
+
+
+def check_run_ledger_freshness(conn) -> dict:
+    """CHECK 8: Run ledger freshness for all critical tasks.
+
+    CEO-DIR-20260130-PIPELINE-UNBLOCK-001 D3:
+    Verifies that critical scheduled tasks are running on schedule.
+    """
+    critical_tasks = {
+        'FHQ_INDICATOR_PULSE': {'max_gap_hours': 36, 'description': 'Indikator-beregning'},
+        'FHQ_PROMOTION_GATE_PULSE': {'max_gap_hours': 2, 'description': 'Promoteringsport'},
+    }
+
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Check if run_ledger exists
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'fhq_monitoring'
+                AND table_name = 'run_ledger'
+            ) as exists
+        """)
+        if not cur.fetchone()['exists']:
+            return {'pass': True, 'status': 'NO_RUN_LEDGER', 'tasks': {}}
+
+        cur.execute("""
+            SELECT DISTINCT ON (task_name)
+                task_name, exit_code, started_at, finished_at
+            FROM fhq_monitoring.run_ledger
+            WHERE exit_code = 0
+            ORDER BY task_name, started_at DESC
+        """)
+        latest_by_task = {r['task_name']: r for r in cur.fetchall()}
+
+    results = {}
+    all_ok = True
+    for task_name, config in critical_tasks.items():
+        last = latest_by_task.get(task_name)
+        if not last:
+            results[task_name] = {
+                'fresh': True,  # No data yet = new deployment, not a failure
+                'hours_since': None,
+                'description': config['description']
+            }
+            continue
+
+        hours_since = 0
+        if last['finished_at']:
+            delta = datetime.now(timezone.utc) - last['finished_at']
+            hours_since = round(delta.total_seconds() / 3600, 1)
+
+        fresh = hours_since <= config['max_gap_hours']
+        if not fresh:
+            all_ok = False
+
+        results[task_name] = {
+            'fresh': fresh,
+            'hours_since': hours_since,
+            'max_gap_hours': config['max_gap_hours'],
+            'description': config['description']
+        }
+
+    return {
+        'pass': all_ok,
+        'tasks': results
+    }
+
+
 def check_outcome_daemon(conn) -> dict:
     """CHECK 2: Outcome daemon overnight activity."""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -803,6 +963,14 @@ def build_telegram_message(results: dict, conn=None) -> str:
         if pulse.get('hours_since_success') is not None:
             lines.append(f"  Siste vellykkede kjøring: {pulse['hours_since_success']}t siden")
 
+    # 1c. PROMOTION GATE PULSE
+    if 'promotion_gate' in results:
+        pg = results['promotion_gate']
+        pg_icon = "\u2713" if pg['pass'] else "\u2717"
+        lines.append(f"{pg_icon} Promoteringsport: {pg['status']}")
+        if pg.get('runs_today') is not None:
+            lines.append(f"  Kjøringer i dag: {pg['runs_today']}")
+
     # 2. UTFALLSMOTOR
     out = results['outcomes']
     lines.append(f"\n━━━ <b>2. UTFALLSMOTOR</b> ━━━")
@@ -882,6 +1050,8 @@ def run_verification(send_tg: bool = True) -> dict:
             'zombies': check_zombie_daemons(conn),
             'pipeline': check_experiment_pipeline(conn),
             'pipeline_health': check_pipeline_health(conn),
+            'promotion_gate': check_promotion_gate_health(conn),
+            'run_ledger': check_run_ledger_freshness(conn),
         }
 
         # D5 fail-closed: if PULSE is stale, override indicator freshness to FAIL
