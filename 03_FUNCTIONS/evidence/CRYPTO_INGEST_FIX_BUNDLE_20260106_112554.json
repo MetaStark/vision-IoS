@@ -1,0 +1,74 @@
+{
+  "directive": "CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001",
+  "issue": "CRYPTO_INGEST_GAP",
+  "timestamp": "2026-01-06T10:25:54.700418+00:00",
+  "root_cause": {
+    "summary": "Date-based skip logic treated midnight data as up-to-date",
+    "detail": "get_last_price_date() returns MAX(timestamp::date), losing time component. For crypto with 2026-01-06 00:00:00 (midnight), start_date=2026-01-07 > end_date=2026-01-06 \u2192 SKIP. Crypto trades 24/7 but was treated as \"up to date\" with 11+ hours of missing data.",
+    "affected_assets": [
+      "BTC-USD",
+      "ETH-USD",
+      "SOL-USD"
+    ],
+    "gap_start": "2026-01-06 00:00:00 UTC",
+    "gap_duration_hours": 11.3
+  },
+  "before": {
+    "BTC-USD": {
+      "latest": "2026-01-06 00:00:00",
+      "age_hrs": 11.3
+    },
+    "ETH-USD": {
+      "latest": "2026-01-06 00:00:00",
+      "age_hrs": 11.3
+    },
+    "SOL-USD": {
+      "latest": "2026-01-06 00:00:00",
+      "age_hrs": 11.3
+    }
+  },
+  "after": {
+    "BTC-USD": {
+      "latest": "2026-01-06 11:00:00",
+      "age_hrs": 0.42
+    },
+    "ETH-USD": {
+      "latest": "2026-01-06 11:00:00",
+      "age_hrs": 0.42
+    },
+    "SOL-USD": {
+      "latest": "2026-01-06 11:00:00",
+      "age_hrs": 0.42
+    }
+  },
+  "fixes_applied": [
+    {
+      "fix": "get_last_price_timestamp()",
+      "description": "New function returns full timestamp instead of date for accurate staleness check"
+    },
+    {
+      "fix": "CRYPTO_STALENESS_HOURS = 6",
+      "description": "Crypto uses timestamp-based check: fetch if stale > 6 hours"
+    },
+    {
+      "fix": "TimeFrame.Hour for crypto",
+      "description": "Use hourly bars for intraday crypto data instead of daily"
+    },
+    {
+      "fix": "OHLC fix_ohlc()",
+      "description": "Fix OHLC data to satisfy DB constraint (high=max, low=min)"
+    },
+    {
+      "fix": "Enhanced logging",
+      "description": "Log staleness hours, latest_ts per asset, warn on 0 rows written"
+    }
+  ],
+  "files_modified": [
+    "ios001_bulletproof_ingest.py"
+  ],
+  "verification": {
+    "all_under_1h": true,
+    "test_command": "python ios001_bulletproof_ingest.py --asset-class CRYPTO",
+    "result": "BTC/ETH/SOL correctly identified as fresh (0.42h < 6h threshold)"
+  }
+}

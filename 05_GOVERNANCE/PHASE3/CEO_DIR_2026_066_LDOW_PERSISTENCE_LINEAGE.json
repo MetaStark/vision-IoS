@@ -1,0 +1,126 @@
+{
+  "directive": "CEO-DIR-2026-066",
+  "title": "LDOW Persistence & Lineage Enforcement",
+  "subtitle": "Read-Only Capture of Damped Forecasts (No New Intervention)",
+  "directive_type": "OPERATIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T03:05:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "effective": "IMMEDIATE",
+
+  "ldow_reference": {
+    "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
+    "status": "ACTIVE",
+    "damper_version_hash": "da311f0ebb875122"
+  },
+
+  "context": {
+    "verified_by": "STIG",
+    "verification_results": {
+      "damper_operational": true,
+      "forecasts_damped_pct": 100,
+      "damper_version_locked": true,
+      "intervention_freeze_respected": true,
+      "lineage_data_generated": true
+    },
+    "purpose": "Persist deterministically so LDOW can measure trend between cycles"
+  },
+
+  "decision": {
+    "authorization": "Persist all damped forecasts from g2c-cycle to database with full IoS-010 lineage under LDOW",
+    "classification": {
+      "is_observation_data": true,
+      "is_new_intervention": false,
+      "is_damper_change": false,
+      "is_gate_change": false
+    }
+  },
+
+  "hard_requirements": {
+    "binding": true,
+
+    "section_3_1_persistence_scope": {
+      "required_fields": [
+        "raw_confidence",
+        "damped_confidence",
+        "dampening_delta",
+        "ceiling_applied",
+        "damper_version_hash",
+        "directive_ref",
+        "ldow_id"
+      ],
+      "directive_ref_value": "CEO-DIR-2026-063R",
+      "ldow_id_value": "30930951-2886-4ee8-a482-5b50f044e72b"
+    },
+
+    "section_3_2_lineage_contract": {
+      "ios_ref": "IoS-010",
+      "requirements": [
+        "parent_forecast_id points to original forecast",
+        "damper_version_hash is NOT NULL",
+        "raw and damped can be compared deterministically"
+      ],
+      "validation_rule": "Missing lineage = LDOW data invalid"
+    },
+
+    "section_3_3_non_intervention_guarantee": {
+      "forbidden_actions": [
+        "Change damper parameters",
+        "Introduce new FMCL tasks",
+        "Activate regime_sanity_gate",
+        "Modify feature space / training / model params"
+      ],
+      "violation_consequence": "LDOW invalidated"
+    }
+  },
+
+  "verification_duties": {
+    "section_4_1_stig_verification": {
+      "first_batch_requirements": {
+        "lineage_coverage": "100% of forecasts must have parent_forecast_id, damper_version_hash, raw_confidence, damped_confidence",
+        "latency_constraints": {
+          "p95_total": "<= 500ms",
+          "added_latency": "<= +50ms"
+        }
+      }
+    },
+    "section_4_2_vega_attestation": {
+      "attestation_scope": [
+        "This is data collection within LDOW",
+        "No intervention rules violated",
+        "Audit trail is complete"
+      ]
+    }
+  },
+
+  "outputs": {
+    "deliverable": "LDOW Cycle 0 Capture Summary",
+    "owner": "STIG",
+    "contents": [
+      "Number of forecasts persisted",
+      "Percentage with complete lineage (must be 100%)",
+      "damper_version_hash",
+      "p95 latency + added latency",
+      "Any deviations (expected: none)"
+    ]
+  },
+
+  "final_declaration": {
+    "purpose": "Ensure LDOW has correct, deterministic data trail to measure learning delta on",
+    "principle": "No action. No optimization. Only evidence."
+  },
+
+  "execution_assignment": {
+    "FINN_CRIO": "Persist with lineage",
+    "STIG": "Verify & evidence",
+    "VEGA": "Attest compliance"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T03:05:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

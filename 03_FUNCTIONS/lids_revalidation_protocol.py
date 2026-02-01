@@ -89,7 +89,7 @@ class LIDSRevalidationProtocol:
                     last_cnrp_completion,
                     fasting_requires_ceo_override
                 FROM fhq_governance.execution_state
-                WHERE state_key = 'PRIMARY'
+                ORDER BY state_id DESC
                 LIMIT 1
             """)
             result = cur.fetchone()
@@ -249,8 +249,17 @@ class LIDSRevalidationProtocol:
                         fasting_reason = NULL,
                         revalidation_required = FALSE,
                         last_cnrp_completion = NOW()
-                    WHERE state_key = 'PRIMARY'
+                    WHERE state_id = (SELECT MAX(state_id) FROM fhq_governance.execution_state)
                 """)
+
+                # CEO-DIR-2026-020 D4: Log state change to immutable audit trail
+                cur.execute("""
+                    SELECT fhq_governance.log_execution_state_change(
+                        'FASTING_END',
+                        %s,
+                        'LIDS_REVALIDATION'
+                    )
+                """, (reason,))
 
                 # Log the exit
                 cur.execute("""
@@ -319,7 +328,16 @@ class LIDSRevalidationProtocol:
                     fasting_reason = %s,
                     fasting_started_at = NOW(),
                     revalidation_required = TRUE
-                WHERE state_key = 'PRIMARY'
+                WHERE state_id = (SELECT MAX(state_id) FROM fhq_governance.execution_state)
+            """, (reason,))
+
+            # CEO-DIR-2026-020 D4: Log state change to immutable audit trail
+            cur.execute("""
+                SELECT fhq_governance.log_execution_state_change(
+                    'FASTING_START',
+                    %s,
+                    'LIDS_GATE'
+                )
             """, (reason,))
 
             # Log entry

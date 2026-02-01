@@ -1,0 +1,58 @@
+2026-01-06 03:00:07,182 | INFO | ======================================================================
+2026-01-06 03:00:07,183 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-01-06 03:00:07,183 | INFO | ======================================================================
+2026-01-06 03:00:07,183 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-01-06 03:00:07,183 | INFO | Executor: STIG (EC-003)
+2026-01-06 03:00:07,183 | INFO | Time: 2026-01-06T02:00:07.182480+00:00
+2026-01-06 03:00:07,184 | INFO | Asset Class Filter: CRYPTO
+2026-01-06 03:00:07,184 | INFO | Dry Run: False
+2026-01-06 03:00:07,184 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-01-06 03:00:07,184 | INFO | ======================================================================
+2026-01-06 03:00:07,298 | INFO | Found 46 canonical assets
+2026-01-06 03:00:08,241 | INFO | ============================================================
+2026-01-06 03:00:08,241 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-01-06 03:00:08,241 | INFO | Assets: 46, Rate limit: 200/min
+2026-01-06 03:00:08,241 | INFO | ============================================================
+2026-01-06 03:00:09,796 | WARNING |   VOLUME SANITY REJECT: GRT-USD 2026-01-06 00:00:00 volume=0.00 < threshold=1000 (source=ALPACA)
+2026-01-06 03:00:09,796 | WARNING |   [GRT-USD] ALL 1 rows REJECTED by volume sanity check (source=ALPACA)
+2026-01-06 03:00:10,762 | WARNING |   VOLUME SANITY REJECT: UNI-USD 2026-01-06 00:00:00 volume=39.00 < threshold=1000 (source=ALPACA)
+2026-01-06 03:00:10,763 | WARNING |   [UNI-USD] ALL 1 rows REJECTED by volume sanity check (source=ALPACA)
+2026-01-06 03:00:11,286 | INFO | Alpaca: Updated 0 assets, 0 remaining
+2026-01-06 03:00:11,286 | INFO | 
+============================================================
+2026-01-06 03:00:11,286 | INFO | VERIFICATION: Checking Data Freshness
+2026-01-06 03:00:11,286 | INFO | ============================================================
+2026-01-06 03:00:12,406 | WARNING | VERIFICATION FAILED: 3 assets are stale
+2026-01-06 03:00:12,408 | WARNING |   - BT.A.L: 22 days stale (last: 2025-12-15)
+2026-01-06 03:00:12,409 | WARNING |   - 1COV.DE: 14 days stale (last: 2025-12-23)
+2026-01-06 03:00:12,409 | WARNING |   - BRK.B: 4 days stale (last: 2026-01-02)
+2026-01-06 03:00:13,416 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 3 assets still stale after ingest! Updated: 0, Rows: 0
+2026-01-06 03:00:13,422 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2026-01-06 03:00:13,423 | CRITICAL | ALERT [CRITICAL]: ALL INGEST METHODS FAILED - No assets were updated! Manual intervention required.
+2026-01-06 03:00:13,429 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2026-01-06 03:00:13,431 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2026-01-06 03:00:13,434 | INFO | 
+======================================================================
+2026-01-06 03:00:13,434 | INFO | BULLETPROOF INGEST COMPLETE
+2026-01-06 03:00:13,435 | INFO | ======================================================================
+2026-01-06 03:00:13,435 | INFO | Status: FAILED
+2026-01-06 03:00:13,435 | INFO | Assets Updated: 0
+2026-01-06 03:00:13,436 | INFO | Rows Inserted: 0
+2026-01-06 03:00:13,436 | INFO | Providers Used: ALPACA
+2026-01-06 03:00:13,436 | INFO | Verification: FAILED (3 stale)
+2026-01-06 03:00:13,437 | INFO | Elapsed: 6.2s
+2026-01-06 03:00:13,437 | INFO | 
+Freshness by Asset Class:
+2026-01-06 03:00:13,437 | INFO |   CRYPTO: 46/50 fresh (92.0%)
+2026-01-06 03:00:13,438 | INFO |   EQUITY: 418/422 fresh (99.1%)
+2026-01-06 03:00:13,438 | INFO |   FX: 24/25 fresh (96.0%)
+2026-01-06 03:00:13,438 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_51965a04_20260106_030013.json
+2026-01-06 03:00:13,439 | INFO | ======================================================================

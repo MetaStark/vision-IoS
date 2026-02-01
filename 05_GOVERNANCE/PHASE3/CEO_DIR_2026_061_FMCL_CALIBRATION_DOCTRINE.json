@@ -1,0 +1,221 @@
+{
+  "directive": "CEO-DIR-2026-061",
+  "title": "FMCL Activation & Calibration-First Learning Doctrine",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T00:45:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "previous_directive_correction": "Originally drafted as CEO-DIR-2026-060, renumbered to 061 to avoid collision with Evidence Time Integrity Protocol",
+
+  "context": {
+    "declaration": "Med etableringen av M1_BOOTSTRAP_HOLDOUT_2026W02 har FjordHQ ACI krysset terskelen fra antatt intelligens til bevisbar, målbar intelligens.",
+    "system_state": {
+      "frozen_holdout": true,
+      "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+      "explicit_learning_baseline": true,
+      "brutal_honest_truth": true
+    },
+    "principle": "Tallene er ikke et avvik. De er startpunktet."
+  },
+
+  "bootstrap_baseline_interpretation": {
+    "binding": true,
+    "metrics": {
+      "brier_score": {
+        "value": 0.5158,
+        "interpretation": "Alvorlig feilkalibrering i 4-klasse probabilistisk system",
+        "baseline_clarification": "Må tolkes relativt til uniform baseline (0.75) og historisk intern referanse, ikke binær tilfeldighetsgrense",
+        "clarification": "Bedre enn tilfeldig baseline (0.75), men dårligere enn triviell klassifikator",
+        "not_evidence_of": "Manglende informasjonsinnhold"
+      },
+      "calibration_error": {
+        "value": 0.5411,
+        "interpretation": "Primær systemsvikt - systematisk overkonfidens",
+        "target_p0": 0.20,
+        "target_p1": 0.30
+      },
+      "stress_regime": {
+        "n": 3,
+        "hit_rate": 0.0,
+        "brier": 0.9873,
+        "interpretation": "Statistisk utilstrekkelig for strukturelle konklusjoner",
+        "strategic_status": "Uakseptabelt dersom mønsteret vedvarer",
+        "evidence_location": "fhq_governance.holdout_evaluation_results.evaluation_results->'by_regime'->'STRESS'"
+      }
+    },
+    "conclusion": "Systemet feiler ikke i signalproduksjon, men i sannsynlighetsdisiplin."
+  },
+
+  "strategic_doctrine": {
+    "binding": true,
+    "principle": "Calibration precedes intelligence. Confidence without calibration is noise.",
+    "prohibited_until_calibration_improved": [
+      "Feature-utvidelse",
+      "Regimesplitting",
+      "Asset-spesifikke inngrep"
+    ]
+  },
+
+  "fmcl_protocol": {
+    "p0_first_action": {
+      "task_name": "forecast_confidence_damper",
+      "priority": "P0",
+      "owner": "FINN",
+      "scope_definition": "forecast_confidence_damper opererer utelukkende post-prediksjon og pre-evaluering, og påvirker ikke feature space, treningsdata eller modellparametere",
+      "mandate": [
+        "Redusere systematisk overkonfidens",
+        "Tvinge predikert sannsynlighet innen historisk bevisbar envelope"
+      ],
+      "rationale": [
+        "Direkte adresserer Calibration Error = 0.5411",
+        "Lav risiko",
+        "Ingen semantisk endring av modell",
+        "Fullt reversibel",
+        "Audit-vennlig"
+      ],
+      "learning_mode_status": "Eksplisitt tillatt",
+      "prerequisite": "FINN/STIG må opprette task i fhq_governance.task_registry før aktivering",
+      "rollback_trigger": "Hvis Brier Score øker (forverres), reversér damper og logg som FMCL_ROLLBACK",
+      "success_criteria": {
+        "p1_success": "calibration_error < 0.30",
+        "p0_success": "calibration_error < 0.20"
+      }
+    },
+    "p1_secondary": {
+      "task_name": "regime_sanity_gate",
+      "priority": "P1",
+      "owner": "FINN",
+      "mandate": [
+        "Eliminere anti-korrelerte prediksjoner",
+        "Spesielt i BEAR og STRESS-overganger"
+      ],
+      "prerequisite": "Skal ikke aktiveres før første kalibreringsdelta er observert"
+    }
+  },
+
+  "stress_regime_handling": {
+    "decision": "EXPLICIT_NON_ACTION",
+    "rationale": "Beskytter systemet mot tail-risk-overfitting",
+    "prohibited": [
+      "STRESS-regime optimalisering",
+      "Strukturendringer basert på N=3"
+    ],
+    "permitted": [
+      "Logging",
+      "Tagging",
+      "Observasjon"
+    ]
+  },
+
+  "vega_attestation_gate": {
+    "gate_type": "G3_TO_G4",
+    "hard_gate": true,
+    "required_attestations": [
+      {
+        "item": "Holdout-isolasjon verifikasjon",
+        "artifact": "fhq_governance.frozen_holdout_registry",
+        "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53"
+      },
+      {
+        "item": "LEARNING_MODE overgang attestasjon",
+        "artifact": "fhq_governance.governance_actions_log",
+        "action_id": "be306904-7977-48c8-8c4b-6fa9d28fbcf0"
+      }
+    ],
+    "deliverable_format": "JSON attestation document with VEGA signature",
+    "without_vega_signature": [
+      "Ingen promotering til ARL-5",
+      "Ingen autonom eskalering"
+    ]
+  },
+
+  "lids_investigation": {
+    "owner": "STIG",
+    "status": "PARALLEL_NON_BLOCKING",
+    "investigation_items": [
+      {
+        "item": "118.8h freshness threshold",
+        "note": "Threshold not found in execution_state table - locate in codebase or add column",
+        "recommendation": "Add lids_freshness_threshold_hours column to execution_state for transparency"
+      },
+      {
+        "item": "58 LIDS blocks analysis",
+        "current_breakdown": {
+          "freshness_blocks": 33,
+          "confidence_blocks": 24,
+          "other": 1
+        },
+        "classification_required": ["Signal", "Støy", "Teknisk etterslep"]
+      }
+    ],
+    "constraints": [
+      "Skal ikke påvirke læringen",
+      "Skal ikke blokkere FMCL",
+      "Leveres som separat diagnostikk"
+    ]
+  },
+
+  "near_term_objectives": {
+    "type": "OBSERVABLE_NOT_PROMISED",
+    "metrics": [
+      {"metric": "Brier Score", "direction": "↓ (negativ delta)"},
+      {"metric": "Calibration Error", "target": "< 0.20 etter damper-aktivering"},
+      {"metric": "Neste holdout", "purpose": "Sammenlikning, ikke selvfeiring"}
+    ]
+  },
+
+  "implementation_requirements": {
+    "artifact_registration": {
+      "instruction": "STIG skal registrere dette direktivet i fhq_governance.artifact_time_registry",
+      "artifact_type": "CEO_DIRECTIVE",
+      "artifact_id": "CEO-DIR-2026-061",
+      "canonical_created_at": "FROM fhq_governance.v_canonical_clock"
+    },
+    "governance_action_logging": {
+      "instruction": "Alle FMCL-aktiveringer skal logges med governance_action_id",
+      "action_type": "FMCL_ACTIVATION"
+    },
+    "task_creation_prerequisite": {
+      "instruction": "FINN/STIG må opprette tasks i task_registry FØR aktivering",
+      "tasks_required": ["forecast_confidence_damper", "regime_sanity_gate"]
+    }
+  },
+
+  "final_declaration": {
+    "priorities": [
+      "Sannhet over tempo",
+      "Lukker den farligste feilkilden først",
+      "Holder systemet lærende, ikke reaktivt",
+      "Etablerer FjordHQ som epistemisk moden ACI"
+    ],
+    "principle": "Systemet skal nå lære riktig, ikke bare lære mer."
+  },
+
+  "execution_assignment": {
+    "FINN": "FMCL task creation and activation",
+    "STIG": "LIDS diagnostics, artifact registration, task_registry updates",
+    "VEGA": "G3→G4 attestation"
+  },
+
+  "database_verification": {
+    "verified_at": "2026-01-14T00:45:00Z",
+    "verified_by": "STIG",
+    "all_metrics_confirmed": true,
+    "sources": [
+      "fhq_governance.holdout_evaluation_results",
+      "fhq_governance.frozen_holdout_registry",
+      "fhq_governance.governance_actions_log",
+      "fhq_governance.execution_state",
+      "fhq_governance.v_learning_progress"
+    ]
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "prepared_by": "STIG",
+    "timestamp": "2026-01-14T00:45:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

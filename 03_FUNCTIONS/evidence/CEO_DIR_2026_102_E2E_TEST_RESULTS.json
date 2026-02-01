@@ -1,0 +1,600 @@
+{
+  "directive": "CEO-DIR-2026-102",
+  "title": "Epistemic E2E Test Results",
+  "phase": "B",
+  "generated_at": "2026-01-19T18:34:57.215833+00:00",
+  "generated_by": "STIG",
+  "agent_id": "EC-003_2026_PRODUCTION",
+  "test_matrix": {
+    "BTC-USD_T+1": {
+      "asset_id": "BTC-USD",
+      "horizon": "T+1",
+      "state_snapshot_hash": "sha256:5280df44aad1944d2ca165ff7daa0236c725360a823261818de27341b07abd8d",
+      "tests": {
+        "brier_score": {
+          "metric_name": "Brier Score",
+          "input_asset": "BTC-USD",
+          "input_timestamp": "2026-01-15T00:00:00+01:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n        SELECT\n            score_id,\n            asset_id,\n            forecast_probability,\n            actual_outcome,\n            squared_error,\n            forecast_timestamp,\n            outcome_timestamp,\n            forecast_horizon_hours,\n            regime\n        FROM fhq_governance.brier_score_ledger\n        WHERE asset_id = 'BTC-USD'\n        ORDER BY forecast_timestamp DESC\n        LIMIT 10\n        ",
+          "raw_data_hash": "sha256:a84bbbe1b95f36c7d579fe01d3c6e982e5f45c7db42fc560c167fb9014e7f543",
+          "transformation_function": "squared_error = (forecast_probability - actual_outcome)^2",
+          "output_value": "0.39134",
+          "output_location": "fhq_governance.brier_score_ledger.squared_error",
+          "ex_ante_proof": "forecast_timestamp < outcome_timestamp",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:5280df44aad1944d2ca165ff7daa0236c725360a823261818de27341b07abd8d",
+          "state_timestamp": "2026-01-19T18:34:57.246076+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "sample_size": 10,
+            "ex_ante_valid": true,
+            "avg_brier": "0.39134",
+            "lineage_verified": true
+          }
+        },
+        "hit_rate": {
+          "metric_name": "Hit Rate",
+          "input_asset": "BTC-USD",
+          "input_timestamp": "2026-01-19T18:34:57.260289+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n            SELECT\n                metric_date,\n                metric_type,\n                hit_rate_1d,\n                sample_size,\n                created_at\n            FROM fhq_research.crypto_regime_quality_metrics\n            ORDER BY metric_date DESC\n            LIMIT 5\n            ",
+          "raw_data_hash": "sha256:f2fedf02411d13e5567a153a05b0c0e93e71ac7be47f193d1de77e60d46aec0c",
+          "transformation_function": "correct_predictions / total_predictions",
+          "output_value": 0.0667,
+          "output_location": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "ex_ante_proof": "denominator explicit, scope isolated",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:5280df44aad1944d2ca165ff7daa0236c725360a823261818de27341b07abd8d",
+          "state_timestamp": "2026-01-19T18:34:57.260289+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "scope": "crypto",
+            "hit_rate": 0.0667,
+            "sample_size": 2
+          }
+        },
+        "regime_state": {
+          "metric_name": "Regime State",
+          "input_asset": "BTC-USD",
+          "input_timestamp": "2026-01-19T18:34:57.267288+00:00",
+          "forecast_horizon": "current",
+          "raw_data_query": "\n        SELECT\n            rs.ticker,\n            rs.date,\n            rs.regime_state,\n            rs.regime_prob_0,\n            rs.regime_prob_1,\n            rs.regime_prob_2,\n            rmr.perception_model_version\n        FROM fhq_research.regime_states rs\n        LEFT JOIN fhq_research.regime_model_registry rmr ON rmr.is_active = true\n        WHERE rs.ticker = 'BTC-USD'\n        ORDER BY rs.date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "HMM 3-state model",
+          "output_value": null,
+          "output_location": "fhq_research.regime_states.regime_state",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "current state",
+          "state_snapshot_hash": "sha256:5280df44aad1944d2ca165ff7daa0236c725360a823261818de27341b07abd8d",
+          "state_timestamp": "2026-01-19T18:34:57.267288+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "REGIME_UNDEFINED",
+            "reason_detail": "No regime data found for BTC-USD",
+            "learning_blocked": true,
+            "remediation": "Extend regime model to cover this asset",
+            "critical_gap": "Regime is classification only, not epistemic belief (CEO-DIR-2026-101)"
+          }
+        },
+        "gfi_impact": {
+          "metric_name": "GFI Impact",
+          "input_asset": "BTC-USD",
+          "input_timestamp": "2026-01-19",
+          "forecast_horizon": "N/A",
+          "raw_data_query": "\n        SELECT\n            geopolitical_friction_index,\n            tariff_normalized,\n            brics_settlement_normalized,\n            sanctions_normalized,\n            usd_reserve_delta_normalized,\n            observation_date,\n            created_at\n        FROM fhq_macro.geopolitical_friction_data\n        ORDER BY observation_date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:ed7a7e61b9cff305db38ec1564dfc235abb62002d3e1d95bb89509747454746f",
+          "transformation_function": "0.30*Tariff + 0.35*BRICS + 0.20*Sanctions + 0.15*USD_Reserve",
+          "output_value": 0.713745,
+          "output_location": "fhq_macro.geopolitical_friction_data.geopolitical_friction_index",
+          "ex_ante_proof": "daily observation",
+          "horizon_semantics": "daily observation",
+          "state_snapshot_hash": "sha256:5280df44aad1944d2ca165ff7daa0236c725360a823261818de27341b07abd8d",
+          "state_timestamp": "2026-01-19T18:34:57.268289+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "latest_gfi": 0.713745,
+            "impact_type": "Indirect",
+            "observation_date": "2026-01-19",
+            "components": {
+              "tariff": 0.6875,
+              "brics_settlement": 0.68,
+              "sanctions": 0.8875,
+              "usd_reserve_delta": 0.6133
+            }
+          }
+        }
+      },
+      "summary": {
+        "passed": 3,
+        "failed": 0,
+        "epistemic_null": 1,
+        "errors": 0,
+        "total": 4,
+        "pass_rate": 0.75
+      }
+    },
+    "ETH-USD_T+1": {
+      "asset_id": "ETH-USD",
+      "horizon": "T+1",
+      "state_snapshot_hash": "sha256:dc4f74dfd9e9a8c58bb16afa50c047dfba6aa38a3b0052eb6e91ee18cabe072f",
+      "tests": {
+        "brier_score": {
+          "metric_name": "Brier Score",
+          "input_asset": "ETH-USD",
+          "input_timestamp": "2026-01-15T00:00:00+01:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n        SELECT\n            score_id,\n            asset_id,\n            forecast_probability,\n            actual_outcome,\n            squared_error,\n            forecast_timestamp,\n            outcome_timestamp,\n            forecast_horizon_hours,\n            regime\n        FROM fhq_governance.brier_score_ledger\n        WHERE asset_id = 'ETH-USD'\n        ORDER BY forecast_timestamp DESC\n        LIMIT 10\n        ",
+          "raw_data_hash": "sha256:f7ced1c4b21be245a01ecce6826ffb4cbdf7b6b9be4f3ad2e0c82595fc2f46c6",
+          "transformation_function": "squared_error = (forecast_probability - actual_outcome)^2",
+          "output_value": "0.28862",
+          "output_location": "fhq_governance.brier_score_ledger.squared_error",
+          "ex_ante_proof": "forecast_timestamp < outcome_timestamp",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:dc4f74dfd9e9a8c58bb16afa50c047dfba6aa38a3b0052eb6e91ee18cabe072f",
+          "state_timestamp": "2026-01-19T18:34:57.271457+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "sample_size": 10,
+            "ex_ante_valid": true,
+            "avg_brier": "0.28862",
+            "lineage_verified": true
+          }
+        },
+        "hit_rate": {
+          "metric_name": "Hit Rate",
+          "input_asset": "ETH-USD",
+          "input_timestamp": "2026-01-19T18:34:57.271982+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n            SELECT\n                metric_date,\n                metric_type,\n                hit_rate_1d,\n                sample_size,\n                created_at\n            FROM fhq_research.crypto_regime_quality_metrics\n            ORDER BY metric_date DESC\n            LIMIT 5\n            ",
+          "raw_data_hash": "sha256:f2fedf02411d13e5567a153a05b0c0e93e71ac7be47f193d1de77e60d46aec0c",
+          "transformation_function": "correct_predictions / total_predictions",
+          "output_value": 0.0667,
+          "output_location": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "ex_ante_proof": "denominator explicit, scope isolated",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:dc4f74dfd9e9a8c58bb16afa50c047dfba6aa38a3b0052eb6e91ee18cabe072f",
+          "state_timestamp": "2026-01-19T18:34:57.271982+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "scope": "crypto",
+            "hit_rate": 0.0667,
+            "sample_size": 2
+          }
+        },
+        "regime_state": {
+          "metric_name": "Regime State",
+          "input_asset": "ETH-USD",
+          "input_timestamp": "2026-01-19T18:34:57.272980+00:00",
+          "forecast_horizon": "current",
+          "raw_data_query": "\n        SELECT\n            rs.ticker,\n            rs.date,\n            rs.regime_state,\n            rs.regime_prob_0,\n            rs.regime_prob_1,\n            rs.regime_prob_2,\n            rmr.perception_model_version\n        FROM fhq_research.regime_states rs\n        LEFT JOIN fhq_research.regime_model_registry rmr ON rmr.is_active = true\n        WHERE rs.ticker = 'ETH-USD'\n        ORDER BY rs.date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "HMM 3-state model",
+          "output_value": null,
+          "output_location": "fhq_research.regime_states.regime_state",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "current state",
+          "state_snapshot_hash": "sha256:dc4f74dfd9e9a8c58bb16afa50c047dfba6aa38a3b0052eb6e91ee18cabe072f",
+          "state_timestamp": "2026-01-19T18:34:57.272980+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "REGIME_UNDEFINED",
+            "reason_detail": "No regime data found for ETH-USD",
+            "learning_blocked": true,
+            "remediation": "Extend regime model to cover this asset",
+            "critical_gap": "Regime is classification only, not epistemic belief (CEO-DIR-2026-101)"
+          }
+        },
+        "gfi_impact": {
+          "metric_name": "GFI Impact",
+          "input_asset": "ETH-USD",
+          "input_timestamp": "2026-01-19",
+          "forecast_horizon": "N/A",
+          "raw_data_query": "\n        SELECT\n            geopolitical_friction_index,\n            tariff_normalized,\n            brics_settlement_normalized,\n            sanctions_normalized,\n            usd_reserve_delta_normalized,\n            observation_date,\n            created_at\n        FROM fhq_macro.geopolitical_friction_data\n        ORDER BY observation_date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:ed7a7e61b9cff305db38ec1564dfc235abb62002d3e1d95bb89509747454746f",
+          "transformation_function": "0.30*Tariff + 0.35*BRICS + 0.20*Sanctions + 0.15*USD_Reserve",
+          "output_value": 0.713745,
+          "output_location": "fhq_macro.geopolitical_friction_data.geopolitical_friction_index",
+          "ex_ante_proof": "daily observation",
+          "horizon_semantics": "daily observation",
+          "state_snapshot_hash": "sha256:dc4f74dfd9e9a8c58bb16afa50c047dfba6aa38a3b0052eb6e91ee18cabe072f",
+          "state_timestamp": "2026-01-19T18:34:57.273980+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "latest_gfi": 0.713745,
+            "impact_type": "Indirect",
+            "observation_date": "2026-01-19",
+            "components": {
+              "tariff": 0.6875,
+              "brics_settlement": 0.68,
+              "sanctions": 0.8875,
+              "usd_reserve_delta": 0.6133
+            }
+          }
+        }
+      },
+      "summary": {
+        "passed": 3,
+        "failed": 0,
+        "epistemic_null": 1,
+        "errors": 0,
+        "total": 4,
+        "pass_rate": 0.75
+      }
+    },
+    "SPY_T+1": {
+      "asset_id": "SPY",
+      "horizon": "T+1",
+      "state_snapshot_hash": "sha256:93701360f84fa4b5f152ea9b21dfb2948639f4102750b2fd4a4f8f7592b8a173",
+      "tests": {
+        "brier_score": {
+          "metric_name": "Brier Score",
+          "input_asset": "SPY",
+          "input_timestamp": "2026-01-14T00:00:00+01:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n        SELECT\n            score_id,\n            asset_id,\n            forecast_probability,\n            actual_outcome,\n            squared_error,\n            forecast_timestamp,\n            outcome_timestamp,\n            forecast_horizon_hours,\n            regime\n        FROM fhq_governance.brier_score_ledger\n        WHERE asset_id = 'SPY'\n        ORDER BY forecast_timestamp DESC\n        LIMIT 10\n        ",
+          "raw_data_hash": "sha256:557c7fbb4491c437f4a45aeba5701eee12e4658d7f2936fb4d6b71674eeb1784",
+          "transformation_function": "squared_error = (forecast_probability - actual_outcome)^2",
+          "output_value": "0.14562",
+          "output_location": "fhq_governance.brier_score_ledger.squared_error",
+          "ex_ante_proof": "forecast_timestamp < outcome_timestamp",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:93701360f84fa4b5f152ea9b21dfb2948639f4102750b2fd4a4f8f7592b8a173",
+          "state_timestamp": "2026-01-19T18:34:57.279348+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "sample_size": 10,
+            "ex_ante_valid": true,
+            "avg_brier": "0.14562",
+            "lineage_verified": true
+          }
+        },
+        "hit_rate": {
+          "metric_name": "Hit Rate",
+          "input_asset": "SPY",
+          "input_timestamp": "2026-01-19T18:34:57.279348+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n            SELECT\n                metric_date,\n                metric_type,\n                hit_rate_1d,\n                sample_size,\n                created_at\n            FROM fhq_research.crypto_regime_quality_metrics\n            ORDER BY metric_date DESC\n            LIMIT 5\n            ",
+          "raw_data_hash": "sha256:f2fedf02411d13e5567a153a05b0c0e93e71ac7be47f193d1de77e60d46aec0c",
+          "transformation_function": "correct_predictions / total_predictions",
+          "output_value": 0.0667,
+          "output_location": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "ex_ante_proof": "denominator explicit, scope isolated",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:93701360f84fa4b5f152ea9b21dfb2948639f4102750b2fd4a4f8f7592b8a173",
+          "state_timestamp": "2026-01-19T18:34:57.280347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "scope": "crypto",
+            "hit_rate": 0.0667,
+            "sample_size": 2
+          }
+        },
+        "regime_state": {
+          "metric_name": "Regime State",
+          "input_asset": "SPY",
+          "input_timestamp": "2026-01-19T18:34:57.280347+00:00",
+          "forecast_horizon": "current",
+          "raw_data_query": "\n        SELECT\n            rs.ticker,\n            rs.date,\n            rs.regime_state,\n            rs.regime_prob_0,\n            rs.regime_prob_1,\n            rs.regime_prob_2,\n            rmr.perception_model_version\n        FROM fhq_research.regime_states rs\n        LEFT JOIN fhq_research.regime_model_registry rmr ON rmr.is_active = true\n        WHERE rs.ticker = 'SPY'\n        ORDER BY rs.date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "HMM 3-state model",
+          "output_value": null,
+          "output_location": "fhq_research.regime_states.regime_state",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "current state",
+          "state_snapshot_hash": "sha256:93701360f84fa4b5f152ea9b21dfb2948639f4102750b2fd4a4f8f7592b8a173",
+          "state_timestamp": "2026-01-19T18:34:57.280347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "REGIME_UNDEFINED",
+            "reason_detail": "No regime data found for SPY",
+            "learning_blocked": true,
+            "remediation": "Extend regime model to cover this asset",
+            "critical_gap": "Regime is classification only, not epistemic belief (CEO-DIR-2026-101)"
+          }
+        },
+        "gfi_impact": {
+          "metric_name": "GFI Impact",
+          "input_asset": "SPY",
+          "input_timestamp": "2026-01-19",
+          "forecast_horizon": "N/A",
+          "raw_data_query": "\n        SELECT\n            geopolitical_friction_index,\n            tariff_normalized,\n            brics_settlement_normalized,\n            sanctions_normalized,\n            usd_reserve_delta_normalized,\n            observation_date,\n            created_at\n        FROM fhq_macro.geopolitical_friction_data\n        ORDER BY observation_date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:ed7a7e61b9cff305db38ec1564dfc235abb62002d3e1d95bb89509747454746f",
+          "transformation_function": "0.30*Tariff + 0.35*BRICS + 0.20*Sanctions + 0.15*USD_Reserve",
+          "output_value": 0.713745,
+          "output_location": "fhq_macro.geopolitical_friction_data.geopolitical_friction_index",
+          "ex_ante_proof": "daily observation",
+          "horizon_semantics": "daily observation",
+          "state_snapshot_hash": "sha256:93701360f84fa4b5f152ea9b21dfb2948639f4102750b2fd4a4f8f7592b8a173",
+          "state_timestamp": "2026-01-19T18:34:57.281347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "latest_gfi": 0.713745,
+            "impact_type": "Indirect",
+            "observation_date": "2026-01-19",
+            "components": {
+              "tariff": 0.6875,
+              "brics_settlement": 0.68,
+              "sanctions": 0.8875,
+              "usd_reserve_delta": 0.6133
+            }
+          }
+        }
+      },
+      "summary": {
+        "passed": 3,
+        "failed": 0,
+        "epistemic_null": 1,
+        "errors": 0,
+        "total": 4,
+        "pass_rate": 0.75
+      }
+    },
+    "GLD_T+1": {
+      "asset_id": "GLD",
+      "horizon": "T+1",
+      "state_snapshot_hash": "sha256:d4ba237867e9c5baf61cbad11cf1e2f61c3418f52d4f750af6f6b01d0a7ecb54",
+      "tests": {
+        "brier_score": {
+          "metric_name": "Brier Score",
+          "input_asset": "GLD",
+          "input_timestamp": "2026-01-19T18:34:57.284347+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n        SELECT\n            score_id,\n            asset_id,\n            forecast_probability,\n            actual_outcome,\n            squared_error,\n            forecast_timestamp,\n            outcome_timestamp,\n            forecast_horizon_hours,\n            regime\n        FROM fhq_governance.brier_score_ledger\n        WHERE asset_id = 'GLD'\n        ORDER BY forecast_timestamp DESC\n        LIMIT 10\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "squared_error = (forecast - outcome)^2",
+          "output_value": null,
+          "output_location": "fhq_governance.brier_score_ledger.squared_error",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:d4ba237867e9c5baf61cbad11cf1e2f61c3418f52d4f750af6f6b01d0a7ecb54",
+          "state_timestamp": "2026-01-19T18:34:57.284347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "ASSET_NOT_COVERED",
+            "reason_detail": "No Brier data found for GLD",
+            "learning_blocked": true,
+            "remediation": "Extend FINN model coverage to include this asset"
+          }
+        },
+        "hit_rate": {
+          "metric_name": "Hit Rate",
+          "input_asset": "GLD",
+          "input_timestamp": "2026-01-19T18:34:57.284347+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n            SELECT\n                metric_date,\n                metric_type,\n                hit_rate_1d,\n                sample_size,\n                created_at\n            FROM fhq_research.crypto_regime_quality_metrics\n            ORDER BY metric_date DESC\n            LIMIT 5\n            ",
+          "raw_data_hash": "sha256:f2fedf02411d13e5567a153a05b0c0e93e71ac7be47f193d1de77e60d46aec0c",
+          "transformation_function": "correct_predictions / total_predictions",
+          "output_value": 0.0667,
+          "output_location": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "ex_ante_proof": "denominator explicit, scope isolated",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:d4ba237867e9c5baf61cbad11cf1e2f61c3418f52d4f750af6f6b01d0a7ecb54",
+          "state_timestamp": "2026-01-19T18:34:57.284347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "scope": "crypto",
+            "hit_rate": 0.0667,
+            "sample_size": 2
+          }
+        },
+        "regime_state": {
+          "metric_name": "Regime State",
+          "input_asset": "GLD",
+          "input_timestamp": "2026-01-19T18:34:57.285347+00:00",
+          "forecast_horizon": "current",
+          "raw_data_query": "\n        SELECT\n            rs.ticker,\n            rs.date,\n            rs.regime_state,\n            rs.regime_prob_0,\n            rs.regime_prob_1,\n            rs.regime_prob_2,\n            rmr.perception_model_version\n        FROM fhq_research.regime_states rs\n        LEFT JOIN fhq_research.regime_model_registry rmr ON rmr.is_active = true\n        WHERE rs.ticker = 'GLD'\n        ORDER BY rs.date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "HMM 3-state model",
+          "output_value": null,
+          "output_location": "fhq_research.regime_states.regime_state",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "current state",
+          "state_snapshot_hash": "sha256:d4ba237867e9c5baf61cbad11cf1e2f61c3418f52d4f750af6f6b01d0a7ecb54",
+          "state_timestamp": "2026-01-19T18:34:57.285347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "REGIME_UNDEFINED",
+            "reason_detail": "No regime data found for GLD",
+            "learning_blocked": true,
+            "remediation": "Extend regime model to cover this asset",
+            "critical_gap": "Regime is classification only, not epistemic belief (CEO-DIR-2026-101)"
+          }
+        },
+        "gfi_impact": {
+          "metric_name": "GFI Impact",
+          "input_asset": "GLD",
+          "input_timestamp": "2026-01-19",
+          "forecast_horizon": "N/A",
+          "raw_data_query": "\n        SELECT\n            geopolitical_friction_index,\n            tariff_normalized,\n            brics_settlement_normalized,\n            sanctions_normalized,\n            usd_reserve_delta_normalized,\n            observation_date,\n            created_at\n        FROM fhq_macro.geopolitical_friction_data\n        ORDER BY observation_date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:ed7a7e61b9cff305db38ec1564dfc235abb62002d3e1d95bb89509747454746f",
+          "transformation_function": "0.30*Tariff + 0.35*BRICS + 0.20*Sanctions + 0.15*USD_Reserve",
+          "output_value": 0.713745,
+          "output_location": "fhq_macro.geopolitical_friction_data.geopolitical_friction_index",
+          "ex_ante_proof": "daily observation",
+          "horizon_semantics": "daily observation",
+          "state_snapshot_hash": "sha256:d4ba237867e9c5baf61cbad11cf1e2f61c3418f52d4f750af6f6b01d0a7ecb54",
+          "state_timestamp": "2026-01-19T18:34:57.286347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "latest_gfi": 0.713745,
+            "impact_type": "Direct",
+            "observation_date": "2026-01-19",
+            "components": {
+              "tariff": 0.6875,
+              "brics_settlement": 0.68,
+              "sanctions": 0.8875,
+              "usd_reserve_delta": 0.6133
+            }
+          }
+        }
+      },
+      "summary": {
+        "passed": 2,
+        "failed": 0,
+        "epistemic_null": 2,
+        "errors": 0,
+        "total": 4,
+        "pass_rate": 0.5
+      }
+    },
+    "TLT_T+1": {
+      "asset_id": "TLT",
+      "horizon": "T+1",
+      "state_snapshot_hash": "sha256:69768a06ce88440a016ee8543ddb28b495f54f7c6e38972d401a817f67fb8a7b",
+      "tests": {
+        "brier_score": {
+          "metric_name": "Brier Score",
+          "input_asset": "TLT",
+          "input_timestamp": "2026-01-19T18:34:57.290346+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n        SELECT\n            score_id,\n            asset_id,\n            forecast_probability,\n            actual_outcome,\n            squared_error,\n            forecast_timestamp,\n            outcome_timestamp,\n            forecast_horizon_hours,\n            regime\n        FROM fhq_governance.brier_score_ledger\n        WHERE asset_id = 'TLT'\n        ORDER BY forecast_timestamp DESC\n        LIMIT 10\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "squared_error = (forecast - outcome)^2",
+          "output_value": null,
+          "output_location": "fhq_governance.brier_score_ledger.squared_error",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:69768a06ce88440a016ee8543ddb28b495f54f7c6e38972d401a817f67fb8a7b",
+          "state_timestamp": "2026-01-19T18:34:57.290346+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "ASSET_NOT_COVERED",
+            "reason_detail": "No Brier data found for TLT",
+            "learning_blocked": true,
+            "remediation": "Extend FINN model coverage to include this asset"
+          }
+        },
+        "hit_rate": {
+          "metric_name": "Hit Rate",
+          "input_asset": "TLT",
+          "input_timestamp": "2026-01-19T18:34:57.291347+00:00",
+          "forecast_horizon": "T+1",
+          "raw_data_query": "\n            SELECT\n                metric_date,\n                metric_type,\n                hit_rate_1d,\n                sample_size,\n                created_at\n            FROM fhq_research.crypto_regime_quality_metrics\n            ORDER BY metric_date DESC\n            LIMIT 5\n            ",
+          "raw_data_hash": "sha256:f2fedf02411d13e5567a153a05b0c0e93e71ac7be47f193d1de77e60d46aec0c",
+          "transformation_function": "correct_predictions / total_predictions",
+          "output_value": 0.0667,
+          "output_location": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "ex_ante_proof": "denominator explicit, scope isolated",
+          "horizon_semantics": "T+1 daily close",
+          "state_snapshot_hash": "sha256:69768a06ce88440a016ee8543ddb28b495f54f7c6e38972d401a817f67fb8a7b",
+          "state_timestamp": "2026-01-19T18:34:57.291347+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "scope": "crypto",
+            "hit_rate": 0.0667,
+            "sample_size": 2
+          }
+        },
+        "regime_state": {
+          "metric_name": "Regime State",
+          "input_asset": "TLT",
+          "input_timestamp": "2026-01-19T18:34:57.292410+00:00",
+          "forecast_horizon": "current",
+          "raw_data_query": "\n        SELECT\n            rs.ticker,\n            rs.date,\n            rs.regime_state,\n            rs.regime_prob_0,\n            rs.regime_prob_1,\n            rs.regime_prob_2,\n            rmr.perception_model_version\n        FROM fhq_research.regime_states rs\n        LEFT JOIN fhq_research.regime_model_registry rmr ON rmr.is_active = true\n        WHERE rs.ticker = 'TLT'\n        ORDER BY rs.date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "transformation_function": "HMM 3-state model",
+          "output_value": null,
+          "output_location": "fhq_research.regime_states.regime_state",
+          "ex_ante_proof": "N/A",
+          "horizon_semantics": "current state",
+          "state_snapshot_hash": "sha256:69768a06ce88440a016ee8543ddb28b495f54f7c6e38972d401a817f67fb8a7b",
+          "state_timestamp": "2026-01-19T18:34:57.292410+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "EPISTEMIC_NULL",
+          "details": {
+            "epistemic_null_reason": "REGIME_UNDEFINED",
+            "reason_detail": "No regime data found for TLT",
+            "learning_blocked": true,
+            "remediation": "Extend regime model to cover this asset",
+            "critical_gap": "Regime is classification only, not epistemic belief (CEO-DIR-2026-101)"
+          }
+        },
+        "gfi_impact": {
+          "metric_name": "GFI Impact",
+          "input_asset": "TLT",
+          "input_timestamp": "2026-01-19",
+          "forecast_horizon": "N/A",
+          "raw_data_query": "\n        SELECT\n            geopolitical_friction_index,\n            tariff_normalized,\n            brics_settlement_normalized,\n            sanctions_normalized,\n            usd_reserve_delta_normalized,\n            observation_date,\n            created_at\n        FROM fhq_macro.geopolitical_friction_data\n        ORDER BY observation_date DESC\n        LIMIT 5\n        ",
+          "raw_data_hash": "sha256:ed7a7e61b9cff305db38ec1564dfc235abb62002d3e1d95bb89509747454746f",
+          "transformation_function": "0.30*Tariff + 0.35*BRICS + 0.20*Sanctions + 0.15*USD_Reserve",
+          "output_value": 0.713745,
+          "output_location": "fhq_macro.geopolitical_friction_data.geopolitical_friction_index",
+          "ex_ante_proof": "daily observation",
+          "horizon_semantics": "daily observation",
+          "state_snapshot_hash": "sha256:69768a06ce88440a016ee8543ddb28b495f54f7c6e38972d401a817f67fb8a7b",
+          "state_timestamp": "2026-01-19T18:34:57.292410+00:00",
+          "agent_id": "STIG",
+          "signer": "Ed25519:STIG_TEST_RUNNER",
+          "verdict": "PASS",
+          "details": {
+            "latest_gfi": 0.713745,
+            "impact_type": "Direct",
+            "observation_date": "2026-01-19",
+            "components": {
+              "tariff": 0.6875,
+              "brics_settlement": 0.68,
+              "sanctions": 0.8875,
+              "usd_reserve_delta": 0.6133
+            }
+          }
+        }
+      },
+      "summary": {
+        "passed": 2,
+        "failed": 0,
+        "epistemic_null": 2,
+        "errors": 0,
+        "total": 4,
+        "pass_rate": 0.5
+      }
+    }
+  },
+  "global_summary": {
+    "total_tests": 20,
+    "passed": 13,
+    "failed": 0,
+    "epistemic_null": 7,
+    "errors": 0,
+    "pass_rate": 0.65
+  },
+  "state_snapshot_hash": "sha256:72faa344d9c06fed3b3af395af9bf438028f8e66e52bd82998547fdeaa7e147c",
+  "verification_status": "COMPLETE"
+}

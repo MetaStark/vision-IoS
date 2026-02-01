@@ -1,0 +1,198 @@
+{
+  "directive_id": "CEO-DIR-2026-107",
+  "title": "Institusjonell Exit-rammeverk & Spot-Canonical TP/SL",
+  "classification": "GOVERNANCE-CRITICAL",
+  "version": "1.0",
+  "implemented_at": "2026-01-19T22:45:00Z",
+  "implemented_by": "STIG",
+
+  "executive_summary": {
+    "purpose": "Transition from OPTIONS-semantic exit rules to SPOT-canonical framework",
+    "status": "IMPLEMENTED",
+    "migration": "316_ceo_dir_2026_107_spot_canonical_exit_framework.sql",
+    "sentinel_daemon": "ios012b_exit_sentinel_daemon.py"
+  },
+
+  "ceo_precision_upgrades_applied": {
+    "UPGRADE_1": {
+      "title": "ATR Kanonikalitet",
+      "specification": "ATR(14), daily timeframe, per IoS-008 Canonical Indicator Registry",
+      "implementation": "fhq_alpha.get_canonical_atr(ticker, date, period=14)",
+      "status": "IMPLEMENTED"
+    },
+    "UPGRADE_2": {
+      "title": "R-definisjon",
+      "specification": "R = |entry_price - canonical_stop_loss| at trade initiation",
+      "implementation": "r_value column in ios012b_paper_positions, calculated at entry",
+      "status": "IMPLEMENTED"
+    },
+    "UPGRADE_3": {
+      "title": "Sentinel som governance-lag",
+      "specification": "Sentinel klassifiseres som governance enforcement layer, ikke ytelseslogikk",
+      "implementation": "ios012b_exit_sentinel_daemon.py operates deterministically without signal access",
+      "status": "IMPLEMENTED"
+    }
+  },
+
+  "exit_rules_canonical": {
+    "active_rules": [
+      {
+        "rule_name": "STOP_LOSS_ATR_2X",
+        "rule_type": "STOP_LOSS",
+        "formula": "SL = entry_price - (2.0 * ATR(14)) for LONG; entry_price + (2.0 * ATR(14)) for SHORT",
+        "trigger": "current_price <= canonical_stop_loss (LONG) OR current_price >= canonical_stop_loss (SHORT)",
+        "priority": 10,
+        "semantic_type": "SPOT",
+        "governance_basis": "CEO-DIR-2026-107 Section 3.1"
+      },
+      {
+        "rule_name": "TAKE_PROFIT_1_25R",
+        "rule_type": "TAKE_PROFIT",
+        "formula": "TP = entry_price + (1.25 * R) for LONG; entry_price - (1.25 * R) for SHORT",
+        "trigger": "current_price >= canonical_take_profit (LONG) OR current_price <= canonical_take_profit (SHORT)",
+        "priority": 20,
+        "semantic_type": "SPOT",
+        "governance_basis": "CEO-DIR-2026-107 Section 3.2"
+      },
+      {
+        "rule_name": "REGIME_EXIT",
+        "rule_type": "REGIME_CHANGE",
+        "formula": "Exit if current_regime != STRESS",
+        "trigger": "Regime transition detected",
+        "priority": 40,
+        "semantic_type": "SPOT",
+        "governance_basis": "IoS-012-B Alpha Inversion Hypothesis"
+      }
+    ],
+    "deprecated_rules": [
+      {
+        "rule_name": "TAKE_PROFIT_50PCT",
+        "deprecation_reason": "OPTIONS-semantic: max_profit undefined in SPOT",
+        "deprecated_at": "2026-01-19T20:44:46Z"
+      },
+      {
+        "rule_name": "STOP_LOSS_75PCT",
+        "deprecation_reason": "OPTIONS-semantic: entry_premium not applicable to SPOT",
+        "deprecated_at": "2026-01-19T20:44:46Z"
+      },
+      {
+        "rule_name": "TIME_DECAY_5DTE",
+        "deprecation_reason": "OPTIONS-only: DTE not applicable to SPOT",
+        "deprecated_at": "2026-01-19T20:44:46Z"
+      }
+    ]
+  },
+
+  "phase_1_restrictions": {
+    "adaptive_tp_sl": {
+      "status": "FORBIDDEN",
+      "rationale": "Verify positive expectancy with fixed rules first"
+    },
+    "trailing_stops": {
+      "status": "FORBIDDEN",
+      "rationale": "Avoid premature optimization"
+    },
+    "parameter_optimization": {
+      "status": "FORBIDDEN",
+      "rationale": "Semantic purity trumps short-term green numbers"
+    }
+  },
+
+  "database_objects_created": {
+    "columns_added": [
+      "ios012b_paper_positions.canonical_stop_loss",
+      "ios012b_paper_positions.canonical_take_profit",
+      "ios012b_paper_positions.atr_at_entry",
+      "ios012b_paper_positions.r_value",
+      "ios012b_paper_positions.exit_rule_triggered",
+      "ios012b_paper_positions.sentinel_monitored"
+    ],
+    "functions": [
+      "fhq_alpha.get_canonical_atr(ticker, date, period)",
+      "fhq_alpha.calculate_canonical_exit_levels(ticker, entry_price, direction)",
+      "fhq_alpha.sentinel_check_position(position_id)",
+      "fhq_alpha.sentinel_check_all_open()"
+    ],
+    "tables": [
+      "fhq_alpha.exit_sentinel_log"
+    ],
+    "views": [
+      "fhq_alpha.v_active_exit_rules"
+    ]
+  },
+
+  "exit_level_examples": {
+    "_note": "Calculated using ATR(14) from fhq_data.indicators",
+    "PGR": {
+      "entry_price": 202.37,
+      "direction": "UP",
+      "atr_14": 5.44,
+      "canonical_stop_loss": 191.49,
+      "canonical_take_profit": 215.97,
+      "r_value": 10.88
+    },
+    "AIG": {
+      "entry_price": 73.86,
+      "direction": "UP",
+      "atr_14": 1.98,
+      "canonical_stop_loss": 69.91,
+      "canonical_take_profit": 78.80,
+      "r_value": 3.95
+    },
+    "GIS": {
+      "entry_price": 44.51,
+      "direction": "UP",
+      "atr_14": 1.02,
+      "canonical_stop_loss": 42.46,
+      "canonical_take_profit": 47.07,
+      "r_value": 2.05
+    }
+  },
+
+  "sentinel_daemon": {
+    "file": "03_FUNCTIONS/ios012b_exit_sentinel_daemon.py",
+    "classification": "GOVERNANCE_ENFORCEMENT_LAYER",
+    "capabilities": [
+      "Monitor all open positions against canonical exit levels",
+      "Log all checks to fhq_alpha.exit_sentinel_log",
+      "Execute exits when triggered (optional flag)",
+      "Run in continuous mode with configurable interval"
+    ],
+    "usage": {
+      "monitor_only": "python ios012b_exit_sentinel_daemon.py",
+      "execute_exits": "python ios012b_exit_sentinel_daemon.py --execute",
+      "continuous": "python ios012b_exit_sentinel_daemon.py --continuous --execute --interval 300"
+    }
+  },
+
+  "governance_compliance": {
+    "adr_012_economic_safety": "COMPLIANT - Fixed rules, no parameter optimization",
+    "adr_004_change_gates": "G1 VERIFIED via Migration 316",
+    "bcbs_239": "COMPLIANT - Deterministic, reproducible calculations",
+    "gips_2020": "COMPLIANT - R-multiple TP expressed in risk units"
+  },
+
+  "audit_trail": {
+    "governance_log_entry": "Migration 316 logged to fhq_governance.governance_actions_log",
+    "exit_rule_deprecation": "OPTIONS-semantic rules archived with deprecation reason",
+    "sentinel_logging": "All checks logged to fhq_alpha.exit_sentinel_log with evidence_hash"
+  },
+
+  "next_steps": {
+    "immediate": [
+      "Re-execute paper trades with canonical exit levels",
+      "Start Sentinel daemon in monitor mode"
+    ],
+    "phase_1_validation": [
+      "Collect 20+ closed positions",
+      "Verify positive expectancy with fixed rules",
+      "Track hit rate by exit rule type"
+    ],
+    "phase_2_consideration": [
+      "Evaluate adaptive TP/SL ONLY after Phase 1 validation",
+      "Requires CEO approval for any parameter changes"
+    ]
+  },
+
+  "evidence_hash": "sha256:ceo_dir_2026_107_spot_canonical_implementation"
+}

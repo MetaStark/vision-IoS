@@ -20,7 +20,7 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $PythonPath = (Get-Command python).Source
 $ScriptPath = "C:\fhq-market-system\vision-ios\03_FUNCTIONS\phase2_morning_verification.py"
-$WorkingDir = "C:\fhq-market-system\vision-ios\03_FUNCTIONS"
+$WorkingDir = "C:\fhq-market-system\vision-ios"
 $TaskName = "FHQ-Phase2-Morning-Verification"
 
 Write-Host "Python path: $PythonPath" -ForegroundColor Gray

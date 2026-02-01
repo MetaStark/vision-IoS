@@ -1,0 +1,114 @@
+{
+  "analysis_id": "FRICTION-001",
+  "analysis_type": "REGIME_OVERCONFIDENCE_EVALUATION",
+  "directive": "CEO Post-G3 Directive 1.1",
+  "execution_date": "2026-01-17",
+  "status": "ANALYSIS_COMPLETE",
+
+  "baseline_reference": {
+    "snapshot_name": "G3_BASELINE_DAY17",
+    "brier_score_avg": 0.5358,
+    "hit_rate": 0.3265,
+    "forecast_count": 6912
+  },
+
+  "regime_analysis": {
+    "data_window": "2026-01-01 to 2026-01-17",
+    "total_forecasts_analyzed": 3526,
+    "findings": [
+      {
+        "regime": "STRESS",
+        "forecast_count": 26,
+        "avg_forecast_probability": 0.9103,
+        "actual_hit_rate": 0.0000,
+        "overconfidence_delta": 0.9103,
+        "severity": "CRITICAL",
+        "recommended_ceiling": 0.0500,
+        "required_reduction": 0.8603,
+        "note": "STRESS regime has 0% hit rate - forecasts are anti-predictive"
+      },
+      {
+        "regime": "BULL",
+        "forecast_count": 1495,
+        "avg_forecast_probability": 0.9207,
+        "actual_hit_rate": 0.2528,
+        "overconfidence_delta": 0.6679,
+        "severity": "SEVERE",
+        "recommended_ceiling": 0.3028,
+        "required_reduction": 0.6179,
+        "note": "CEO hypothesis CONFIRMED - BULL regime is massively overconfident"
+      },
+      {
+        "regime": "NEUTRAL",
+        "forecast_count": 1275,
+        "avg_forecast_probability": 0.8546,
+        "actual_hit_rate": 0.2886,
+        "overconfidence_delta": 0.5660,
+        "severity": "SEVERE",
+        "recommended_ceiling": 0.3386,
+        "required_reduction": 0.5160
+      },
+      {
+        "regime": "BEAR",
+        "forecast_count": 730,
+        "avg_forecast_probability": 0.8557,
+        "actual_hit_rate": 0.3260,
+        "overconfidence_delta": 0.5297,
+        "severity": "SEVERE",
+        "recommended_ceiling": 0.3760,
+        "required_reduction": 0.4797
+      }
+    ]
+  },
+
+  "key_insight": {
+    "headline": "System-wide overconfidence, not just BULL regime",
+    "detail": "All regimes show SEVERE overconfidence (>50% delta between confidence and hit rate)",
+    "worst_case": "STRESS regime: 91% confidence, 0% hit rate - complete model failure",
+    "bull_confirmation": "CEO hypothesis confirmed - BULL shows 66.79% overconfidence delta"
+  },
+
+  "calibration_recommendation": {
+    "recommendation_code": "FRICTION-001",
+    "target": "confidence_damper_beta",
+    "current_behavior": "Damping based on FSS thresholds only",
+    "proposed_behavior": "Add regime-specific confidence ceilings",
+    "priority_target": {
+      "regime": "BULL",
+      "current_avg_confidence": 0.9207,
+      "proposed_ceiling": 0.35,
+      "rationale": "Cap BULL confidence at hit_rate + 10% margin"
+    },
+    "expected_roi_delta": {
+      "brier_improvement": "0.05-0.10 (hypothesis)",
+      "mechanism": "Reduced squared error from lower overconfidence",
+      "validation_required": true
+    }
+  },
+
+  "execution_gate": {
+    "gate": "G3_FULLY_LOCKED",
+    "status": "SATISFIED",
+    "satisfied_at": "2026-01-17T00:05:18Z"
+  },
+
+  "governance": {
+    "analyzed_by": "UMA",
+    "executed_by": "STIG",
+    "requires_ceo_approval": true,
+    "status": "AWAITING_QUEUE_INSERTION"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "timestamp": "2026-01-17T01:45:00Z",
+    "summary": [
+      "CEO hypothesis about BULL overconfidence: CONFIRMED",
+      "Analysis reveals system-wide overconfidence across ALL regimes",
+      "STRESS regime is critical failure: 0% hit rate at 91% confidence",
+      "BULL regime: 66.79% overconfidence delta (92% conf → 25% hit)",
+      "Calibration queued through Migration 274 infrastructure",
+      "Execution requires CEO approval"
+    ]
+  }
+}

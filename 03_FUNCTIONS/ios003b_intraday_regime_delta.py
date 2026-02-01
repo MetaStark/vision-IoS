@@ -46,6 +46,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ============================================================================
+# CEO-DIR-2026-0ZE-A v2: OBSERVABILITY-ONLY MODE
+# ============================================================================
+# When True: Detection engine runs, delta_log writes allowed, but
+# flash_context emission is BLOCKED. Hypothetical contexts are logged instead.
+# This mode is for Phase 1 evaluation - proving IOS-003-B value before execution.
+# ============================================================================
+OBSERVABILITY_ONLY_MODE = os.getenv('IOS003B_OBSERVABILITY_ONLY', 'true').lower() == 'true'
+
+if OBSERVABILITY_ONLY_MODE:
+    logger.info("=" * 60)
+    logger.info("OBSERVABILITY-ONLY MODE ACTIVE (CEO-DIR-2026-0ZE-A v2)")
+    logger.info("Flash-context emission DISABLED. Hypothetical logging ENABLED.")
+    logger.info("=" * 60)
+
 
 class DeltaType(Enum):
     """Intraday regime delta classifications"""
@@ -583,6 +598,10 @@ class IntradayRegimeDeltaEngine:
         Emit a Flash-Context object for the Signal Executor.
 
         Flash-Context carries the intraday permit with TTL.
+
+        CEO-DIR-2026-0ZE-A v2: In OBSERVABILITY_ONLY_MODE, flash_context writes
+        are blocked. Instead, we log what WOULD have been emitted to delta_log
+        for audit purposes (hypothetical context).
         """
         config = self.configs.get(listing_id, SqueezeConfig(listing_id))
 
@@ -606,6 +625,15 @@ class IntradayRegimeDeltaEngine:
         elif result.delta_type in [DeltaType.MOMENTUM_SHIFT_BULL, DeltaType.MOMENTUM_SHIFT_BEAR]:
             applicable_strategies = ['TREND_FOLLOWING', 'MOMENTUM_CONTINUATION']
 
+        # CEO-DIR-2026-0ZE-A v2: OBSERVABILITY-ONLY MODE CHECK
+        if OBSERVABILITY_ONLY_MODE:
+            # Log hypothetical context instead of emitting
+            return self._log_hypothetical_context(
+                delta_id, listing_id, result, context_id,
+                ttl_minutes, applicable_strategies
+            )
+
+        # Normal mode: emit flash_context
         with self.conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO fhq_operational.flash_context (
@@ -639,6 +667,54 @@ class IntradayRegimeDeltaEngine:
 
         logger.info(f"{listing_id}: Flash-Context emitted - {context_id[:8]}... "
                    f"(TTL={ttl_minutes}min, strategies={applicable_strategies})")
+
+        return context_id
+
+    def _log_hypothetical_context(self, delta_id: str, listing_id: str,
+                                   result: SqueezeResult, context_id: str,
+                                   ttl_minutes: int,
+                                   applicable_strategies: List[str]) -> Optional[str]:
+        """
+        CEO-DIR-2026-0ZE-A v2: Log hypothetical flash_context for audit.
+
+        In observability-only mode, we don't write to flash_context table
+        but we DO log what WOULD have been emitted. This allows:
+        1. Audit trail of IOS-003-B decision quality
+        2. Counterfactual analysis (what if we had executed?)
+        3. Phase 1 evaluation without execution risk
+        """
+        import json
+
+        hypothetical_context = {
+            'context_id': context_id,
+            'delta_id': delta_id,
+            'listing_id': listing_id,
+            'delta_type': result.delta_type.value,
+            'intensity': float(result.intensity),
+            'momentum_vector': result.momentum_vector.value,
+            'target_signal_class': 'C',
+            'applicable_strategies': applicable_strategies,
+            'ttl_minutes': ttl_minutes,
+            'mode': 'OBSERVABILITY_ONLY',
+            'directive': 'CEO-DIR-2026-0ZE-A-v2'
+        }
+
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_operational.delta_log (
+                    event_type, delta_id, context_id, listing_id, details
+                ) VALUES (
+                    'HYPOTHETICAL_FLASH_CONTEXT', %s, %s, %s, %s
+                )
+            """, (
+                delta_id, context_id, listing_id,
+                json.dumps(hypothetical_context)
+            ))
+
+            self.conn.commit()
+
+        logger.info(f"{listing_id}: HYPOTHETICAL Flash-Context logged - {context_id[:8]}... "
+                   f"(TTL={ttl_minutes}min, strategies={applicable_strategies}) [OBSERVABILITY-ONLY]")
 
         return context_id
 

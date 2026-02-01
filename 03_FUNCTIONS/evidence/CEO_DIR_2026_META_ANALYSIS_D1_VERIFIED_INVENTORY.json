@@ -1,0 +1,151 @@
+{
+  "directive": "CEO-DIR-2026-META-ANALYSIS",
+  "deliverable": "D1",
+  "title": "Verified Inventory Report",
+  "generated_at": "2026-01-23T13:30:00.000Z",
+  "generated_by": "STIG (EC-003)",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "database_infrastructure": {
+    "total_tables": 1046,
+    "schemas_operational": {
+      "fhq_research": { "tables": 142, "status": "OPERATIONAL", "role": "Forecasts, Brier, Outcome tracking" },
+      "fhq_calendar": { "tables": 33, "status": "OPERATIONAL", "role": "Events (IoS-016)" },
+      "fhq_signal_context": { "tables": 7, "status": "OPERATIONAL", "role": "Signal pipeline (IoS-013)" },
+      "fhq_learning": { "tables": 4, "status": "DEPLOYED", "role": "Learning loop" },
+      "fhq_ops": { "tables": 3, "status": "DEPLOYED", "role": "Control room" }
+    }
+  },
+
+  "ios013_signal_engine": {
+    "status": "OPERATIONAL",
+    "current_signals": 22,
+    "calibrated": 22,
+    "not_calibrated": 0,
+    "unique_assets": 22,
+    "latest_signal": "2026-01-23T00:32:11.756Z",
+    "sources_integrated": {
+      "documented": 3,
+      "target": 6,
+      "active": ["Golden Needles", "G1 Validated Signals", "Brier Enrichment"],
+      "missing": ["IoS-002 Technical", "IoS-006 Macro", "IoS-016 Event Tags"]
+    },
+    "weighting_factors": {
+      "regime_alignment": "IMPLEMENTED",
+      "forecast_skill": "IMPLEMENTED",
+      "causal_linkage": "IMPLEMENTED",
+      "redundancy_penalty": "IMPLEMENTED",
+      "event_proximity": "IMPLEMENTED (but source broken)"
+    }
+  },
+
+  "ios016_events_framework": {
+    "status": "DEPLOYED",
+    "calendar_events": {
+      "total": 51,
+      "upcoming": 34,
+      "recent_30d": 14
+    },
+    "hypothesis_ledger": {
+      "rows": 8,
+      "latest": "2026-01-23T09:45:47.629Z",
+      "forward_coverage": "100% (next 7 days)"
+    },
+    "tag_event_proximity": {
+      "status": "BROKEN",
+      "error": "v_tag record field mismatch"
+    }
+  },
+
+  "learning_loop": {
+    "status": "PRIMED",
+    "components": {
+      "hypothesis_ledger": { "rows": 8, "status": "POPULATED" },
+      "decision_packs": { "rows": 20, "status": "ALL_FAILED (confidence < 0.45)" },
+      "outcome_ledger": { "rows": 31042, "status": "OPERATIONAL" },
+      "forecast_skill_metrics": { "rows": 147, "status": "OPERATIONAL" }
+    },
+    "lvi_status": {
+      "score": 0.0,
+      "grade": "F",
+      "completed_experiments": 20,
+      "integrity_rate": 1.0,
+      "coverage_rate": 0.0,
+      "bottleneck": "coverage_rate = 0 (past events without hypothesis)"
+    }
+  },
+
+  "brier_calibration": {
+    "status": "OPERATIONAL",
+    "global_brier": 0.3233,
+    "forecast_count": 17656,
+    "model_scores": {
+      "STRAT_WEEK_V1": { "brier": 0.2640, "count": 2931 },
+      "STRAT_DAY_V1": { "brier": 0.2775, "count": 2642 },
+      "STRAT_SEC_V1": { "brier": 0.2996, "count": 14957 },
+      "STRAT_HOUR_V1": { "brier": 0.3029, "count": 4505 }
+    },
+    "calibration_gates": {
+      "active": 19,
+      "status": "OPERATIONAL"
+    },
+    "recalibration": {
+      "platt_scaling": "NOT_IMPLEMENTED",
+      "isotonic_regression": "NOT_IMPLEMENTED",
+      "automated_triggers": "NOT_IMPLEMENTED"
+    }
+  },
+
+  "control_room": {
+    "status": "DEPLOYED",
+    "alerts": {
+      "critical": 1,
+      "warning": 2,
+      "active_types": ["lvi_degradation", "epistemic_proposals_empty", "daemon_heartbeat_stale"]
+    },
+    "dashboard": {
+      "ios013_tab": "DEPLOYED",
+      "factor_breakdown": "IMPLEMENTED",
+      "lvi_panel": "IMPLEMENTED",
+      "real_time_streaming": "NOT_IMPLEMENTED"
+    }
+  },
+
+  "fama_french": {
+    "status": "OPERATIONAL",
+    "total_rows": 15709,
+    "date_range": {
+      "earliest": "1963-07-01",
+      "latest": "2025-11-28"
+    },
+    "factors": ["Mkt-Rf", "SMB", "HML", "RMW", "CMA", "RF", "Mom"],
+    "factor_attribution": "NOT_IMPLEMENTED"
+  },
+
+  "news_sentiment": {
+    "status": "PARTIAL",
+    "serper_integration": "DEPLOYED",
+    "sentiment_scoring": "DEPLOYED (in fhq_finn)",
+    "scheduled_ingestion": "NOT_IMPLEMENTED",
+    "finbert_nlp": "NOT_IMPLEMENTED"
+  },
+
+  "produces_learning_today": [
+    "outcome_ledger (31,042 outcomes recorded)",
+    "forecast_skill_metrics (147 Brier computations)",
+    "calibration_gates (19 active confidence ceilings)",
+    "hypothesis_ledger (8 hypotheses, 100% forward coverage)"
+  ],
+
+  "connected_to_ios013": [
+    "fhq_signal_context.weighted_signal_plan (22 signals)",
+    "fhq_research.forecast_skill_metrics (skill_factor input)",
+    "fhq_alpha.g1_validated_signals (golden needle source)"
+  ],
+
+  "connected_to_ios016": [
+    "fhq_calendar.calendar_events (51 events)",
+    "fhq_learning.hypothesis_ledger (8 hypotheses)",
+    "fhq_learning.decision_packs (20 packs)"
+  ]
+}

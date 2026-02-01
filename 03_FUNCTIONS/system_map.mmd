@@ -1,0 +1,102 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "background": "#0d1117",
+    "primaryColor": "#1e3a5f",
+    "primaryTextColor": "#c9d1d9",
+    "primaryBorderColor": "#30363d",
+    "secondaryColor": "#21262d",
+    "secondaryTextColor": "#8b949e",
+    "tertiaryColor": "#161b22",
+    "lineColor": "#58a6ff",
+    "textColor": "#c9d1d9",
+    "mainBkg": "#161b22",
+    "nodeBorder": "#30363d",
+    "clusterBkg": "#0d1117",
+    "clusterBorder": "#21262d",
+    "titleColor": "#58a6ff",
+    "edgeLabelBackground": "#161b22",
+    "nodeTextColor": "#c9d1d9"
+  }
+}}%%
+
+flowchart TD
+
+    subgraph PIPELINE["🔷 COGNITIVE ENGINE PIPELINE"]
+        direction LR
+        P0["P0: Data Liveness"]
+        P1["P1: Embedding Gen"]
+        P2["P2: Hybrid Retrieval"]
+        P3["P3: IKEA Grounding"]
+        P4["P4: Memory Stack"]
+        P5["P5: Evidence Bundle"]
+        P0 --> P1 --> P2 --> P3 --> P4 --> P5
+    end
+
+    subgraph MEMORY["💾 fhq_memory"]
+        direction TB
+        CONVERSATIONS["conversations\n(0 rows)"]
+        CONVERSATION_MESSAGES["conversation_messages\n(0 rows)"]
+        EMBEDDING_STORE["embedding_store\n(5 rows)"]
+        ARCHIVAL_STORE["archival_store\n(14 rows)"]
+    end
+
+    subgraph CANONICAL["📜 fhq_canonical"]
+        direction TB
+        EVIDENCE_NODES["evidence_nodes\n(1019 rows)"]
+        EVIDENCE_BUNDLES["evidence_bundles\n(14 rows)"]
+        EVIDENCE_RELATIONSHIPS["evidence_relationships\n(0 rows)"]
+    end
+
+    subgraph GOVERNANCE["⚖️ fhq_governance"]
+        direction TB
+        INFORAGE_QUERY_LOG["inforage_query_log\n(14 rows)"]
+    end
+
+    subgraph GRAPH["🕸️ fhq_graph"]
+        direction TB
+        GRAPH_NODES["nodes\n(196 rows)"]
+        GRAPH_EDGES["edges\n(18 rows)"]
+    end
+
+    subgraph QDRANT["🔍 Qdrant Vector Store"]
+        direction TB
+        QDRANT_EVIDENCE_NODES["evidence_nodes\n(1019 vectors)\nstatus: green"]
+        QDRANT_FINN_EMBEDDINGS["finn_embeddings\n(0 vectors)\nstatus: green"]
+        QDRANT_CAUSAL_CLAIMS["causal_claims\n(0 vectors)\nstatus: green"]
+    end
+
+    %% FK Relationships (DB-Verified)
+    EVIDENCE_RELATIONSHIPS -->|from_evidence_id| EVIDENCE_NODES
+    GRAPH_EDGES -->|from_node_id| GRAPH_NODES
+    ARCHIVAL_STORE -->|source_message_id| CONVERSATION_MESSAGES
+    ARCHIVAL_STORE -->|source_conversation_id| CONVERSATIONS
+    CONVERSATION_MESSAGES -->|parent_message_id| CONVERSATION_MESSAGES
+    CONVERSATION_MESSAGES -->|conversation_id| CONVERSATIONS
+    CONVERSATION_MESSAGES -->|embedding_id| EMBEDDING_STORE
+
+    %% Qdrant Sync Linkage
+    EVIDENCE_NODES -.->|1019 synced| QDRANT_EVIDENCE_NODES
+
+    %% Pipeline Phase Connections
+    P1 -.-> EMBEDDING_STORE
+    P2 -.-> EVIDENCE_NODES
+    P2 -.-> QDRANT_EVIDENCE_NODES
+    P3 -.-> EVIDENCE_BUNDLES
+    P4 -.-> ARCHIVAL_STORE
+    P5 -.-> INFORAGE_QUERY_LOG
+
+    %% Styling
+    classDef memory fill:#1a365d,stroke:#2c5282,color:#bee3f8
+    classDef canonical fill:#234e52,stroke:#319795,color:#b2f5ea
+    classDef governance fill:#553c9a,stroke:#805ad5,color:#e9d8fd
+    classDef graph fill:#744210,stroke:#d69e2e,color:#fefcbf
+    classDef qdrant fill:#702459,stroke:#b83280,color:#fed7e2
+    classDef pipeline fill:#1e3a5f,stroke:#58a6ff,color:#c9d1d9
+
+    class CONVERSATIONS,CONVERSATION_MESSAGES,EMBEDDING_STORE,ARCHIVAL_STORE memory
+    class EVIDENCE_NODES,EVIDENCE_BUNDLES,EVIDENCE_RELATIONSHIPS canonical
+    class INFORAGE_QUERY_LOG governance
+    class GRAPH_NODES,GRAPH_EDGES graph
+    class QDRANT_EVIDENCE_NODES,QDRANT_FINN_EMBEDDINGS,QDRANT_CAUSAL_CLAIMS qdrant
+    class P0,P1,P2,P3,P4,P5 pipeline

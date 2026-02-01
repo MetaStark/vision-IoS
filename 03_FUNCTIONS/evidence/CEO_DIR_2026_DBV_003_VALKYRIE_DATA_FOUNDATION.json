@@ -1,0 +1,176 @@
+{
+  "evidence_id": "CEO_DIR_2026_DBV_003_VALKYRIE_DATA_FOUNDATION",
+  "directive": "CEO-DIR-2026-DBV-003",
+  "title": "VALKYRIE Data Foundation Analysis",
+  "classification": "GOVERNANCE-CRITICAL / CALIBRATION-FAILURE",
+  "created_at": "2026-01-20T21:45:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "executive_summary": {
+    "status": "CRITICAL_FINDINGS",
+    "primary_finding": "System is trading assets with WORST calibration scores",
+    "severity": "P0 - IMMEDIATE ACTION REQUIRED"
+  },
+
+  "brier_analysis": {
+    "status": "PARTIALLY_ACTIVE",
+    "total_scores": 912,
+    "window": "7 days",
+    "data_freshness": "Last forecast: 2026-01-14 (6 days stale)",
+
+    "by_market": {
+      "EQUITY_US": {"count": 517, "avg_brier": 0.5517},
+      "CRYPTO": {"count": 348, "avg_brier": 0.7194},
+      "EQUITY_OSLO": {"count": 47, "avg_brier": 0.5976}
+    },
+
+    "top_10_best_calibration": [
+      {"asset": "USDJPY=X", "brier": 0.112, "class": "EQUITY_US"},
+      {"asset": "ZM", "brier": 0.112, "class": "EQUITY_US"},
+      {"asset": "EMR", "brier": 0.140, "class": "EQUITY_US"},
+      {"asset": "SPY", "brier": 0.146, "class": "EQUITY_US"},
+      {"asset": "MCHP", "brier": 0.147, "class": "EQUITY_US"},
+      {"asset": "DNB.OL", "brier": 0.152, "class": "EQUITY_OSLO"},
+      {"asset": "DBK.DE", "brier": 0.160, "class": "EQUITY_US"},
+      {"asset": "USDSEK=X", "brier": 0.172, "class": "EQUITY_US"},
+      {"asset": "BTC-USD", "brier": 0.172, "class": "CRYPTO"},
+      {"asset": "HLT", "brier": 0.173, "class": "EQUITY_US"}
+    ],
+
+    "bottom_10_worst_calibration": [
+      {"asset": "AIG", "brier": 0.998, "class": "EQUITY_US", "BEING_TRADED": true},
+      {"asset": "NOW", "brier": 0.998, "class": "EQUITY_US"},
+      {"asset": "PGR", "brier": 0.993, "class": "EQUITY_US", "BEING_TRADED": true},
+      {"asset": "HO.PA", "brier": 0.990, "class": "EQUITY_US"},
+      {"asset": "GIS", "brier": 0.979, "class": "EQUITY_US", "BEING_TRADED": true},
+      {"asset": "FLOW-USD", "brier": 0.966, "class": "CRYPTO"},
+      {"asset": "BNP.PA", "brier": 0.950, "class": "EQUITY_US"},
+      {"asset": "MORG.OL", "brier": 0.941, "class": "EQUITY_OSLO"},
+      {"asset": "LYV", "brier": 0.940, "class": "EQUITY_US"},
+      {"asset": "OR.PA", "brier": 0.924, "class": "EQUITY_US"}
+    ]
+  },
+
+  "CRITICAL_CALIBRATION_FAILURE": {
+    "finding": "IOS012B_INVERSION strategy trading assets with WORST Brier scores",
+    "assets_being_traded": [
+      {"canonical_id": "AIG", "order_count": 9, "brier": 0.998, "rank": "WORST"},
+      {"canonical_id": "PGR", "order_count": 6, "brier": 0.993, "rank": "2nd WORST"},
+      {"canonical_id": "GIS", "order_count": 9, "brier": 0.979, "rank": "5th WORST"},
+      {"canonical_id": "ADSK", "order_count": 6, "brier": 0.775, "rank": "BAD"}
+    ],
+    "interpretation": "Brier score ~1.0 means forecasts are almost ALWAYS WRONG. System is systematically selecting worst-calibrated assets for trading.",
+    "root_cause": "IOS012B_INVERSION asset selection does not incorporate Brier calibration filtering",
+    "recommended_action": "HALT trading until Brier-based asset filter is implemented"
+  },
+
+  "lvi_analysis": {
+    "status": "NOT_IMPLEMENTED",
+    "lvi_canonical_records": 0,
+    "v_system_lvi_records": 0,
+    "finding": "Learning Velocity Index has ZERO data - computation never implemented",
+    "impact": "Cannot measure learning rate or velocity",
+    "recommended_action": "Implement LVI computation daemon"
+  },
+
+  "alpha_graph_analysis": {
+    "status": "SEVERELY_UNDERUTILIZED",
+    "total_edges": 1,
+    "most_recent_edge": "2026-01-06",
+    "days_since_last_edge": 14,
+    "finding": "Alpha graph has only 1 edge, created 14 days ago",
+    "impact": "No causal relationship discovery happening",
+    "recommended_action": "Review and reactivate alpha graph population"
+  },
+
+  "golden_needle_analysis": {
+    "status": "PRODUCTION_HALTED",
+    "total_needles": 1804,
+    "current_needles": 39,
+    "most_recent_creation": "2026-01-14T15:13:36Z",
+    "days_since_last_needle": 6,
+    "needle_chain_links": 0,
+    "finding": "No Golden Needles produced in 6 days. Chain linking never implemented.",
+    "impact": "Alpha hypothesis generation halted"
+  },
+
+  "signal_to_order_flow": {
+    "status": "ACTIVE_BUT_DISCONNECTED",
+    "finding": "Paper orders come from IOS012B_INVERSION, NOT from Golden Needles",
+    "flow_diagram": {
+      "golden_needle_path": "fhq_canonical.golden_needles → (NO CHAIN) → NOT CONNECTED TO EXECUTION",
+      "actual_order_path": "IOS012B_INVERSION → fhq_execution.paper_orders → Alpaca",
+      "observation": "Two completely separate systems - GN is research, IOS012B is execution"
+    },
+    "orders_last_7d": {
+      "total": 30,
+      "unique_assets": 4,
+      "strategy_source": "IOS012B_INVERSION",
+      "regime_state": "STRESS"
+    }
+  },
+
+  "valkyrie_data_requirements": {
+    "brier_per_market": "AVAILABLE - 3 markets with scores",
+    "brier_top_10": "AVAILABLE - query defined",
+    "brier_bottom_10": "AVAILABLE - query defined",
+    "lvi_daily": "NOT_AVAILABLE - zero data",
+    "alpha_edges_24h": "NOT_AVAILABLE - no recent edges",
+    "golden_needles_24h": "NOT_AVAILABLE - production halted",
+    "gn_to_signal_chain": "NOT_IMPLEMENTED - tables empty",
+    "signal_to_order_flow": "AVAILABLE - can trace"
+  },
+
+  "recommended_actions": [
+    {
+      "priority": "P0",
+      "action": "Implement Brier calibration filter in IOS012B_INVERSION asset selection",
+      "rationale": "Currently trading worst-calibrated assets",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P0",
+      "action": "HALT trading until calibration filter implemented",
+      "rationale": "Brier 0.99 = forecasts almost always wrong",
+      "owner": "CEO"
+    },
+    {
+      "priority": "P1",
+      "action": "Implement LVI computation daemon",
+      "rationale": "Zero LVI data prevents learning velocity measurement",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P1",
+      "action": "Diagnose Golden Needle production halt",
+      "rationale": "No needles in 6 days",
+      "owner": "FINN"
+    },
+    {
+      "priority": "P2",
+      "action": "Implement needle_chain_links population",
+      "rationale": "Chain tracing not implemented",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P2",
+      "action": "Reactivate alpha graph edge discovery",
+      "rationale": "Only 1 edge in entire graph",
+      "owner": "FINN"
+    }
+  ],
+
+  "valkyrie_narrative_data": {
+    "situation": "System executing 30 paper orders on 4 assets, all in STRESS regime",
+    "complications": [
+      "All 4 traded assets have Brier > 0.77 (worst calibration)",
+      "LVI not implemented (0 records)",
+      "Golden Needles halted (6 days)",
+      "Alpha graph empty (1 edge)"
+    ],
+    "resolution": "Evidence file created, P0 actions documented",
+    "outlook": "Trading should halt until calibration filter implemented"
+  },
+
+  "hash": "d7e4a2f8b1c5a9e6c4f0b2d8a3e6f1c5"
+}

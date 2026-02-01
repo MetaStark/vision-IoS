@@ -1,0 +1,194 @@
+{
+  "document_id": "CEO-DIR-2026-002-PROVENANCE-REPORT",
+  "document_type": "GOVERNANCE_INVESTIGATION",
+  "classification": "GOVERNANCE-CRITICAL (CLASS A)",
+  "directive": "CEO-DIR-2026-002",
+  "subject": "Sovereign Regime Ontology Violation - SIDEWAYS Provenance Investigation",
+  "timestamp": "2026-01-06T20:30:00Z",
+  "investigating_agent": "STIG",
+  "authority": ["ADR-013", "ADR-004", "ADR-017", "CEO-DIR-2026-001"],
+
+  "executive_summary": {
+    "finding": "SIDEWAYS is NOT a bug - it is an intentional v4-to-v2 mapping introduced by Migration 207",
+    "source": "04_DATABASE/MIGRATIONS/207_unified_decision_shadow_observation.sql",
+    "line_numbers": "182-205",
+    "classification": "ONTOLOGY_LEAKAGE + LAYER_VIOLATION",
+    "remediation_status": "PENDING_G4_APPROVAL"
+  },
+
+  "section_1_provenance_reconstruction": {
+    "exact_writer": "Migration 207 (CEO-DIR-2026-UNIFIED-DECISION-001)",
+    "timestamp": "2026-01-06T15:06:26.616Z",
+    "execution_context": "Database migration execution",
+    "authority_tag": "STIG.UNIFIED_v4",
+    "immediately_prior_value": "UNKNOWN (not logged by migration)",
+    "code_path": "207_unified_decision_shadow_observation.sql:182-205",
+    "process_responsible": "psql migration execution via task registry",
+
+    "origin_classification": "INTENTIONAL_MAPPING_LAYER",
+    "origin_explanation": "Migration 207 Section 4 contains explicit v4-to-v2 regime mapping to maintain compatibility with legacy consumers of fhq_meta.regime_state",
+
+    "mapping_logic": {
+      "source_table": "fhq_perception.sovereign_regime_state_v4",
+      "source_column": "sovereign_regime",
+      "source_value": "NEUTRAL",
+      "target_table": "fhq_meta.regime_state",
+      "target_column": "current_regime",
+      "target_value": "SIDEWAYS",
+      "mapping_sql": "CASE sovereign_regime WHEN 'NEUTRAL' THEN 'SIDEWAYS' WHEN 'STRESS' THEN 'CRISIS' ELSE sovereign_regime END"
+    },
+
+    "reproducibility": {
+      "adR_011_replay_compliant": true,
+      "deterministic": true,
+      "verification_query": "SELECT current_regime, updated_by, last_updated_at FROM fhq_meta.regime_state WHERE updated_by = 'STIG.UNIFIED_v4'"
+    }
+  },
+
+  "section_2_ontology_contract_verification": {
+    "authoritative_v4_ontology": {
+      "source": "fhq_perception.sovereign_regime_state_v4",
+      "canonical_states": ["BULL", "BEAR", "NEUTRAL", "STRESS"],
+      "specification": "IoS-003 v4 (3-4 state parsimonious model)",
+      "authority": "IoS-003.v4_2026_PRODUCTION.md"
+    },
+
+    "legacy_v2_ontology": {
+      "source": "fhq_meta.regime_state (via Migration 207 mapping)",
+      "states": ["BULL", "BEAR", "SIDEWAYS", "CRISIS", "UNKNOWN"],
+      "specification": "Undocumented legacy format",
+      "authority": "NONE - introduced without ADR approval"
+    },
+
+    "sideways_definition_check": {
+      "in_v4_canonical": false,
+      "in_v2_legacy": true,
+      "exists_as_ui_abstraction": "UNKNOWN",
+      "exists_as_policy_placeholder": false,
+      "exists_as_intermediate_state": false,
+      "containment_boundary": "Migration 207 v4-to-v2 mapping layer"
+    }
+  },
+
+  "section_3_anomaly_classification": {
+    "primary_category": "ONTOLOGY_LEAKAGE",
+    "secondary_category": "LAYER_VIOLATION",
+    "final_classification": "ONTOLOGY_LEAKAGE + LAYER_VIOLATION (Dual)",
+
+    "evidence_for_ontology_leakage": [
+      "Non-canonical value 'SIDEWAYS' present in fhq_meta.regime_state",
+      "Value does not exist in v4 ontology (BULL, BEAR, NEUTRAL, STRESS)",
+      "Mapping introduced without ADR approval or ontology amendment"
+    ],
+
+    "evidence_for_layer_violation": [
+      "v2 compatibility mapping hardcoded in production migration",
+      "Presentation layer concerns (legacy compatibility) contaminate canonical state",
+      "Migration 207 makes fhq_meta.regime_state a presentation alias, not canonical truth"
+    ],
+
+    "evidence_against_other_categories": {
+      "legacy_ghost_state": "No - SIDEWAYS was intentionally introduced by new migration",
+      "unauthorized_semantic_expansion": "Partially applicable - v2 ontology not ADR-approved",
+      "data_corruption": "No - mapping is deterministic and intentional",
+      "process_fault": "No - migration executed as designed"
+    }
+  },
+
+  "section_4_impact_assessment": {
+    "belief_layer": {
+      "status": "CONTAMINATED",
+      "description": "fhq_meta.regime_state contains v2 labels, not v4 canonical beliefs",
+      "severity": "HIGH",
+      "downstream_impact": "Any system reading fhq_meta.regime_state receives v2 alias, not canonical v4"
+    },
+
+    "policy_layer": {
+      "status": "UNAFFECTED",
+      "description": "Policy systems use fhq_perception.sovereign_regime_state_v4 directly",
+      "severity": "LOW",
+      "downstream_impact": "None if systems correctly bind to v4 source"
+    },
+
+    "learning_layer": {
+      "status": "AT_RISK",
+      "description": "If learning systems read fhq_meta.regime_state, they learn from v2 aliases not v4 beliefs",
+      "severity": "CRITICAL",
+      "downstream_impact": "Learning models may not know what the model actually believed"
+    },
+
+    "replay_integrity": {
+      "status": "BROKEN",
+      "description": "fhq_meta.regime_state prior value was not logged before Migration 207 overwrote it",
+      "severity": "MEDIUM",
+      "downstream_impact": "Cannot replay pre-migration state from audit trail"
+    },
+
+    "downstream_systems": [
+      {
+        "system": "cognitive_gateway",
+        "reads_from": "fhq_meta.regime_state",
+        "impact": "Receives SIDEWAYS instead of NEUTRAL"
+      },
+      {
+        "system": "data_liveness_checker",
+        "reads_from": "fhq_meta.regime_state",
+        "impact": "Staleness checks use v2 labels"
+      }
+    ]
+  },
+
+  "section_5_governance_recommendation": {
+    "recommended_action": "AMEND_MIGRATION_207_VIA_G4",
+    "gate_required": "ADR-004 G4 (CEO Approval)",
+    "adr_implicated": ["ADR-013 (One-True-Source)", "ADR-004 (Change Gates)", "ADR-017 (LIDS/Epistemic Integrity)"],
+
+    "options": [
+      {
+        "option_id": "A",
+        "name": "Remove v2 Mapping",
+        "description": "Amend Migration 207 to write v4 values directly to fhq_meta.regime_state without mapping",
+        "pros": ["Restores ADR-013 compliance", "Eliminates ontology leakage"],
+        "cons": ["May break legacy consumers expecting v2 labels", "Requires consumer audit"],
+        "complexity": "MEDIUM"
+      },
+      {
+        "option_id": "B",
+        "name": "Formalize v2 Ontology",
+        "description": "Create ADR-024 to formally approve v2 ontology as presentation layer",
+        "pros": ["Documents existing behavior", "No code changes"],
+        "cons": ["Perpetuates split-brain architecture", "Learning still at risk"],
+        "complexity": "LOW"
+      },
+      {
+        "option_id": "C",
+        "name": "Deprecate fhq_meta.regime_state",
+        "description": "Mark fhq_meta.regime_state as DEPRECATED, migrate all consumers to v4 source",
+        "pros": ["Clean solution", "Single source of truth restored"],
+        "cons": ["Requires all consumer migration", "Breaking change"],
+        "complexity": "HIGH"
+      }
+    ],
+
+    "stig_recommendation": "Option A with consumer audit",
+    "rationale": "ADR-013 mandates one-true-source. Mapping layers in canonical stores violate this principle. Consumer audit is necessary overhead."
+  },
+
+  "section_6_constraints_verified": {
+    "no_mapping_applied": true,
+    "no_normalization_applied": true,
+    "no_data_cleanup_applied": true,
+    "no_silent_compatibility_introduced": true,
+    "investigation_read_only": true,
+    "evidence_preserved": true
+  },
+
+  "attestation": {
+    "investigating_agent": "STIG",
+    "agent_role": "Chief Technology Officer",
+    "investigation_complete": true,
+    "timestamp": "2026-01-06T20:30:00Z",
+    "evidence_hash": "TO_BE_COMPUTED",
+    "signature": "PENDING_CRYPTOGRAPHIC_SIGNATURE"
+  }
+}

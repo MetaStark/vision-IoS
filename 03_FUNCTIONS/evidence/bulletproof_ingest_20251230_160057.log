@@ -1,0 +1,88 @@
+2025-12-30 16:00:57,314 | INFO | ======================================================================
+2025-12-30 16:00:57,314 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2025-12-30 16:00:57,314 | INFO | ======================================================================
+2025-12-30 16:00:57,314 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2025-12-30 16:00:57,314 | INFO | Executor: STIG (EC-003)
+2025-12-30 16:00:57,314 | INFO | Time: 2025-12-30T15:00:57.314199+00:00
+2025-12-30 16:00:57,314 | INFO | Asset Class Filter: FX
+2025-12-30 16:00:57,314 | INFO | Dry Run: False
+2025-12-30 16:00:57,314 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2025-12-30 16:00:57,314 | INFO | ======================================================================
+2025-12-30 16:00:57,430 | INFO | Found 24 canonical assets
+2025-12-30 16:00:59,043 | INFO | ============================================================
+2025-12-30 16:00:59,044 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2025-12-30 16:00:59,045 | INFO | Assets: 24, Rate limit: 200/min
+2025-12-30 16:00:59,045 | INFO | ============================================================
+2025-12-30 16:00:59,377 | INFO | Alpaca: Updated 0 assets, 9 remaining
+2025-12-30 16:00:59,769 | INFO | ============================================================
+2025-12-30 16:00:59,769 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2025-12-30 16:00:59,769 | INFO | Assets: 9, Using BATCH DOWNLOAD (efficient)
+2025-12-30 16:00:59,769 | INFO | ============================================================
+2025-12-30 16:00:59,769 | INFO |   Checking Yahoo Finance rate limit status...
+2025-12-30 16:01:04,796 | ERROR | 
+1 Failed download:
+2025-12-30 16:01:04,796 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2025-12-30 16:01:04,806 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2025-12-30 16:01:04,806 | WARNING |   Skipping Yahoo and marking all assets as failed
+2025-12-30 16:01:04,806 | INFO | Yahoo: Updated 0 assets, 9 remaining
+2025-12-30 16:01:04,806 | INFO | ============================================================
+2025-12-30 16:01:04,806 | INFO | ATTEMPTING ECB FX INGEST (Backup Provider)
+2025-12-30 16:01:04,806 | INFO | Assets: 9, Rate limit: NONE (free API)
+2025-12-30 16:01:04,806 | INFO | ============================================================
+2025-12-30 16:01:04,806 | INFO |   ECB-supported: 2, Not supported: 7
+2025-12-30 16:01:06,390 | INFO |   [EURNOK=X] +1 rows via ECB
+2025-12-30 16:01:08,316 | INFO |   [EURUSD=X] +1 rows via ECB
+2025-12-30 16:01:08,823 | INFO |   ECB ingest complete: 2 updated, 7 failed
+2025-12-30 16:01:08,826 | INFO | ECB: Updated 2 FX assets, 7 total remaining
+2025-12-30 16:01:08,827 | INFO | ============================================================
+2025-12-30 16:01:08,827 | INFO | ATTEMPTING TWELVEDATA FX INGEST (Non-EUR Backup)
+2025-12-30 16:01:08,827 | INFO | Assets: 7, Rate limit: 7/min (90% of free tier)
+2025-12-30 16:01:08,828 | INFO | ============================================================
+2025-12-30 16:01:08,828 | INFO |   FX assets: 7, Non-FX: 0
+2025-12-30 16:01:10,734 | WARNING |   [AUDUSD=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:01:20,186 | WARNING |   [CADJPY=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:01:29,833 | WARNING |   [CHFJPY=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:01:40,599 | WARNING |   [GBPJPY=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:01:50,464 | WARNING |   [GBPUSD=X] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2025-12-30 16:02:02,466 | WARNING |   [NZDUSD=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:02:11,671 | WARNING |   [USDSGD=X] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2025-12-30 16:02:11,671 | INFO |   TwelveData FX ingest complete: 0 updated, 7 failed, 7 API calls
+2025-12-30 16:02:11,671 | INFO | TwelveData FX: Updated 0 FX assets, 7 total remaining
+2025-12-30 16:02:11,671 | INFO | 
+============================================================
+2025-12-30 16:02:11,671 | INFO | VERIFICATION: Checking Data Freshness
+2025-12-30 16:02:11,671 | INFO | ============================================================
+2025-12-30 16:02:12,411 | WARNING | VERIFICATION FAILED: 3 assets are stale
+2025-12-30 16:02:12,414 | WARNING |   - BT.A.L: 15 days stale (last: 2025-12-15)
+2025-12-30 16:02:12,414 | WARNING |   - 1COV.DE: 7 days stale (last: 2025-12-23)
+2025-12-30 16:02:12,414 | WARNING |   - BRK.B: 4 days stale (last: 2025-12-26)
+2025-12-30 16:02:13,202 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 3 assets still stale after ingest! Updated: 2, Rows: 2
+2025-12-30 16:02:13,202 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2025-12-30 16:02:13,202 | WARNING | ALERT [WARNING]: PARTIAL INGEST: 7 assets could not be updated via any provider
+2025-12-30 16:02:13,209 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2025-12-30 16:02:13,209 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2025-12-30 16:02:13,209 | INFO | 
+======================================================================
+2025-12-30 16:02:13,209 | INFO | BULLETPROOF INGEST COMPLETE
+2025-12-30 16:02:13,209 | INFO | ======================================================================
+2025-12-30 16:02:13,209 | INFO | Status: PARTIAL
+2025-12-30 16:02:13,209 | INFO | Assets Updated: 2
+2025-12-30 16:02:13,209 | INFO | Rows Inserted: 2
+2025-12-30 16:02:13,209 | INFO | Providers Used: ALPACA, YAHOO, ECB, TWELVEDATA_FX
+2025-12-30 16:02:13,209 | INFO | Verification: FAILED (3 stale)
+2025-12-30 16:02:13,209 | INFO | Elapsed: 75.9s
+2025-12-30 16:02:13,209 | INFO | 
+Freshness by Asset Class:
+2025-12-30 16:02:13,209 | INFO |   CRYPTO: 46/50 fresh (92.0%)
+2025-12-30 16:02:13,209 | INFO |   EQUITY: 418/422 fresh (99.1%)
+2025-12-30 16:02:13,209 | INFO |   FX: 24/25 fresh (96.0%)
+2025-12-30 16:02:13,209 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_bc2d2de9_20251230_160213.json
+2025-12-30 16:02:13,209 | INFO | ======================================================================

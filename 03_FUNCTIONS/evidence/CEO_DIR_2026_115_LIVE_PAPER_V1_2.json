@@ -1,0 +1,119 @@
+{
+  "directive": "CEO-DIR-2026-115",
+  "version": "1.2",
+  "title": "Verification-Led Pivot to LIVE-PAPER Trading",
+  "classification": "OPERATIONAL-CRITICAL / LEARNING-ACCELERATION / ECONOMIC-SAFETY-PRESERVED",
+  "timestamp": "2026-01-20T12:57:35.583394+00:00",
+  "executor": "STIG",
+  "dir_112_termination": {
+    "directive": "CEO-DIR-2026-112",
+    "original_window": {
+      "started_at": "2026-01-20T01:36:19Z",
+      "planned_end": "2026-01-22T01:15:00Z",
+      "duration_hours": 48
+    },
+    "actual_duration_hours": 11.32,
+    "termination_type": "VERIFICATION-LED EARLY TERMINATION",
+    "authority": "ADR-004 (Change Control)",
+    "justification": "CEO-DIR-2026-113 verified pipeline as bit-perfect, deterministic, governance-complete",
+    "final_metrics": {
+      "violations_detected": 0,
+      "signals_processed": 2,
+      "learning_attributions": 2,
+      "parameter_changes": 0,
+      "execution_attempts": 0
+    }
+  },
+  "mode_transition": {
+    "from_mode": "SHADOW",
+    "to_mode": "LIVE_PAPER",
+    "broker": "Alpaca Paper",
+    "capital_at_risk": 0,
+    "line_submission": "ENABLED (paper-only)",
+    "cpto_mode": "ACTIVE (unchanged parameters)",
+    "defcon": "ENFORCED"
+  },
+  "pivot_justification": {
+    "trigger": "CEO-DIR-2026-113 Zero-Assumption Audit",
+    "audit_result": {
+      "bit_perfect": true,
+      "deterministic": true,
+      "governance_complete": true
+    },
+    "shadow_purpose_fulfilled": true,
+    "epistemic_stagnation_avoided": true,
+    "remaining_uncertainty": "Execution realism (slippage, fills, latency)"
+  },
+  "live_paper_definition": {
+    "real_time_market_data": true,
+    "real_broker_infrastructure": true,
+    "real_order_placement": true,
+    "real_fills_slippage_latency": true,
+    "capital_at_risk": false,
+    "statement": "Riskless interaction with reality - NOT simulation"
+  },
+  "mandatory_decision_object": [
+    "Instrument",
+    "Direction",
+    "Entry",
+    "Stop Loss",
+    "Take Profit",
+    "Position Size",
+    "Regime context",
+    "Evidence references",
+    "Human-readable rationale"
+  ],
+  "slippage_calibration_kpi": {
+    "objective": "Quantify CPTO economic value under real execution",
+    "measurements": {
+      "estimated_slippage_saved_bps": "CPTO forecast",
+      "actual_executed_slippage_bps": "broker fill",
+      "slippage_delta_bps": "estimated - actual"
+    },
+    "review_trigger": "If mean(actual) > mean(estimated), flag IoS-012"
+  },
+  "paper_drawdown_safety_veto": {
+    "threshold_pct": -5.0,
+    "trigger": "Intraday P&L relative to daily baseline",
+    "automatic_actions": [
+      "Terminate LIVE-PAPER",
+      "Revert to SHADOW",
+      "Freeze new submissions",
+      "Generate incident report",
+      "Notify VEGA"
+    ],
+    "reason": "Safety mechanisms must function independently of capital reality"
+  },
+  "verification_checkpoint_24h": {
+    "deadline": "2026-01-21T12:55:43Z",
+    "requirements": {
+      "min_executed_paper_trades": 5,
+      "min_blocked_trades": 1,
+      "min_resolved_outcomes": 1,
+      "slippage_kpi_populated": true,
+      "no_drawdown_veto": true,
+      "daily_report_updated": true
+    }
+  },
+  "learning_channels_required": [
+    "INVERSION_DELTA_LEARNING",
+    "FRICTION_REFUSAL_LEARNING",
+    "CALIBRATION_BRIER_LEARNING"
+  ],
+  "broker_state_at_activation": {
+    "nav": 104904.05,
+    "cash": 104904.05,
+    "buying_power": 209808.1,
+    "positions_count": 0,
+    "environment": "PAPER"
+  },
+  "governing_adrs": [
+    "ADR-004 (Change Control)",
+    "ADR-012 (Economic Safety)",
+    "ADR-013 (Canonical Truth)",
+    "ADR-014 (Execution Integrity)",
+    "ADR-016 (DEFCON)",
+    "ADR-018 (Learning Validity)"
+  ],
+  "evidence_hash": "b11fd00160d0c69d4562b7a30e117e423c941b1de453d23252eb63c6edbe6d51"
+}

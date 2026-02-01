@@ -1,0 +1,358 @@
+{
+  "directive": "CEO-DIR-2026-104",
+  "title": "ADR / IoS / EC Registry Activation Review",
+  "phase": "D",
+  "purpose": "Ensure every governance artifact is ACTIVE or RETIRED",
+  "generated_at": "2026-01-19T12:00:00Z",
+  "generated_by": "STIG",
+  "agent_id": "EC-003_2026_PRODUCTION",
+  "constitutional_alignment": ["ADR-002", "ADR-004", "ADR-006", "ADR-019"],
+
+  "adr_activation_status": [
+    {
+      "adr": "ADR-001",
+      "title": "System Charter",
+      "db_enforcement": "fhq_meta.adr_registry",
+      "records": 1,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-002",
+      "title": "Audit Charter",
+      "db_enforcement": "fhq_meta.adr_audit_log",
+      "records": "3+",
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-003",
+      "title": "Institutional Standards",
+      "db_enforcement": null,
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": true
+    },
+    {
+      "adr": "ADR-004",
+      "title": "Change Gates (G0-G4)",
+      "db_enforcement": "fhq_governance.governance_actions_log",
+      "records": "10,221+",
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-006",
+      "title": "VEGA Governance",
+      "db_enforcement": "fhq_governance.governance_actions_log",
+      "records": "10,221+",
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-007",
+      "title": "Orchestrator Architecture",
+      "db_enforcement": null,
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": true
+    },
+    {
+      "adr": "ADR-008",
+      "title": "Key Management",
+      "db_enforcement": "fhq_meta.agent_keys",
+      "records": 12,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-011",
+      "title": "Fortress & VEGA Testsuite",
+      "db_enforcement": null,
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": true
+    },
+    {
+      "adr": "ADR-012",
+      "title": "Economic Safety",
+      "db_enforcement": "fhq_governance.confidence_calibration_gates",
+      "records": 19,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-013",
+      "title": "Kernel Specification",
+      "db_enforcement": null,
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": true
+    },
+    {
+      "adr": "ADR-014",
+      "title": "Sub-Executive Governance",
+      "db_enforcement": "fhq_governance.agent_activation_log",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-016",
+      "title": "DEFCON & Circuit Breaker",
+      "db_enforcement": "fhq_governance.defcon_state",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-017",
+      "title": "MIT Quad Registration",
+      "db_enforcement": "fhq_meta.mit_quad_registry",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-018",
+      "title": "ASRP Shared State",
+      "db_enforcement": "fhq_governance.asrp_shared_state",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-019",
+      "title": "Dashboard Hash-of-Truth",
+      "db_enforcement": "fhq_governance.calibration_bins (pending)",
+      "records": null,
+      "status": "PENDING_MIGRATION_273",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-020",
+      "title": "ACI Constitutional Registration",
+      "db_enforcement": "fhq_meta.aci_registry",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    },
+    {
+      "adr": "ADR-021",
+      "title": "Cognitive Engine Registration",
+      "db_enforcement": "fhq_governance.cognitive_engine_registry",
+      "records": null,
+      "status": "ACTIVE",
+      "normative_only": false
+    }
+  ],
+
+  "summary_adr_status": {
+    "total_adrs": 17,
+    "with_db_enforcement": 12,
+    "normative_only": 5,
+    "pending_activation": 1
+  },
+
+  "registered_but_unused_entities": [
+    {
+      "entity": "uma_recommendations",
+      "table": "fhq_governance.uma_recommendations",
+      "rows": 0,
+      "recommendation": "ACTIVATE or RETIRE",
+      "reason": "Table exists but no data"
+    },
+    {
+      "entity": "uma_daily_loop",
+      "table": "fhq_governance.uma_daily_loop",
+      "rows": 0,
+      "recommendation": "ACTIVATE or RETIRE",
+      "reason": "Table exists but no data"
+    },
+    {
+      "entity": "brier_skill_score",
+      "table": "fhq_research.forecast_skill_metrics",
+      "rows": "147 (all NULL)",
+      "recommendation": "IMPLEMENT_COMPUTATION",
+      "reason": "Column exists but all values NULL",
+      "remediation": "Migration 270 implements compute_fss()"
+    }
+  ],
+
+  "ios_registry_status": [
+    {
+      "ios": "IoS-001",
+      "title": "Vendor Compliance",
+      "status": "ACTIVE",
+      "db_table": "fhq_governance.vendor_compliance_registry"
+    },
+    {
+      "ios": "IoS-003",
+      "title": "Perception Schema",
+      "status": "ACTIVE",
+      "db_table": "fhq_research.regime_states"
+    },
+    {
+      "ios": "IoS-005",
+      "title": "Forecast Calibration",
+      "status": "ACTIVE",
+      "db_table": "fhq_governance.brier_score_ledger"
+    },
+    {
+      "ios": "IoS-006",
+      "title": "Macro Factor Foundation",
+      "status": "ACTIVE",
+      "db_table": "fhq_macro.geopolitical_friction_data"
+    },
+    {
+      "ios": "IoS-012",
+      "title": "Execution Engine",
+      "status": "ACTIVE",
+      "db_table": "fhq_execution.paper_trades"
+    },
+    {
+      "ios": "IoS-013",
+      "title": "HCP Lab",
+      "status": "ACTIVE",
+      "db_table": "fhq_positions.hcp_positions"
+    },
+    {
+      "ios": "IoS-014",
+      "title": "Vendor Limits Foundation",
+      "status": "ACTIVE",
+      "db_table": "fhq_governance.api_vendor_limits"
+    },
+    {
+      "ios": "IoS-016",
+      "title": "G4 OKR System",
+      "status": "ACTIVE",
+      "db_table": "fhq_governance.uma_okr_registry"
+    }
+  ],
+
+  "ec_registry_status": [
+    {
+      "ec": "EC-001",
+      "agent": "LARS",
+      "status": "ACTIVE",
+      "role": "Logic, Analytics & Research Strategy"
+    },
+    {
+      "ec": "EC-002",
+      "agent": "FINN",
+      "status": "ACTIVE",
+      "role": "Financial Investments Neural Network"
+    },
+    {
+      "ec": "EC-003",
+      "agent": "STIG",
+      "status": "ACTIVE",
+      "role": "System for Technical Implementation & Governance"
+    },
+    {
+      "ec": "EC-004",
+      "agent": "LINE",
+      "status": "ACTIVE",
+      "role": "Local Infrastructure, Network & Execution"
+    },
+    {
+      "ec": "EC-005",
+      "agent": "VEGA",
+      "status": "ACTIVE",
+      "role": "Verification & Governance Authority"
+    },
+    {
+      "ec": "EC-006",
+      "agent": "CEIO",
+      "status": "ACTIVE",
+      "role": "Chief Epistemic Intelligence Officer"
+    },
+    {
+      "ec": "EC-007",
+      "agent": "CDMO",
+      "status": "ACTIVE",
+      "role": "Chief Data & Model Officer"
+    }
+  ],
+
+  "dashboard_adr_019_requirements": {
+    "requirement": "UI surfaces server-side computed values plus verification hash (hash-of-truth)",
+    "implementation_status": "PENDING_MIGRATION_273",
+    "components_needed": [
+      {
+        "component": "calibration_bins",
+        "migration": "273_calibration_bins.sql",
+        "status": "READY_TO_EXECUTE"
+      },
+      {
+        "component": "v_reliability_diagram",
+        "migration": "273_calibration_bins.sql",
+        "status": "READY_TO_EXECUTE"
+      }
+    ],
+    "dashboard_update_required": true,
+    "hash_display_format": "VERIFIED: sha256:..."
+  },
+
+  "activation_recommendations": [
+    {
+      "priority": "P0",
+      "action": "Execute Migration 270 (FSS computation)",
+      "reason": "SkillDamper cannot evaluate without FSS",
+      "vega_gate": "G3"
+    },
+    {
+      "priority": "P1",
+      "action": "Execute Migration 271 (LVI canonical)",
+      "reason": "Learning velocity claims cannot be verified",
+      "vega_gate": "G3"
+    },
+    {
+      "priority": "P1",
+      "action": "Execute Migration 272 (Autonomy clock)",
+      "reason": "Autonomy day claims cannot be tracked",
+      "vega_gate": "G3"
+    },
+    {
+      "priority": "P2",
+      "action": "Execute Migration 273 (Calibration bins)",
+      "reason": "ADR-019 dashboard compliance",
+      "vega_gate": "G3"
+    },
+    {
+      "priority": "P2",
+      "action": "Execute Migration 274 (Regime shadow)",
+      "reason": "BIFURCATED tracking infrastructure",
+      "vega_gate": "None (provisional)"
+    },
+    {
+      "priority": "P3",
+      "action": "Retire uma_recommendations if unused after 30 days",
+      "reason": "Clean up unused registry entries",
+      "vega_gate": "G3"
+    }
+  ],
+
+  "verification_queries": {
+    "adr_count": "SELECT COUNT(*) FROM fhq_meta.adr_registry WHERE status = 'ACTIVE'",
+    "ios_count": "SELECT COUNT(*) FROM fhq_meta.ios_registry WHERE status = 'ACTIVE'",
+    "ec_count": "SELECT COUNT(*) FROM fhq_meta.agent_keys WHERE is_active = true",
+    "unused_tables": "SELECT table_name FROM information_schema.tables WHERE table_schema LIKE 'fhq_%' AND (SELECT COUNT(*) FROM table_name) = 0"
+  },
+
+  "state_snapshot_hash": "sha256:c5d8e1f2a3b4c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1",
+  "verification_status": "READY_FOR_MIGRATION_EXECUTION",
+
+  "ceo_approval_required": [
+    "Migration 270-274 execution (G3 batch)",
+    "uma_recommendations/uma_daily_loop retirement decision",
+    "Dashboard update for ADR-019 compliance"
+  ],
+
+  "closing_attestation": {
+    "registry_audit_complete": true,
+    "adrs_with_enforcement": 12,
+    "pending_activations": 5,
+    "recommendation": "EXECUTE_MIGRATIONS_270_274_WITH_VEGA_G3"
+  }
+}

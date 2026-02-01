@@ -1,0 +1,168 @@
+{
+  "document_id": "M209-PREFLIGHT-WRITEPATH-EVIDENCE",
+  "document_type": "GOVERNANCE_EVIDENCE",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-003",
+  "migration": "209_epistemic_immutability_controls.sql",
+  "timestamp": "2026-01-06T21:45:00Z",
+  "author": "STIG",
+
+  "section_1_roles_and_privileges": {
+    "description": "Database roles with write access to fhq_perception.model_belief_state",
+    "query_executed": "SELECT grantee, privilege_type FROM information_schema.table_privileges WHERE table_schema = 'fhq_perception' AND table_name = 'model_belief_state'",
+    "query_timestamp": "2026-01-06T21:40:00Z",
+
+    "findings": [
+      {
+        "grantee": "postgres",
+        "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"],
+        "is_superuser": true,
+        "risk_assessment": "SUPERUSER - bypasses all access controls including triggers"
+      }
+    ],
+
+    "other_roles_checked": [
+      {"role": "anon", "has_access": false},
+      {"role": "authenticated", "has_access": false},
+      {"role": "dashboard_user", "has_access": false},
+      {"role": "service_role", "has_access": false}
+    ],
+
+    "schema_ownership": {
+      "schema": "fhq_perception",
+      "owner": "postgres"
+    }
+  },
+
+  "section_2_application_write_paths": {
+    "description": "Agents and jobs that insert belief records",
+
+    "current_writers": {
+      "count": 0,
+      "explanation": "Table was created by Migration 208 (2026-01-06). No application code currently writes to model_belief_state.",
+      "record_count_at_assessment": 0
+    },
+
+    "intended_write_paths": [
+      {
+        "agent": "IoS-003 (Regime Classification Engine)",
+        "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "authority": "FINN (via LARS orchestration)",
+        "operation": "INSERT only",
+        "frequency": "Daily per asset",
+        "integration_status": "PENDING - requires code update to write to model_belief_state"
+      }
+    ],
+
+    "related_tables_currently_written": [
+      {
+        "table": "fhq_perception.regime_daily",
+        "writer": "ios003_daily_regime_update_v4.py",
+        "operation": "INSERT (line 507)"
+      },
+      {
+        "table": "fhq_perception.sovereign_regime_state_v4",
+        "writer": "ios003_daily_regime_update_v4.py",
+        "operation": "INSERT (line 558)"
+      },
+      {
+        "table": "fhq_perception.bocd_changepoint_log",
+        "writer": "ios003_daily_regime_update_v4.py",
+        "operation": "INSERT (line 589)"
+      }
+    ]
+  },
+
+  "section_3_existing_controls": {
+    "description": "Existing policies, triggers, and RLS rules on model_belief_state",
+
+    "triggers": {
+      "count": 0,
+      "list": [],
+      "query": "SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 'model_belief_state'",
+      "finding": "NO TRIGGERS EXIST - immutability not enforced"
+    },
+
+    "rls_policies": {
+      "rls_enabled": false,
+      "rls_forced": false,
+      "policies": [],
+      "finding": "NO RLS POLICIES - table is unprotected"
+    },
+
+    "check_constraints": {
+      "list": [
+        "belief_confidence BETWEEN 0 AND 1",
+        "valid_technical_regime (BULL, BEAR, NEUTRAL, STRESS)"
+      ],
+      "finding": "Data validation exists, but no immutability enforcement"
+    }
+  },
+
+  "section_4_security_gap_analysis": {
+    "current_state": "UNPROTECTED",
+
+    "gaps_identified": [
+      {
+        "gap_id": "G1",
+        "description": "No trigger prevents UPDATE operations",
+        "risk": "Historical beliefs can be modified, breaking replay integrity",
+        "severity": "CRITICAL"
+      },
+      {
+        "gap_id": "G2",
+        "description": "No trigger prevents DELETE operations",
+        "risk": "Beliefs can be erased, destroying audit trail",
+        "severity": "CRITICAL"
+      },
+      {
+        "gap_id": "G3",
+        "description": "No audit logging for modification attempts",
+        "risk": "Violation attempts go undetected",
+        "severity": "HIGH"
+      },
+      {
+        "gap_id": "G4",
+        "description": "Superuser (postgres) bypasses trigger-based controls",
+        "risk": "Administrative override possible",
+        "severity": "MEDIUM",
+        "mitigation": "Procedural control + governance logging"
+      }
+    ],
+
+    "recommended_controls": [
+      {
+        "control": "BEFORE UPDATE OR DELETE trigger",
+        "action": "RAISE EXCEPTION with violation details",
+        "target": "fhq_perception.model_belief_state"
+      },
+      {
+        "control": "Governance audit logging",
+        "action": "Log all violation attempts to fhq_governance.governance_actions_log",
+        "severity_class": "CLASS_A_VIOLATION"
+      }
+    ]
+  },
+
+  "section_5_superuser_limitation_acknowledgment": {
+    "statement": "PostgreSQL superusers (postgres, supabase_admin) can bypass trigger-based immutability controls. This is a database-level architectural limitation.",
+
+    "mitigations": [
+      "All superuser access is audited via PostgreSQL logging",
+      "Production access restricted to emergency scenarios",
+      "CEO-DIR-2026-003 establishes governance policy layer",
+      "Violation attempts logged even if trigger bypassed via application layer"
+    ],
+
+    "acceptance": "ACKNOWLEDGED - Procedural controls supplement technical controls for superuser access"
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:45:00Z",
+    "status": "EVIDENCE_COMPLETE",
+    "statement": "Write-path evidence extraction complete per CEO-DIR-2026-003 Section 3.1"
+  }
+}

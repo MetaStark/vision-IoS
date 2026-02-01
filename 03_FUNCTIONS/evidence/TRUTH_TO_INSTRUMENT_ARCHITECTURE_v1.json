@@ -1,0 +1,123 @@
+{
+  "architecture_id": "TRUTH_TO_INSTRUMENT_ARCHITECTURE_v1",
+  "directive_ref": "CEO-DIR-2026-084",
+  "created_at": "2026-01-18T02:30:00Z",
+  "created_by": "CEO / STIG (EC-003)",
+  "status": "CANONICAL",
+
+  "ONE_LINE_DOCTRINE": "Alpha speaks first. Measurement verifies. Instruments listen. Capital waits.",
+
+  "LAYER_1_SIGNAL": {
+    "name": "SIGNAL LAYER - Truth Discovery",
+    "owner": ["FINN", "UMA"],
+    "mode": "Cognitive / Predictive",
+    "authority": "READ-ONLY downstream",
+
+    "what_happens": [
+      "Market state classified as STRESS @ 99%+ (EQUITY only)",
+      "Signal is inverted by design (contrarian alpha)",
+      "Quality measured by Inverted Brier only"
+    ],
+
+    "explicitly_excluded": [
+      "PnL",
+      "Instruments",
+      "Execution logic",
+      "Capital considerations"
+    ],
+
+    "output": {
+      "format": "(timestamp, asset, direction, confidence)",
+      "meaning": "This is truth, not money"
+    }
+  },
+
+  "LAYER_2_LEDGER": {
+    "name": "LEDGER LAYER - Economic Truth (Shadow)",
+    "owner": ["STIG", "VEGA"],
+    "mode": "SHADOW (append-only)",
+    "authority": "OBSERVATION ONLY",
+
+    "what_happens": [
+      "Signal outcomes logged in fhq_research.roi_direction_ledger_equity",
+      "Direction evaluated at t+1 / t+3 / t+5"
+    ],
+
+    "metrics_tracked": [
+      "Hit rate",
+      "Inverted Brier",
+      "Edge per Activation",
+      "Rolling EV (direction-only)"
+    ],
+
+    "explicitly_excluded": [
+      "Greeks",
+      "Implied Volatility",
+      "Options chains",
+      "Payoff modelling",
+      "Execution timing"
+    ],
+
+    "purpose": "Prove that the system is right before asking how much money it can make."
+  },
+
+  "LAYER_3_INSTRUMENT": {
+    "name": "INSTRUMENT LAYER - Preparation Only",
+    "owner": ["LINE"],
+    "mode": "STUDY / TRAINING",
+    "authority": "NO EXECUTION",
+
+    "what_happens": [
+      "Study options as instruments, not as trades",
+      "Map signal properties to instrument properties"
+    ],
+
+    "signal_to_instrument_mapping": {
+      "Direction": "Put / Call / Spread class",
+      "Horizon": "Expiry feasibility",
+      "Sparsity": "Liquidity tolerance"
+    },
+
+    "validation": "Validate compatibility with broker constraints (e.g. Alpaca)",
+
+    "explicitly_excluded": [
+      "Order placement",
+      "Paper trading",
+      "Live broker connection",
+      "PnL optimisation",
+      "Sizing logic"
+    ],
+
+    "output": [
+      "Options Execution Readiness v1 (document)",
+      "Compatibility matrix",
+      "Explicit 'do-not-use' list"
+    ]
+  },
+
+  "AUTHORITY_FLOW": {
+    "description": "Non-Reversible Authority Flow",
+    "flow": [
+      "Signal (Truth)",
+      "  ↓  cannot be altered by",
+      "Ledger (Measurement)",
+      "  ↓  cannot be optimised by",
+      "Instrument (Preparation)"
+    ],
+    "constraint": "No upward influence permitted. Execution never informs truth."
+  },
+
+  "WHY_THIS_MATTERS": [
+    "Prevents execution skill from masking signal decay",
+    "Prevents clever instruments from faking alpha",
+    "Makes the paper-trading decision trivial and defensible",
+    "Scales cleanly to: Options, Other derivatives, Other asset classes (later)"
+  ],
+
+  "GOVERNANCE": {
+    "signal_layer": "FINN/UMA own truth discovery",
+    "ledger_layer": "STIG/VEGA own measurement integrity",
+    "instrument_layer": "LINE owns instrument preparation",
+    "cross_layer_rule": "Each layer protects the one above it from contamination"
+  }
+}

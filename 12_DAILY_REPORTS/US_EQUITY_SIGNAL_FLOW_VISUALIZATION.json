@@ -1,0 +1,374 @@
+{
+  "document_id": "US_EQUITY_SIGNAL_FLOW_VISUALIZATION",
+  "title": "FjordHQ US Equities Signal Journey - Complete IoS Chain Visualization",
+  "classification": "GOVERNANCE-CRITICAL / MBB INVESTOR-GRADE",
+  "created_at": "2026-01-20T23:00:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+  "directive_chain": ["CEO-DIR-20260120-DAY20", "CEO-DIR-2026-115"],
+
+  "executive_summary": {
+    "total_ios_modules": 19,
+    "core_ios_chain": 16,
+    "database_schemas": 30,
+    "total_tables": 975,
+    "data_records": 639975,
+    "ec_contracts": 5,
+    "agent_contracts": 13,
+    "inversion_universe_tickers": 10,
+    "causal_edges": 10
+  },
+
+  "ios_registry_verification": {
+    "source": "fhq_meta.ios_registry",
+    "verified_at": "2026-01-20T23:00:00Z",
+    "modules": [
+      {"ios_id": "IoS-001", "title": "Canonical Asset & Context Registry", "owner": "STIG", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-002", "title": "Indicator Engine (Sensory Cortex)", "owner": "STIG", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-003", "title": "HMM Regime Engine", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-003-B", "title": "Intraday Regime-Delta", "owner": "FINN", "status": "G0_SUBMITTED", "canonical": false},
+      {"ios_id": "IoS-004", "title": "Regime-Driven Allocation Engine", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-005", "title": "Forecast Calibration & Skill Engine", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-006", "title": "Global Macro & Factor Integration", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-007", "title": "Alpha Graph Engine (Causal Reasoning)", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-008", "title": "Runtime Decision Engine", "owner": "LINE", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-009", "title": "Research Stack", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-010", "title": "Prediction Ledger Engine", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-011", "title": "Technical Analysis Pipeline", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-012", "title": "Execution Engine", "owner": "LINE", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-012-B", "title": "Synthetic Inversion Module", "owner": "STIG", "status": "G0_SUBMITTED", "canonical": false},
+      {"ios_id": "IoS-013", "title": "Options Lab / HCP", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-014", "title": "Autonomous Task Orchestration", "owner": "STIG", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-015", "title": "Multi-Strategy Cognitive Infrastructure", "owner": "FINN", "status": "ACTIVE", "canonical": true},
+      {"ios_id": "IoS-016", "title": "Economic Calendar & Temporal Governance", "owner": "LINE", "status": "ACTIVE", "canonical": true, "governance_state": "G4_CONSTITUTIONAL"}
+    ]
+  },
+
+  "ec_to_ios_mapping": {
+    "tier_0_ceo": {
+      "authority": "Constitutional Authority",
+      "ios_oversight": ["ALL"],
+      "veto_power": "ABSOLUTE"
+    },
+    "tier_1_executives": {
+      "LARS": {"role": "Strategy Lead", "ios_authority": ["IoS-003", "IoS-004", "IoS-007", "IoS-008"]},
+      "VEGA": {"role": "Governance", "ios_authority": ["ALL - Audit & Attestation"]},
+      "STIG": {"role": "CTO", "ios_authority": ["IoS-001", "IoS-002", "IoS-012-B", "IoS-014"]},
+      "FINN": {"role": "Research", "ios_authority": ["IoS-003", "IoS-004", "IoS-005", "IoS-006", "IoS-007", "IoS-009", "IoS-010", "IoS-011", "IoS-013", "IoS-015"]}
+    },
+    "tier_2_operational": {
+      "LINE (EC-005)": {"role": "Execution Agent", "ios_authority": ["IoS-008", "IoS-012", "IoS-016"], "exclusive_execution": true},
+      "CDMO (EC-007)": {"role": "Data Steward", "ios_authority": ["IoS-001", "IoS-006"]},
+      "CEIO (EC-009)": {"role": "External Intelligence", "ios_authority": ["IoS-006", "IoS-016"]},
+      "CRIO": {"role": "Alpha Graph", "ios_authority": ["IoS-007"]},
+      "CFAO": {"role": "Forecast Aggregation", "ios_authority": ["IoS-005", "IoS-010"]}
+    },
+    "tier_2_cognitive": {
+      "EC-014 UMA": {"role": "Learning Velocity & ROI", "ios_authority": ["IoS-005", "IoS-010", "IoS-016"]},
+      "EC-018 MAFO": {"role": "Meta-Alpha Optimizer", "ios_authority": ["IoS-007", "IoS-015"]},
+      "EC-020 SitC": {"role": "Search-in-the-Chain", "ios_authority": ["IoS-007"]},
+      "EC-021 InForage": {"role": "Information Economist", "ios_authority": ["IoS-006"]},
+      "EC-022 IKEA": {"role": "Hallucination Firewall", "ios_authority": ["IoS-005", "IoS-010"]}
+    }
+  },
+
+  "us_equity_signal_flow": {
+    "_description": "Complete signal journey for US Equities from data capture to execution",
+
+    "stage_1_data_acquisition": {
+      "ios": "IoS-001",
+      "title": "Canonical Asset & Context Registry",
+      "database_schema": "fhq_market",
+      "key_tables": ["prices", "staging_prices", "ingestion_batches"],
+      "data_sources": ["Alpaca IEX", "yfinance", "FRED"],
+      "record_count": 397788,
+      "process": [
+        "1. External price feeds ingested via CDMO (EC-007)",
+        "2. Staging table validation (staleness, gaps, anomalies)",
+        "3. Canonicalization to fhq_market.prices",
+        "4. Lineage hash chain attached (ADR-011 Fortress)",
+        "5. Asset metadata synced to canonical registry"
+      ],
+      "output": "OHLCV + Volume data for 500+ assets",
+      "freshness_sla": "15 minutes for US Equities"
+    },
+
+    "stage_2_indicator_calculation": {
+      "ios": "IoS-002 + IoS-011",
+      "title": "Indicator Engine & Technical Analysis Pipeline",
+      "database_schema": "fhq_indicators + fhq_research",
+      "key_tables": ["momentum", "trend", "volatility", "volume", "indicator_registry"],
+      "indicators": {
+        "momentum": ["RSI", "MACD", "Stochastic", "Williams %R"],
+        "trend": ["SMA", "EMA", "ADX", "Ichimoku"],
+        "volatility": ["ATR", "Bollinger Bands", "Keltner Channels"],
+        "volume": ["OBV", "VWAP", "MFI"]
+      },
+      "process": [
+        "1. Price data fetched from IoS-001 canonical table",
+        "2. Deterministic indicator calculations (no ML here)",
+        "3. Indicators stored with asset_id + timestamp key",
+        "4. Multi-timeframe support (1D, 4H, 1H)"
+      ],
+      "output": "Technical indicator feature vectors"
+    },
+
+    "stage_3_macro_integration": {
+      "ios": "IoS-006",
+      "title": "Global Macro & Factor Integration Engine",
+      "database_schema": "fhq_macro",
+      "key_tables": ["feature_registry", "canonical_series", "stationarity_tests", "feature_significance"],
+      "record_count": 183207,
+      "clusters": {
+        "LIQUIDITY": ["M2 YoY", "Net Liquidity", "TGA"],
+        "CREDIT": ["HY Spreads", "Yield Curve", "MOVE"],
+        "VOLATILITY": ["VIX Term Structure", "IV/RV"],
+        "FACTOR": ["DXY", "Real Rates", "Tech Beta"]
+      },
+      "process": [
+        "1. Macro features registered in MFR (Macro Feature Registry)",
+        "2. Stationarity gate: ADF test p < 0.05 required",
+        "3. Lag alignment (no look-ahead bias)",
+        "4. IoS-005 significance test (Bonferroni corrected)",
+        "5. Only GOLDEN features pass to HMM"
+      ],
+      "output": "Stationary, significant macro features"
+    },
+
+    "stage_4_regime_detection": {
+      "ios": "IoS-003",
+      "title": "HMM Regime Engine",
+      "database_schema": "fhq_research",
+      "key_tables": ["hmm_models", "hmm_states", "regime_predictions_v2", "regime_statistics"],
+      "regime_states": {
+        "NORMAL": {"description": "Low volatility, trending", "exposure_bias": "LONG"},
+        "STRESS": {"description": "High volatility, risk-off", "exposure_bias": "DEFENSIVE"},
+        "EXPANSION": {"description": "Growth acceleration", "exposure_bias": "RISK-ON"},
+        "CONTRACTION": {"description": "Growth deceleration", "exposure_bias": "CAUTIOUS"}
+      },
+      "process": [
+        "1. Feature vector from IoS-002 + IoS-006",
+        "2. Hidden Markov Model state inference",
+        "3. Regime probability distribution output",
+        "4. State transition logging",
+        "5. Intraday delta via IoS-003-B (ephemeral)"
+      ],
+      "output": "Current regime state + probabilities"
+    },
+
+    "stage_5_forecast_calibration": {
+      "ios": "IoS-005 + IoS-010",
+      "title": "Forecast Calibration & Prediction Ledger",
+      "database_schema": "fhq_research + fhq_governance",
+      "key_tables": ["forecast_ledger", "brier_score_ledger", "forecast_skill_metrics", "forecast_outcome_pairs"],
+      "metrics": {
+        "brier_score": "Primary calibration metric (0 = perfect, 1 = worst)",
+        "fss_score": "Forecast Skill Score (risk-adjusted)",
+        "hit_rate": "Directional accuracy",
+        "sharpe_ratio": "Risk-adjusted returns"
+      },
+      "process": [
+        "1. Forecasts logged with ex-ante beliefs (ADR-017)",
+        "2. Outcomes resolved against canonical prices",
+        "3. Brier score computed per forecast",
+        "4. Aggregate skill metrics updated",
+        "5. Calibration bins tracked for reliability"
+      ],
+      "output": "Calibrated confidence scores + skill metrics"
+    },
+
+    "stage_6_alpha_graph": {
+      "ios": "IoS-007",
+      "title": "Alpha Graph Engine (Causal Reasoning)",
+      "database_schema": "fhq_alpha + fhq_graph",
+      "key_tables": ["causal_edges", "alpha_hypotheses", "micro_causal_edges", "macro_causal_edges"],
+      "edge_types": {
+        "LEADS": "Asset A leads Asset B (temporal causality)",
+        "INHIBITS": "Asset A suppresses Asset B movement",
+        "AMPLIFIES": "Asset A amplifies Asset B movement",
+        "REGIME_CAUSAL": "Cross-asset regime dependency"
+      },
+      "verified_edges": 10,
+      "process": [
+        "1. PCMCI causal discovery on price/indicator data",
+        "2. Edge weight assignment based on statistical strength",
+        "3. Cluster-level macro causal relationships",
+        "4. Micro-level asset pair relationships",
+        "5. Causal parents inform action selection"
+      ],
+      "output": "Causal network for alpha generation"
+    },
+
+    "stage_7_allocation": {
+      "ios": "IoS-004",
+      "title": "Regime-Driven Allocation Engine",
+      "database_schema": "fhq_alpha",
+      "key_tables": ["risk_budget", "kelly_sizing_log", "signal_cohesion_log"],
+      "allocation_rules": {
+        "max_position_size": "2.5% NAV per ticker",
+        "max_total_exposure": "25% NAV for inversion strategy",
+        "correlation_threshold": 0.7,
+        "kelly_fraction": "Half-Kelly with hard caps"
+      },
+      "process": [
+        "1. Regime state from IoS-003",
+        "2. Asset signals from IoS-007 alpha graph",
+        "3. Kelly-based position sizing",
+        "4. Signal cohesion filter (correlation < 0.7)",
+        "5. Circuit breaker integration (ADR-016)"
+      ],
+      "output": "Target exposure per asset"
+    },
+
+    "stage_8_inversion_module": {
+      "ios": "IoS-012-B",
+      "title": "Synthetic Inversion Module",
+      "database_schema": "fhq_alpha",
+      "key_tables": ["inversion_universe", "inversion_overlay_shadow", "stress_inversion_shadow"],
+      "inversion_universe": {
+        "tickers": ["ADBE", "ADSK", "AIG", "AZO", "GIS", "HNR1.DE", "INTU", "LEN", "NOW", "PGR"],
+        "trigger_condition": "regime = STRESS AND confidence >= 0.99 AND ticker IN universe",
+        "hit_rate_original": "0%",
+        "inverted_brier": 0.0058
+      },
+      "process": [
+        "1. Check if ticker in inversion_universe",
+        "2. If STRESS + 99%+ confidence: INVERT direction",
+        "3. Convert LONG signal to SHORT (or vice versa)",
+        "4. Shadow mode until 2026-02-02 (Hindsight Firewall)",
+        "5. Paper trading only until G4 approval"
+      ],
+      "output": "Inverted directional signals"
+    },
+
+    "stage_9_decision_engine": {
+      "ios": "IoS-008",
+      "title": "Runtime Decision Engine",
+      "database_schema": "fhq_alpha + fhq_governance",
+      "key_tables": ["g2_decision_plans", "decision_batches", "canonical_signal_handoff"],
+      "trinity_requirement": {
+        "signal": "Alpha signal from IoS-007",
+        "context": "Regime + macro state from IoS-003/006",
+        "permission": "VEGA governance clearance"
+      },
+      "process": [
+        "1. Trinity validation (Signal + Context + Permission)",
+        "2. DecisionPlan schema validation",
+        "3. DEFCON check (GREEN/YELLOW/ORANGE/RED/BLACK)",
+        "4. Economic safety limits check (ADR-012)",
+        "5. Create execution mandate for LINE"
+      ],
+      "output": "Validated DecisionPlan"
+    },
+
+    "stage_10_execution": {
+      "ios": "IoS-012",
+      "title": "Execution Engine",
+      "database_schema": "fhq_execution",
+      "key_tables": ["paper_orders", "broker_state_snapshots", "alpaca_paper_trades", "capital_ledger"],
+      "execution_authority": "LINE (EC-005) ONLY per IoS-012",
+      "broker": "Alpaca Paper Trading",
+      "order_types": {
+        "MARKET": "Immediate execution",
+        "LIMIT": "Price-constrained",
+        "BRACKET": "With TP/SL (TakeProfitRequest + StopLossRequest)"
+      },
+      "process": [
+        "1. DecisionPlan received from IoS-008",
+        "2. Order construction (BRACKET preferred)",
+        "3. Pre-flight validation (TP/SL required)",
+        "4. Submission to Alpaca via TradingClient",
+        "5. Order confirmation + position tracking",
+        "6. Broker state reconciliation"
+      ],
+      "output": "Executed orders + positions"
+    },
+
+    "stage_11_calendar_governance": {
+      "ios": "IoS-016",
+      "title": "Economic Calendar & Temporal Governance",
+      "database_schema": "fhq_calendar",
+      "key_tables": ["calendar_events", "event_type_registry", "unexplained_volatility_flags"],
+      "event_categories": ["MACRO", "EQUITY", "CRYPTO", "CROSS_ASSET"],
+      "impact_ranks": [1, 2, 3, 4, 5],
+      "tagging": {
+        "EVENT_ADJACENT": "Forecast in pre-event window",
+        "EVENT_NEUTRAL": "No significant events nearby",
+        "POST_EVENT": "Forecast in post-event window"
+      },
+      "process": [
+        "1. Tag forecasts with event proximity",
+        "2. Stratify Brier scores by event context",
+        "3. Detect ghost events (unexplained volatility)",
+        "4. Compute LVI_adjusted for CEO dashboard"
+      ],
+      "output": "Event-aware learning metrics"
+    },
+
+    "stage_12_orchestration": {
+      "ios": "IoS-014",
+      "title": "Autonomous Task Orchestration Engine",
+      "database_schema": "fhq_governance",
+      "key_tables": ["orchestrator_cycles", "task_registry", "scheduled_tasks"],
+      "schedule_classes": {
+        "NIGHTLY": "00:00-01:00 UTC - Full refresh",
+        "HOURLY": "Alpha refresh, anomaly scans",
+        "REALTIME": "Every 5 min - Execution loop",
+        "EVENT": "DEFCON change, regime break"
+      },
+      "process": [
+        "1. Load schedules from task_registry",
+        "2. Execute DAG (IoS-001 -> IoS-002 -> ... -> IoS-012)",
+        "3. Vendor quota management (90% soft ceiling)",
+        "4. DEFCON-aware execution",
+        "5. Audit trail + evidence production"
+      ],
+      "output": "Coordinated system rhythm"
+    }
+  },
+
+  "visualization_prompt": {
+    "_description": "Use this prompt to generate a visual diagram of the signal flow",
+    "prompt": "Create an intricate, professional technical diagram showing FjordHQ's US Equity signal flow through 12 interconnected stages. The visualization should flow from top-left to bottom-right, with each IoS module represented as a node with its database schema connections shown below. Use a dark theme with cyan/blue accent colors for data flow, orange for governance checkpoints, and green for execution paths. Include:\n\n1. IoS-001 (Asset Registry) at origin - data streams from Alpaca/yfinance\n2. IoS-002/011 (Indicators) - fan out to momentum/trend/volatility calculation blocks\n3. IoS-006 (Macro) - parallel path showing FRED/Bloomberg integration with stationarity gate\n4. IoS-003 (Regime) - central hub with 4-state HMM visualization (NORMAL/STRESS/EXPANSION/CONTRACTION)\n5. IoS-005/010 (Calibration) - Brier score thermometer widget\n6. IoS-007 (Alpha Graph) - causal network visualization with LEADS/INHIBITS/AMPLIFIES edges\n7. IoS-004 (Allocation) - Kelly sizing with position constraints\n8. IoS-012-B (Inversion) - conditional path for STRESS regime + 99% confidence\n9. IoS-008 (Decision) - Trinity gate (Signal + Context + Permission)\n10. IoS-012 (Execution) - LINE (EC-005) authority badge, Alpaca connection\n11. IoS-016 (Calendar) - event timeline ribbon\n12. IoS-014 (Orchestration) - metronome/clock overlay\n\nShow data flowing as animated particles. Mark governance checkpoints with VEGA shield icons. Highlight the inversion universe (10 tickers) with special styling. Include real metrics: 639K records, 500+ assets, 10 causal edges, Brier target <0.30."
+  },
+
+  "key_learnings_day20": [
+    {
+      "id": "LEARN-20260120-001",
+      "category": "STATE_DIVERGENCE",
+      "description": "Broker state diverged from internal tracking",
+      "root_cause": "No real-time reconciliation daemon",
+      "fix": "Implement broker_state_reconciliation_daemon"
+    },
+    {
+      "id": "LEARN-20260120-002",
+      "category": "DIRECTION_BUG",
+      "description": "SPOT_CANONICAL opened LONG on inversion universe",
+      "root_cause": "Not checking inversion_universe table",
+      "fix": "Add inversion check before any position entry"
+    },
+    {
+      "id": "LEARN-20260120-003",
+      "category": "TP_SL_ENFORCEMENT",
+      "description": "TP/SL in database but not at Alpaca",
+      "root_cause": "Bracket orders not implemented until CEO-DIR-2026-DBV-002",
+      "fix": "Now using OrderClass.BRACKET with TakeProfitRequest/StopLossRequest"
+    }
+  ],
+
+  "current_live_paper_state": {
+    "market_status": "CLOSED (MLK Day)",
+    "positions_at_alpaca": 4,
+    "pending_closure_orders": 4,
+    "order_status": "ACCEPTED (queued for market open)",
+    "positions": [
+      {"ticker": "ADBE", "qty": 7, "direction": "LONG", "pnl": -4.14},
+      {"ticker": "GIS", "qty": 46, "direction": "LONG", "pnl": -7.82},
+      {"ticker": "INTU", "qty": 3, "direction": "LONG", "pnl": -37.72},
+      {"ticker": "NOW", "qty": 15, "direction": "LONG", "pnl": -35.32}
+    ],
+    "total_unrealized_pnl": -85.00,
+    "next_action": "SELL orders will execute at market open 2026-01-21"
+  },
+
+  "hash": "e5f3c2d1a8b7e4f9c6d0a3e2f1b5c4d3"
+}

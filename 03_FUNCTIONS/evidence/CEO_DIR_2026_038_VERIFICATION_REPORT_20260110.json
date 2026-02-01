@@ -1,0 +1,140 @@
+{
+  "directive_id": "CEO-DIR-2026-038",
+  "title": "Canonical Orchestrator Verification & Activation",
+  "classification": "FORENSIC_VERIFICATION_REPORT",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T12:35:00Z",
+
+  "classification_result": "D",
+  "classification_description": "PARTIALLY IMPLEMENTED - Schema exists, jobs registered, enabled=true, but execution loop NOT running",
+
+  "section_1_orchestrator_tables_found": {
+    "count": 11,
+    "tables": [
+      "agent_heartbeats",
+      "agent_task_log",
+      "agent_task_stats_v",
+      "epistemic_schedule_config",
+      "orchestrator_authority",
+      "orchestrator_cycles",
+      "scheduled_audits",
+      "scheduled_tasks",
+      "system_heartbeats",
+      "task_registry",
+      "vega_rhythm_schedule"
+    ],
+    "finding": "Rich orchestrator infrastructure EXISTS"
+  },
+
+  "section_2_price_ingestion_orchestrators": {
+    "query": "SELECT * FROM fhq_governance.orchestrator_authority WHERE orchestrator_id LIKE '%Bulletproof%'",
+    "result": [
+      {
+        "orchestrator_id": "FHQ-IoS001-Bulletproof-CRYPTO",
+        "scope": "Crypto daily OHLCV prices",
+        "primary_vendor": "binance",
+        "enabled": true,
+        "activated_by": "CEO",
+        "activated_at": "2025-12-18T22:53:34.907Z",
+        "directive_reference": "CD-IOS-001-PRICE-ARCH-001"
+      },
+      {
+        "orchestrator_id": "FHQ-IoS001-Bulletproof-EQUITY",
+        "scope": "Equity daily OHLCV prices",
+        "primary_vendor": "alpaca",
+        "enabled": true,
+        "activated_by": "CEO",
+        "activated_at": "2025-12-18T22:53:34.907Z",
+        "directive_reference": "CD-IOS-001-PRICE-ARCH-001"
+      },
+      {
+        "orchestrator_id": "FHQ-IoS001-Bulletproof-FX",
+        "scope": "FX daily rates",
+        "primary_vendor": "yahoo_finance",
+        "enabled": true,
+        "activated_by": "CEO",
+        "activated_at": "2025-12-18T22:53:34.907Z",
+        "directive_reference": "CD-IOS-001-PRICE-ARCH-001"
+      }
+    ],
+    "finding": "THREE price ingestion orchestrators REGISTERED and ENABLED"
+  },
+
+  "section_3_task_registry": {
+    "query": "SELECT * FROM fhq_governance.task_registry WHERE task_name ILIKE '%ingest%'",
+    "result": [
+      {"task_name": "ios001_daily_ingest", "assigned_to": "LINE", "enabled": true, "schedule": null},
+      {"task_name": "daily_ingest_worker", "assigned_to": "LINE", "enabled": true, "schedule": null},
+      {"task_name": "ios006_g2_macro_ingest", "assigned_to": "LINE", "enabled": true, "schedule": null}
+    ],
+    "finding": "Ingestion tasks registered but NO SCHEDULE defined, assigned to LINE (not CEIO)"
+  },
+
+  "section_4_execution_evidence": {
+    "orchestrator_cycles": {
+      "query": "SELECT COUNT(*) FROM fhq_governance.orchestrator_cycles",
+      "result": 0,
+      "finding": "ZERO cycles recorded - orchestrator has NEVER executed"
+    },
+    "agent_task_log": {
+      "query": "SELECT * FROM fhq_governance.agent_task_log WHERE task_name LIKE '%ingest%'",
+      "result": [],
+      "finding": "ZERO execution logs for ingest tasks"
+    },
+    "line_heartbeat": {
+      "query": "SELECT last_heartbeat FROM fhq_governance.agent_heartbeats WHERE agent_id = 'LINE'",
+      "result": "2025-12-15T10:49:27.456Z",
+      "finding": "LINE agent last heartbeat 26 DAYS AGO - agent STALE"
+    }
+  },
+
+  "section_5_freshness_monitoring": {
+    "system_heartbeats": {
+      "query": "SELECT * FROM fhq_governance.system_heartbeats WHERE component_name = 'PRICE_FRESHNESS'",
+      "last_heartbeat": "2026-01-10T10:29:00.498Z",
+      "status": "BLACKOUT",
+      "finding": "Freshness monitoring EXISTS and detected BLACKOUT state"
+    }
+  },
+
+  "gap_analysis": {
+    "what_exists": [
+      "orchestrator_authority with 3 enabled ingestors",
+      "task_registry with ingestion tasks",
+      "system_heartbeats monitoring freshness",
+      "Constitutional authority from CEO"
+    ],
+    "what_is_missing": [
+      "Scheduled execution (schedule=null on tasks)",
+      "Active execution loop (0 cycles recorded)",
+      "LINE agent heartbeat (26 days stale)",
+      "Binding to CEIO (EC-009) - currently assigned to LINE"
+    ],
+    "root_cause": "Orchestrator infrastructure is DEFINED but execution loop is NOT RUNNING"
+  },
+
+  "classification_matrix": {
+    "A_fully_registered_but_disabled": false,
+    "B_registered_not_bound_to_ceio": true,
+    "C_running_without_registration": false,
+    "D_partially_implemented": true,
+    "E_truly_missing": false
+  },
+
+  "final_classification": "D",
+  "classification_rationale": "Schema exists. Jobs registered. orchestrator_authority enabled. But: (1) No execution cycles, (2) No task schedules, (3) LINE agent stale, (4) Not bound to CEIO.",
+
+  "required_repair_actions": [
+    "1. Re-bind ingestion tasks from LINE to CEIO (EC-009)",
+    "2. Add schedule to ingestion tasks (interval-based)",
+    "3. Activate orchestrator execution loop",
+    "4. Restore LINE/CEIO agent heartbeat registration",
+    "5. Verify execution via orchestrator_cycles after activation"
+  ],
+
+  "stig_attestation": {
+    "statement": "I, STIG (CTO), attest that price ingestion orchestration is PARTIALLY IMPLEMENTED (Classification D). The infrastructure exists and is enabled, but the execution loop is not running. This is a REPAIR scenario, not a creation scenario. No new schemas or orchestrators are required - only activation and binding.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

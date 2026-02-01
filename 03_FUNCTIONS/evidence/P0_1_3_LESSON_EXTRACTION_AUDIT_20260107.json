@@ -1,0 +1,97 @@
+{
+  "directive_id": "CEO-DIR-2026-019",
+  "artifact_type": "P0_1_3_LESSON_EXTRACTION_AUDIT",
+  "status": "COMPLETE_WITH_CRITICAL_FINDINGS",
+  "generated_at": "2026-01-07T20:55:00Z",
+  "generated_by": "STIG",
+  "evidence_bundle_type": "BACKFILL",
+
+  "executive_summary": {
+    "task": "P0-1.3: Run lesson extraction engine",
+    "result": "SUCCESS with CRITICAL AUDIT FINDINGS",
+    "lessons_extracted": 1,
+    "lesson_type": "SUPPRESSION_WISDOM"
+  },
+
+  "lesson_details": {
+    "lesson_id": "a94f827f-2945-43bd-a429-70647758a958",
+    "lesson_hash": "40e8c82252b931fc62a0b679d1637dd1c590271980af4e1f6bab85a95eadd288",
+    "lesson_category": "SUPPRESSION_WISDOM",
+    "lesson_description": "Suppression Wisdom: 100.0%. Policy correctly suppressed 118 beliefs that would have been wrong."
+  },
+
+  "code_fixes_applied": [
+    "ios010_lesson_extraction_engine.py line 238: Fixed period overlap query (was: >= AND <=, now: < AND >)",
+    "ios010_lesson_extraction_engine.py line 241: Fixed parameter order (period_end, period_start for proper overlap)",
+    "ios010_lesson_extraction_engine.py line 278: Fixed error_direction from 'NONE' to 'UNDER' (valid constraint value)"
+  ],
+
+  "audit_test_1_determinism": {
+    "test": "Re-run with same input window → same lessons → same hashes",
+    "result": "PARTIAL_PASS",
+    "finding": "Same hash generated (40e8c82252...) but DUPLICATE records created",
+    "issue": "Lesson extraction engine lacks idempotency - no hash uniqueness check before insert",
+    "fix_required": "Add ON CONFLICT (lesson_hash) DO NOTHING or check existence before insert"
+  },
+
+  "audit_test_2_hit_rate_definition": {
+    "test": "Definition audit of 100% hit rate - what counts as forecast, correct, denominator",
+    "result": "CRITICAL_FAILURE",
+    "finding": "CIRCULAR VALIDATION DETECTED",
+    "evidence": {
+      "outcome_ledger_evidence_source": "sovereign_regime_state_v4",
+      "implication": "Outcomes are DERIVED FROM predictions, not independent observations",
+      "matches": [
+        {"policy_regime": "NEUTRAL", "outcome_value": "NEUTRAL", "count": 175},
+        {"policy_regime": "BEAR", "outcome_value": "BEAR", "count": 117},
+        {"policy_regime": "BULL", "outcome_value": "BULL", "count": 109},
+        {"policy_regime": "STRESS", "outcome_value": "STRESS", "count": 15}
+      ],
+      "all_identical": true
+    },
+    "conclusion": "100% hit rate is MEANINGLESS - system is validating predictions against themselves",
+    "fix_required": "Outcomes must come from INDEPENDENT source (actual price movements, external oracle)"
+  },
+
+  "canonical_regime_issue": {
+    "canonical_enum": ["BULL", "NEUTRAL", "BEAR"],
+    "found_in_data": ["BULL", "NEUTRAL", "BEAR", "STRESS"],
+    "non_canonical_regime": "STRESS",
+    "occurrences": {
+      "outcome_ledger": 19,
+      "model_belief_state": 13,
+      "sovereign_policy_state": 15
+    },
+    "fix_required": "Either add STRESS to canonical enum or map STRESS to existing regime"
+  },
+
+  "suppression_metrics_are_valid": {
+    "note": "Unlike Brier/hit-rate, suppression regret IS meaningful",
+    "reason": "Suppression regret compares model belief (what model wanted) vs policy choice (what was executed) vs realized outcome",
+    "wisdom_rate": "100% means policy suppressions turned out correct",
+    "interpretation": "Hysteresis system (confirms_required=5) is adding value"
+  },
+
+  "blocking_issues_for_learning": [
+    {
+      "issue": "Circular Brier validation",
+      "severity": "CRITICAL",
+      "impact": "Cannot measure true forecast skill",
+      "fix": "Create independent outcome source from price data"
+    },
+    {
+      "issue": "Lesson extraction lacks idempotency",
+      "severity": "MEDIUM",
+      "impact": "Duplicate lessons on re-run",
+      "fix": "Add unique constraint on lesson_hash"
+    },
+    {
+      "issue": "Non-canonical STRESS regime",
+      "severity": "MEDIUM",
+      "impact": "Data integrity, lesson text contains invalid regime",
+      "fix": "Update canonical regime enum or add mapping"
+    }
+  ],
+
+  "lineage_hash": "p0_1_3_audit_40e8c82252b931fc62a0b679d1637dd1c590271980af4e1f6bab85a95eadd288"
+}

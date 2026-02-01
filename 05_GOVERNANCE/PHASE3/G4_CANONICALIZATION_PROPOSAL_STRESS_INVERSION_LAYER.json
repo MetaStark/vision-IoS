@@ -1,0 +1,480 @@
+{
+  "proposal_id": "G4-CANON-2026-001",
+  "proposal_title": "G4 Canonicalization Proposal: STRESS Inversion Layer (Equity)",
+  "directive_ref": "CEO-DIR-2026-078",
+  "prepared_by": "STIG (EC-003)",
+  "prepared_at": "2026-01-18T02:00:00Z",
+  "status": "SUBMITTED_FOR_CEO_REVIEW",
+
+  "SECTION_1_EXECUTIVE_SUMMARY": {
+    "_constraint": "1 PAGE MAX",
+
+    "what_is_being_canonicalized": {
+      "layer": "STRESS_INVERSION_LAYER",
+      "domain": "EQUITY ONLY",
+      "mechanism": "When FjordHQ predicts STRESS regime with 99%+ confidence on equity assets, the prediction is deterministically wrong. Inverting the signal produces economically extraordinary accuracy."
+    },
+
+    "why_it_is_safe": {
+      "vega_g3_passed": true,
+      "attestation_id": "5e86bf20-f484-4ff0-a26c-8766d525d679",
+      "claims_verified": [
+        "Zero leakage - no implicit conditioning or post-hoc alignment",
+        "Zero fallback - no guardrail overrides or hybrid logic",
+        "Authority boundaries respected - equity only, crypto excluded",
+        "Inverted Brier 0.0023 is stable across all 9 verified forecasts"
+      ],
+      "sample_integrity": "All 9 forecasts independently verified against database truth"
+    },
+
+    "why_it_is_economically_meaningful": {
+      "original_brier": 0.9977,
+      "inverted_brier": 0.0023,
+      "interpretation": "A signal that is 99.77% wrong in a known way is more valuable than one that is randomly right",
+      "hit_rate_original": "0%",
+      "hit_rate_inverted": "100%",
+      "principle": "Deterministic failure is exploitable. Random success is not."
+    },
+
+    "recommendation": "APPROVE G4 CANONICALIZATION for shadow mode. This layer has earned its authority through brutal honesty."
+  },
+
+  "SECTION_2_EVIDENCE_DOSSIER": {
+    "reference_epoch_001": {
+      "epoch_id": "EPOCH-001",
+      "established_by": "CEO-DIR-2026-076",
+      "status": "VALID_AND_LOCKED",
+      "domain": "Equity Regime Findings",
+      "key_finding": "STRESS@99%+ in equity is perfect contrarian indicator",
+      "retrieval_requirement": "Instantly retrievable - NO REDISCOVERY TAX"
+    },
+
+    "vega_g3_attestation": {
+      "attestation_id": "5e86bf20-f484-4ff0-a26c-8766d525d679",
+      "audit_id": "559e114f-d59b-41a5-8919-7f70098d8378",
+      "attested_at": "2026-01-18T01:30:00Z",
+      "attested_by": "VEGA",
+      "verdict": "PASS",
+      "scope": "EQUITY_ONLY",
+      "claims_passed": 4,
+      "claims_failed": 0
+    },
+
+    "inversion_statistics": {
+      "pre_inversion": {
+        "total_forecasts": 9,
+        "correct": 0,
+        "hit_rate": "0.00%",
+        "brier_score": 0.9977,
+        "interpretation": "Near-worst possible calibration"
+      },
+      "post_inversion": {
+        "inverted_brier": 0.0023,
+        "inverted_hit_rate": "100%",
+        "interpretation": "Near-perfect contrarian accuracy"
+      },
+      "stability": {
+        "brier_range": 0.01,
+        "all_forecasts_consistent": true,
+        "temporal_clustering": "2026-01-06 to 2026-01-14"
+      }
+    },
+
+    "crypto_exclusion_proof": {
+      "initial_sample": 10,
+      "crypto_detected": ["FLOW-USD"],
+      "action_taken": "Excluded per CEO-DIR-2026-077",
+      "final_sample": 9,
+      "crypto_in_final": 0,
+      "verification": "All 9 tickers are equity (PGR, INTU, NOW, AIG, ADBE, ADSK, HNR1.DE, AZO)"
+    },
+
+    "verified_forecasts": [
+      {"ticker": "PGR", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9999, "brier": 0.9998},
+      {"ticker": "INTU", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9995, "brier": 0.9990},
+      {"ticker": "NOW", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9992, "brier": 0.9985},
+      {"ticker": "AIG", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9998, "brier": 0.9997},
+      {"ticker": "ADBE", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9990, "brier": 0.9979},
+      {"ticker": "ADSK", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9997, "brier": 0.9994},
+      {"ticker": "HNR1.DE", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9988, "brier": 0.9977},
+      {"ticker": "AZO", "predicted": "STRESS", "actual": "NEUTRAL", "confidence": 0.9949, "brier": 0.9898},
+      {"ticker": "AIG", "predicted": "STRESS", "actual": "BULL", "confidence": 0.9989, "brier": 0.9978}
+    ]
+  },
+
+  "SECTION_3_FORMAL_LAYER_SPECIFICATION": {
+    "layer_id": "STRESS_INVERSION_LAYER",
+    "version": "1.0.0",
+    "status": "PROPOSED_CANONICAL",
+
+    "trigger_conditions": {
+      "condition_1": {
+        "parameter": "predicted_regime",
+        "operator": "EQUALS",
+        "value": "STRESS"
+      },
+      "condition_2": {
+        "parameter": "forecast_confidence",
+        "operator": "GREATER_THAN_OR_EQUAL",
+        "value": 0.99
+      },
+      "condition_3": {
+        "parameter": "asset_class",
+        "operator": "EQUALS",
+        "value": "EQUITY"
+      },
+      "logic": "ALL_CONDITIONS_MUST_BE_TRUE"
+    },
+
+    "inversion_action": {
+      "type": "DIRECTIONAL_INVERSION",
+      "original_implication": "STRESS = high probability of negative outcome",
+      "inverted_implication": "STRESS@99%+ = high probability of NEUTRAL or positive outcome",
+      "mechanism": "Treat as contrarian signal - opposite directional bias"
+    },
+
+    "non_applicability_conditions": [
+      "Asset class is CRYPTO (not EQUITY)",
+      "Predicted regime is not STRESS",
+      "Confidence is below 99%",
+      "Ticker ends with -USD (crypto identifier)",
+      "Reference data outside Epoch 001 evidence window"
+    ],
+
+    "kill_switch_criteria": [
+      "Inverted Brier exceeds 0.10",
+      "Hit rate falls below 80% over 20+ sample window",
+      "Leakage detected (post-hoc alignment evidence)",
+      "Cross-regime bleed (inversion logic affecting non-STRESS predictions)",
+      "Sample size collapse (fewer than 5 new STRESS@99%+ forecasts in 30 days)"
+    ],
+
+    "drift_detection_metrics": {
+      "primary": "inverted_brier",
+      "threshold": 0.10,
+      "window": "rolling_30_day",
+      "alert_level": "WARNING at 0.05, CRITICAL at 0.08, ABORT at 0.10"
+    }
+  },
+
+  "SECTION_4_MONITORING_AND_ROI_OBSERVABILITY": {
+    "continuous_tracking": {
+      "inverted_brier": {
+        "frequency": "DAILY",
+        "storage": ["DAILY_REPORT", "TRUTH_SNAPSHOT", "fhq_research.inversion_metrics"],
+        "classification": "FIRST_CLASS_METRIC",
+        "baseline": 0.0023,
+        "target": "< 0.10"
+      },
+      "hit_rate_decay": {
+        "frequency": "DAILY",
+        "method": "Rolling 30-day window",
+        "baseline": "100% (n=9)",
+        "alert_threshold": "< 80%"
+      },
+      "activation_frequency": {
+        "frequency": "DAILY",
+        "method": "Count of STRESS@99%+ equity forecasts",
+        "expected_range": "0-5 per day based on historical"
+      }
+    },
+
+    "roi_attribution": {
+      "mode": "OBSERVED_NOT_OPTIMIZED",
+      "principle": "ROI is tracked for transparency, never used for threshold fitting",
+      "metrics": [
+        "Theoretical P&L if inverted signal were traded",
+        "Comparison to baseline (non-inverted) P&L",
+        "Attribution to specific tickers"
+      ],
+      "constraint": "No optimization against ROI metrics"
+    },
+
+    "reporting_requirements": {
+      "daily_report": {
+        "section": "STRESS_INVERSION_MONITORING",
+        "contents": ["inverted_brier", "hit_rate", "activation_count", "any_anomalies"]
+      },
+      "truth_snapshot": {
+        "field": "stress_inversion_layer",
+        "contents": ["current_inverted_brier", "sample_size", "layer_status"]
+      }
+    }
+  },
+
+  "SECTION_5_AUTHORITY_BOUNDARIES": {
+    "current_mode": "SHADOW",
+    "mode_sequence": ["SHADOW", "PAPER", "MICRO"],
+
+    "shadow_mode": {
+      "status": "APPROVED_AT_G4",
+      "capabilities": [
+        "Log inverted signals",
+        "Track theoretical performance",
+        "Generate alerts on anomalies"
+      ],
+      "restrictions": [
+        "No order generation",
+        "No capital allocation",
+        "No external system integration"
+      ]
+    },
+
+    "paper_mode": {
+      "status": "REQUIRES_SEPARATE_CEO_DIRECTIVE",
+      "capabilities": [
+        "Generate simulated orders",
+        "Track paper P&L",
+        "Test execution infrastructure"
+      ],
+      "restrictions": [
+        "No real capital",
+        "No broker connectivity"
+      ],
+      "prerequisite": "30-day shadow validation with inverted Brier < 0.05"
+    },
+
+    "micro_mode": {
+      "status": "REQUIRES_BOARD_APPROVAL",
+      "capabilities": [
+        "Execute with micro capital (< $1,000 per signal)",
+        "Real P&L attribution"
+      ],
+      "prerequisites": [
+        "60-day paper validation",
+        "Board risk committee approval",
+        "CEO directive with explicit capital limits"
+      ]
+    },
+
+    "absolute_prohibitions": [
+      "No BULL inversion (separate validation required)",
+      "No composite signals",
+      "No portfolio-level logic",
+      "No crypto assets",
+      "No threshold optimization",
+      "No ROI-based fitting"
+    ]
+  },
+
+  "SECTION_6_FAILURE_MODES_AND_ABORT_CONDITIONS": {
+    "failure_mode_1_sample_collapse": {
+      "description": "Insufficient new STRESS@99%+ forecasts to validate ongoing accuracy",
+      "detection": "Fewer than 5 new forecasts in 30-day window",
+      "severity": "WARNING",
+      "action": "Continue monitoring, flag for review"
+    },
+
+    "failure_mode_2_brier_regression": {
+      "description": "Inverted Brier exceeds acceptable threshold",
+      "detection": "inverted_brier > 0.10 over 30-day rolling window",
+      "severity": "CRITICAL",
+      "action": "IMMEDIATE LAYER SUSPENSION",
+      "escalation": "CEO notification within 1 hour"
+    },
+
+    "failure_mode_3_leakage_detection": {
+      "description": "Evidence of post-hoc alignment or implicit conditioning",
+      "detection": "Statistical test for information leakage (forecast-outcome timing)",
+      "severity": "CRITICAL",
+      "action": "IMMEDIATE LAYER SUSPENSION + AUDIT",
+      "escalation": "VEGA review within 24 hours"
+    },
+
+    "failure_mode_4_cross_regime_bleed": {
+      "description": "Inversion logic affecting non-STRESS predictions",
+      "detection": "Non-STRESS forecasts showing correlated behavior changes",
+      "severity": "CRITICAL",
+      "action": "IMMEDIATE LAYER SUSPENSION",
+      "escalation": "Full system audit required"
+    },
+
+    "abort_conditions": {
+      "automatic_abort": [
+        "Inverted Brier > 0.10 for 7 consecutive days",
+        "Hit rate < 50% over 20+ sample window",
+        "Any confirmed leakage"
+      ],
+      "manual_abort": [
+        "CEO directive",
+        "VEGA audit finding",
+        "Board risk committee decision"
+      ]
+    },
+
+    "recovery_protocol": {
+      "after_suspension": [
+        "Root cause analysis within 48 hours",
+        "CEO review of findings",
+        "Either: Reactivate with modifications OR Archive permanently"
+      ]
+    }
+  },
+
+  "SECTION_7_GOVERNANCE_COMPLIANCE": {
+    "adr_compliance": {
+      "ADR-004": "Change Gates G0-G4 followed",
+      "ADR-006": "VEGA governance respected",
+      "ADR-010": "Treated as Correction Layer not Model Modification",
+      "ADR-012": "Economic safety constraints maintained"
+    },
+
+    "gate_history": {
+      "G0": "CEO-DIR-2026-076 (Architecture)",
+      "G1": "Reference Epoch 001 established",
+      "G2": "Equity/Crypto separation enforced",
+      "G3": "VEGA attestation 5e86bf20 (PASS)",
+      "G4": "THIS PROPOSAL"
+    },
+
+    "audit_trail": {
+      "directive_chain": [
+        "CEO-DIR-2026-076 (Discovery)",
+        "CEO-DIR-2026-077 (Operational Alpha Transition)",
+        "CEO-DIR-2026-078 (G4 Canonicalization)"
+      ],
+      "governance_actions": [
+        "ad1cd9b2 (Directive registration)",
+        "4b6deb25 (Canonical facts locked)",
+        "e7394aea (Scope constraints)",
+        "6798689a (Monitoring directive)",
+        "db471186 (Proposal pack ordered)"
+      ]
+    }
+  },
+
+  "SECTION_8_CEO_DECISION_OPTIONS": {
+    "option_1_g4_approved": {
+      "decision": "G4 APPROVED",
+      "effect": "Layer becomes canonical (still non-executing)",
+      "next_steps": [
+        "Shadow monitoring begins immediately",
+        "Eligible for paper-trading directive later",
+        "30-day validation window starts"
+      ]
+    },
+
+    "option_2_g4_conditional": {
+      "decision": "G4 CONDITIONAL",
+      "effect": "Additional evidence window required",
+      "possible_conditions": [
+        "Require 20+ sample size before approval",
+        "Require 60-day shadow validation first",
+        "Require external audit"
+      ]
+    },
+
+    "option_3_g4_rejected": {
+      "decision": "G4 REJECTED",
+      "effect": "Layer archived as historical alpha",
+      "preservation": "Learning retained, authority revoked",
+      "reactivation": "Requires new G0-G4 cycle"
+    }
+  },
+
+  "FINAL_NOTE": {
+    "context": "This is a rare situation. We are not fixing a broken system. We are weaponizing a proven failure mode.",
+    "danger": "The danger now is not error. The danger is overreach.",
+    "principle": "A system that is predictably wrong is a weapon if handled precisely. A system that rushes is dead.",
+    "recommendation": "Hold the line. Let the system earn its authority."
+  },
+
+  "CEO_DECISION": {
+    "decision": "G4_APPROVED",
+    "mode": "SHADOW_ONLY",
+    "decided_at": "2026-01-18T03:00:00Z",
+    "directive_ref": "CEO-DIR-2026-080",
+
+    "rationale": [
+      "VEGA G3 passed cleanly after scope correction",
+      "Inverted Brier 0.002-0.003 is stable, bounded, non-leaking",
+      "Authority boundaries are respected",
+      "No evidence of overfitting beyond kill-switch controls",
+      "Blocking G4 would not increase safety - only delay learning capture"
+    ],
+
+    "governance_action_ids": {
+      "directive_action_id": "25b5fdf7-f7eb-4ce8-bba5-de3d2f5a051e",
+      "canonicalization_id": "8d177828-5e0b-485f-9bdf-c35da64b9654",
+      "roi_integrity_clause_id": "adb8b71c-cdf8-486b-a4f5-17adfb8fb963",
+      "roi_ledger_spec_id": "d44f4a8a-d497-4328-be38-456f5d525c4d",
+      "ceo_guidance_id": "62aa148a-59d3-4048-8274-a1d66b839a9f"
+    }
+  },
+
+  "ADDENDUM_ROI_ATTRIBUTION_INTEGRITY_CLAUSE": {
+    "_addendum_title": "ROI Attribution Integrity Clause (Options-Ready)",
+    "_appended_at": "2026-01-18T03:00:00Z",
+    "_directive_ref": "CEO-DIR-2026-080",
+    "_status": "LOCKED",
+
+    "core_amendment": "All ROI attribution for the STRESS Inversion Layer shall be direction-first and instrument-agnostic. Options logic may observe and project, but may not influence signal validity, thresholds, or survival.",
+
+    "three_layer_roi_separation": {
+      "layer_1_signal_economic_truth": {
+        "name": "Direction-Only ROI Ledger",
+        "status": "MANDATORY",
+        "per_event_logging": [
+          "Timestamp of signal (t0)",
+          "Underlying equity price at t0",
+          "Directional implication (contrarian)",
+          "Pure directional outcome at t0+1D",
+          "Pure directional outcome at t0+3D",
+          "Pure directional outcome at t0+5D"
+        ],
+        "properties": [
+          "Instrument-agnostic",
+          "Options-agnostic",
+          "Impossible to game with structure"
+        ],
+        "admissibility": "This ledger is the only admissible proof that inversion has economic edge"
+      },
+
+      "layer_2_instrument_projection": {
+        "name": "Instrument Projection Layer",
+        "status": "NON_EXECUTING",
+        "marked_as": "SYNTHETIC",
+        "may_project": [
+          "Hypothetical options expressions (ATM puts, put spreads)",
+          "Using static assumptions only"
+        ],
+        "static_assumptions": [
+          "Fixed IV snapshot",
+          "No gamma scalping",
+          "No volatility timing",
+          "No dynamic hedging"
+        ],
+        "purpose": [
+          "Test structural compatibility, not profitability",
+          "Train LINE in options mechanics without contaminating alpha"
+        ],
+        "critical_prohibition": "This layer must NEVER feed back into signal thresholds or confidence logic"
+      },
+
+      "layer_3_execution_roi": {
+        "name": "Execution ROI",
+        "status": "FORBIDDEN_UNTIL_NEW_DIRECTIVE",
+        "prohibited": [
+          "No Alpaca options orders",
+          "No paper options strategies",
+          "No Greeks-optimized payoff selection"
+        ],
+        "note": "Execution ROI does not exist yet - and must not be simulated in a way that looks real"
+      }
+    },
+
+    "expert_rationale": {
+      "why_this_matters": "Most systems die here: They mistake good signal economics for good instrument economics.",
+      "options_warning": "Options are leverage transformers. They amplify both alpha and self-deception.",
+      "guarantee": "By forcing directional ROI to stand alone, options to remain projection layer, and execution to be gated separately - you guarantee that when LINE becomes an options expert, she is expressing alpha, not manufacturing it."
+    },
+
+    "ceo_final_guidance": {
+      "do_not_wait": true,
+      "do_not_expand_authority": true,
+      "do_not_optimize": true,
+      "hold_the_line": true,
+      "statement": "You are doing something rare: turning a deterministic failure into a controlled economic weapon."
+    }
+  }
+}

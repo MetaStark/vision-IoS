@@ -1,0 +1,597 @@
+#!/usr/bin/env python3
+"""
+Central Context Orchestrator (CCO) Daemon
+CEO Directive WAVE 17A - 2025-12-18
+
+Implements the single point of truth for execution context.
+Transitions CCO from INIT → OPERATIONAL on first signed context update.
+
+WAVE 17A Compliance:
+- Section 3.1: Cold-Start Integrity (INIT state handling)
+- Section 3.2: Canonical Provenance (ADR-013 hashing)
+- Section 3.3: Failover Semantics (4-state model)
+"""
+
+import os
+import sys
+import time
+import json
+import hashlib
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [CCO] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger('CCO_DAEMON')
+
+# Database configuration
+DB_CONFIG = {
+    'host': os.getenv('PGHOST', '127.0.0.1'),
+    'port': os.getenv('PGPORT', '54322'),
+    'database': os.getenv('PGDATABASE', 'postgres'),
+    'user': os.getenv('PGUSER', 'postgres'),
+    'password': os.getenv('PGPASSWORD', 'postgres')
+}
+
+# CCO Configuration
+CCO_CONFIG = {
+    'update_interval_seconds': 10,      # How often to update context
+    'vol_neutral_min': 30,              # VOL_NEUTRAL lower bound
+    'vol_neutral_max': 70,              # VOL_NEUTRAL upper bound
+    'vol_lookback_days': 30,            # Days for volatility calculation
+    'default_asset': 'BTC-USD',         # Primary asset for context
+    'source_tables': [
+        'fhq_data.price_series',
+        'fhq_canonical.ios003_regime_classifications'
+    ]
+}
+
+
+class CCODaemon:
+    """Central Context Orchestrator Daemon"""
+
+    def __init__(self):
+        self.conn = None
+        self.running = False
+        self.update_count = 0
+        self.last_context_hash = None
+
+    def connect(self) -> bool:
+        """Establish database connection"""
+        try:
+            self.conn = psycopg2.connect(**DB_CONFIG)
+            self.conn.autocommit = False
+            logger.info("Database connection established")
+            return True
+        except Exception as e:
+            logger.error(f"Database connection failed: {e}")
+            return False
+
+    def close(self):
+        """Close database connection"""
+        if self.conn:
+            self.conn.close()
+            logger.info("Database connection closed")
+
+    def get_current_cco_state(self) -> Optional[Dict]:
+        """Get current CCO state"""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT cco_status, global_permit, permit_attribution,
+                       context_timestamp, context_hash
+                FROM fhq_canonical.g5_cco_state
+                WHERE is_active = TRUE
+            """)
+            return cur.fetchone()
+
+    def get_locked_parameters(self) -> Dict:
+        """Get locked G4.2/WAVE17 parameters"""
+        params = {}
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT parameter_name, parameter_value
+                FROM fhq_canonical.g4_2_parameters
+            """)
+            for row in cur.fetchall():
+                params[row['parameter_name']] = float(row['parameter_value'])
+        return params
+
+    def fetch_regime_context(self, symbol: str = 'BTC-USD') -> Optional[Dict]:
+        """Fetch regime classification from IoS-003 or derive from prices"""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Check if ios003_regime_classifications table exists
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_schema = 'fhq_canonical'
+                    AND table_name = 'ios003_regime_classifications'
+                )
+            """)
+            table_exists = cur.fetchone()['exists']
+
+            if table_exists:
+                # Try to get from ios003_regime_classifications
+                cur.execute("""
+                    SELECT regime, confidence, vol_state
+                    FROM fhq_canonical.ios003_regime_classifications
+                    WHERE symbol = %s
+                    ORDER BY classified_at DESC
+                    LIMIT 1
+                """, (symbol,))
+                result = cur.fetchone()
+
+                if result:
+                    return {
+                        'regime': result['regime'],
+                        'regime_confidence': float(result['confidence'] or 0.5),
+                        'vol_state': result['vol_state'] or 'STABLE'
+                    }
+
+            # Fallback: derive from price data
+            logger.info("Using price-derived regime context (IoS-003 table not available)")
+            return self._derive_regime_from_prices(symbol)
+
+    def _derive_regime_from_prices(self, symbol: str) -> Optional[Dict]:
+        """Derive regime from price data (fallback)"""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get recent prices (using correct schema: listing_id, date, close)
+            cur.execute("""
+                SELECT close, date
+                FROM fhq_data.price_series
+                WHERE listing_id = %s
+                  AND close IS NOT NULL
+                ORDER BY date DESC
+                LIMIT 60
+            """, (symbol,))
+            rows = cur.fetchall()
+
+            if len(rows) < 20:
+                logger.warning(f"Insufficient price data for {symbol}: {len(rows)} rows")
+                return None
+
+            prices = [float(r['close']) for r in rows]
+
+            # Simple regime detection
+            sma_20 = sum(prices[:20]) / 20
+            sma_50 = sum(prices[:min(50, len(prices))]) / min(50, len(prices))
+            current = prices[0]
+
+            # Calculate returns for volatility
+            returns = []
+            for i in range(len(prices) - 1):
+                if prices[i+1] > 0:
+                    ret = (prices[i] - prices[i+1]) / prices[i+1]
+                    returns.append(ret)
+
+            # Volatility state
+            if len(returns) >= 5:
+                recent_vol = sum(abs(r) for r in returns[:5]) / 5
+                historical_vol = sum(abs(r) for r in returns) / len(returns)
+
+                if recent_vol < historical_vol * 0.7:
+                    vol_state = 'COMPRESSING'
+                elif recent_vol > historical_vol * 1.3:
+                    vol_state = 'EXPANDING'
+                else:
+                    vol_state = 'STABLE'
+            else:
+                vol_state = 'STABLE'
+
+            # Regime detection
+            if current > sma_20 > sma_50:
+                regime = 'BULL'
+                confidence = min(0.9, 0.5 + (current - sma_20) / sma_20)
+            elif current < sma_20 < sma_50:
+                regime = 'BEAR'
+                confidence = min(0.9, 0.5 + (sma_20 - current) / sma_20)
+            elif vol_state == 'EXPANDING' and current < sma_20:
+                regime = 'STRESS'
+                confidence = 0.7
+            else:
+                regime = 'NEUTRAL'
+                confidence = 0.6
+
+            return {
+                'regime': regime,
+                'regime_confidence': confidence,
+                'vol_state': vol_state
+            }
+
+    def calculate_vol_percentile(self, symbol: str = 'BTC-USD', lookback_days: int = 30) -> Optional[float]:
+        """Calculate current volatility percentile using daily price range"""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Use daily range (high-low)/close as volatility measure - more robust
+            cur.execute("""
+                WITH daily_range AS (
+                    SELECT
+                        date,
+                        high,
+                        low,
+                        close,
+                        CASE WHEN close > 0 AND high > low
+                             THEN (high - low) / close * 100
+                             ELSE NULL END as range_pct
+                    FROM fhq_data.price_series
+                    WHERE listing_id = %s
+                      AND close IS NOT NULL
+                      AND high IS NOT NULL
+                      AND low IS NOT NULL
+                    ORDER BY date DESC
+                    LIMIT %s
+                ),
+                valid_ranges AS (
+                    SELECT date, range_pct
+                    FROM daily_range
+                    WHERE range_pct IS NOT NULL AND range_pct > 0.1
+                )
+                SELECT
+                    AVG(range_pct) as avg_range,
+                    (SELECT AVG(range_pct) FROM valid_ranges
+                     WHERE date >= CURRENT_DATE - INTERVAL '7 days') as recent_7d_range,
+                    MIN(range_pct) as min_range,
+                    MAX(range_pct) as max_range,
+                    COUNT(*) as data_points
+                FROM valid_ranges
+            """, (symbol, lookback_days + 10))
+
+            result = cur.fetchone()
+
+            if not result or result['recent_7d_range'] is None:
+                logger.warning(f'Could not calculate vol percentile for {symbol}')
+                return 50.0  # Default to neutral
+
+            recent_vol = float(result['recent_7d_range'] or 0)
+            min_vol = float(result['min_range'] or 0)
+            max_vol = float(result['max_range'] or recent_vol)
+
+            if max_vol == min_vol:
+                return 50.0
+
+            # Calculate where recent volatility sits in historical range
+            percentile = ((recent_vol - min_vol) / (max_vol - min_vol)) * 100
+            logger.info(f'Vol: 7d range={recent_vol:.2f}%, pctl={percentile:.1f}%')
+
+            return max(0, min(100, percentile))
+
+    def get_liquidity_state(self, symbol: str = 'BTC-USD') -> str:
+        """Determine current liquidity state - uses 7-day average to avoid anomalies"""
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # WAVE 17D.2: Robust liquidity with data quality check
+            # If data has mixed units (high CV), default to NORMAL
+            cur.execute("""
+                WITH raw_volumes AS (
+                    SELECT
+                        date,
+                        volume,
+                        -- Normalize to BTC equiv: > 1M assumed USD, divide by ~90K
+                        CASE WHEN volume > 1000000 THEN volume / 90000.0 ELSE volume END as btc_vol
+                    FROM fhq_data.price_series
+                    WHERE listing_id = %s
+                      AND volume IS NOT NULL
+                      AND volume > 100
+                    ORDER BY date DESC
+                    LIMIT 14  -- 2 weeks only for consistency
+                ),
+                recent_7d AS (
+                    SELECT btc_vol FROM raw_volumes
+                    WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+                ),
+                prior_7d AS (
+                    SELECT btc_vol FROM raw_volumes  
+                    WHERE date < CURRENT_DATE - INTERVAL '7 days'
+                )
+                SELECT
+                    COALESCE(AVG(r.btc_vol), 0) as avg_recent,
+                    COALESCE(AVG(p.btc_vol), 0) as avg_prior,
+                    COALESCE(STDDEV(r.btc_vol) / NULLIF(AVG(r.btc_vol), 0), 0) as cv_recent,
+                    (SELECT COUNT(*) FROM recent_7d) as n_recent,
+                    (SELECT COUNT(*) FROM prior_7d) as n_prior
+                FROM recent_7d r, prior_7d p
+            """, (symbol,))
+
+            result = cur.fetchone()
+
+            if not result:
+                return 'NORMAL'
+
+            n_recent = int(result.get('n_recent') or 0)
+            n_prior = int(result.get('n_prior') or 0)
+            cv_recent = float(result.get('cv_recent') or 0)
+
+            # If insufficient data or high CV (mixed units), data quality is poor
+            if n_recent < 3 or n_prior < 3 or cv_recent > 2.0:
+                return 'NORMAL'  # Can't reliably assess liquidity
+
+            avg_recent = float(result.get('avg_recent') or 0)
+            avg_prior = float(result.get('avg_prior') or avg_recent)
+
+            if avg_prior == 0:
+                return 'NORMAL'
+
+            ratio = avg_recent / avg_prior
+
+            if ratio < 0.3:
+                return 'CRISIS'
+            elif ratio < 0.6:
+                return 'LOW'
+            elif ratio > 1.5:
+                return 'HIGH'
+            else:
+                return 'NORMAL'
+
+    def is_market_hours(self) -> bool:
+        """Check if within market hours (crypto = always True)"""
+        # For crypto markets, always open
+        # For equities, would check exchange hours
+        return True
+
+    def compute_context_hash(self, context_vector: Dict) -> str:
+        """Compute SHA-256 hash of context vector (ADR-013)"""
+        # Sort keys for deterministic hashing
+        sorted_context = json.dumps(context_vector, sort_keys=True, default=str)
+        return hashlib.sha256(sorted_context.encode()).hexdigest()
+
+    def compute_input_hash(self, source_tables: list) -> str:
+        """Compute SHA-256 hash of source tables (ADR-013)"""
+        sources_str = ','.join(sorted(source_tables))
+        return hashlib.sha256(sources_str.encode()).hexdigest()
+
+    def update_context(self) -> Tuple[bool, str, Optional[str]]:
+        """
+        Fetch fresh context and update CCO state.
+        Returns: (success, new_status, error_message)
+        """
+        try:
+            symbol = CCO_CONFIG['default_asset']
+
+            # 1. Fetch regime context
+            regime_ctx = self.fetch_regime_context(symbol)
+            if not regime_ctx:
+                return False, 'INIT', 'Failed to fetch regime context'
+
+            # 2. Calculate volatility percentile
+            vol_percentile = self.calculate_vol_percentile(symbol)
+
+            # 3. Get liquidity state
+            liquidity_state = self.get_liquidity_state(symbol)
+
+            # 4. Check market hours
+            market_hours = self.is_market_hours()
+
+            # 5. Build context vector
+            context_vector = {
+                'regime': regime_ctx['regime'],
+                'regime_confidence': regime_ctx['regime_confidence'],
+                'vol_percentile': vol_percentile,
+                'vol_state': regime_ctx['vol_state'],
+                'liquidity_state': liquidity_state,
+                'market_hours': market_hours,
+                'symbol': symbol,
+                'computed_at': datetime.now().isoformat()
+            }
+
+            # 6. Compute hashes (ADR-013 provenance)
+            context_hash = self.compute_context_hash(context_vector)
+            input_hash = self.compute_input_hash(CCO_CONFIG['source_tables'])
+
+            # 7. Skip update if context unchanged
+            if context_hash == self.last_context_hash:
+                logger.debug("Context unchanged, skipping update")
+                return True, 'OPERATIONAL', None
+
+            # 8. Determine permit based on VOL_NEUTRAL window
+            vol_min = CCO_CONFIG['vol_neutral_min']
+            vol_max = CCO_CONFIG['vol_neutral_max']
+
+            if vol_min <= vol_percentile <= vol_max:
+                global_permit = 'PERMITTED'
+                permit_reason = f'VOL_NEUTRAL context ({vol_percentile:.1f}% in {vol_min}-{vol_max}%)'
+            else:
+                global_permit = 'SUPPRESSED'
+                if vol_percentile < vol_min:
+                    permit_reason = f'Vol too low ({vol_percentile:.1f}% < {vol_min}%)'
+                else:
+                    permit_reason = f'Vol too high ({vol_percentile:.1f}% > {vol_max}%)'
+
+            # 9. Get coherence window for valid_until
+            params = self.get_locked_parameters()
+            coherence_window = int(params.get('CCO_COHERENCE_WINDOW_SECONDS', 300))
+            valid_until = datetime.now() + timedelta(seconds=coherence_window)
+
+            # 10. Update CCO state
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE fhq_canonical.g5_cco_state SET
+                        cco_status = 'OPERATIONAL',
+                        current_regime = %s,
+                        current_regime_confidence = %s,
+                        current_vol_percentile = %s,
+                        current_vol_state = %s,
+                        current_liquidity_state = %s,
+                        current_market_hours = %s,
+                        context_timestamp = NOW(),
+                        valid_until = %s,
+                        global_permit = %s,
+                        global_permit_active = %s,
+                        permit_attribution = 'MARKET_DRIVEN',
+                        permit_reason = %s,
+                        context_vector = %s,
+                        context_hash = %s,
+                        input_hash = %s,
+                        source_tables = %s,
+                        signed_by = 'CCO_DAEMON',
+                        updated_at = NOW()
+                    WHERE is_active = TRUE
+                """, (
+                    regime_ctx['regime'],
+                    regime_ctx['regime_confidence'],
+                    vol_percentile,
+                    regime_ctx['vol_state'],
+                    liquidity_state,
+                    market_hours,
+                    valid_until,
+                    global_permit,
+                    global_permit == 'PERMITTED',
+                    permit_reason,
+                    json.dumps(context_vector),
+                    context_hash,
+                    input_hash,
+                    CCO_CONFIG['source_tables']
+                ))
+
+                # Log to health log
+                cur.execute("""
+                    INSERT INTO fhq_canonical.g5_cco_health_log (
+                        check_timestamp, context_age_seconds, cco_status,
+                        previous_status, triggered_degraded, triggered_unavailable
+                    ) VALUES (
+                        NOW(), 0, 'OPERATIONAL',
+                        CASE WHEN %s = 0 THEN 'INIT' ELSE 'OPERATIONAL' END,
+                        FALSE, FALSE
+                    )
+                """, (self.update_count,))
+
+            self.conn.commit()
+            self.last_context_hash = context_hash
+            self.update_count += 1
+
+            return True, 'OPERATIONAL', None
+
+        except Exception as e:
+            self.conn.rollback()
+            logger.error(f"Context update failed: {e}")
+            return False, 'INIT', str(e)
+
+    def run_once(self) -> Dict:
+        """Run a single context update cycle"""
+        logger.info("=" * 60)
+        logger.info("CCO DAEMON - Single Update Cycle")
+        logger.info("=" * 60)
+
+        # Get current state
+        current_state = self.get_current_cco_state()
+        if current_state:
+            logger.info(f"Current CCO Status: {current_state['cco_status']}")
+            logger.info(f"Current Global Permit: {current_state['global_permit']}")
+
+        # Update context
+        success, new_status, error = self.update_context()
+
+        if success:
+            # Get updated state
+            new_state = self.get_current_cco_state()
+            logger.info("-" * 60)
+            logger.info(f"NEW CCO Status: {new_state['cco_status']}")
+            logger.info(f"NEW Global Permit: {new_state['global_permit']}")
+            logger.info(f"Context Hash: {new_state['context_hash'][:16]}...")
+            logger.info("=" * 60)
+
+            return {
+                'success': True,
+                'previous_status': current_state['cco_status'] if current_state else 'UNKNOWN',
+                'new_status': new_state['cco_status'],
+                'global_permit': new_state['global_permit'],
+                'context_hash': new_state['context_hash']
+            }
+        else:
+            logger.error(f"Update failed: {error}")
+            return {
+                'success': False,
+                'error': error
+            }
+
+    def run_continuous(self, max_iterations: int = None):
+        """Run continuous context update loop"""
+        logger.info("=" * 60)
+        logger.info("CCO DAEMON - Starting Continuous Mode")
+        logger.info(f"Update Interval: {CCO_CONFIG['update_interval_seconds']}s")
+        logger.info("=" * 60)
+
+        self.running = True
+        iteration = 0
+
+        try:
+            while self.running:
+                iteration += 1
+
+                if max_iterations and iteration > max_iterations:
+                    logger.info(f"Reached max iterations ({max_iterations})")
+                    break
+
+                logger.info(f"\n[Iteration {iteration}] Updating context...")
+
+                success, status, error = self.update_context()
+
+                if success:
+                    state = self.get_current_cco_state()
+                    permit_symbol = "✓" if state['global_permit'] == 'PERMITTED' else "✗"
+                    logger.info(
+                        f"[{status}] Permit: {state['global_permit']} {permit_symbol} | "
+                        f"Updates: {self.update_count}"
+                    )
+                else:
+                    logger.warning(f"Update failed: {error}")
+
+                time.sleep(CCO_CONFIG['update_interval_seconds'])
+
+        except KeyboardInterrupt:
+            logger.info("\nShutdown requested...")
+        finally:
+            self.running = False
+            logger.info("CCO Daemon stopped")
+
+    def stop(self):
+        """Stop the daemon"""
+        self.running = False
+
+
+def main():
+    """Main entry point"""
+    import argparse
+
+    parser = argparse.ArgumentParser(description='CCO Daemon - Central Context Orchestrator')
+    parser.add_argument('--once', action='store_true', help='Run single update and exit')
+    parser.add_argument('--continuous', action='store_true', help='Run continuous updates')
+    parser.add_argument('--max-iterations', type=int, help='Max iterations for continuous mode')
+    parser.add_argument('--interval', type=int, default=10, help='Update interval in seconds')
+    args = parser.parse_args()
+
+    if args.interval:
+        CCO_CONFIG['update_interval_seconds'] = args.interval
+
+    daemon = CCODaemon()
+
+    if not daemon.connect():
+        logger.error("Failed to connect to database")
+        sys.exit(1)
+
+    try:
+        if args.once:
+            result = daemon.run_once()
+            if result['success']:
+                print(f"\n[OK] CCO transitioned to {result['new_status']}")
+                print(f"     Global Permit: {result['global_permit']}")
+                print(f"     Context Hash: {result['context_hash'][:16]}...")
+            else:
+                print(f"\n[ERROR] Update failed: {result.get('error')}")
+                sys.exit(1)
+        elif args.continuous:
+            daemon.run_continuous(max_iterations=args.max_iterations)
+        else:
+            # Default: run once
+            result = daemon.run_once()
+            if not result['success']:
+                sys.exit(1)
+    finally:
+        daemon.close()
+
+
+if __name__ == "__main__":
+    main()

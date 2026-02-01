@@ -1,0 +1,182 @@
+{
+  "directive_id": "CEO-DIR-2026-013B",
+  "report_type": "INTEGRATED_COUNTERFACTUAL_PACKAGE",
+  "status": "SHADOW_ONLY",
+  "generated_at": "2026-01-07T14:15:00Z",
+  "generated_by": "STIG",
+  "delivery_milestone": "T+48h",
+
+  "workstream_4_1_counterfactual_simulation": {
+    "status": "COMPLETE",
+    "methodology": "Pre-T0 parameter projection using only pre-suppression data",
+    "temporal_integrity": "VERIFIED - no future information leakage",
+    "total_suppressions_analyzed": 118,
+    "key_findings": {
+      "equity_suppressions": 105,
+      "crypto_suppressions": 13,
+      "dominant_pattern": "NEUTRAL->BEAR (43 cases, 36.4%)",
+      "secondary_pattern": "BULL->NEUTRAL (33 cases, 28.0%)",
+      "counterfactual_projection": "Without hysteresis, 40 additional regime changes would have occurred"
+    },
+    "counterfactual_trajectory_summary": {
+      "suppressed_bull_regime": 33,
+      "suppressed_bear_regime": 21,
+      "suppressed_neutral_regime": 57,
+      "suppressed_stress_regime": 2,
+      "avg_suppressed_confidence": 0.7506
+    }
+  },
+
+  "workstream_4_2_hysteresis_stress_test": {
+    "status": "COMPLETE",
+    "configurations_tested": 24,
+    "current_thresholds": {
+      "equity": "5/5 consecutive confirms",
+      "crypto": "3/3 consecutive confirms"
+    },
+    "simulation_results": {
+      "equity_at_conf_90": {"would_confirm": 23, "pct": 21.9},
+      "equity_at_conf_80": {"would_confirm": 43, "pct": 41.0},
+      "equity_at_conf_70": {"would_confirm": 63, "pct": 60.0},
+      "crypto_at_conf_90": {"would_confirm": 3, "pct": 23.1},
+      "crypto_at_conf_80": {"would_confirm": 5, "pct": 38.5},
+      "crypto_at_conf_70": {"would_confirm": 7, "pct": 53.8}
+    },
+    "optimal_threshold_recommendation": "NONE - insufficient outcome data for calibration",
+    "note": "Requires T+72h outcome reconciliation for regret-weighted optimization"
+  },
+
+  "workstream_4_3_early_regret_signals": {
+    "status": "COMPLETE",
+    "methodology": "Asymmetric regret weighting per CEO-DIR-2026-013B",
+    "weights_applied": {
+      "STRESS_MISSED": 2.0,
+      "BEAR_MISSED": 1.5,
+      "BULL_MISSED": 1.0
+    },
+    "high_regret_risk_suppressions": {
+      "total_high_risk": 43,
+      "by_direction": {
+        "NEUTRAL_to_BEAR": {"count": 19, "weighted_risk": 28.5},
+        "BULL_to_NEUTRAL": {"count": 9, "weighted_risk": 9.0},
+        "BEAR_to_NEUTRAL": {"count": 7, "weighted_risk": 7.0},
+        "NEUTRAL_to_BULL": {"count": 3, "weighted_risk": 3.0},
+        "NEUTRAL_to_STRESS": {"count": 1, "weighted_risk": 2.0},
+        "BULL_to_STRESS": {"count": 1, "weighted_risk": 2.0}
+      }
+    },
+    "critical_assets_flagged": [
+      {"asset": "RNO.PA", "suppressed": "BEAR", "conf": 0.997, "risk": "CRITICAL"},
+      {"asset": "TRV", "suppressed": "BEAR", "conf": 0.994, "risk": "CRITICAL"},
+      {"asset": "SPY", "suppressed": "NEUTRAL", "conf": 0.991, "risk": "HIGH"},
+      {"asset": "VTI", "suppressed": "NEUTRAL", "conf": 0.990, "risk": "HIGH"},
+      {"asset": "BTC-USD", "suppressed": "BULL", "conf": 0.901, "risk": "HIGH"}
+    ],
+    "early_regret_proxy": "ELEVATED - 36.4% of suppressions are high-confidence bearish signals"
+  },
+
+  "workstream_4_4_historical_baseline": {
+    "status": "COMPLETE",
+    "data_range": "2025-12-08 to 2026-01-06",
+    "baseline_regime_distribution": {
+      "typical_bull_pct": 35.2,
+      "typical_neutral_pct": 38.8,
+      "typical_bear_pct": 22.4,
+      "typical_stress_pct": 3.6
+    },
+    "current_distribution_2026_01_06": {
+      "bull_pct": 51.4,
+      "neutral_pct": 35.7,
+      "bear_pct": 5.7,
+      "stress_pct": 7.1
+    },
+    "deviation_analysis": {
+      "bull_deviation": "+16.2pp above baseline",
+      "bear_deviation": "-16.7pp below baseline",
+      "interpretation": "Current state shows BULLISH TILT vs historical baseline",
+      "z_score_estimate": "Insufficient consecutive data for statistical significance"
+    },
+    "synthetic_baseline_note": "Limited historical data (30 days). Full baseline requires 90+ days."
+  },
+
+  "workstream_4_5_cross_cluster_contagion": {
+    "status": "COMPLETE",
+    "methodology": "Sector-level regime cascade detection within 24h windows",
+    "contagion_events_detected": {
+      "significant_cascades": 3,
+      "details": [
+        {"date": "2026-01-06", "sector": "INDUSTRIALS", "regime": "BULL", "change": -10, "interpretation": "BULL exodus from INDUSTRIALS"},
+        {"date": "2026-01-05", "sector": "TECHNOLOGY", "regime": "BEAR", "change": -8, "interpretation": "BEAR pressure releasing in TECH"},
+        {"date": "2026-01-05", "sector": "HEALTHCARE", "regime": "NEUTRAL", "change": -7, "interpretation": "NEUTRAL dispersion in HEALTHCARE"}
+      ]
+    },
+    "cross_domain_isolation": {
+      "equity_crypto_leakage": "NOT_DETECTED",
+      "timing_separation": "3h (Equity 22:00 UTC, Crypto 01:00 UTC)",
+      "correlation": "LOW"
+    },
+    "contagion_risk_level": "MODERATE - sector-specific cascades observed but no cross-domain spread"
+  },
+
+  "workstream_4_6_model_calibration": {
+    "status": "COMPLETE",
+    "model_version": "v2026.PROD.1",
+    "calibration_metrics": {
+      "avg_confidence_equity": 0.7506,
+      "avg_confidence_crypto": 0.7264,
+      "stddev_confidence": 0.176,
+      "calibration_quality": "MODERATE - confidence spread indicates uncertainty"
+    },
+    "regime_prediction_accuracy": "PENDING_OUTCOME_RECONCILIATION",
+    "note": "Predictions table empty for last 7 days - model operating in perception-only mode"
+  },
+
+  "workstream_4_7_entropy_gradient": {
+    "status": "COMPLETE",
+    "methodology": "Daily regime distribution entropy tracking",
+    "entropy_trend_14d": [
+      {"date": "2025-12-25", "entropy": 1.253, "signal": "HIGH_UNCERTAINTY"},
+      {"date": "2025-12-28", "entropy": 1.227, "signal": "HIGH_UNCERTAINTY"},
+      {"date": "2025-12-30", "entropy": 1.152, "signal": "MODERATE_UNCERTAINTY"},
+      {"date": "2026-01-01", "entropy": 1.100, "signal": "MODERATE_UNCERTAINTY"},
+      {"date": "2026-01-04", "entropy": 1.122, "signal": "MODERATE_UNCERTAINTY"},
+      {"date": "2026-01-05", "entropy": 1.170, "signal": "MODERATE_UNCERTAINTY"},
+      {"date": "2026-01-06", "entropy": 1.061, "signal": "DECREASING_UNCERTAINTY"}
+    ],
+    "gradient_direction": "DECLINING",
+    "gradient_magnitude": -0.192,
+    "interpretation": "Entropy declining indicates regime consolidation - fewer assets in transition",
+    "early_warning_signal": "LOW - declining entropy suggests stability, not imminent regime shift"
+  },
+
+  "integrated_assessment": {
+    "oscillation_status": "CONFIRMED_CONTROLLED",
+    "hysteresis_effectiveness": "FUNCTIONING_AS_DESIGNED",
+    "regret_risk_level": "ELEVATED_BUT_BOUNDED",
+    "cross_domain_integrity": "INTACT",
+    "entropy_signal": "STABILIZING",
+    "recommended_actions": [
+      "MAINTAIN current hysteresis thresholds (5/5 equity, 3/3 crypto)",
+      "MONITOR high-confidence BEAR suppressions (43 flagged)",
+      "AWAIT T+72h outcome reconciliation for regret classification",
+      "NO POLICY CHANGES until full decision envelope at T+72h"
+    ],
+    "escalation_status": "NOT_TRIGGERED",
+    "defcon_recommendation": "MAINTAIN_GREEN"
+  },
+
+  "next_milestone": {
+    "delivery": "T+72h",
+    "content": "Consolidated Decision Envelope with outcome reconciliation",
+    "depends_on": "Realized outcomes for suppressed regimes",
+    "earliest_available": "2026-01-08T22:00:00Z"
+  },
+
+  "raw_queries_attached": {
+    "suppression_ledger": "SELECT * FROM fhq_governance.epistemic_suppression_ledger WHERE suppression_timestamp >= NOW() - INTERVAL '48 hours'",
+    "regime_state": "SELECT * FROM fhq_perception.sovereign_regime_state_v4 WHERE timestamp >= NOW() - INTERVAL '48 hours'",
+    "entropy_calculation": "WITH sector_regime_counts AS (...) SELECT sector, -SUM(prob * LN(prob)) as entropy FROM sector_probs GROUP BY sector"
+  },
+
+  "lineage_hash": "86d0642e4f97fa91349b7c70037405446043884111287e9c123f9db4b5d9efd8"
+}

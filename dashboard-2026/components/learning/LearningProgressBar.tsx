@@ -1,12 +1,12 @@
 /**
  * Dual Progress Bars - CEO-DIR-2026-058
  *
- * CRITICAL DISTINCTION:
- * - System Maturity: FMCL, safety gates, governance (can reach 100%)
- * - Market Learning: Holdout performance improvement (starts at 0%)
+ * CRITICAL DISTINCTION (CEO-DIR-2026-046 LANGUAGE CORRECTION):
+ * - System Maturity: FMCL, safety gates, governance → "Structural Readiness" (not "100% maturity")
+ * - Market Learning: Holdout performance → "Learning Preparation" (no claims until frozen holdout)
  *
  * Per CEO-DIR-2026-058: "Learning Maturity = 100%" was conceptually wrong.
- * Now correctly split into two separate tracks.
+ * Per CEO-DIR-2026-046: Replace "100% maturity" with "structural readiness achieved"
  */
 
 'use client'
@@ -24,11 +24,12 @@ interface DualProgressBarProps {
   lastUpdated?: string
 }
 
+// CEO-DIR-2026-046: "100% maturity" → "structural readiness achieved"
 const SYSTEM_ANCHORS = [
   { value: 28, label: 'Baseline', color: 'text-gray-500' },
   { value: 80, label: 'Verified', color: 'text-blue-400' },
   { value: 90, label: 'QG-F6', color: 'text-yellow-400' },
-  { value: 100, label: 'Ready', color: 'text-green-400' },
+  { value: 100, label: 'Structural', color: 'text-green-400' },
 ]
 
 const LEARNING_ANCHORS = [
@@ -103,7 +104,7 @@ export function DualProgressBars({
             <Shield className="h-5 w-5 text-blue-400" />
             <div>
               <h3 className="text-lg font-semibold text-white">
-                System Maturity
+                Structural Readiness
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
                 FMCL • Safety Gates • Governance Integrity
@@ -161,7 +162,7 @@ export function DualProgressBars({
             <Brain className="h-5 w-5 text-purple-400" />
             <div>
               <h3 className="text-lg font-semibold text-white">
-                Market Learning
+                Learning Preparation
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
                 Holdout Performance • Out-of-Sample Skill

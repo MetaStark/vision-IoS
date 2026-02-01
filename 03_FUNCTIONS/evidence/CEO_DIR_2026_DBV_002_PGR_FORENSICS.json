@@ -1,0 +1,119 @@
+{
+  "evidence_id": "CEO_DIR_2026_DBV_002_PGR_FORENSICS",
+  "directive": "CEO-DIR-2026-DBV-002",
+  "section": "2.1 PGR Anomaly",
+  "classification": "CRITICAL_DATA_INTEGRITY_FAILURE",
+  "created_at": "2026-01-20T19:45:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "anomaly_description": {
+    "reported_issue": "PGR submitted with limit price 96.27 while asset trades ~201",
+    "price_submitted": 96.27,
+    "price_actual": 202.37,
+    "price_delta_pct": -52.4,
+    "severity": "FATAL"
+  },
+
+  "forensic_trace": {
+    "source_ios_001": {
+      "table": "fhq_market.prices",
+      "canonical_id": "PGR",
+      "current_price": {
+        "date": "2026-01-15",
+        "close": 202.37,
+        "source": "TWELVEDATA",
+        "quality_score": 1
+      },
+      "stale_price_match": {
+        "date": "2021-12-12",
+        "close": 96.69,
+        "source": "yfinance_colab",
+        "age_years": 4.1
+      }
+    },
+
+    "ios_002_indicator_layer": "NOT_DIRECTLY_INVOLVED",
+
+    "ios_003_regime_output": {
+      "note": "PGR orders in paper_orders show regime_state=STRESS",
+      "source": "IOS012B_INVERSION"
+    },
+
+    "ios_008_decision_engine": {
+      "note": "Decision engine received stale price from upstream",
+      "root_cause_location": "DATA_FEED_ORIGIN"
+    },
+
+    "ios_012_final_order": {
+      "orders_found": 6,
+      "all_orders_have_null_limit_price": true,
+      "note": "The 96.27 limit price was in CEO-specified checkpoint orders, not automated pipeline"
+    }
+  },
+
+  "root_cause_classification": "STALE_PRICE_DATA",
+
+  "root_cause_detail": {
+    "category": "DATA_FEED_STALENESS",
+    "subcategory": "HISTORICAL_DATA_LEAKAGE",
+    "explanation": "The price 96.27 matches PGR's closing price from December 2021 (4+ years ago). Either: (a) A lookup query retrieved historical data instead of current, (b) A cache was not invalidated, or (c) Manual input used outdated reference data.",
+    "evidence_sql": "SELECT canonical_id, timestamp, close FROM fhq_market.prices WHERE canonical_id='PGR' AND close BETWEEN 90 AND 100 ORDER BY timestamp DESC",
+    "evidence_result": "10 rows from 2021-11-30 to 2021-12-13, all showing prices $93-$97"
+  },
+
+  "excluded_causes": [
+    {
+      "cause": "misrouted_directive",
+      "reason": "PGR canonical_id matches correctly in all tables"
+    },
+    {
+      "cause": "asset_mapping_error",
+      "reason": "No evidence of symbol confusion; PGR consistently identified"
+    },
+    {
+      "cause": "pipeline_race_condition",
+      "reason": "Timestamps show linear progression; no concurrent writes detected"
+    }
+  ],
+
+  "impact_assessment": {
+    "orders_affected": "CEO checkpoint orders (5 total including PGR)",
+    "financial_risk": "None - LIVE-PAPER mode, zero capital at risk",
+    "data_integrity_risk": "HIGH - If pattern exists for other assets, widespread mispricing possible",
+    "learning_impact": "CRITICAL - Slippage/fill data will be unreliable if prices are stale"
+  },
+
+  "recommended_actions": [
+    {
+      "priority": "P0",
+      "action": "Implement price freshness gate: Reject any order where price_timestamp > 24h stale",
+      "owner": "STIG",
+      "ios_reference": "IoS-001"
+    },
+    {
+      "priority": "P0",
+      "action": "Add canonical timestamp verification at IoS-012 order submission",
+      "owner": "LINE",
+      "ios_reference": "IoS-012"
+    },
+    {
+      "priority": "P1",
+      "action": "Audit all 5 checkpoint orders for similar staleness",
+      "owner": "CDMO",
+      "ios_reference": "IoS-001"
+    },
+    {
+      "priority": "P2",
+      "action": "Implement automated price sanity check: current vs 52-week range",
+      "owner": "VEGA",
+      "ios_reference": "IoS-014"
+    }
+  ],
+
+  "verification_queries": {
+    "find_stale_prices": "SELECT canonical_id, MAX(timestamp) as latest, NOW() - MAX(timestamp) as staleness FROM fhq_market.prices GROUP BY canonical_id HAVING NOW() - MAX(timestamp) > INTERVAL '48 hours' ORDER BY staleness DESC",
+    "price_sanity_check": "SELECT canonical_id, close, timestamp FROM fhq_market.prices WHERE close < (SELECT AVG(close)*0.5 FROM fhq_market.prices p2 WHERE p2.canonical_id = prices.canonical_id AND p2.timestamp > NOW() - INTERVAL '1 year')"
+  },
+
+  "hash": "e3a7f9c2d8b4a1e6f0c3d9b5a2e8f4c1"
+}

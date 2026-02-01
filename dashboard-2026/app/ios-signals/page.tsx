@@ -328,11 +328,13 @@ export default function IoS013SignalsPage() {
             <span className="text-gray-500">
               updated {formatTimestamp(data.system_status.last_updated)}
             </span>
-            {data.db_reconciliation.row_count_match ? (
-              <CheckCircle className="h-4 w-4 text-green-500" title="DB row count match" />
-            ) : (
-              <XCircle className="h-4 w-4 text-red-500" title="DB row count mismatch" />
-            )}
+            <span title={data.db_reconciliation.row_count_match ? "DB row count match" : "DB row count mismatch"}>
+              {data.db_reconciliation.row_count_match ? (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-500" />
+              )}
+            </span>
           </div>
         </div>
 

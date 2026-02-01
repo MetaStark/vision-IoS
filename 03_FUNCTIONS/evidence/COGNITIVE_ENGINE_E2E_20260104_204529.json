@@ -1,0 +1,165 @@
+{
+  "test_suite": "COGNITIVE_ENGINE_E2E_PIPELINE",
+  "directive": "CEO-DIR-2026-COGNITIVE-ENGINES-001",
+  "timestamp": "2026-01-04T20:45:29.457205+00:00",
+  "pipeline_metrics": {
+    "data_liveness": {
+      "evidence_nodes": {
+        "count": 29,
+        "hours_stale": 120.81446438583333
+      },
+      "regime_state": {
+        "count": 131150,
+        "hours_stale": 1.8770615180555557
+      },
+      "market_prices": {
+        "count": 1219300,
+        "hours_stale": 21.756815455
+      }
+    },
+    "embedding": {
+      "query": "What is the outlook for BTC-USD given current NEUTRAL regime?",
+      "dimensions": 1536,
+      "latency_ms": 1316
+    },
+    "retrieval": {
+      "query": "Bitcoin regime causal transmission liquidity",
+      "sparse_count": 2,
+      "dense_count": 5,
+      "fused_count": 6,
+      "top_rrf_score": 0.01575682382133995,
+      "latency_ms": 5
+    },
+    "ikea": {
+      "claims_extracted": 2,
+      "claims_grounded": 0,
+      "claims_ungrounded": 2,
+      "is_fully_grounded": false,
+      "latency_ms": 25
+    },
+    "memory": {
+      "core_tokens": 352,
+      "recall_memories": 0,
+      "current_regime": "SIDEWAYS",
+      "archive_id": "a40add0d-86d3-46bb-b420-fe63b82d134e",
+      "latency_ms": 14
+    },
+    "storage": {
+      "bundle_id": "6331b944-626b-4d79-87c8-c77efade77d4",
+      "bundle_hash": "1323507f3e1dd0ad9c3fdc0b2a67ef66c642af043736a4d6ccf3ad38ae19ea9d",
+      "latency_ms": 10
+    }
+  },
+  "total_latency_ms": 1370,
+  "total_tests": 13,
+  "passed": 12,
+  "failed": 0,
+  "warned": 1,
+  "skipped": 0,
+  "results": [
+    {
+      "test_id": "00fffcb5-352a-4cf9-b1b4-5ddfcde9b34a",
+      "test_name": "DATA_LIVENESS_CHECK",
+      "status": "PASS",
+      "details": "Evidence:29, Regime:131150, Prices:1219300",
+      "latency_ms": null,
+      "timestamp": "2026-01-04T20:45:24.992396+00:00"
+    },
+    {
+      "test_id": "9c49823d-9740-420b-beb2-44f89e928664",
+      "test_name": "EMBEDDING_GENERATION",
+      "status": "PASS",
+      "details": "Query: \"What is the outlook for BTC-USD given current NEUT...\" -> 1536 dims",
+      "latency_ms": 1316,
+      "timestamp": "2026-01-04T20:45:29.305468+00:00"
+    },
+    {
+      "test_id": "f7dfb83c-f16f-4cac-86ce-0c3b88646be0",
+      "test_name": "SPARSE_FTS_SEARCH",
+      "status": "PASS",
+      "details": "Query: \"Bitcoin regime causal transmission liquidity\" -> 2 results",
+      "latency_ms": 5,
+      "timestamp": "2026-01-04T20:45:29.360864+00:00"
+    },
+    {
+      "test_id": "b6aaa31e-9633-495a-a85b-60c99a6d442a",
+      "test_name": "DENSE_VECTOR_SEARCH",
+      "status": "PASS",
+      "details": "Simulated 5 dense results (no pgvector)",
+      "latency_ms": null,
+      "timestamp": "2026-01-04T20:45:29.360864+00:00"
+    },
+    {
+      "test_id": "a5f554fa-2c59-4144-9ef2-a1e9778beaa5",
+      "test_name": "RRF_FUSION",
+      "status": "PASS",
+      "details": "Fused 6 unique results, top_score=0.015757",
+      "latency_ms": 0,
+      "timestamp": "2026-01-04T20:45:29.360864+00:00"
+    },
+    {
+      "test_id": "6b59c4a6-15c6-4ceb-923a-b3a6ec8833e5",
+      "test_name": "EVIDENCE_TEXT_FETCH",
+      "status": "PASS",
+      "details": "Fetched 5 evidence texts",
+      "latency_ms": null,
+      "timestamp": "2026-01-04T20:45:29.368498+00:00"
+    },
+    {
+      "test_id": "cfc69f8b-54c5-44c2-bffd-a10d7d822f49",
+      "test_name": "CLAIM_EXTRACTION",
+      "status": "PASS",
+      "details": "Extracted 2 claims from response",
+      "latency_ms": 20,
+      "timestamp": "2026-01-04T20:45:29.389568+00:00"
+    },
+    {
+      "test_id": "bc56fdcf-6eae-4d09-9318-764444255501",
+      "test_name": "IKEA_GROUNDING_CHECK",
+      "status": "WARN",
+      "details": "Grounded: 0, Ungrounded: 2",
+      "latency_ms": 5,
+      "timestamp": "2026-01-04T20:45:29.395566+00:00"
+    },
+    {
+      "test_id": "0096cf13-4f38-4b6f-a7c1-967a3212e71d",
+      "test_name": "CORE_MEMORY_LOAD",
+      "status": "PASS",
+      "details": "Loaded constitution (352 tokens)",
+      "latency_ms": 12,
+      "timestamp": "2026-01-04T20:45:29.413144+00:00"
+    },
+    {
+      "test_id": "1eeb872d-54e6-43a9-a0b6-ceca52bddb77",
+      "test_name": "MEMORY_PAGE_IN",
+      "status": "PASS",
+      "details": "Regime=SIDEWAYS, Core=352t, Recall=0",
+      "latency_ms": 2,
+      "timestamp": "2026-01-04T20:45:29.441564+00:00"
+    },
+    {
+      "test_id": "d56fd870-ce0d-4c74-b8ad-4ee3371daf74",
+      "test_name": "ARCHIVAL_STORE",
+      "status": "PASS",
+      "details": "Archived insight a40add0d-86d3-46bb-b420-fe63b82d134e",
+      "latency_ms": 0,
+      "timestamp": "2026-01-04T20:45:29.441564+00:00"
+    },
+    {
+      "test_id": "fcada7d2-1289-49d1-8061-ad3d1165e628",
+      "test_name": "EVIDENCE_BUNDLE_STORE",
+      "status": "PASS",
+      "details": "Bundle 6331b944-626b-4d79-87c8-c77efade77d4, hash=1323507f3e1dd0ad...",
+      "latency_ms": 10,
+      "timestamp": "2026-01-04T20:45:29.451648+00:00"
+    },
+    {
+      "test_id": "14342457-faa0-4c7e-bfae-c323864cf496",
+      "test_name": "QUERY_LOG_STORE",
+      "status": "PASS",
+      "details": "Logged to inforage_query_log",
+      "latency_ms": null,
+      "timestamp": "2026-01-04T20:45:29.457205+00:00"
+    }
+  ]
+}

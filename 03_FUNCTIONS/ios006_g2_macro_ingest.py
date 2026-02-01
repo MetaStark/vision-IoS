@@ -43,6 +43,13 @@ logger = logging.getLogger('IoS-006-G2')
 # Load environment
 load_dotenv()
 
+# CEO-DIR-2026-020 D2: Mandatory Evidence Attachment
+try:
+    from mandatory_evidence_contract import attach_evidence, MissingEvidenceViolation
+    EVIDENCE_CONTRACT_ENABLED = True
+except ImportError:
+    EVIDENCE_CONTRACT_ENABLED = False
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
@@ -454,6 +461,217 @@ class CEIOIngestionEngine:
             logger.info(f"CALCULATED | GLOBAL_M2_USD: Using US M2 as proxy (full global M2 requires additional sources)")
 
         return calculated
+
+    # =========================================================================
+    # CEO-DIR-2026-120 P2.1: FAMA-FRENCH FACTOR INTEGRATION
+    # =========================================================================
+
+    def ingest_fama_french_factors(self) -> Optional[pd.DataFrame]:
+        """
+        Ingest Fama-French 5-Factor Model data from Kenneth French Data Library.
+
+        CEO-DIR-2026-120 P2.1: Factor-based weighting methodology for IoS-013.
+
+        Factors:
+        - MKT_RF: Market Risk Premium (Rm - Rf)
+        - SMB: Small Minus Big (size factor)
+        - HML: High Minus Low (value factor)
+        - RMW: Robust Minus Weak (profitability factor)
+        - CMA: Conservative Minus Aggressive (investment factor)
+        - RF: Risk-Free Rate
+        - MOM: Momentum factor (optional, from separate file)
+
+        Returns:
+            DataFrame with daily factor returns, or None if ingestion fails
+        """
+        import io
+        import zipfile
+        import urllib.request
+
+        # Kenneth French Data Library URLs
+        FF5_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_daily_CSV.zip"
+        MOM_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_daily_CSV.zip"
+
+        logger.info("FAMA-FRENCH | Fetching 5-Factor data from Kenneth French Data Library...")
+
+        try:
+            # Fetch and extract 5-Factor data
+            ff5_df = self._fetch_french_csv(FF5_URL, 'F-F_Research_Data_5_Factors_2x3_daily')
+
+            if ff5_df is None or len(ff5_df) == 0:
+                logger.error("FAMA-FRENCH | Failed to fetch 5-Factor data")
+                return None
+
+            logger.info(f"FAMA-FRENCH | 5-Factor data: {len(ff5_df)} observations, "
+                       f"{ff5_df.index.min()} to {ff5_df.index.max()}")
+
+            # Try to fetch Momentum factor
+            try:
+                mom_df = self._fetch_french_csv(MOM_URL, 'F-F_Momentum_Factor_daily')
+                if mom_df is not None and len(mom_df) > 0:
+                    # Merge momentum with 5-factor data
+                    ff5_df = ff5_df.join(mom_df, how='left')
+                    logger.info(f"FAMA-FRENCH | Momentum factor merged: {len(mom_df)} observations")
+            except Exception as mom_err:
+                logger.warning(f"FAMA-FRENCH | Could not fetch Momentum factor: {mom_err}")
+                ff5_df['Mom'] = None  # Add empty momentum column
+
+            # Standardize column names
+            column_map = {
+                'Mkt-RF': 'mkt_rf',
+                'SMB': 'smb',
+                'HML': 'hml',
+                'RMW': 'rmw',
+                'CMA': 'cma',
+                'RF': 'rf',
+                'Mom': 'mom'
+            }
+            ff5_df = ff5_df.rename(columns=column_map)
+
+            # Convert from percentage to decimal (French data is in percentage)
+            for col in ['mkt_rf', 'smb', 'hml', 'rmw', 'cma', 'rf', 'mom']:
+                if col in ff5_df.columns:
+                    ff5_df[col] = ff5_df[col] / 100.0
+
+            # Add date column from index
+            ff5_df = ff5_df.reset_index()
+            ff5_df = ff5_df.rename(columns={'index': 'date'})
+
+            logger.info(f"FAMA-FRENCH | Ingestion complete: {len(ff5_df)} daily factor returns")
+
+            return ff5_df
+
+        except Exception as e:
+            logger.error(f"FAMA-FRENCH | Ingestion failed: {e}")
+            self.errors.append({
+                'feature_id': 'FAMA_FRENCH_5F',
+                'source': 'FRENCH_DATA_LIBRARY',
+                'error': str(e)
+            })
+            return None
+
+    def _fetch_french_csv(self, url: str, filename_prefix: str) -> Optional[pd.DataFrame]:
+        """Fetch and parse a CSV from Kenneth French Data Library ZIP file."""
+        import io
+        import zipfile
+        import urllib.request
+
+        try:
+            # Download ZIP file
+            with urllib.request.urlopen(url, timeout=30) as response:
+                zip_data = io.BytesIO(response.read())
+
+            # Extract CSV from ZIP
+            with zipfile.ZipFile(zip_data, 'r') as zf:
+                # Find the CSV file
+                csv_name = None
+                for name in zf.namelist():
+                    if name.endswith('.CSV') or name.endswith('.csv'):
+                        csv_name = name
+                        break
+
+                if csv_name is None:
+                    logger.error(f"FAMA-FRENCH | No CSV found in {url}")
+                    return None
+
+                with zf.open(csv_name) as f:
+                    # Read and parse CSV
+                    # French data has header rows we need to skip
+                    lines = f.read().decode('utf-8').splitlines()
+
+                    # Find where data starts (after header text)
+                    data_start = 0
+                    for i, line in enumerate(lines):
+                        if line.strip() and line[0].isdigit():
+                            data_start = i
+                            break
+
+                    # Find where data ends (before annual data or footer)
+                    data_end = len(lines)
+                    for i in range(data_start + 1, len(lines)):
+                        line = lines[i].strip()
+                        if not line or (not line[0].isdigit() and ',' not in line):
+                            # Check if it's annual data section
+                            if 'Annual' in line or not line:
+                                data_end = i
+                                break
+
+                    # Get header row (one row before data)
+                    header_line = lines[data_start - 1] if data_start > 0 else lines[0]
+
+                    # Parse data
+                    csv_text = header_line + '\n' + '\n'.join(lines[data_start:data_end])
+                    df = pd.read_csv(io.StringIO(csv_text))
+
+                    # First column is date
+                    date_col = df.columns[0]
+                    df[date_col] = pd.to_datetime(df[date_col].astype(str), format='%Y%m%d', errors='coerce')
+                    df = df.dropna(subset=[date_col])
+                    df = df.set_index(date_col)
+
+                    # Drop any non-numeric columns
+                    numeric_cols = df.select_dtypes(include=[np.number]).columns
+                    df = df[numeric_cols]
+
+                    return df
+
+        except Exception as e:
+            logger.error(f"FAMA-FRENCH | Failed to fetch {url}: {e}")
+            return None
+
+    def save_fama_french_to_database(self, ff_df: pd.DataFrame) -> int:
+        """
+        Save Fama-French factor data to database.
+
+        CEO-DIR-2026-120 P2.1: Persist to fhq_research.fama_french_factors
+        """
+        if ff_df is None or len(ff_df) == 0:
+            return 0
+
+        if self.conn is None:
+            logger.warning("FAMA-FRENCH | No database connection, skipping save")
+            return 0
+
+        try:
+            rows_inserted = 0
+            with self.conn.cursor() as cur:
+                # Use upsert to handle duplicates
+                for _, row in ff_df.iterrows():
+                    cur.execute("""
+                        INSERT INTO fhq_research.fama_french_factors (
+                            date, mkt_rf, smb, hml, rmw, cma, rf, mom, source, ingested_at
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                        ON CONFLICT (date) DO UPDATE SET
+                            mkt_rf = EXCLUDED.mkt_rf,
+                            smb = EXCLUDED.smb,
+                            hml = EXCLUDED.hml,
+                            rmw = EXCLUDED.rmw,
+                            cma = EXCLUDED.cma,
+                            rf = EXCLUDED.rf,
+                            mom = EXCLUDED.mom,
+                            ingested_at = NOW()
+                    """, (
+                        row['date'],
+                        row.get('mkt_rf'),
+                        row.get('smb'),
+                        row.get('hml'),
+                        row.get('rmw'),
+                        row.get('cma'),
+                        row.get('rf'),
+                        row.get('mom'),
+                        'FRENCH_DATA_LIBRARY'
+                    ))
+                    rows_inserted += 1
+
+                self.conn.commit()
+                logger.info(f"FAMA-FRENCH | Saved {rows_inserted} rows to database")
+
+            return rows_inserted
+
+        except Exception as e:
+            logger.error(f"FAMA-FRENCH | Database save failed: {e}")
+            self.conn.rollback()
+            return 0
 
     def run_ingestion(self) -> Dict[str, pd.DataFrame]:
         """Execute full ingestion pipeline."""
@@ -1113,6 +1331,38 @@ def run_g2_pipeline():
         logger.info(f"Total Observations: {evidence['summary']['total_observations']:,}")
         logger.info(f"Evidence File: {evidence_path}")
         logger.info("=" * 70)
+
+        # CEO-DIR-2026-020 D2: Attach court-proof evidence to ledger
+        if EVIDENCE_CONTRACT_ENABLED:
+            try:
+                raw_query = """
+                SELECT feature_id, timestamp, value_raw, value_transformed, transformation_method
+                FROM fhq_macro.canonical_series
+                WHERE timestamp > NOW() - INTERVAL '7 days'
+                ORDER BY timestamp DESC
+                -- G2 macro ingest evidence query
+                """
+                summary_id = f"G2-INGEST-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+                evidence_result = attach_evidence(
+                    conn=conn,
+                    summary_id=summary_id,
+                    summary_type='G2_INGEST_SUMMARY',
+                    generating_agent='CEIO',
+                    raw_query=raw_query,
+                    query_result=evidence,
+                    summary_content={
+                        'features_ingested': evidence['summary']['features_ingested'],
+                        'features_stationary': evidence['summary']['features_stationary'],
+                        'features_rejected': evidence['summary']['features_rejected'],
+                        'total_observations': evidence['summary']['total_observations'],
+                        'evidence_file': evidence_path,
+                        'integrity_hash': evidence['integrity_hash'][:32]
+                    },
+                    evidence_sources=['FRED', 'YAHOO', 'fhq_macro.canonical_series']
+                )
+                logger.info(f"[EVIDENCE-D2] G2 ingest evidence attached: {evidence_result['evidence_id']}")
+            except Exception as e:
+                logger.error(f"[EVIDENCE-D2] Failed to attach G2 evidence: {e}")
 
         return evidence
 

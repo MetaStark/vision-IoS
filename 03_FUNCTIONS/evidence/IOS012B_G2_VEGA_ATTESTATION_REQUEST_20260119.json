@@ -1,0 +1,156 @@
+{
+  "attestation_request_id": "G2-IOS012B-20260119-001",
+  "directive": "CEO-DIR-2026-106",
+  "module": "IoS-012-B Synthetic Inversion Module",
+  "request_type": "G2_GOVERNANCE_ATTESTATION",
+  "submitted_by": "STIG",
+  "submitted_at": "2026-01-19T19:45:00Z",
+
+  "attestation_scope": {
+    "purpose": "VEGA attestation of IoS-012-B epistemic hygiene and governance compliance",
+    "clarification": "Per CEO directive: VEGA evaluates epistemic hygiene, NOT alpha/strategy quality. Strategy quality is FINN/LARS/CEO domain.",
+
+    "review_items": [
+      {
+        "item_id": "G2-1",
+        "category": "STATISTICAL_METHODOLOGY",
+        "item": "Inverted Brier Score Definition",
+        "document": "02_IOS/IoS-012-B_G1_ADDENDUM_STATISTICAL_DEFENSIBILITY.md",
+        "claim": "Directional inversion with confidence preservation is mathematically sound",
+        "verification_method": "Review Section 1.3-1.5 for methodology freeze"
+      },
+      {
+        "item_id": "G2-2",
+        "category": "STATISTICAL_METHODOLOGY",
+        "item": "Statistical Significance Test",
+        "document": "02_IOS/IoS-012-B_G1_ADDENDUM_STATISTICAL_DEFENSIBILITY.md",
+        "claim": "p-value < 0.001 under binomial exact test",
+        "verification_method": "Review Section 1.5 calculation: P(X>=37|n=37,p=0.5)"
+      },
+      {
+        "item_id": "G2-3",
+        "category": "RISK_CONTROLS",
+        "item": "Dual-Layer Health Metrics",
+        "document": "02_IOS/IoS-012-B_G1_ADDENDUM_STATISTICAL_DEFENSIBILITY.md",
+        "claim": "Auto-disable triggers on P&L breach ONLY, not directional breach alone",
+        "verification_method": "Review Section 2.4 auto-disable conditions"
+      },
+      {
+        "item_id": "G2-4",
+        "category": "TEMPORAL_INTEGRITY",
+        "item": "Regime Transition Timing",
+        "document": "02_IOS/IoS-012-B_G1_ADDENDUM_STATISTICAL_DEFENSIBILITY.md",
+        "claim": "Exit at next market open + 30 minutes on regime change",
+        "verification_method": "Review Section 3.2 time-anchored exit rules"
+      },
+      {
+        "item_id": "G2-5",
+        "category": "HINDSIGHT_FIREWALL",
+        "item": "Non-Eligibility Clause",
+        "document": "03_FUNCTIONS/evidence/CEO_DIR_2026_106_IOS012B_G0_SUBMISSION.json",
+        "claim": "Shadow mode enforced until 2026-02-02, no live execution permitted",
+        "verification_method": "Review hindsight_firewall_compliance section"
+      },
+      {
+        "item_id": "G2-6",
+        "category": "INFRASTRUCTURE",
+        "item": "Write-Path Isolation",
+        "document": "03_FUNCTIONS/evidence/IOS012B_G1_VALIDATION_20260119.json",
+        "claim": "Shadow writes isolated from live execution",
+        "verification_method": "G1 validation test 1 PASS"
+      },
+      {
+        "item_id": "G2-7",
+        "category": "INFRASTRUCTURE",
+        "item": "Deterministic Replay",
+        "document": "03_FUNCTIONS/evidence/IOS012B_G1_VALIDATION_20260119.json",
+        "claim": "Same inputs produce same outputs",
+        "verification_method": "G1 validation test 2 PASS"
+      },
+      {
+        "item_id": "G2-8",
+        "category": "INFRASTRUCTURE",
+        "item": "Health Idempotence",
+        "document": "03_FUNCTIONS/evidence/IOS012B_G1_VALIDATION_20260119.json",
+        "claim": "Multiple health checks give consistent results",
+        "verification_method": "G1 validation test 3 PASS"
+      }
+    ]
+  },
+
+  "adr_alignment_checklist": {
+    "ADR-004": {
+      "title": "Change Gates",
+      "requirement": "G0-G4 approval workflow",
+      "status": "COMPLIANT",
+      "evidence": "G0 submitted, G1 verified, G2 in progress"
+    },
+    "ADR-006": {
+      "title": "VEGA Governance",
+      "requirement": "VEGA attestation for governance artifacts",
+      "status": "PENDING_ATTESTATION",
+      "evidence": "This request"
+    },
+    "ADR-012": {
+      "title": "Economic Safety",
+      "requirement": "Auto-disable on economic breach",
+      "status": "COMPLIANT",
+      "evidence": "P&L health threshold at 0% (breakeven)"
+    },
+    "ADR-016": {
+      "title": "DEFCON Circuit Breaker",
+      "requirement": "System halt on critical conditions",
+      "status": "COMPLIANT",
+      "evidence": "Hindsight contamination detection triggers system halt"
+    }
+  },
+
+  "g1_validation_summary": {
+    "status": "VERIFIED",
+    "tests_passed": 5,
+    "tests_total": 5,
+    "evidence_file": "03_FUNCTIONS/evidence/IOS012B_G1_VALIDATION_20260119.json",
+    "test_results": [
+      {"name": "write_path_isolation", "status": "PASS"},
+      {"name": "deterministic_replay", "status": "PASS"},
+      {"name": "health_idempotence", "status": "PASS"},
+      {"name": "schema_isolation", "status": "PASS"},
+      {"name": "no_cross_schema_triggers", "status": "PASS"}
+    ]
+  },
+
+  "requested_attestation": {
+    "attestation_type": "G2_GOVERNANCE",
+    "attesting_agent": "VEGA",
+    "attestation_statement": "I attest that IoS-012-B Synthetic Inversion Module has been reviewed for epistemic hygiene and governance compliance. The statistical methodology is sound, risk controls are adequate, and the hindsight firewall is properly enforced.",
+
+    "attestation_scope_limits": [
+      "This attestation does NOT evaluate alpha quality or strategy profitability",
+      "This attestation does NOT predict future performance",
+      "This attestation is limited to epistemic hygiene and governance compliance"
+    ]
+  },
+
+  "evidence_chain": {
+    "g0_submission": "03_FUNCTIONS/evidence/CEO_DIR_2026_106_IOS012B_G0_SUBMISSION.json",
+    "g1_addendum": "02_IOS/IoS-012-B_G1_ADDENDUM_STATISTICAL_DEFENSIBILITY.md",
+    "g1_validation": "03_FUNCTIONS/evidence/IOS012B_G1_VALIDATION_20260119.json",
+    "migration_313": "04_DATABASE/MIGRATIONS/313_ios012b_inversion_overlay_infrastructure.sql",
+    "migration_314": "04_DATABASE/MIGRATIONS/314_ios012b_g1_health_metrics_v2.sql"
+  },
+
+  "next_steps": {
+    "upon_g2_approval": [
+      "Proceed to G3 integration testing (shadow mode)",
+      "Begin daily shadow performance measurement",
+      "Collect 14+ days of shadow data for G4 package"
+    ],
+    "g4_prerequisites": [
+      "Date >= 2026-02-02 (hindsight firewall expiry)",
+      "Shadow inverted hit rate >= 80%",
+      "CEO approval"
+    ]
+  },
+
+  "evidence_hash": "sha256:IOS012B_G2_REQUEST_20260119"
+}

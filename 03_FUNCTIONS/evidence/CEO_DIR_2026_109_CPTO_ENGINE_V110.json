@@ -1,0 +1,211 @@
+{
+  "directive": "CEO-DIR-2026-109",
+  "scope": "CPTO Precision Engine v1.1.0 Implementation",
+  "classification": "MANDATORY - CEO AMENDMENTS A, B, C",
+  "execution_timestamp": "2026-01-20T01:05:00Z",
+  "implementor": "STIG",
+  "status": "IMPLEMENTED",
+
+  "file_implemented": "03_FUNCTIONS/cpto_precision_engine.py",
+  "version": "1.1.0",
+  "lines_of_code": 1140,
+
+  "ceo_amendments_implemented": {
+    "A": {
+      "name": "Inversion-Aware STRESS Logic",
+      "status": "IMPLEMENTED",
+      "description": "VERIFIED_INVERTED_STRESS regime with aggression 0.002",
+      "implementation_details": [
+        "Added VERIFIED_INVERTED_STRESS to regime_aggression_map with value 0.002",
+        "_get_regime_state() checks metadata->>'verified_inverted' flag",
+        "When STRESS + verified_inverted=true, regime becomes VERIFIED_INVERTED_STRESS",
+        "_calculate_precision_entry() treats VERIFIED_INVERTED_STRESS like STRONG_BULL for high fill probability"
+      ],
+      "code_references": [
+        "line 102: 'VERIFIED_INVERTED_STRESS': 0.002 in regime_aggression_map",
+        "line 719: VERIFIED_INVERTED_STRESS in direction UP logic",
+        "line 736: VERIFIED_INVERTED_STRESS in direction DOWN logic",
+        "line 894-896: Regime transformation based on verified_inverted metadata"
+      ]
+    },
+    "B": {
+      "name": "Alpha Attribution - Slippage Saved",
+      "status": "IMPLEMENTED",
+      "description": "estimated_slippage_saved_bps and mid_market_at_signal tracking",
+      "implementation_details": [
+        "Added mid_market_at_signal field to TradePacket",
+        "Added estimated_slippage_saved_bps field to TradePacket",
+        "Created _calculate_slippage_saved() method with formula from EC-015",
+        "BUY: (mid_market - limit_price) / mid_market * 10000",
+        "SELL: (limit_price - mid_market) / mid_market * 10000",
+        "Slippage saved logged to cpto_precision_log"
+      ],
+      "code_references": [
+        "line 185-186: TradePacket fields for mid_market and slippage_saved",
+        "line 654-682: _calculate_slippage_saved() method",
+        "line 583-585: Calculation call in transform_signal()",
+        "line 610-611: Fields set in packet construction",
+        "line 1037-1038: Database logging of slippage fields"
+      ]
+    },
+    "C": {
+      "name": "Friction Feedback Loop",
+      "status": "IMPLEMENTED",
+      "description": "30%/24h refusal threshold triggers LARS escalation",
+      "implementation_details": [
+        "Created FrictionMonitor class (lines 229-360)",
+        "record_outcome() logs ACCEPTED/REFUSED to cpto_friction_log",
+        "compute_friction_rate() calculates rolling 24h refusal percentage",
+        "check_and_escalate() triggers LARS escalation when threshold exceeded",
+        "_trigger_lars_escalation() calls database function and logs governance action",
+        "Every transform_signal() call records outcome and checks friction"
+      ],
+      "code_references": [
+        "line 229-360: FrictionMonitor class",
+        "line 115-117: CPTOParameterSet friction thresholds",
+        "line 393: friction_monitor initialization",
+        "line 621-624: Outcome recording and escalation check",
+        "line 634-648: _record_refusal() method for blocked signals"
+      ]
+    }
+  },
+
+  "additional_features": {
+    "defcon_behavior": {
+      "status": "IMPLEMENTED",
+      "description": "DEFCON-aware behavior per EC-015 Section 7",
+      "behavior_map": {
+        "GREEN": "NORMAL",
+        "YELLOW": "NORMAL",
+        "ORANGE": "CONSERVATIVE (tightened aggression, stricter liquidity)",
+        "RED": "REFUSE_NEW (no new TradePackets)",
+        "BLACK": "REFUSE_NEW (no new TradePackets)"
+      },
+      "code_references": [
+        "line 48-75: DEFCONLevel enum and DEFCON_BEHAVIOR_MAP",
+        "line 477-497: _get_current_defcon() database query",
+        "line 499-502: get_behavior_mode() method",
+        "line 529-536: DEFCON check at start of transform_signal()"
+      ]
+    },
+    "parameter_loading": {
+      "status": "IMPLEMENTED",
+      "description": "Loads active parameters from fhq_alpha.cpto_parameter_versions",
+      "code_references": [
+        "line 400-451: _load_active_parameters() method",
+        "Queries cpto_parameter_versions WHERE is_active=true AND superseded_at IS NULL",
+        "Falls back to CPTOParameterSet defaults if database unavailable"
+      ]
+    },
+    "line_handoff": {
+      "status": "IMPLEMENTED",
+      "description": "submit_to_line() method for CPTO->LINE TradePacket handoff",
+      "code_references": [
+        "line 1050-1092: submit_to_line() method",
+        "Inserts to fhq_alpha.cpto_line_handoff table",
+        "Returns handoff_id for tracking"
+      ]
+    }
+  },
+
+  "class_structure": {
+    "DEFCONLevel": {
+      "type": "Enum",
+      "values": ["GREEN", "YELLOW", "ORANGE", "RED", "BLACK"]
+    },
+    "CPTOBehavior": {
+      "type": "Enum",
+      "values": ["NORMAL", "CONSERVATIVE", "REFUSE_NEW"]
+    },
+    "CPTOParameterSet": {
+      "type": "dataclass",
+      "version": "1.1.0",
+      "fields": [
+        "version", "max_entry_deviation_pct", "regime_aggression_map",
+        "liquidity_threshold_pct", "ttl_buffer_seconds",
+        "atr_multiplier_stop_loss", "r_multiplier_take_profit",
+        "friction_escalation_threshold_pct", "friction_escalation_window_hours",
+        "shadow_fill_log_enabled"
+      ]
+    },
+    "TradePacket": {
+      "type": "dataclass",
+      "version": "1.1.0",
+      "fields": [
+        "ticker", "direction", "confidence", "limit_price",
+        "canonical_stop_loss", "canonical_take_profit",
+        "atr_at_entry", "r_value", "ttl_valid_until",
+        "regime_at_calculation", "regime_snapshot_hash",
+        "parameter_set_version", "parameter_content_hash",
+        "input_features_hash", "outputs_hash", "calculation_logic_hash",
+        "ec_contract_number", "source_signal_id", "source_ios",
+        "signal_timestamp", "computed_timestamp",
+        "mid_market_at_signal", "estimated_slippage_saved_bps",
+        "liquidity_check_passed", "ttl_check_passed", "refusal_reason"
+      ]
+    },
+    "FrictionMonitor": {
+      "type": "class",
+      "methods": [
+        "record_outcome()", "compute_friction_rate()",
+        "check_and_escalate()", "_trigger_lars_escalation()"
+      ]
+    },
+    "CPTOPrecisionEngine": {
+      "type": "class",
+      "version": "1.1.0",
+      "methods": [
+        "transform_signal()", "submit_to_line()",
+        "_calculate_precision_entry()", "_calculate_canonical_exits()",
+        "_calculate_slippage_saved()", "_check_ttl()", "check_liquidity()",
+        "_get_regime_state()", "_get_latest_indicators()", "_get_canonical_atr()",
+        "_log_precision_calculation()", "get_behavior_mode()"
+      ]
+    }
+  },
+
+  "cli_usage": {
+    "command": "python cpto_precision_engine.py --ticker SPY --direction UP --price 580.50",
+    "arguments": [
+      "--ticker: Ticker symbol (required)",
+      "--direction: UP or DOWN (required)",
+      "--price: Current price (required)",
+      "--confidence: Signal confidence (default 0.7)",
+      "--ttl-hours: TTL window in hours (default 24)",
+      "--submit: Submit to LINE handoff"
+    ]
+  },
+
+  "database_dependencies": [
+    "fhq_alpha.cpto_parameter_versions",
+    "fhq_alpha.cpto_precision_log",
+    "fhq_alpha.cpto_friction_log",
+    "fhq_alpha.cpto_line_handoff",
+    "fhq_research.regime_classifications",
+    "fhq_research.global_regime_state",
+    "fhq_research.indicator_values",
+    "fhq_governance.defcon_status",
+    "fhq_governance.governance_actions_log"
+  ],
+
+  "ec015_compliance": {
+    "contract_number": "EC-015",
+    "parameter_version": "1.1.0",
+    "parent_executive": "FINN",
+    "execution_path": "LINE_ONLY",
+    "order_type": "LIMIT_ONLY",
+    "can_place_orders": false,
+    "produces": "TradePacket"
+  },
+
+  "verification_checklist": [
+    "PASS: CPTOParameterSet v1.1.0 with VERIFIED_INVERTED_STRESS (Amendment A)",
+    "PASS: estimated_slippage_saved_bps calculation implemented (Amendment B)",
+    "PASS: FrictionMonitor class with 30%/24h escalation (Amendment C)",
+    "PASS: DEFCON-aware behavior (GREEN/YELLOW=NORMAL, ORANGE=CONSERVATIVE, RED/BLACK=REFUSE_NEW)",
+    "PASS: Canonical exits per CEO-DIR-2026-107 (2.0x ATR SL, 1.25R TP)",
+    "PASS: Full audit lineage with all required hash fields",
+    "PASS: LINE handoff interface via submit_to_line()",
+    "PASS: CLI entry point with --submit option"
+  ]
+}

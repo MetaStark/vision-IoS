@@ -1,0 +1,204 @@
+{
+  "directive": "CEO-DIR-2026-109",
+  "classification": "MANDATORY - CONSTITUTIONAL / RUNTIME-CRITICAL",
+  "phase": "D",
+  "scope": "EC-015 CPTO Registration",
+  "execution_timestamp": "2026-01-20T00:12:08Z",
+  "implementor": "STIG",
+  "status": "EXECUTED_G4_APPROVED",
+
+  "migrations_executed": [
+    {
+      "migration": "318_ceo_dir_2026_109_scheduler_convergence.sql",
+      "status": "SUCCESS",
+      "assertions_passed": 6,
+      "scope": "Scheduler convergence with hardening"
+    },
+    {
+      "migration": "319_ec015_cpto_infrastructure.sql",
+      "status": "SUCCESS",
+      "assertions_passed": 6,
+      "scope": "CPTO infrastructure (precision log, append-only, evidence recorder)"
+    },
+    {
+      "migration": "320_ec015_cpto_registration.sql",
+      "status": "SUCCESS",
+      "assertions_passed": 10,
+      "scope": "EC-015 registration with G4 gate checklist"
+    }
+  ],
+
+  "g4_gate_checklist": {
+    "A_safe_activation_defaults": {
+      "status": "PASS",
+      "details": {
+        "ec_status": "PENDING_VEGA",
+        "task_status": "pending",
+        "task_enabled": false,
+        "binding_enabled": false,
+        "activation_requires": "VEGA attestation + CEO G4 approval"
+      }
+    },
+    "B_separation_of_execution": {
+      "status": "PASS",
+      "details": {
+        "can_place_orders": false,
+        "only_produces": "TradePacket",
+        "execution_path": "LINE_ONLY",
+        "handoff_interface": "cpto_line_handoff"
+      }
+    },
+    "C_parameter_registry": {
+      "status": "PASS",
+      "details": {
+        "version": "1.0.0",
+        "content_hash": "4b02b4b45d6de93233848735f66f6bceffe337643ce97378e59f7de6c061d56a",
+        "max_entry_deviation_pct": 0.005,
+        "regime_aggression": {
+          "STRONG_BULL": 0.002,
+          "NEUTRAL": 0.003,
+          "VOLATILE": 0.005,
+          "STRESS": 0.007
+        },
+        "liquidity_threshold_pct": 0.05,
+        "ttl_buffer_seconds": 30,
+        "atr_multiplier_sl": 2.0,
+        "r_multiplier_tp": 1.25
+      }
+    },
+    "D_defcon_behavior": {
+      "status": "PASS",
+      "details": {
+        "GREEN": "NORMAL",
+        "YELLOW": "NORMAL",
+        "ORANGE": "CONSERVATIVE",
+        "RED": "REFUSE_NEW",
+        "BLACK": "REFUSE_NEW"
+      }
+    }
+  },
+
+  "ceo_final_improvements": {
+    "E_parameter_version_immutability": {
+      "status": "PASS",
+      "table": "fhq_alpha.cpto_parameter_versions",
+      "immutability_triggers": [
+        "trg_block_param_version_update",
+        "trg_block_param_version_delete"
+      ],
+      "initial_version": "1.0.0",
+      "supersession_workflow": "create_cpto_parameter_version() + mark_parameter_version_superseded()"
+    },
+    "F_vega_attestation_scope": {
+      "status": "PASS",
+      "registration": "ALLOWED_WITHOUT_VEGA",
+      "activation": "REQUIRES_VEGA_ATTESTATION",
+      "activation_function": "fhq_governance.vega_attest_ec_activation('EC-015')",
+      "mirrors_pattern": "EC-019"
+    }
+  },
+
+  "ec015_registration": {
+    "contract_number": "EC-015",
+    "employee": "CPTO",
+    "status": "PENDING_VEGA",
+    "reports_to": "FINN",
+    "governing_charter": "ADR-014",
+    "constitutional_foundation": [
+      "ADR-007",
+      "ADR-012",
+      "ADR-014",
+      "CEO-DIR-2026-107",
+      "CEO-DIR-2026-109"
+    ],
+    "canonical_table": "fhq_meta.vega_employment_contract"
+  },
+
+  "cpto_mandate": {
+    "duties": [
+      "Regime-adaptive entry price calculation",
+      "Canonical TP/SL per CEO-DIR-2026-107",
+      "TTL-sync with signal valid_until",
+      "Liquidity-aware sizing (5% order book threshold)",
+      "Full audit lineage (parameter set + regime snapshot + input features)"
+    ],
+    "constraints": [
+      "LIMIT orders only (market orders forbidden)",
+      "Single parent: FINN (not dual FINN+LINE)",
+      "No strategy formulation (transforms signals only)",
+      "Cannot place orders (produces TradePacket for LINE)"
+    ]
+  },
+
+  "task_binding": {
+    "task_name": "cpto_precision_transform",
+    "assigned_to": "CPTO",
+    "ec_binding": "EC-015",
+    "status": "pending",
+    "enabled": false,
+    "defcon_gate": "GREEN_YELLOW",
+    "requires_vega_attestation": true,
+    "vega_attestation_received": false
+  },
+
+  "infrastructure_created": [
+    {
+      "table": "fhq_alpha.cpto_parameter_versions",
+      "purpose": "Immutable parameter version registry"
+    },
+    {
+      "table": "fhq_alpha.cpto_line_handoff",
+      "purpose": "CPTO -> LINE handoff interface for TradePacket"
+    },
+    {
+      "constraint": "fk_precision_ec",
+      "table": "fhq_alpha.cpto_precision_log",
+      "references": "fhq_meta.vega_employment_contract(contract_number)"
+    },
+    {
+      "constraint": "executive_roles_role_name_check",
+      "scope": "Extended to include CPTO"
+    }
+  ],
+
+  "ceo_fixes_applied": [
+    "Fix #1: Single canonical register (fhq_meta.vega_employment_contract)",
+    "Fix #2: PENDING_VEGA status (not self-asserted, explicit attestation required)",
+    "Fix #4: Single parent FINN (not dual FINN+LINE)",
+    "Fix #5: Full audit lineage (parameter_set_version, input_features_hash, outputs_hash)"
+  ],
+
+  "activation_workflow": [
+    "1. STIG creates EC-015 in PENDING_VEGA status [DONE]",
+    "2. Task created with enabled=false [DONE]",
+    "3. VEGA reviews EC-015 content against 10_EMPLOYMENT_CONTRACTS/EC-015_*.md",
+    "4. VEGA calls vega_attest_ec_activation('EC-015')",
+    "5. EC status changes to ACTIVE",
+    "6. Task binding enabled_state changes to true",
+    "7. CPTO can begin processing signals"
+  ],
+
+  "verification_assertions": {
+    "total": 10,
+    "passed": 10,
+    "details": [
+      "PASS: G4-A: EC-015 status=PENDING_VEGA (not self-attested)",
+      "PASS: Fix #4: EC-015 single parent is FINN",
+      "PASS: G4-A: Task status=pending, enabled=false (safe defaults)",
+      "PASS: G4-B: execution_constraints.can_place_orders=false (LINE only execution)",
+      "PASS: G4-C: Parameter registry exists with versioned thresholds",
+      "PASS: G4-D: DEFCON behavior defined (RED=REFUSE_NEW)",
+      "PASS: G4-A: Binding requires VEGA attestation, enabled=false",
+      "PASS: FK fk_precision_ec added to cpto_precision_log",
+      "PASS: Improvement E: Parameter version table exists, immutable, v1.0.0 active",
+      "PASS: Improvement F: VEGA attestation scope explicitly defined"
+    ]
+  },
+
+  "next_steps": [
+    "Create EC-015 employment contract document (10_EMPLOYMENT_CONTRACTS/EC-015_CPTO.md)",
+    "Implement cpto_precision_engine.py per specification",
+    "VEGA review and attestation",
+    "CEO G4 activation approval"
+  ]
+}

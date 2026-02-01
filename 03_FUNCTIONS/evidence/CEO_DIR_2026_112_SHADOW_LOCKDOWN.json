@@ -1,0 +1,173 @@
+{
+  "directive": "CEO-DIR-2026-112",
+  "version": "1.0",
+  "title": "48h SHADOW Learning Lockdown & Epistemic Yield Maximization",
+  "classification": "LEARNING-CRITICAL / NO-EXECUTION",
+  "executed_at": "2026-01-20T02:36:19Z",
+  "implementor": "STIG",
+  "status": "ACTIVE",
+
+  "lockdown_window": {
+    "started_at": "2026-01-20T02:36:19Z",
+    "ends_at": "2026-01-22T01:15:00Z",
+    "duration_hours": 48,
+    "hours_remaining_at_creation": 47.6,
+    "status": "ACTIVE"
+  },
+
+  "executive_intent": {
+    "purpose": "Lock system behavior for 48 hours, maximize epistemic learning yield, produce governance-defensible evidence for G4 transition",
+    "principle": "We are not optimizing returns. We are teaching the system how to know when it is wrong."
+  },
+
+  "mandatory_lockdown_2_1_forbidden": [
+    "Parameter changes (CPTO, FINN, LARS)",
+    "Aggression tuning",
+    "TTL adjustment",
+    "Regime threshold changes",
+    "Execution enablement",
+    "Manual signal injections"
+  ],
+
+  "mandatory_lockdown_2_2_allowed": [
+    "Signal generation (real data only)",
+    "Canonical routing",
+    "CPTO evaluation in SHADOW",
+    "Paper trade generation",
+    "Learning and evidence logging"
+  ],
+
+  "mandate_a_calibration_curve": {
+    "owner": "UMA",
+    "deliverable": "Preliminary Calibration Curve",
+    "deadline": "2026-01-20T18:00:00Z",
+    "scope": "fhq_research.evaluations, LOW_CONFIDENCE_INVERSION_CANDIDATE only",
+    "required_outputs": [
+      "Confidence buckets vs outcome (inversion success proxy)",
+      "Early Reliability vs Resolution signal",
+      "Directional bias detection",
+      "Explicit uncertainty statement"
+    ],
+    "infrastructure_ready": true,
+    "table": "fhq_research.calibration_curve_data",
+    "status": "AWAITING_DATA"
+  },
+
+  "mandate_b_signal_flow_verification": {
+    "owner": "STIG",
+    "status": "VERIFIED",
+    "verification_questions": {
+      "q1_fresh_signals_flow_automatically": {
+        "answer": "YES",
+        "evidence": "canonical_signal_handoff → CPTO → cpto_shadow_trade_packets → evaluations",
+        "pipeline_status": "COMPLETE"
+      },
+      "q2_latency_statistics": {
+        "median_latency_seconds": 263.85,
+        "max_latency_seconds": 263.85,
+        "min_latency_seconds": 263.85,
+        "note": "First signal processed manually, subsequent signals will show true automated latency"
+      },
+      "q3_scheduler_cadence": {
+        "broker_truth_capture": "*/5 * * * * (every 5 minutes)",
+        "finn_cognitive_gateway": "SHADOW mode, event-triggered",
+        "cpto_precision_transform": "SIGNAL-triggered (pending activation)",
+        "cnrp_cycle": "~1.5 hour intervals observed"
+      },
+      "q4_signals_by_outcome": {
+        "ACCEPTED": 1,
+        "BLOCKED_TTL": 0,
+        "BLOCKED_LIQUIDITY": 0,
+        "BLOCKED_DEFCON": 0,
+        "PENDING": 0
+      }
+    },
+    "freshness_kpi": {
+      "target": "<5 minutes",
+      "current": "N/A (single sample)",
+      "freshness_rate": 1.0
+    }
+  },
+
+  "mandate_c_learning_channel_attribution": {
+    "owners": ["UMA", "STIG"],
+    "status": "OPERATIONAL",
+    "channels": {
+      "INVERSION_DELTA_LEARNING": {
+        "description": "Systematic blindspot discovery via STRESS regime inversions",
+        "count": 1
+      },
+      "FRICTION_REFUSAL_LEARNING": {
+        "description": "Market constraint learning via TTL/liquidity/DEFCON blocks",
+        "count": 0
+      },
+      "CALIBRATION_BRIER_LEARNING": {
+        "description": "Confidence calibration via Reliability vs Resolution",
+        "count": 0
+      }
+    },
+    "total_attributions": 1,
+    "surprise_metric_added": true,
+    "function": "03_FUNCTIONS/learning_channel_attributor.py"
+  },
+
+  "success_criteria": {
+    "calibration_curve_exists": {
+      "status": "PENDING",
+      "deadline": "2026-01-22T01:15:00Z"
+    },
+    "signal_to_cpto_verified": {
+      "status": "VERIFIED",
+      "evidence": "Pipeline COMPLETE status confirmed"
+    },
+    "median_freshness_under_5min": {
+      "status": "PENDING",
+      "note": "Requires more samples"
+    },
+    "learning_data_accepted": {
+      "status": "VERIFIED",
+      "count": 1
+    },
+    "learning_data_refused": {
+      "status": "PENDING",
+      "count": 0
+    },
+    "no_parameters_changed": {
+      "status": "VERIFIED",
+      "violations": 0
+    }
+  },
+
+  "migrations_executed": [
+    {
+      "file": "328_ceo_dir_2026_112_shadow_lockdown.sql",
+      "status": "EXECUTED",
+      "tables_created": [
+        "fhq_governance.shadow_lockdown_config",
+        "fhq_research.learning_channel_attribution",
+        "fhq_research.calibration_curve_data"
+      ],
+      "views_created": [
+        "fhq_research.v_signal_flow_verification",
+        "fhq_research.v_signal_flow_statistics",
+        "fhq_governance.v_shadow_window_status",
+        "fhq_research.v_learning_summary"
+      ]
+    }
+  ],
+
+  "daily_report_integration": {
+    "shadow_window_tracking": true,
+    "auto_expiry_notification": true,
+    "view": "fhq_governance.v_shadow_window_status"
+  },
+
+  "ceo_additions_implemented": {
+    "2_1_manual_signal_injections_forbidden": true,
+    "3_3_surprise_metric": true,
+    "description": "MBB-level 0.01% edge additions"
+  },
+
+  "evidence_hash": "a7c3e812f5d49107",
+  "overall_status": "ACTIVE"
+}

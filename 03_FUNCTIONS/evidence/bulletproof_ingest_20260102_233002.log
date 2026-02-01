@@ -1,0 +1,368 @@
+2026-01-02 23:30:02,498 | INFO | ======================================================================
+2026-01-02 23:30:02,499 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-01-02 23:30:02,499 | INFO | ======================================================================
+2026-01-02 23:30:02,499 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-01-02 23:30:02,499 | INFO | Executor: STIG (EC-003)
+2026-01-02 23:30:02,499 | INFO | Time: 2026-01-02T22:30:02.498888+00:00
+2026-01-02 23:30:02,499 | INFO | Asset Class Filter: EQUITY
+2026-01-02 23:30:02,501 | INFO | Dry Run: False
+2026-01-02 23:30:02,501 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-01-02 23:30:02,501 | INFO | ======================================================================
+2026-01-02 23:30:02,583 | INFO | Found 421 canonical assets
+2026-01-02 23:30:03,241 | INFO | ============================================================
+2026-01-02 23:30:03,241 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-01-02 23:30:03,241 | INFO | Assets: 421, Rate limit: 200/min
+2026-01-02 23:30:03,241 | INFO | ============================================================
+2026-01-02 23:30:04,091 | WARNING |   [BRK.B] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-02 23:30:04,716 | WARNING |   [BT.A.L] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-02 23:30:05,366 | WARNING |   [CHD] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-02 23:30:06,005 | WARNING |   [CHTR] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-02 23:30:06,633 | WARNING |   [CI] SIP subscription error (5 consecutive)
+2026-01-02 23:30:06,633 | WARNING |   EARLY TERMINATION: Alpaca SIP subscription not available
+2026-01-02 23:30:06,633 | WARNING |   Skipping remaining 342 Alpaca assets - will use fallback provider
+2026-01-02 23:30:06,653 | INFO | Alpaca: Updated 0 assets, 348 remaining
+2026-01-02 23:30:07,097 | INFO | ============================================================
+2026-01-02 23:30:07,097 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2026-01-02 23:30:07,097 | INFO | Assets: 348, Using BATCH DOWNLOAD (efficient)
+2026-01-02 23:30:07,097 | INFO | ============================================================
+2026-01-02 23:30:07,097 | INFO |   Checking Yahoo Finance rate limit status...
+2026-01-02 23:30:12,779 | ERROR | 
+1 Failed download:
+2026-01-02 23:30:12,781 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2026-01-02 23:30:12,817 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2026-01-02 23:30:12,817 | WARNING |   Skipping Yahoo and marking all assets as failed
+2026-01-02 23:30:12,817 | INFO | Yahoo: Updated 0 assets, 348 remaining
+2026-01-02 23:30:12,817 | INFO | ============================================================
+2026-01-02 23:30:12,817 | INFO | ATTEMPTING TWELVEDATA EQUITY INGEST (Backup Provider)
+2026-01-02 23:30:12,817 | INFO | Assets: 348, Rate limit: 7/min (90% of free tier)
+2026-01-02 23:30:12,817 | INFO | Daily limit: 720 calls (90% of 800)
+2026-01-02 23:30:12,817 | INFO | ============================================================
+2026-01-02 23:30:12,817 | INFO |   Equity assets: 348, Non-equity: 0
+2026-01-02 23:30:13,514 | WARNING |   [1COV.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:30:22,651 | WARNING |   [BRK.B] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:30:41,081 | WARNING |   [CHD] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:30:50,224 | WARNING |   [CHTR] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:30:59,349 | WARNING |   [CI] TwelveData error: You have run out of API credits for the current minute. 13 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:31:08,457 | WARNING |   [CL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:31:17,596 | WARNING |   [CLX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:31:26,693 | WARNING |   [CMCSA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:31:35,839 | WARNING |   [CME] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:31:44,953 | WARNING |   [CMG] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:31:54,051 | WARNING |   [COF] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:32:03,153 | WARNING |   [COIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:32:12,552 | WARNING |   [CON.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:32:21,735 | WARNING |   [COP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:32:30,950 | WARNING |   [COST] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:32:40,220 | WARNING |   [CPG.L] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:32:49,434 | WARNING |   [CRM] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:32:58,649 | WARNING |   [CRWD] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:33:16,940 | WARNING |   [CSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:33:26,058 | WARNING |   [CTAS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:33:35,221 | WARNING |   [CTVA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:33:44,314 | WARNING |   [CVS] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:33:53,528 | WARNING |   [CVX] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:34:02,665 | WARNING |   [D] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:34:11,733 | WARNING |   [DAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:34:21,672 | WARNING |   [DBK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:34:30,972 | WARNING |   [DD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:34:40,284 | WARNING |   [DDOG] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:34:49,758 | WARNING |   [DE] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:34:58,973 | WARNING |   [DECK] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:35:26,626 | WARNING |   [DHER.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:35:35,913 | WARNING |   [DHI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:35:45,136 | WARNING |   [DHL.DE] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:35:54,446 | WARNING |   [DHR] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:36:03,731 | WARNING |   [DIA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:36:13,857 | WARNING |   [DIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:36:23,172 | WARNING |   [DLR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:36:42,016 | WARNING |   [DOCU] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:36:51,357 | WARNING |   [DOW] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:37:01,199 | WARNING |   [DPZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:37:24,199 | WARNING |   [DTE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:37:33,876 | WARNING |   [DUK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:37:43,440 | WARNING |   [DVN] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:37:53,065 | WARNING |   [DXCM] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:38:02,408 | WARNING |   [EA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:38:12,994 | WARNING |   [EBAY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:38:23,155 | WARNING |   [ECL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:38:36,056 | WARNING |   [ED] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:38:45,199 | WARNING |   [EIX] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:38:54,482 | WARNING |   [EL] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:39:22,614 | WARNING |   [ELV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:39:31,842 | WARNING |   [EMR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:39:41,038 | WARNING |   [EN.PA] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:39:50,482 | WARNING |   [ENGI.PA] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:39:59,686 | WARNING |   [ENR.DE] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:40:18,221 | WARNING |   [EOAN.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:40:27,461 | WARNING |   [EOG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:40:36,695 | WARNING |   [EQIX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:40:46,001 | WARNING |   [EQNR.OL] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:40:55,263 | WARNING |   [EQR] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:41:13,834 | WARNING |   [ES] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:41:23,059 | WARNING |   [ETN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:41:32,391 | WARNING |   [ETSY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:41:41,980 | WARNING |   [EW] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:41:51,178 | WARNING |   [EXC] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:42:00,740 | WARNING |   [F] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:42:09,900 | WARNING |   [FANG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:42:19,088 | WARNING |   [FCX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:42:28,303 | WARNING |   [FDX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:42:37,711 | WARNING |   [FIVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:42:48,554 | WARNING |   [FOX] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:42:57,870 | WARNING |   [FRE.DE] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:43:16,335 | WARNING |   [FTNT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:43:25,667 | WARNING |   [GD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:43:34,873 | WARNING |   [GE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:43:44,139 | WARNING |   [GILD] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:43:53,569 | WARNING |   [GIS] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:44:31,053 | WARNING |   [GM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:44:40,771 | WARNING |   [GOOG] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:44:50,672 | WARNING |   [GOOGL] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:45:00,301 | WARNING |   [GS] TwelveData error: You have run out of API credits for the current minute. 13 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:45:28,152 | WARNING |   [HAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:45:37,528 | WARNING |   [HD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:45:46,905 | WARNING |   [HEN3.DE] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:45:56,953 | WARNING |   [HFG.DE] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:46:06,216 | WARNING |   [HLT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:46:15,505 | WARNING |   [HNR1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:46:34,110 | WARNING |   [HON] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:46:43,459 | WARNING |   [HSBA.L] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:46:52,700 | WARNING |   [HSY] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:47:01,934 | WARNING |   [HUBS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:47:11,289 | WARNING |   [HUM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:47:30,296 | WARNING |   [ICE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:47:39,613 | WARNING |   [IFF] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:47:48,933 | WARNING |   [IFX.DE] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:47:58,261 | WARNING |   [III.L] TwelveData error: You have run out of API credits for the current minute. 13 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:48:07,665 | WARNING |   [INTC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:48:16,981 | WARNING |   [INTU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:48:26,275 | WARNING |   [ISRG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:48:35,865 | WARNING |   [ITW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:48:45,043 | WARNING |   [IWM] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:48:54,261 | WARNING |   [JNJ] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:49:03,479 | WARNING |   [JPM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:49:22,187 | WARNING |   [KHC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:49:40,806 | WARNING |   [KLAC] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:49:49,998 | WARNING |   [KMB] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:49:59,292 | WARNING |   [KMI] TwelveData error: You have run out of API credits for the current minute. 13 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:50:08,771 | WARNING |   [KO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:50:27,226 | WARNING |   [KR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:50:36,415 | WARNING |   [LCID] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:50:45,773 | WARNING |   [LEN] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:50:54,986 | WARNING |   [LGEN.L] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:51:04,356 | WARNING |   [LHX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:51:13,554 | WARNING |   [LIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:51:32,239 | WARNING |   [LLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:51:41,599 | WARNING |   [LMT] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:51:51,158 | WARNING |   [LOW] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:52:00,441 | WARNING |   [LR.PA] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:52:09,655 | WARNING |   [LRCX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:52:28,966 | WARNING |   [LULU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:52:38,246 | WARNING |   [LUV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:52:47,327 | WARNING |   [LYFT] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:52:56,408 | WARNING |   [LYV] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:53:05,530 | WARNING |   [MA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:53:14,957 | WARNING |   [MAR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:53:24,042 | WARNING |   [MBG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:53:42,336 | WARNING |   [MCD] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:53:51,420 | WARNING |   [MCHP] TwelveData error: You have run out of API credits for the current minute. 12 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:54:00,634 | WARNING |   [MCK] TwelveData error: You have run out of API credits for the current minute. 14 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:54:09,751 | WARNING |   [MCO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:54:18,915 | WARNING |   [MDB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:54:28,974 | WARNING |   [MDLZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:54:38,088 | WARNING |   [MDT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:54:47,193 | WARNING |   [MET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:54:56,253 | WARNING |   [META] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-02 23:55:14,740 | WARNING |   [MLM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:55:24,155 | WARNING |   [MMC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:55:33,355 | WARNING |   [MO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:00,654 | WARNING |   [MPC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:09,864 | WARNING |   [MRK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:19,044 | WARNING |   [MRK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:56:28,131 | WARNING |   [MRVL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:37,232 | WARNING |   [MS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:46,338 | WARNING |   [MSCI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:56:55,475 | WARNING |   [MSFT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:57:04,527 | WARNING |   [MTCH] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:57:13,632 | WARNING |   [MTX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:57:22,727 | WARNING |   [MU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:57:31,907 | WARNING |   [MUV2.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-02 23:57:41,081 | WARNING |   [NEE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:57:59,392 | WARNING |   [NEM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:58:08,449 | WARNING |   [NET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:58:17,581 | WARNING |   [NFLX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:58:45,275 | WARNING |   [NKE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:58:54,381 | WARNING |   [NOC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:59:13,305 | WARNING |   [NOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:59:22,412 | WARNING |   [NSC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:59:31,714 | WARNING |   [NUE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:59:40,883 | WARNING |   [NVDA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-02 23:59:49,980 | WARNING |   [NVR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-03 00:00:08,472 | INFO |   [NXPI] +1 rows via TWELVEDATA
+2026-01-03 00:00:17,923 | INFO |   [OKE] +1 rows via TWELVEDATA
+2026-01-03 00:00:27,083 | INFO |   [OKTA] +1 rows via TWELVEDATA
+2026-01-03 00:01:03,759 | INFO |   [ORCL] +1 rows via TWELVEDATA
+2026-01-03 00:01:21,990 | INFO |   [ORLY] +1 rows via TWELVEDATA
+2026-01-03 00:01:31,244 | INFO |   [OTIS] +1 rows via TWELVEDATA
+2026-01-03 00:01:40,375 | INFO |   [OXY] +1 rows via TWELVEDATA
+2026-01-03 00:01:49,470 | WARNING |   [P911.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:01:58,578 | WARNING |   [PAH3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:02:07,672 | INFO |   [PANW] +1 rows via TWELVEDATA
+2026-01-03 00:02:16,785 | INFO |   [PCG] +1 rows via TWELVEDATA
+2026-01-03 00:02:25,923 | INFO |   [PEP] +1 rows via TWELVEDATA
+2026-01-03 00:02:35,059 | INFO |   [PFE] +1 rows via TWELVEDATA
+2026-01-03 00:02:44,294 | INFO |   [PG] +1 rows via TWELVEDATA
+2026-01-03 00:02:53,418 | INFO |   [PGR] +1 rows via TWELVEDATA
+2026-01-03 00:03:02,708 | INFO |   [PH] +1 rows via TWELVEDATA
+2026-01-03 00:03:11,996 | INFO |   [PHM] +1 rows via TWELVEDATA
+2026-01-03 00:03:30,204 | INFO |   [PLD] +1 rows via TWELVEDATA
+2026-01-03 00:03:39,541 | INFO |   [PLTR] +1 rows via TWELVEDATA
+2026-01-03 00:03:48,792 | INFO |   [PM] +1 rows via TWELVEDATA
+2026-01-03 00:03:57,904 | INFO |   [PNC] +1 rows via TWELVEDATA
+2026-01-03 00:04:07,468 | INFO |   [POOL] +1 rows via TWELVEDATA
+2026-01-03 00:04:16,602 | INFO |   [PPG] +1 rows via TWELVEDATA
+2026-01-03 00:04:34,907 | INFO |   [PSA] +1 rows via TWELVEDATA
+2026-01-03 00:04:44,040 | INFO |   [PSX] +1 rows via TWELVEDATA
+2026-01-03 00:05:02,464 | INFO |   [PYPL] +1 rows via TWELVEDATA
+2026-01-03 00:05:11,886 | INFO |   [QCOM] +1 rows via TWELVEDATA
+2026-01-03 00:05:20,985 | WARNING |   [QIA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:05:30,178 | INFO |   [QQQ] +1 rows via TWELVEDATA
+2026-01-03 00:05:39,308 | INFO |   [REGN] +1 rows via TWELVEDATA
+2026-01-03 00:05:57,594 | WARNING |   [RHM.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:06:25,125 | INFO |   [RIVN] +1 rows via TWELVEDATA
+2026-01-03 00:07:01,939 | INFO |   [ROK] +1 rows via TWELVEDATA
+2026-01-03 00:07:11,047 | INFO |   [ROKU] +1 rows via TWELVEDATA
+2026-01-03 00:07:20,167 | INFO |   [ROST] +1 rows via TWELVEDATA
+2026-01-03 00:07:38,423 | INFO |   [RSG] +1 rows via TWELVEDATA
+2026-01-03 00:07:47,725 | INFO |   [RTX] +1 rows via TWELVEDATA
+2026-01-03 00:07:56,807 | WARNING |   [RWE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:08:33,437 | WARNING |   [SAP.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:08:42,623 | INFO |   [SBAC] +1 rows via TWELVEDATA
+2026-01-03 00:08:52,009 | INFO |   [SBUX] +1 rows via TWELVEDATA
+2026-01-03 00:08:52,013 | INFO |   Progress: 250/348 assets, 250 API calls
+2026-01-03 00:09:10,195 | INFO |   [SCHW] +1 rows via TWELVEDATA
+2026-01-03 00:09:37,544 | WARNING |   [SHL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:09:46,719 | INFO |   [SHOP] +1 rows via TWELVEDATA
+2026-01-03 00:09:55,850 | INFO |   [SHW] +1 rows via TWELVEDATA
+2026-01-03 00:10:04,987 | WARNING |   [SIE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:10:14,238 | INFO |   [SLB] +1 rows via TWELVEDATA
+2026-01-03 00:10:23,326 | INFO |   [SNOW] +1 rows via TWELVEDATA
+2026-01-03 00:10:32,398 | INFO |   [SNPS] +1 rows via TWELVEDATA
+2026-01-03 00:10:41,521 | INFO |   [SO] +1 rows via TWELVEDATA
+2026-01-03 00:10:50,656 | INFO |   [SPG] +1 rows via TWELVEDATA
+2026-01-03 00:10:59,774 | INFO |   [SPGI] +1 rows via TWELVEDATA
+2026-01-03 00:11:08,862 | INFO |   [SPY] +1 rows via TWELVEDATA
+2026-01-03 00:11:18,053 | INFO |   [SRE] +1 rows via TWELVEDATA
+2026-01-03 00:11:27,242 | WARNING |   [SRT3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:12:03,752 | INFO |   [STLD] +1 rows via TWELVEDATA
+2026-01-03 00:12:22,308 | INFO |   [STZ] +1 rows via TWELVEDATA
+2026-01-03 00:12:49,612 | WARNING |   [SY1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:12:58,895 | INFO |   [SYK] +1 rows via TWELVEDATA
+2026-01-03 00:13:08,034 | INFO |   [SYY] +1 rows via TWELVEDATA
+2026-01-03 00:13:17,191 | INFO |   [T] +1 rows via TWELVEDATA
+2026-01-03 00:13:26,326 | INFO |   [TEAM] +1 rows via TWELVEDATA
+2026-01-03 00:13:53,690 | INFO |   [TFC] +1 rows via TWELVEDATA
+2026-01-03 00:14:12,266 | INFO |   [TGT] +1 rows via TWELVEDATA
+2026-01-03 00:14:21,513 | INFO |   [TJX] +1 rows via TWELVEDATA
+2026-01-03 00:14:30,658 | INFO |   [TMO] +1 rows via TWELVEDATA
+2026-01-03 00:14:39,809 | INFO |   [TMUS] +1 rows via TWELVEDATA
+2026-01-03 00:14:57,973 | INFO |   [TRV] +1 rows via TWELVEDATA
+2026-01-03 00:15:16,251 | INFO |   [TSLA] +1 rows via TWELVEDATA
+2026-01-03 00:15:34,385 | INFO |   [TTWO] +1 rows via TWELVEDATA
+2026-01-03 00:15:43,515 | INFO |   [TXN] +1 rows via TWELVEDATA
+2026-01-03 00:15:52,793 | INFO |   [UAL] +1 rows via TWELVEDATA
+2026-01-03 00:16:02,127 | INFO |   [UBER] +1 rows via TWELVEDATA
+2026-01-03 00:16:20,542 | INFO |   [UNH] +1 rows via TWELVEDATA
+2026-01-03 00:16:29,782 | INFO |   [UNP] +1 rows via TWELVEDATA
+2026-01-03 00:16:29,782 | INFO |   Progress: 300/348 assets, 300 API calls
+2026-01-03 00:16:39,055 | INFO |   [UPS] +1 rows via TWELVEDATA
+2026-01-03 00:16:57,288 | INFO |   [USB] +1 rows via TWELVEDATA
+2026-01-03 00:17:06,416 | INFO |   [V] +1 rows via TWELVEDATA
+2026-01-03 00:17:24,531 | INFO |   [VICI] +1 rows via TWELVEDATA
+2026-01-03 00:17:52,023 | INFO |   [VLO] +1 rows via TWELVEDATA
+2026-01-03 00:18:01,215 | INFO |   [VMC] +1 rows via TWELVEDATA
+2026-01-03 00:18:10,515 | WARNING |   [VNA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:18:28,909 | INFO |   [VOO] +1 rows via TWELVEDATA
+2026-01-03 00:18:38,116 | INFO |   [VOW3.DE] +1 rows via TWELVEDATA
+2026-01-03 00:18:47,295 | INFO |   [VRTX] +1 rows via TWELVEDATA
+2026-01-03 00:18:56,436 | INFO |   [VTI] +1 rows via TWELVEDATA
+2026-01-03 00:19:05,545 | INFO |   [VZ] +1 rows via TWELVEDATA
+2026-01-03 00:19:24,032 | INFO |   [WBD] +1 rows via TWELVEDATA
+2026-01-03 00:19:33,317 | INFO |   [WDAY] +1 rows via TWELVEDATA
+2026-01-03 00:19:42,393 | INFO |   [WEC] +1 rows via TWELVEDATA
+2026-01-03 00:19:51,459 | INFO |   [WELL] +1 rows via TWELVEDATA
+2026-01-03 00:20:00,623 | INFO |   [WFC] +1 rows via TWELVEDATA
+2026-01-03 00:20:19,020 | INFO |   [WM] +1 rows via TWELVEDATA
+2026-01-03 00:20:28,116 | INFO |   [WMB] +1 rows via TWELVEDATA
+2026-01-03 00:20:37,299 | INFO |   [WMT] +1 rows via TWELVEDATA
+2026-01-03 00:20:46,465 | INFO |   [XEL] +1 rows via TWELVEDATA
+2026-01-03 00:20:55,559 | INFO |   [XLB] +1 rows via TWELVEDATA
+2026-01-03 00:21:04,736 | INFO |   [XLC] +1 rows via TWELVEDATA
+2026-01-03 00:21:13,978 | INFO |   [XLE] +1 rows via TWELVEDATA
+2026-01-03 00:21:23,263 | INFO |   [XLF] +1 rows via TWELVEDATA
+2026-01-03 00:21:32,599 | INFO |   [XLI] +1 rows via TWELVEDATA
+2026-01-03 00:21:41,960 | INFO |   [XLK] +1 rows via TWELVEDATA
+2026-01-03 00:21:51,111 | INFO |   [XLP] +1 rows via TWELVEDATA
+2026-01-03 00:22:00,330 | INFO |   [XLRE] +1 rows via TWELVEDATA
+2026-01-03 00:22:09,448 | INFO |   [XLU] +1 rows via TWELVEDATA
+2026-01-03 00:22:18,596 | INFO |   [XLV] +1 rows via TWELVEDATA
+2026-01-03 00:22:27,726 | INFO |   [XLY] +1 rows via TWELVEDATA
+2026-01-03 00:22:36,847 | INFO |   [XOM] +1 rows via TWELVEDATA
+2026-01-03 00:22:55,034 | INFO |   [YUM] +1 rows via TWELVEDATA
+2026-01-03 00:23:04,123 | WARNING |   [ZAL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-03 00:23:13,318 | INFO |   [ZM] +1 rows via TWELVEDATA
+2026-01-03 00:23:22,578 | INFO |   [ZS] +1 rows via TWELVEDATA
+2026-01-03 00:23:31,714 | INFO |   [ZTS] +1 rows via TWELVEDATA
+2026-01-03 00:23:49,939 | INFO |   [AAPL] +1 rows via TWELVEDATA
+2026-01-03 00:23:49,939 | INFO |   TwelveData ingest complete: 102 updated, 246 failed, 348 API calls
+2026-01-03 00:23:49,949 | INFO | TwelveData: Updated 102 equity assets, 246 total remaining
+2026-01-03 00:23:49,949 | INFO | 
+============================================================
+2026-01-03 00:23:49,949 | INFO | VERIFICATION: Checking Data Freshness
+2026-01-03 00:23:49,949 | INFO | ============================================================
+2026-01-03 00:23:50,415 | WARNING | VERIFICATION FAILED: 265 assets are stale
+2026-01-03 00:23:50,416 | WARNING |   - BT.A.L: 19 days stale (last: 2025-12-15)
+2026-01-03 00:23:50,416 | WARNING |   - 1COV.DE: 11 days stale (last: 2025-12-23)
+2026-01-03 00:23:50,417 | WARNING |   - MRK.DE: 5 days stale (last: 2025-12-29)
+2026-01-03 00:23:50,417 | WARNING |   - HAFNI.OL: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,417 | WARNING |   - ORK.OL: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,417 | WARNING |   - P911.DE: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,418 | WARNING |   - PAH3.DE: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,419 | WARNING |   - PHO.OL: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,420 | WARNING |   - MORG.OL: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,421 | WARNING |   - MOWI.OL: 4 days stale (last: 2025-12-30)
+2026-01-03 00:23:50,421 | WARNING |   ... and 255 more
+2026-01-03 00:23:50,900 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 265 assets still stale after ingest! Updated: 102, Rows: 102
+2026-01-03 00:23:50,910 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2026-01-03 00:23:50,910 | WARNING | ALERT [WARNING]: PARTIAL INGEST: 246 assets could not be updated via any provider
+2026-01-03 00:23:50,910 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2026-01-03 00:23:50,910 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2026-01-03 00:23:50,920 | INFO | 
+======================================================================
+2026-01-03 00:23:50,920 | INFO | BULLETPROOF INGEST COMPLETE
+2026-01-03 00:23:50,920 | INFO | ======================================================================
+2026-01-03 00:23:50,920 | INFO | Status: PARTIAL
+2026-01-03 00:23:50,920 | INFO | Assets Updated: 102
+2026-01-03 00:23:50,920 | INFO | Rows Inserted: 102
+2026-01-03 00:23:50,920 | INFO | Providers Used: ALPACA, YAHOO, TWELVEDATA
+2026-01-03 00:23:50,920 | INFO | Verification: FAILED (265 stale)
+2026-01-03 00:23:50,920 | INFO | Elapsed: 3228.4s
+2026-01-03 00:23:50,920 | INFO | 
+Freshness by Asset Class:
+2026-01-03 00:23:50,920 | INFO |   CRYPTO: 45/50 fresh (90.0%)
+2026-01-03 00:23:50,930 | INFO |   EQUITY: 175/422 fresh (41.5%)
+2026-01-03 00:23:50,930 | INFO |   FX: 6/25 fresh (24.0%)
+2026-01-03 00:23:50,930 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_3cc234b9_20260103_002350.json
+2026-01-03 00:23:50,930 | INFO | ======================================================================

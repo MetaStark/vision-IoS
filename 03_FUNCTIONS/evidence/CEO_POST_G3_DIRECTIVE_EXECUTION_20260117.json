@@ -1,0 +1,133 @@
+{
+  "event": "CEO_POST_G3_DIRECTIVE_EXECUTION",
+  "execution_date": "2026-01-17",
+  "status": "ALL_DIRECTIVES_COMPLETE",
+  "baseline_reference": {
+    "snapshot": "G3_BASELINE_DAY17",
+    "brier_score": 0.5358,
+    "hit_rate": 0.3265,
+    "principle": "All future ROI measured against this locked baseline"
+  },
+
+  "directives_executed": {
+    "directive_3_1": {
+      "title": "Complete ADR-008 - UMA Ed25519 keypair",
+      "priority": "BLOCKING",
+      "status": "COMPLETE",
+      "result": {
+        "public_key": "7c5e44cb0145743106f41c20907b1bd34137538ad3fdb026f054eb5e2ee96bb6",
+        "fingerprint": "2fd377f9be70cea9",
+        "vega_attested": true,
+        "migration": "275_adr008_uma_key_attestation.sql"
+      },
+      "evidence": "ADR008_UMA_KEY_VERIFICATION_20260117.json"
+    },
+
+    "directive_1_1": {
+      "title": "Evaluate BULL regime overconfidence",
+      "status": "COMPLETE",
+      "result": {
+        "hypothesis": "BULL regime shows massive overconfidence",
+        "verdict": "CONFIRMED",
+        "findings": {
+          "STRESS": {"confidence": 0.9103, "hit_rate": 0.0000, "delta": 0.9103, "severity": "CRITICAL"},
+          "BULL": {"confidence": 0.9207, "hit_rate": 0.2528, "delta": 0.6679, "severity": "SEVERE"},
+          "NEUTRAL": {"confidence": 0.8546, "hit_rate": 0.2886, "delta": 0.5660, "severity": "SEVERE"},
+          "BEAR": {"confidence": 0.8557, "hit_rate": 0.3260, "delta": 0.5297, "severity": "SEVERE"}
+        },
+        "key_insight": "System-wide overconfidence, not just BULL regime"
+      },
+      "evidence": "UMA_FRICTION_001_ANALYSIS_20260117.json"
+    },
+
+    "directive_1_2": {
+      "title": "Queue confidence_damper_beta calibration",
+      "status": "COMPLETE",
+      "result": {
+        "calibrations_queued": 5,
+        "execution_gate": "G3_FULLY_LOCKED (SATISFIED)",
+        "requires_ceo_approval": true,
+        "queue_entries": [
+          {"code": "FRICTION-001-STRESS", "current": 0.91, "proposed": 0.10},
+          {"code": "FRICTION-001-BULL", "current": 0.92, "proposed": 0.35},
+          {"code": "FRICTION-001-NEUTRAL", "current": 0.85, "proposed": 0.39},
+          {"code": "FRICTION-001-BEAR", "current": 0.86, "proposed": 0.43},
+          {"code": "OKR-2026-D17-001", "current": 0.4312, "proposed": 0.35}
+        ]
+      },
+      "migrations": ["276_uma_friction_001_calibration_queue.sql", "277_friction_001_regime_queues.sql"]
+    },
+
+    "directive_2_1": {
+      "title": "IoS-016 EVENT_ADJACENT tagging",
+      "status": "COMPLETE",
+      "result": {
+        "columns_added": ["event_proximity_tag", "adjacent_event_id", "adjacent_event_type", "adjacent_event_impact", "hours_from_event"],
+        "trigger_created": "trg_auto_tag_event_proximity",
+        "trigger_status": "DISABLED (shadow mode)",
+        "view_created": "v_brier_by_event_proximity",
+        "backfill_function": "backfill_event_proximity_tags()"
+      },
+      "migration": "278_ios016_event_adjacent_tagging.sql"
+    },
+
+    "directive_2_2": {
+      "title": "Activate surprise-based diagnostics",
+      "status": "COMPLETE",
+      "result": {
+        "functions_created": [
+          "compute_surprise_score()",
+          "detect_ghost_events()",
+          "get_surprise_diagnostics()"
+        ],
+        "view_created": "v_surprise_impact_analysis",
+        "event_types_calibrated": ["US_FOMC", "US_CPI", "US_NFP", "EARNINGS_Q"]
+      },
+      "migration": "279_surprise_based_diagnostics.sql"
+    },
+
+    "directive_4_1": {
+      "title": "CFAO Bear→Stress synthesis",
+      "status": "COMPLETE",
+      "result": {
+        "scenarios_generated": 13,
+        "bear_stress_transitions": 10,
+        "model_failure_scenarios": 3,
+        "severity_breakdown": {"EXTREME": 9, "HIGH": 4},
+        "key_finding": "STRESS regime 0% hit rate indicates complete model failure"
+      },
+      "migration": "280_cfao_bear_stress_synthesis.sql"
+    }
+  },
+
+  "migrations_created": [
+    "275_adr008_uma_key_attestation.sql",
+    "276_uma_friction_001_calibration_queue.sql",
+    "277_friction_001_regime_queues.sql",
+    "278_ios016_event_adjacent_tagging.sql",
+    "279_surprise_based_diagnostics.sql",
+    "280_cfao_bear_stress_synthesis.sql"
+  ],
+
+  "ceo_action_required": {
+    "action": "Review and approve FRICTION-001 calibration queue",
+    "queue_location": "fhq_governance.calibration_change_queue",
+    "entries_pending": 5,
+    "recommendation": "Start with STRESS regime (0.10 ceiling) as highest priority"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "timestamp": "2026-01-17T02:00:00Z",
+    "summary": [
+      "All 6 CEO Post-G3 Directives EXECUTED",
+      "ADR-008 UMA key verified and VEGA-attested",
+      "BULL overconfidence hypothesis CONFIRMED (all regimes affected)",
+      "5 calibration changes queued for CEO approval",
+      "IoS-016 EVENT_ADJACENT tagging deployed (shadow mode)",
+      "Surprise-based diagnostics activated",
+      "13 CFAO Bear→Stress scenarios generated",
+      "CRITICAL: STRESS regime shows 0% hit rate - model failure"
+    ]
+  }
+}

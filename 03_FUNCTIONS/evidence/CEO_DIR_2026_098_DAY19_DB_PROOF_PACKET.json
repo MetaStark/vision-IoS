@@ -1,0 +1,183 @@
+{
+  "evidence_id": "CEO-DIR-2026-098-DAY19-DB-PROOF-PACKET",
+  "directive": "CEO-DIR-2026-098",
+  "title": "DATABASE PROOF PACKET - DAY 19 CLAIMS + SKILLDAMPER ELIGIBILITY",
+  "generated_at": "2026-01-19T09:30:00Z",
+  "generated_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "time_anchor_utc": "2026-01-19T09:30:00Z",
+
+  "verification_matrix": {
+    "claim_1_gfi_value": {
+      "claim": "GFI = 0.7137 and stress threshold breach = TRUE",
+      "verdict": "VERIFIED",
+      "db_source": "fhq_macro.geopolitical_friction_data + fhq_macro.macro_nodes",
+      "db_filter": "ORDER BY observation_date DESC LIMIT 1; node_id = 'MACRO_GEOPOLITICAL_FRICTION'",
+      "db_values": {
+        "observation_date_utc": "2026-01-18T22:00:00Z",
+        "gfi_value": 0.7137,
+        "stress_threshold": 0.70,
+        "extreme_threshold": 0.85,
+        "stress_threshold_breached": true,
+        "extreme_threshold_breached": false,
+        "record_created_utc": "2026-01-19T06:03:46Z"
+      }
+    },
+
+    "claim_2_bifurcated_liquidity_regime": {
+      "claim": "BIFURCATED_LIQUIDITY regime is Day 4/5",
+      "verdict": "NOT VERIFIED - REGIME DOES NOT EXIST IN DATABASE",
+      "db_source": "Searched: fhq_research.regime_states, fhq_research.regime_model_registry, fhq_governance.governance_actions_log, fhq_meta.regime_state",
+      "db_filter": "WHERE regime_name/action_target ILIKE '%BIFURCATED%'",
+      "db_values": {
+        "bifurcated_liquidity_definition_found": false,
+        "bifurcated_liquidity_state_record_found": false,
+        "day_n_of_m_rule_found": false
+      },
+      "finding": "BIFURCATED_LIQUIDITY is a CONCEPTUAL regime described in G0-2026-019 proposal document, but it is NOT registered as a canonical regime in the database. No regime_id, no state transition rules, no hysteresis tracking exists. The 'Day 4/5' claim has no database backing."
+    },
+
+    "claim_3_autonomy_clock_day1": {
+      "claim": "Autonomy clock = Day 1 complete",
+      "verdict": "PARTIALLY VERIFIED - NO CANONICAL AUTONOMY STATE",
+      "db_source": "fhq_governance.agent_task_log",
+      "db_filter": "WHERE started_at >= '2026-01-19' AND task_name LIKE 'ios003c%'",
+      "db_values": {
+        "ios003c_tasks_on_2026_01_19": [
+          {"task": "ios003c_epoch_snapshot", "status": "SUCCESS", "started_utc": "2026-01-18T22:05:07Z"},
+          {"task": "ios003c_outcome_computation", "status": "SUCCESS", "started_utc": "2026-01-19T02:00:01Z"}
+        ],
+        "total_tasks_found": 2,
+        "claimed_tasks": 5
+      },
+      "finding": "Only 2 ios003c tasks found in agent_task_log for Day 19, not 5 as claimed. No canonical 'autonomy_clock' table or 'consecutive_unattended_days' counter exists in the database. The 'Day 1 complete' claim cannot be verified from a single authoritative source."
+    },
+
+    "claim_4_hit_rate": {
+      "claim": "Hit rate = 6.67%",
+      "verdict": "VERIFIED",
+      "db_source": "fhq_research.crypto_regime_quality_metrics",
+      "db_filter": "ORDER BY metric_date DESC, created_at DESC LIMIT 1",
+      "db_values": {
+        "metric_date": "2026-01-18",
+        "metric_type": "DAILY",
+        "sample_size": 46,
+        "signals_with_outcome": 45,
+        "hit_rate_1d": 0.0667,
+        "computed_utc": "2026-01-19T02:00:02Z"
+      },
+      "population_definition": "Crypto regime signals with T+1 outcome resolution",
+      "denominator_rule": "signals_with_outcome = 45 (45/46 had outcomes)"
+    },
+
+    "claim_5_fss_value": {
+      "claim": "FSS value used for SkillDamper gating",
+      "verdict": "NOT VERIFIED - FSS IS NULL",
+      "db_source": "fhq_research.forecast_skill_metrics",
+      "db_filter": "ORDER BY computed_at DESC",
+      "db_values": {
+        "brier_skill_score_fss": null,
+        "brier_score_mean": 0.3233,
+        "hit_rate": 0.5084,
+        "computed_utc": "2026-01-16T12:41:20Z"
+      },
+      "finding": "The brier_skill_score (FSS) column is NULL in all recent forecast_skill_metrics records. FSS is not being computed. Therefore, SkillDamper cannot be triggered based on FSS as the input value does not exist."
+    },
+
+    "claim_6_confidence_adjustments_versioned": {
+      "claim": "Recommended confidence adjustments exist as versioned artifact",
+      "verdict": "PARTIALLY VERIFIED - NO GEOPOLITICAL FRICTION GATE EXISTS",
+      "db_source": "fhq_governance.confidence_calibration_gates",
+      "db_filter": "WHERE effective_until IS NULL (currently active)",
+      "db_values": {
+        "active_gates_count": 17,
+        "geopolitical_friction_gate_exists": false,
+        "bifurcated_liquidity_gate_exists": false,
+        "recommended_0.60_ceiling_persisted": false
+      },
+      "finding": "Confidence calibration gates exist for PRICE_DIRECTION by regime (BULL/BEAR/NEUTRAL/STRESS) and confidence bands, with VEGA and CEO approvals. However, NO gate exists for 'friction-derived forecasts' with the recommended 0.60 ceiling. The recommendation is ad-hoc, not a versioned artifact."
+    }
+  },
+
+  "skilldamper_eligibility": {
+    "rule_text": "FSS < 0.40 -> damper_value = 0.00 (FREEZE - Capital Freeze)",
+    "rule_source": "fhq_governance.skill_damper_config",
+    "rule_persisted": true,
+    "current_fss_value": null,
+    "verdict": "NOT_TRIGGERED - INPUT VALUE MISSING",
+    "rationale": "SkillDamper rule is persisted in skill_damper_config, but FSS (brier_skill_score) is NULL in forecast_skill_metrics. Cannot evaluate trigger condition without input value.",
+    "affected_scope": "N/A - trigger condition cannot be evaluated"
+  },
+
+  "blast_radius_analysis": {
+    "if_confidence_adjustments_applied": {
+      "warning": "The recommended actions are NOT eligible for execution",
+      "reason": "No versioned artifact exists for 'Apply 0.60 confidence ceiling to friction-derived forecasts'",
+      "tables_that_would_change": "N/A - action not authorized",
+      "contamination_risk": "N/A - action not authorized"
+    },
+    "if_ttl_reduction_applied": {
+      "warning": "The recommended actions are NOT eligible for execution",
+      "reason": "No versioned artifact exists for 'Reduce TTL by 50% on macro-driven decisions'",
+      "tables_that_would_change": "N/A - action not authorized",
+      "contamination_risk": "N/A - action not authorized"
+    },
+    "if_regime_confirmation_applied": {
+      "warning": "The recommended actions are NOT eligible for execution",
+      "reason": "BIFURCATED_LIQUIDITY regime is not registered in database",
+      "tables_that_would_change": "N/A - action not authorized",
+      "contamination_risk": "N/A - action not authorized"
+    }
+  },
+
+  "summary_verdict": {
+    "day19_numbers_correct_in_db": "PARTIAL - GFI and hit_rate verified; regime and autonomy claims NOT verified",
+    "skilldamper_trigger_met_by_rule": "NO - FSS value is NULL, cannot evaluate",
+    "scope_and_blast_radius_bounded": "NO - recommended actions have no versioned artifact",
+    "reporting_path_auditable": "YES - confidence_calibration_gates has audit trail",
+    "ceo_decision_recommendation": "NO ACTION - Multiple verification failures"
+  },
+
+  "verification_failures": [
+    {
+      "id": "VF-001",
+      "claim": "BIFURCATED_LIQUIDITY regime Day 4/5",
+      "failure": "Regime does not exist as canonical database entity"
+    },
+    {
+      "id": "VF-002",
+      "claim": "Autonomy clock Day 1 complete",
+      "failure": "No canonical autonomy_clock table; only 2/5 claimed tasks found"
+    },
+    {
+      "id": "VF-003",
+      "claim": "FSS for SkillDamper gating",
+      "failure": "FSS (brier_skill_score) is NULL in all records"
+    },
+    {
+      "id": "VF-004",
+      "claim": "0.60 confidence ceiling recommendation",
+      "failure": "Not persisted as versioned artifact in confidence_calibration_gates"
+    }
+  ],
+
+  "raw_queries": {
+    "query_1_gfi": "SELECT observation_date AT TIME ZONE 'UTC', ROUND(geopolitical_friction_index::numeric, 4), stress_threshold, extreme_threshold, geopolitical_friction_index > stress_threshold FROM fhq_macro.geopolitical_friction_data gfd, fhq_macro.macro_nodes mn WHERE mn.node_id = 'MACRO_GEOPOLITICAL_FRICTION' ORDER BY observation_date DESC LIMIT 1",
+    "query_2_regime_search": "SELECT * FROM fhq_research.regime_states WHERE regime_state ILIKE '%BIFURCATED%' -- Returns 0 rows",
+    "query_3_autonomy_tasks": "SELECT task_name, status, started_at FROM fhq_governance.agent_task_log WHERE started_at >= '2026-01-19' AND task_name LIKE 'ios003c%'",
+    "query_4_hit_rate": "SELECT metric_date, sample_size, signals_with_outcome, hit_rate_1d FROM fhq_research.crypto_regime_quality_metrics ORDER BY metric_date DESC LIMIT 1",
+    "query_5_fss": "SELECT brier_skill_score, brier_score_mean, hit_rate FROM fhq_research.forecast_skill_metrics ORDER BY computed_at DESC LIMIT 1",
+    "query_6_confidence_gates": "SELECT forecast_type, regime, confidence_ceiling, approved_by FROM fhq_governance.confidence_calibration_gates WHERE effective_until IS NULL"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-19T09:30:00Z",
+    "principle": "If it cannot be verified in the database, it does not exist.",
+    "compliance": "CEO-DIR-2026-098 EXECUTED - Evidence packet delivered",
+    "recommendation": "NO ACTION on Day 19 recommended adjustments due to verification failures"
+  },
+
+  "file_checksum": "sha256:59d7d6c407e977dca11c06ff24b137fcdc24fb775e0095d8a9b4dec5f00a10ca"
+}

@@ -1,0 +1,95 @@
+{
+  "directive": "CEO-DIR-2026-120",
+  "phase": "P2.1",
+  "title": "Fama-French 5-Factor + Momentum Integration Complete",
+  "classification": "G4_DATA_FOUNDATION",
+  "generated_at": "2026-01-22T01:07:00+01:00",
+  "generated_by": "STIG (EC-003)",
+
+  "meta_analysis": {
+    "data_source": "Kenneth French Data Library (Dartmouth)",
+    "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html",
+
+    "update_pattern": {
+      "source_frequency": "Daily (trading days only)",
+      "publication_frequency": "Monthly batch updates",
+      "typical_lag": "1-2 months",
+      "current_lag_days": 55,
+      "latest_data_date": "2025-11-28",
+      "analysis_date": "2026-01-22"
+    },
+
+    "recommendation": {
+      "run_frequency": "WEEKLY",
+      "rationale": [
+        "Kenneth French publishes data for each trading day",
+        "Updates are batched monthly (not real-time)",
+        "Current lag is ~2 months from publication",
+        "Weekly checks capture new batches without excessive API load",
+        "Monday 08:00 UTC optimal for weekend batch processing"
+      ],
+      "cron_expression": "0 8 * * 1",
+      "human_readable": "Every Monday at 08:00 UTC"
+    }
+  },
+
+  "ingestion_summary": {
+    "rows_inserted": 15709,
+    "date_range": {
+      "start": "1963-07-01",
+      "end": "2025-11-28"
+    },
+    "coverage_years": 62.4,
+    "factors": [
+      {"name": "MKT_RF", "description": "Market excess return (Rm - Rf)"},
+      {"name": "SMB", "description": "Small Minus Big (size factor)"},
+      {"name": "HML", "description": "High Minus Low (value factor)"},
+      {"name": "RMW", "description": "Robust Minus Weak (profitability factor)"},
+      {"name": "CMA", "description": "Conservative Minus Aggressive (investment factor)"},
+      {"name": "RF", "description": "Risk-free rate"},
+      {"name": "MOM", "description": "Momentum factor (UMD)"}
+    ],
+    "table": "fhq_research.fama_french_factors"
+  },
+
+  "scheduler_registration": {
+    "scheduled_tasks": {
+      "task_id": "FAMA-FRENCH-WEEKLY-001",
+      "status": "SCHEDULED",
+      "cron": "0 8 * * 1",
+      "next_run": "2026-01-29T08:00:00Z"
+    },
+    "ingest_schedule": {
+      "schedule_name": "FAMA_FRENCH_FACTORS",
+      "pipeline_stage": "G2_MACRO",
+      "is_active": true,
+      "cron": "0 8 * * 1"
+    }
+  },
+
+  "usage_in_ios013": {
+    "signal_weighting_factors": [
+      "Factor exposure calculation for portfolio",
+      "Regime-conditional factor returns",
+      "Risk decomposition for signal attribution"
+    ],
+    "integration_point": "ios013_signal_weighting_engine.py",
+    "table_reference": "fhq_alpha.factor_exposure_daily"
+  },
+
+  "verification": {
+    "database_query": "SELECT COUNT(*), MIN(date), MAX(date) FROM fhq_research.fama_french_factors",
+    "result": {
+      "count": 15709,
+      "min_date": "1963-07-01",
+      "max_date": "2025-11-28"
+    },
+    "status": "VERIFIED"
+  },
+
+  "vega_attestation": {
+    "required": true,
+    "status": "PENDING",
+    "adr_compliance": ["ADR-002", "ADR-004", "ADR-013"]
+  }
+}

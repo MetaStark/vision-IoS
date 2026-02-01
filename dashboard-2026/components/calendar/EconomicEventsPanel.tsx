@@ -119,9 +119,9 @@ function EconomicEventRow({ event }: { event: EconomicEvent }) {
         {event.actual !== null ? (
           <div>
             <p className="text-sm font-mono text-white">{event.actual}</p>
-            {event.surprise !== null && event.surprise !== 0 && (
-              <p className={`text-xs ${event.surprise > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {event.surprise > 0 ? '+' : ''}{event.surprise.toFixed(2)} surprise
+            {event.surprise !== null && parseFloat(String(event.surprise)) !== 0 && (
+              <p className={`text-xs ${parseFloat(String(event.surprise)) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {parseFloat(String(event.surprise)) > 0 ? '+' : ''}{(parseFloat(String(event.surprise)) * 100).toFixed(2)}% surprise
               </p>
             )}
           </div>

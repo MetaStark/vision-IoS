@@ -1,0 +1,40 @@
+{
+  "directive": "CEO-DIR-2026-HYPOTHESIS-ECONOMY-001",
+  "phase": "I",
+  "component": "error_detector_daemon",
+  "execution_id": "a56475e2-2a65-4402-8a52-4ab854432bf4",
+  "timestamp": "2026-01-23T21:35:55.254058+00:00",
+  "detection_results": {
+    "execution_id": "a56475e2-2a65-4402-8a52-4ab854432bf4",
+    "timestamp": "2026-01-23T21:35:55.254058+00:00",
+    "lookback_hours": 168,
+    "errors_detected": [],
+    "summary": {
+      "total_new_errors": 0,
+      "by_type": {},
+      "by_priority": {}
+    },
+    "error": "column ol.symbol does not exist\nLINE 3:             ol.symbol,\n                    ^\nQUERY:  SELECT\n            ol.outcome_id,\n            ol.symbol,\n            ol.prediction_timestamp,\n            ol.outcome_timestamp,\n            ol.predicted_direction,\n            ol.actual_direction,\n            ol.predicted_magnitude,\n            ol.actual_magnitude,\n            ol.confidence_at_prediction,\n            ol.regime_at_prediction,\n            ol.regime_at_outcome\n        FROM fhq_research.outcome_ledger ol\n        WHERE ol.outcome_timestamp >= NOW() - (p_lookback_hours || ' hours')::INTERVAL\n          AND ol.outcome_timestamp IS NOT NULL\n          AND (\n              ol.predicted_direction IS DISTINCT FROM ol.actual_direction\n              OR ABS(COALESCE(ol.predicted_magnitude, 0) - COALESCE(ol.actual_magnitude, 0)) > 0.02\n              OR ol.regime_at_prediction IS DISTINCT FROM ol.regime_at_outcome\n          )\n          AND NOT EXISTS (\n              SELECT 1 FROM fhq_learning.error_classification_taxonomy ect\n              WHERE ect.source_prediction_id = ol.outcome_id\n          )\nCONTEXT:  PL/pgSQL function fhq_learning.detect_prediction_errors(integer) line 12 at FOR over SELECT rows\n"
+  },
+  "system_summary": {
+    "timestamp": "2026-01-23T21:35:55.402644+00:00",
+    "total_errors": 0,
+    "high_priority_pending": 0,
+    "hypotheses_generated": 0,
+    "error_to_hypothesis_rate": 0.0,
+    "by_type": {
+      "DIRECTION": 0,
+      "MAGNITUDE": 0,
+      "TIMING": 0,
+      "REGIME": 0
+    },
+    "recent_errors": []
+  },
+  "acceptance_tests": {
+    "I.T1_daemon_executes": true,
+    "I.T2_errors_classified": false,
+    "I.T3_priority_assignment": true,
+    "I.T4_regime_mismatch": true
+  },
+  "signed_by": "STIG (EC-003)"
+}

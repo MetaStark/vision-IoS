@@ -1,0 +1,140 @@
+{
+  "evidence_id": "UMA_SHADOW_002_BULL_MIRROR_20260117",
+  "title": "UMA-SHADOW-002: BULL Mirror Case Falsification Exercise",
+  "execution_status": "COMPLETE",
+  "attested_by": "STIG",
+  "attestation_timestamp": "2026-01-17T19:45:00+01:00",
+
+  "proposal_summary": {
+    "proposal_code": "UMA-SHADOW-002",
+    "proposal_id": "d491c2cb-ac0c-422f-8c03-85eff8b2cd1b",
+    "mode": "FALSIFICATION_EXERCISE",
+    "hypothesis_tested": "Overconfidence is symmetric (BULL and BEAR equally affected)",
+    "result": "SYMMETRY_REJECTED",
+    "classification": "ASYMMETRIC + CONTEXT-DEPENDENT",
+    "status": "PROPOSED_SHADOW"
+  },
+
+  "falsification_result": {
+    "symmetry_hypothesis": "REJECTED",
+    "finding": "Overconfidence is REGIME-SPECIFIC, not structural",
+    "key_differences": {
+      "magnitude": "BEAR 12x worse than BULL by hit rate",
+      "stability": "BEAR uniform (consistently wrong), BULL variable (25-41% by date)",
+      "context": "BULL has asset-class-specific crypto vulnerability"
+    }
+  },
+
+  "comparative_statistics": {
+    "BEAR_at_99pct": {
+      "total": 33,
+      "correct": 1,
+      "hit_rate": 0.0303,
+      "to_neutral": 32,
+      "neutral_reversion_rate": 0.9697,
+      "to_opposite": 0,
+      "avg_brier": 0.9609,
+      "classification": "CATASTROPHIC"
+    },
+    "BULL_at_99pct": {
+      "total": 139,
+      "correct": 52,
+      "hit_rate": 0.3741,
+      "to_neutral": 73,
+      "neutral_reversion_rate": 0.5252,
+      "to_bear": 14,
+      "bear_reversal_rate": 0.1007,
+      "avg_brier": 0.6221,
+      "classification": "MODERATE"
+    }
+  },
+
+  "asset_class_segmentation": {
+    "BULL_on_crypto": {
+      "total": 24,
+      "hit_rate": 0.25,
+      "to_neutral": 8,
+      "to_bear": 10,
+      "bear_reversal_rate": 0.4167,
+      "avg_brier": 0.7444,
+      "classification": "DANGEROUS",
+      "assets_affected": ["ATOM-USD", "SHIB-USD", "ALGO-USD", "DOT-USD", "VET-USD", "XRP-USD", "AVAX-USD", "FIL-USD"]
+    },
+    "BULL_on_equity": {
+      "total": 115,
+      "hit_rate": 0.40,
+      "to_neutral": 65,
+      "to_bear": 4,
+      "bear_reversal_rate": 0.0348,
+      "avg_brier": 0.5966,
+      "classification": "MODERATE"
+    }
+  },
+
+  "sitc_reasoning_chain": {
+    "interaction_id": "b2c3d4e5-f6a7-8901-cdef-234567890abc",
+    "total_nodes": 7,
+    "nodes": [
+      {"index": 1, "type": "PLAN_INIT", "content": "Falsification frame - test symmetry hypothesis"},
+      {"index": 2, "type": "SEARCH", "content": "BULL vs BEAR data comparison"},
+      {"index": 3, "type": "REASONING", "content": "Magnitude analysis - 12x asymmetry confirmed"},
+      {"index": 4, "type": "VERIFICATION", "content": "Temporal stability - BEAR uniform, BULL variable"},
+      {"index": 5, "type": "REASONING", "content": "Context-dependence - crypto vulnerability discovered"},
+      {"index": 6, "type": "REASONING", "content": "Classification - ASYMMETRIC + CONTEXT-DEPENDENT"},
+      {"index": 7, "type": "SYNTHESIS", "content": "Symmetry hypothesis REJECTED"}
+    ],
+    "all_verified": true
+  },
+
+  "ikea_validation": {
+    "validation_id": "cfdec048-fcbd-4c5e-8570-d92b6422db0d",
+    "classification": "PARAMETRIC",
+    "verdict": "APPROVED",
+    "claims_analyzed": 6,
+    "parametric_claims": 6,
+    "external_claims": 0,
+    "unverified_claims": 0,
+    "falsification_language_check": "PASSED"
+  },
+
+  "q2_q5_traceability": {
+    "q2_forecast": "139 BULL@99%+ forecasts (vs 33 BEAR baseline)",
+    "q3_outcome": "52 BULL, 73 NEUTRAL, 14 BEAR distribution",
+    "q4_error": "Avg Brier 0.6221 (vs BEAR 0.9609) - 1.54x better",
+    "q5_hindsight": "ASYMMETRIC_OVERCONFIDENCE pattern + CRYPTO_VULNERABILITY"
+  },
+
+  "epistemic_findings": {
+    "primary": "Overconfidence is regime-specific, not structural",
+    "secondary": "BULL-on-crypto has specific directional reversal risk (41.67% to BEAR)",
+    "tertiary": "BULL-on-equity is moderately miscalibrated but not dangerous",
+    "implication": "Error surface is more complex than initially hypothesized"
+  },
+
+  "governance_compliance": {
+    "directive_ref": "CEO-DIR-2026-070",
+    "falsification_frame": "RESPECTED",
+    "execution_language": "AVOIDED",
+    "tradability_claims": "NONE",
+    "status": "PROPOSED_SHADOW"
+  },
+
+  "portfolio_status": {
+    "total_proposals": 2,
+    "UMA-SHADOW-001": {
+      "finding": "BEAR catastrophic overconfidence (96.97% wrong)",
+      "classification": "STRUCTURAL within BEAR regime"
+    },
+    "UMA-SHADOW-002": {
+      "finding": "BULL moderate overconfidence (62.59% wrong) with crypto vulnerability",
+      "classification": "ASYMMETRIC + CONTEXT-DEPENDENT"
+    },
+    "combined_insight": "Model blind spots are regime-specific and asset-class-specific, not uniform"
+  },
+
+  "ceo_review_required": {
+    "status": "AWAITING_CEO_REVIEW",
+    "key_question": "Does falsification result satisfy mirror case requirement?",
+    "next_proposal": "UMA-SHADOW-003 (STRESS) or UMA-SHADOW-004 (Temporal) - CEO decision pending"
+  }
+}

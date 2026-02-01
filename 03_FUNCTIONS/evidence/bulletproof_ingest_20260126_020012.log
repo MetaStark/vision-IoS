@@ -1,0 +1,421 @@
+2026-01-26 02:00:12,990 | INFO | ======================================================================
+2026-01-26 02:00:12,990 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-01-26 02:00:12,991 | INFO | ======================================================================
+2026-01-26 02:00:12,991 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-01-26 02:00:12,992 | INFO | Executor: STIG (EC-003)
+2026-01-26 02:00:12,992 | INFO | Time: 2026-01-26T01:00:12.990131+00:00
+2026-01-26 02:00:12,993 | INFO | Asset Class Filter: EQUITY
+2026-01-26 02:00:12,994 | INFO | Dry Run: False
+2026-01-26 02:00:12,994 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-01-26 02:00:12,994 | INFO | ======================================================================
+2026-01-26 02:00:13,199 | INFO | Found 421 canonical assets
+2026-01-26 02:00:15,577 | INFO | ============================================================
+2026-01-26 02:00:15,578 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-01-26 02:00:15,578 | INFO | Assets: 421, Rate limit: 200/min
+2026-01-26 02:00:15,578 | INFO | ============================================================
+2026-01-26 02:00:15,590 | INFO |   [1COV.DE] Stale (817.0h > 18h) - fetching
+2026-01-26 02:00:15,592 | INFO |   [ABBV] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:20,546 | WARNING |   [ABBV] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-26 02:00:21,445 | INFO |   [ABNB] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:21,587 | WARNING |   [ABNB] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-26 02:00:22,089 | INFO |   [ABT] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:22,213 | WARNING |   [ABT] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-26 02:00:22,918 | INFO |   [ACA.PA] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:22,931 | INFO |   [ADBE] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:23,056 | WARNING |   [ADBE] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-26 02:00:23,561 | INFO |   [ADI] Stale (73.0h > 18h) - fetching
+2026-01-26 02:00:23,679 | WARNING |   [ADI] SIP subscription error (5 consecutive)
+2026-01-26 02:00:23,680 | WARNING |   EARLY TERMINATION: Alpaca SIP subscription not available
+2026-01-26 02:00:23,680 | WARNING |   Skipping remaining 414 Alpaca assets - will use fallback provider
+2026-01-26 02:00:23,687 | INFO | Alpaca: Updated 0 assets, 421 remaining
+2026-01-26 02:00:25,770 | INFO | ============================================================
+2026-01-26 02:00:25,771 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2026-01-26 02:00:25,771 | INFO | Assets: 421, Using BATCH DOWNLOAD (efficient)
+2026-01-26 02:00:25,772 | INFO | ============================================================
+2026-01-26 02:00:25,772 | INFO |   Checking Yahoo Finance rate limit status...
+2026-01-26 02:00:33,505 | ERROR | 
+1 Failed download:
+2026-01-26 02:00:33,505 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2026-01-26 02:00:33,767 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2026-01-26 02:00:33,768 | WARNING |   Skipping Yahoo and marking all assets as failed
+2026-01-26 02:00:33,769 | INFO | Yahoo: Updated 0 assets, 421 remaining
+2026-01-26 02:00:33,770 | INFO | ============================================================
+2026-01-26 02:00:33,770 | INFO | ATTEMPTING TWELVEDATA EQUITY INGEST (Backup Provider)
+2026-01-26 02:00:33,770 | INFO | Assets: 421, Rate limit: 7/min (90% of free tier)
+2026-01-26 02:00:33,770 | INFO | Daily limit: 720 calls (90% of 800)
+2026-01-26 02:00:33,770 | INFO | ============================================================
+2026-01-26 02:00:33,771 | INFO |   Equity assets: 421, Non-equity: 0
+2026-01-26 02:00:46,437 | WARNING |   [ABBV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:00:56,041 | WARNING |   [ABNB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:01:05,719 | WARNING |   [ABT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:01:32,822 | WARNING |   [ADBE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:01:42,410 | WARNING |   [ADI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:01:54,121 | WARNING |   [ADS.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:02:03,948 | WARNING |   [ADSK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:02:14,356 | WARNING |   [AEP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:02:25,112 | WARNING |   [AFL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:02:50,334 | WARNING |   [AIG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:03:00,221 | WARNING |   [AIR.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:03:19,422 | WARNING |   [AKAM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:04:18,202 | WARNING |   [ALB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:04:27,362 | WARNING |   [ALL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:04:47,243 | WARNING |   [ALV.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:04:56,922 | WARNING |   [AMAT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:10,902 | WARNING |   [AMD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:20,552 | WARNING |   [AMGN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:29,950 | WARNING |   [AMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:39,578 | WARNING |   [AMZN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:49,118 | WARNING |   [AON] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:05:58,576 | WARNING |   [APD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:06:07,918 | WARNING |   [ASML] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:07:03,050 | WARNING |   [AVB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:07:12,162 | WARNING |   [AVGO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:07:21,458 | WARNING |   [AWK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:07:34,139 | WARNING |   [AXP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:07:53,951 | WARNING |   [AZO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:08:04,361 | WARNING |   [BA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:08:22,627 | WARNING |   [BAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:08:54,561 | WARNING |   [BAS.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:09:13,925 | WARNING |   [BAYN.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:09:23,187 | WARNING |   [BEI.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:09:51,173 | WARNING |   [BKNG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:10:02,859 | WARNING |   [BKR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:10:12,229 | WARNING |   [BLK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:10:22,217 | WARNING |   [BMW.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:10:31,643 | WARNING |   [BMY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:10:59,352 | WARNING |   [BNR.DE] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:11:24,511 | WARNING |   [BRK.B] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:11:34,961 | WARNING |   [BSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:11:44,853 | WARNING |   [BT.A.L] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:11:55,179 | WARNING |   [BWO.OL] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:12:04,828 | WARNING |   [C] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:12:14,715 | WARNING |   [CAG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:12:46,742 | WARNING |   [CARR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:12:57,731 | WARNING |   [CAT] TwelveData error: You have run out of API credits for the current minute. 10 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:13:07,631 | WARNING |   [CB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:13:17,407 | WARNING |   [CBK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:13:27,043 | WARNING |   [CCI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:13:37,309 | WARNING |   [CDNS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:13:52,702 | WARNING |   [CF] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:14:02,632 | WARNING |   [CHD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:14:12,191 | WARNING |   [CHTR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:14:21,936 | WARNING |   [CI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:14:31,220 | WARNING |   [CL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:14:40,632 | WARNING |   [CLX] TwelveData error: You have run out of API credits for the current minute. 9 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:14:49,835 | WARNING |   [CMCSA] TwelveData error: You have run out of API credits for the current minute. 11 API credits were used, with the current limit being 8. Wait for the next minute or consider switching to a higher tier plan at https://twelvedata.com/pricing
+2026-01-26 02:15:06,227 | WARNING |   [CME] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:15:15,445 | WARNING |   [CMG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:15:24,981 | WARNING |   [COF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:15:34,176 | WARNING |   [COIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:15:43,612 | WARNING |   [CON.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:15:52,885 | WARNING |   [COP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:16:02,015 | WARNING |   [COST] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:16:24,047 | WARNING |   [CRM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:16:33,545 | WARNING |   [CRWD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:16:52,362 | WARNING |   [CSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:01,739 | WARNING |   [CTAS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:10,884 | WARNING |   [CTVA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:20,725 | WARNING |   [CVS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:33,950 | WARNING |   [CVX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:43,480 | WARNING |   [D] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:17:53,220 | WARNING |   [DAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:18:02,732 | WARNING |   [DBK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:18:11,884 | WARNING |   [DD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:18:21,491 | WARNING |   [DDOG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:18:30,660 | WARNING |   [DE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:18:45,880 | WARNING |   [DECK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:19:14,343 | WARNING |   [DHER.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:19:23,573 | WARNING |   [DHI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:19:32,812 | WARNING |   [DHL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:19:41,974 | WARNING |   [DHR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:19:54,583 | WARNING |   [DIA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:20:06,934 | WARNING |   [DIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:20:16,393 | WARNING |   [DLR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:20:34,894 | WARNING |   [DOCU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:20:44,231 | WARNING |   [DOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:20:53,827 | WARNING |   [DPZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:21:20,134 | WARNING |   [DTE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:21:29,607 | WARNING |   [DUK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:21:39,162 | WARNING |   [DVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:21:48,710 | WARNING |   [DXCM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:21:58,231 | WARNING |   [EA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:22:07,610 | WARNING |   [EBAY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:22:17,216 | WARNING |   [ECL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:22:33,679 | WARNING |   [ED] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:22:43,130 | WARNING |   [EIX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:22:53,033 | WARNING |   [EL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:23:21,885 | WARNING |   [ELV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:23:31,020 | WARNING |   [EMR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:24:07,965 | WARNING |   [ENR.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:24:27,288 | WARNING |   [EOAN.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:24:36,969 | WARNING |   [EOG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:24:46,507 | WARNING |   [EQIX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:25:12,034 | WARNING |   [EQR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:25:30,608 | WARNING |   [ES] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:25:39,982 | WARNING |   [ETN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:25:49,603 | WARNING |   [ETSY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:25:58,967 | WARNING |   [EW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:26:16,470 | WARNING |   [EXC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:26:25,878 | WARNING |   [F] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:26:36,629 | WARNING |   [FANG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:26:46,168 | WARNING |   [FCX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:26:56,071 | WARNING |   [FDX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:27:05,842 | WARNING |   [FIVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:27:15,531 | WARNING |   [FOX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:27:31,692 | WARNING |   [FRE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:27:50,895 | WARNING |   [FTNT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:28:00,817 | WARNING |   [GD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:28:10,027 | WARNING |   [GE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:28:19,195 | WARNING |   [GILD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:28:28,611 | WARNING |   [GIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:29:18,248 | WARNING |   [GM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:29:27,433 | WARNING |   [GOOG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:29:36,582 | WARNING |   [GOOGL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:29:45,723 | WARNING |   [GS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:30:28,954 | WARNING |   [HAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:30:38,093 | WARNING |   [HD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:30:47,881 | WARNING |   [HEN3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:30:58,612 | WARNING |   [HFG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:31:08,108 | WARNING |   [HLT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:31:18,343 | WARNING |   [HNR1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:31:37,395 | WARNING |   [HON] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:31:55,766 | WARNING |   [HSY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:32:05,528 | WARNING |   [HUBS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:32:15,591 | WARNING |   [HUM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:32:41,443 | WARNING |   [ICE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:32:50,931 | WARNING |   [IFF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:33:00,416 | WARNING |   [IFX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:33:19,365 | WARNING |   [INTC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:33:28,796 | WARNING |   [INTU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:33:45,827 | WARNING |   [ISRG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:33:54,976 | WARNING |   [ITW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:34:04,954 | WARNING |   [IWM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:34:15,084 | WARNING |   [JNJ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:34:24,477 | WARNING |   [JPM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:34:43,285 | WARNING |   [KHC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:35:05,052 | WARNING |   [KLAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:35:15,081 | WARNING |   [KMB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:35:24,984 | WARNING |   [KMI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:35:34,259 | WARNING |   [KO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:35:53,082 | WARNING |   [KR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:36:03,178 | WARNING |   [LCID] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:36:15,422 | WARNING |   [LEN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:36:34,990 | WARNING |   [LHX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:36:44,177 | WARNING |   [LIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:37:02,582 | WARNING |   [LLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:37:11,736 | WARNING |   [LMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:37:22,915 | WARNING |   [LOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:37:41,973 | WARNING |   [LRCX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:01,670 | WARNING |   [LULU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:10,966 | WARNING |   [LUV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:20,267 | WARNING |   [LYFT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:30,165 | WARNING |   [LYV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:46,479 | WARNING |   [MA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:38:55,948 | WARNING |   [MAR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:39:05,826 | WARNING |   [MBG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:39:24,688 | WARNING |   [MCD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:39:34,151 | WARNING |   [MCHP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:39:43,887 | WARNING |   [MCK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:01,525 | WARNING |   [MCO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:11,312 | WARNING |   [MDB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:21,205 | WARNING |   [MDLZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:30,713 | WARNING |   [MDT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:40,735 | WARNING |   [MET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:40:50,805 | WARNING |   [META] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:41:18,287 | WARNING |   [MLM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:41:27,926 | WARNING |   [MMC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:41:37,996 | WARNING |   [MO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:42:06,838 | WARNING |   [MPC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:42:16,990 | WARNING |   [MRK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:42:32,956 | WARNING |   [MRK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:42:42,423 | WARNING |   [MRVL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:42:51,693 | WARNING |   [MS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:43:01,882 | WARNING |   [MSCI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:43:11,762 | WARNING |   [MSFT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:43:20,986 | WARNING |   [MTCH] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:43:30,354 | WARNING |   [MTX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:43:43,117 | WARNING |   [MU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:43:52,603 | WARNING |   [MUV2.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:44:02,108 | WARNING |   [NEE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:44:21,011 | WARNING |   [NEM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:44:30,125 | WARNING |   [NET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:44:39,970 | WARNING |   [NFLX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:45:12,595 | WARNING |   [NKE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:45:22,101 | WARNING |   [NOC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:45:40,707 | WARNING |   [NOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:45:50,084 | WARNING |   [NSC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:45:59,486 | WARNING |   [NUE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:46:15,762 | WARNING |   [NVDA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:46:25,446 | WARNING |   [NVR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:46:44,231 | WARNING |   [NXPI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:46:53,671 | WARNING |   [OKE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:47:03,255 | WARNING |   [OKTA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:47:49,725 | WARNING |   [ORCL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:48:08,178 | WARNING |   [ORLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:48:17,941 | WARNING |   [OTIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:48:27,445 | WARNING |   [OXY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:48:38,538 | WARNING |   [P911.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:48:48,092 | WARNING |   [PAH3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:50:02,147 | WARNING |   [PANW] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:50:23,274 | WARNING |   [PCG] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:50:31,870 | WARNING |   [PEP] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:50:40,454 | WARNING |   [PFE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:50:49,044 | WARNING |   [PG] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:50:57,803 | WARNING |   [PGR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:06,427 | WARNING |   [PH] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:15,333 | WARNING |   [PHM] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:23,928 | WARNING |   [PHO.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:32,511 | WARNING |   [PLD] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:41,096 | WARNING |   [PLTR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:49,679 | WARNING |   [PM] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:51:58,339 | WARNING |   [PNC] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:52:06,926 | WARNING |   [POOL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:52:27,563 | WARNING |   [PPG] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:52:36,489 | WARNING |   [PRU.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:52:45,084 | WARNING |   [PSA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:52:57,155 | WARNING |   [PSX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:05,746 | WARNING |   [PUB.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:14,326 | WARNING |   [PYPL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:23,244 | WARNING |   [QCOM] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:31,834 | WARNING |   [QIA.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:31,834 | INFO |   Progress: 300/421 assets, 278 API calls
+2026-01-26 02:53:41,048 | WARNING |   [QQQ] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:53:49,626 | WARNING |   [REGN] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:54:10,462 | WARNING |   [REL.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-01-26 02:56:03,946 | WARNING |   [RHM.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:56:32,545 | WARNING |   [RIVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:57:09,970 | WARNING |   [ROK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:57:24,591 | WARNING |   [ROKU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:57:34,118 | WARNING |   [ROST] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:57:53,045 | WARNING |   [RSG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:58:02,584 | WARNING |   [RTX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:58:11,990 | WARNING |   [RWE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:58:52,763 | WARNING |   [SAP.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 02:59:02,205 | WARNING |   [SBAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:59:11,575 | WARNING |   [SBUX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 02:59:30,271 | WARNING |   [SCHW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:00:01,306 | WARNING |   [SHL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:00:10,818 | WARNING |   [SHOP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:00:20,190 | WARNING |   [SHW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:00:29,602 | WARNING |   [SIE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:00:39,261 | WARNING |   [SLB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:00:48,537 | WARNING |   [SNOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:00:57,821 | WARNING |   [SNPS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:08,514 | WARNING |   [SO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:17,774 | WARNING |   [SPG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:27,019 | WARNING |   [SPGI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:36,324 | WARNING |   [SPY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:45,525 | WARNING |   [SRE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:01:54,920 | WARNING |   [SRT3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:02:41,908 | WARNING |   [STLD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:03:01,128 | WARNING |   [STZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:03:31,006 | WARNING |   [SY1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:03:40,193 | WARNING |   [SYK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:03:49,803 | WARNING |   [SYY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:04:01,676 | WARNING |   [T] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:04:11,065 | WARNING |   [TEAM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:04:39,379 | WARNING |   [TFC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:04:58,293 | WARNING |   [TGT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:05:07,495 | WARNING |   [TJX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:05:16,979 | WARNING |   [TMO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:05:26,051 | WARNING |   [TMUS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:05:44,436 | WARNING |   [TRV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:06:07,161 | WARNING |   [TSLA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:06:25,740 | WARNING |   [TTWO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:06:35,057 | WARNING |   [TXN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:06:44,483 | WARNING |   [UAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:06:53,943 | WARNING |   [UBER] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:07:19,034 | WARNING |   [UNH] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:07:28,549 | WARNING |   [UNP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:07:37,646 | WARNING |   [UPS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:07:56,031 | WARNING |   [USB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:08:05,413 | WARNING |   [V] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:08:26,244 | WARNING |   [VICI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:08:54,393 | WARNING |   [VLO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:09:04,235 | WARNING |   [VMC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:09:13,766 | WARNING |   [VNA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:09:32,213 | WARNING |   [VOO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:09:44,259 | WARNING |   [VOW3.DE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:09:53,710 | WARNING |   [VRTX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:03,195 | WARNING |   [VTI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:12,561 | WARNING |   [VZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:31,412 | WARNING |   [WBD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:40,605 | WARNING |   [WDAY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:49,858 | WARNING |   [WEC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:10:59,331 | WARNING |   [WELL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:11:08,868 | WARNING |   [WFC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:11:27,741 | WARNING |   [WM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:11:37,262 | WARNING |   [WMB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:11:46,444 | WARNING |   [WMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:11:55,862 | WARNING |   [XEL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:10,997 | WARNING |   [XLB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:21,137 | WARNING |   [XLC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:30,757 | WARNING |   [XLE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:40,440 | WARNING |   [XLF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:49,929 | WARNING |   [XLI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:12:59,270 | WARNING |   [XLK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:13:08,623 | WARNING |   [XLP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:13:25,116 | WARNING |   [XLRE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:13:34,531 | WARNING |   [XLU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:13:43,935 | WARNING |   [XLV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:13:53,342 | WARNING |   [XLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:14:02,800 | WARNING |   [XOM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:14:21,521 | WARNING |   [YUM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:14:30,945 | WARNING |   [ZAL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-26 03:14:40,355 | WARNING |   [ZM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:14:49,650 | WARNING |   [ZS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:14:58,781 | WARNING |   [ZTS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:15:17,516 | WARNING |   [AAPL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-26 03:15:17,516 | INFO |   TwelveData ingest complete: 0 updated, 421 failed, 396 API calls
+2026-01-26 03:15:17,603 | INFO | TwelveData: Updated 0 equity assets, 421 total remaining
+2026-01-26 03:15:17,603 | INFO | 
+============================================================
+2026-01-26 03:15:17,603 | INFO | VERIFICATION: Checking Data Freshness
+2026-01-26 03:15:17,603 | INFO | ============================================================
+2026-01-26 03:15:19,800 | WARNING | VERIFICATION FAILED: 424 assets are stale
+2026-01-26 03:15:19,800 | WARNING |   - BT.A.L: 42 days stale (last: 2025-12-15)
+2026-01-26 03:15:19,800 | WARNING |   - 1COV.DE: 34 days stale (last: 2025-12-23)
+2026-01-26 03:15:19,800 | WARNING |   - TLT: 17 days stale (last: 2026-01-09)
+2026-01-26 03:15:19,800 | WARNING |   - GLD: 16 days stale (last: 2026-01-10)
+2026-01-26 03:15:19,800 | WARNING |   - UNI-USD: 4 days stale (last: 2026-01-22)
+2026-01-26 03:15:19,800 | WARNING |   - ADBE: 3 days stale (last: 2026-01-23)
+2026-01-26 03:15:19,800 | WARNING |   - ADI: 3 days stale (last: 2026-01-23)
+2026-01-26 03:15:19,800 | WARNING |   - ADS.DE: 3 days stale (last: 2026-01-23)
+2026-01-26 03:15:19,800 | WARNING |   - ADSK: 3 days stale (last: 2026-01-23)
+2026-01-26 03:15:19,800 | WARNING |   - AEP: 3 days stale (last: 2026-01-23)
+2026-01-26 03:15:19,800 | WARNING |   ... and 414 more
+2026-01-26 03:15:21,313 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 424 assets still stale after ingest! Updated: 0, Rows: 0
+2026-01-26 03:15:21,323 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2026-01-26 03:15:21,324 | CRITICAL | ALERT [CRITICAL]: ALL INGEST METHODS FAILED - No assets were updated! Manual intervention required.
+2026-01-26 03:15:21,326 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2026-01-26 03:15:21,329 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2026-01-26 03:15:21,406 | INFO | 
+======================================================================
+2026-01-26 03:15:21,407 | INFO | BULLETPROOF INGEST COMPLETE
+2026-01-26 03:15:21,407 | INFO | ======================================================================
+2026-01-26 03:15:21,407 | INFO | Status: FAILED
+2026-01-26 03:15:21,408 | INFO | Assets Updated: 0
+2026-01-26 03:15:21,408 | INFO | Rows Inserted: 0
+2026-01-26 03:15:21,408 | INFO | Providers Used: ALPACA, YAHOO, TWELVEDATA
+2026-01-26 03:15:21,409 | INFO | Verification: FAILED (424 stale)
+2026-01-26 03:15:21,410 | INFO | Elapsed: 4508.3s
+2026-01-26 03:15:21,410 | INFO | 
+Freshness by Asset Class:
+2026-01-26 03:15:21,411 | INFO |   CRYPTO: 45/50 fresh (90.0%)
+2026-01-26 03:15:21,411 | INFO |   EQUITY: 0/422 fresh (0.0%)
+2026-01-26 03:15:21,411 | INFO |   ETF: 0/2 fresh (0.0%)
+2026-01-26 03:15:21,411 | INFO |   FX: 24/25 fresh (96.0%)
+2026-01-26 03:15:21,412 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_b91e2b31_20260126_031521.json
+2026-01-26 03:15:21,412 | INFO | ======================================================================

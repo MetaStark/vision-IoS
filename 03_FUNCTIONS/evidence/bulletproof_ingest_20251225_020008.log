@@ -1,0 +1,79 @@
+2025-12-25 02:00:08,618 | INFO | ======================================================================
+2025-12-25 02:00:08,619 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2025-12-25 02:00:08,620 | INFO | ======================================================================
+2025-12-25 02:00:08,620 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2025-12-25 02:00:08,621 | INFO | Executor: STIG (EC-003)
+2025-12-25 02:00:08,621 | INFO | Time: 2025-12-25T01:00:08.618418+00:00
+2025-12-25 02:00:08,621 | INFO | Asset Class Filter: CRYPTO
+2025-12-25 02:00:08,622 | INFO | Dry Run: False
+2025-12-25 02:00:08,622 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2025-12-25 02:00:08,622 | INFO | ======================================================================
+2025-12-25 02:00:08,705 | INFO | Found 46 canonical assets
+2025-12-25 02:00:13,928 | INFO | ============================================================
+2025-12-25 02:00:13,928 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2025-12-25 02:00:13,928 | INFO | Assets: 46, Rate limit: 200/min
+2025-12-25 02:00:13,928 | INFO | ============================================================
+2025-12-25 02:00:17,639 | INFO |   [AVAX-USD] +1 rows via ALPACA
+2025-12-25 02:00:18,908 | INFO |   [BCH-USD] +1 rows via ALPACA
+2025-12-25 02:00:20,217 | INFO |   [BTC-USD] +1 rows via ALPACA
+2025-12-25 02:00:22,152 | INFO |   [CRV-USD] +1 rows via ALPACA
+2025-12-25 02:00:22,802 | INFO |   [DOGE-USD] +1 rows via ALPACA
+2025-12-25 02:00:23,436 | INFO |   [DOT-USD] +1 rows via ALPACA
+2025-12-25 02:00:25,335 | INFO |   [ETH-USD] +1 rows via ALPACA
+2025-12-25 02:00:27,225 | INFO |   [GRT-USD] +1 rows via ALPACA
+2025-12-25 02:00:30,381 | INFO |   [LINK-USD] +1 rows via ALPACA
+2025-12-25 02:00:31,009 | INFO |   [LTC-USD] +1 rows via ALPACA
+2025-12-25 02:00:36,677 | INFO |   [SHIB-USD] +1 rows via ALPACA
+2025-12-25 02:00:37,994 | INFO |   [SOL-USD] +1 rows via ALPACA
+2025-12-25 02:00:40,089 | INFO |   [UNI-USD] +1 rows via ALPACA
+2025-12-25 02:00:52,236 | INFO |   [XRP-USD] +1 rows via ALPACA
+2025-12-25 02:00:54,263 | INFO |   [XTZ-USD] +1 rows via ALPACA
+2025-12-25 02:00:55,714 | INFO |   [AAVE-USD] +1 rows via ALPACA
+2025-12-25 02:00:56,821 | INFO | Alpaca: Updated 16 assets, 30 remaining
+2025-12-25 02:01:01,991 | INFO | ============================================================
+2025-12-25 02:01:02,017 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2025-12-25 02:01:02,018 | INFO | Assets: 30, Using BATCH DOWNLOAD (efficient)
+2025-12-25 02:01:02,020 | INFO | ============================================================
+2025-12-25 02:01:02,021 | INFO |   Checking Yahoo Finance rate limit status...
+2025-12-25 02:01:09,939 | ERROR | 
+1 Failed download:
+2025-12-25 02:01:09,967 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2025-12-25 02:01:10,526 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2025-12-25 02:01:10,526 | WARNING |   Skipping Yahoo and marking all assets as failed
+2025-12-25 02:01:10,526 | INFO | Yahoo: Updated 0 assets, 30 remaining
+2025-12-25 02:01:10,526 | INFO | 
+============================================================
+2025-12-25 02:01:10,526 | INFO | VERIFICATION: Checking Data Freshness
+2025-12-25 02:01:10,526 | INFO | ============================================================
+2025-12-25 02:01:11,268 | WARNING | VERIFICATION FAILED: 1 assets are stale
+2025-12-25 02:01:11,268 | WARNING |   - BT.A.L: 10 days stale (last: 2025-12-15)
+2025-12-25 02:01:11,804 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 1 assets still stale after ingest! Updated: 16, Rows: 16
+2025-12-25 02:01:11,806 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2025-12-25 02:01:11,806 | WARNING | ALERT [WARNING]: PARTIAL INGEST: 30 assets could not be updated via any provider
+2025-12-25 02:01:11,806 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2025-12-25 02:01:11,815 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2025-12-25 02:01:11,821 | INFO | 
+======================================================================
+2025-12-25 02:01:11,826 | INFO | BULLETPROOF INGEST COMPLETE
+2025-12-25 02:01:11,869 | INFO | ======================================================================
+2025-12-25 02:01:11,869 | INFO | Status: PARTIAL
+2025-12-25 02:01:11,869 | INFO | Assets Updated: 16
+2025-12-25 02:01:11,869 | INFO | Rows Inserted: 16
+2025-12-25 02:01:11,873 | INFO | Providers Used: ALPACA, YAHOO
+2025-12-25 02:01:11,873 | INFO | Verification: FAILED (1 stale)
+2025-12-25 02:01:11,873 | INFO | Elapsed: 63.2s
+2025-12-25 02:01:11,873 | INFO | 
+Freshness by Asset Class:
+2025-12-25 02:01:11,873 | INFO |   CRYPTO: 46/50 fresh (92.0%)
+2025-12-25 02:01:11,873 | INFO |   EQUITY: 420/422 fresh (99.5%)
+2025-12-25 02:01:11,873 | INFO |   FX: 24/25 fresh (96.0%)
+2025-12-25 02:01:11,879 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_22cf40fe_20251225_020111.json
+2025-12-25 02:01:11,879 | INFO | ======================================================================

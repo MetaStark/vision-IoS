@@ -1,0 +1,183 @@
+{
+  "event": "CEO_BOARD_FOMC_DATA_CORRECTION",
+  "evidence_id": "FOMC-CORRECTION-20260117-001",
+  "timestamp": "2026-01-17T12:40:00Z",
+  "initiated_by": "CEO_BOARD",
+  "executed_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "directive_reference": "CEO_BOARD_DISCREPANCY_ANALYSIS_20260117",
+
+  "discrepancy_report": {
+    "title": "FOMC Calendar Data Discrepancy",
+    "discovered_at": "2026-01-17T12:00:00Z",
+    "discovered_by": "CEO_BOARD",
+    "severity": "CRITICAL",
+    "category": "DATA_QUALITY",
+
+    "discrepancies_identified": [
+      {
+        "field": "fed_funds_rate",
+        "calendar_value": "4.25%-4.50%",
+        "actual_market_value": "3.50%-3.75%",
+        "delta_bps": 100,
+        "source_of_truth": "Federal Reserve Official (Dec 2025: 3 cuts totaling 100bps)",
+        "impact": "Consensus estimates would be systematically wrong"
+      },
+      {
+        "field": "fomc_meeting_date",
+        "calendar_value": "2026-01-29",
+        "actual_market_value": "2026-01-28 (2-day meeting Jan 27-28)",
+        "delta_days": 1,
+        "source_of_truth": "Federal Reserve FOMC Calendar",
+        "impact": "Event proximity tagging would be misaligned by 24 hours"
+      },
+      {
+        "field": "market_expectation",
+        "calendar_value": "25bp CUT implied",
+        "actual_market_value": "PAUSE (95% probability)",
+        "source_of_truth": "CME FedWatch Tool",
+        "impact": "Surprise score calculations would be inverted"
+      }
+    ],
+
+    "root_cause_analysis": {
+      "primary_cause": "Stale seed data from migration 290",
+      "contributing_factors": [
+        "Rate data not updated post-2025 rate cutting cycle",
+        "FOMC schedule date approximation error",
+        "Lack of real-time Fed Funds rate validation"
+      ],
+      "category": "SEED_DATA_QUALITY"
+    }
+  },
+
+  "corrections_applied": {
+    "migration": "291_calendar_data_correction_fomc.sql",
+    "executed_at": "2026-01-17T12:38:00Z",
+    "transaction_status": "COMMITTED",
+
+    "records_corrected": [
+      {
+        "event_id": "a85bb2cd-d81a-44e5-9842-66494f06a8f8",
+        "event": "US_FOMC Dec 18, 2025",
+        "field": "actual_value",
+        "before": "4.50",
+        "after": "3.50",
+        "rationale": "Fed cut to 3.50%-3.75% range in Dec 2025"
+      },
+      {
+        "event_id": "a85bb2cd-d81a-44e5-9842-66494f06a8f8",
+        "event": "US_FOMC Dec 18, 2025",
+        "field": "previous_value",
+        "before": null,
+        "after": "3.75",
+        "rationale": "Rate before Dec 2025 cut was 3.75%-4.00%"
+      },
+      {
+        "event_id": "fe3cb3ba-6794-4253-ab7d-18a8b09f35a8",
+        "event": "US_FOMC Jan 2026",
+        "field": "event_timestamp",
+        "before": "2026-01-29T19:00:00Z",
+        "after": "2026-01-28T19:00:00Z",
+        "rationale": "FOMC decision announced Jan 28 (end of 2-day meeting)"
+      },
+      {
+        "event_id": "fe3cb3ba-6794-4253-ab7d-18a8b09f35a8",
+        "event": "US_FOMC Jan 2026",
+        "field": "consensus_estimate",
+        "before": "4.25",
+        "after": "3.50",
+        "rationale": "PAUSE expected - 95% probability per CME FedWatch"
+      },
+      {
+        "event_id": "fe3cb3ba-6794-4253-ab7d-18a8b09f35a8",
+        "event": "US_FOMC Jan 2026",
+        "field": "previous_value",
+        "before": null,
+        "after": "3.50",
+        "rationale": "Previous rate from Dec 2025 decision"
+      }
+    ],
+
+    "records_invalidated": [
+      {
+        "event_id": "9d9add8d-d052-4f5c-852c-584355fe0d96",
+        "event": "US_FOMC Jan 8, 2026",
+        "action": "is_canonical set to FALSE",
+        "rationale": "No FOMC meeting occurred on Jan 8, 2026 - erroneous record"
+      },
+      {
+        "event_id": "e7127465-d502-4c33-bdda-9a47855c62d4",
+        "event": "US_FOMC Jan 29, 2026 (G1_TEST_TZ)",
+        "action": "is_canonical set to FALSE",
+        "rationale": "Test data - incorrect date"
+      },
+      {
+        "event_id": "11ea78ab-1595-4745-8ff4-2e475e2113a4",
+        "event": "US_FOMC Jan 29, 2026 (G1_TEST_PRECISION)",
+        "action": "is_canonical set to FALSE",
+        "rationale": "Test data - incorrect date"
+      }
+    ]
+  },
+
+  "verification": {
+    "query": "SELECT event_id, event_type_code, event_timestamp, consensus_estimate, actual_value, previous_value, is_canonical FROM fhq_calendar.calendar_events WHERE event_type_code = 'US_FOMC' ORDER BY event_timestamp",
+    "executed_at": "2026-01-17T12:39:00Z",
+    "result_summary": {
+      "total_fomc_records": 5,
+      "canonical_records": 2,
+      "non_canonical_records": 3,
+      "dec_2025_rate": "3.50 (actual)",
+      "jan_2026_consensus": "3.50 (PAUSE)",
+      "jan_2026_date": "2026-01-28T19:00:00Z"
+    },
+    "status": "VERIFIED_CORRECT"
+  },
+
+  "governance_logging": {
+    "governance_actions_log": {
+      "action_type": "DATA_CORRECTION",
+      "action_target": "fhq_calendar.calendar_events",
+      "decision": "APPROVED",
+      "decision_rationale": "Calendar data correction per CEO/Board discrepancy analysis: FOMC rates corrected from 4.50% to 3.50%, meeting date from Jan 29 to Jan 28, expectation from CUT to PAUSE. Erroneous Jan 8 entry invalidated."
+    },
+    "source_conflict_log": {
+      "event_type_code": "US_FOMC",
+      "event_domain": "MACRO",
+      "winning_provider": "BOARD_VERIFICATION",
+      "resolution_method": "CEO_BOARD_DISCREPANCY_ANALYSIS",
+      "resolution_path": "MANUAL_OVERRIDE"
+    }
+  },
+
+  "impact_assessment": {
+    "forecasts_affected": "All forecasts with event_adjacent_event_id pointing to FOMC events",
+    "brier_impact": "Surprise scores now correctly computed against 3.50% baseline",
+    "learning_impact": "Event proximity tagging now aligned with actual FOMC schedule",
+    "risk_mitigation": "Prevents systematic forecast evaluation errors"
+  },
+
+  "lessons_learned": [
+    "Calendar seed data requires multi-source verification before production",
+    "FOMC rates should be pulled from official Federal Reserve API, not hardcoded",
+    "Event dates should be validated against central bank official schedules",
+    "CEO/Board review is essential quality gate for critical financial data"
+  ],
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T12:40:00Z",
+    "summary": [
+      "CEO/Board discrepancy analysis identified critical FOMC data errors",
+      "Fed Funds rate corrected from 4.50% to 3.50% (100bps delta)",
+      "FOMC date corrected from Jan 29 to Jan 28",
+      "Market expectation corrected from CUT to PAUSE",
+      "Erroneous Jan 8 record invalidated",
+      "Migration 291 executed and committed",
+      "Corrections verified against database",
+      "Governance logging completed"
+    ]
+  }
+}

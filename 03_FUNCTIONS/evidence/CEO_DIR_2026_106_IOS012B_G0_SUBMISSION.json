@@ -1,0 +1,270 @@
+{
+  "directive": "CEO-DIR-2026-106",
+  "title": "IoS-012-B Synthetic Inversion Module - G0 Submission",
+  "version": "1.0",
+  "classification": "ALPHA_STRATEGY",
+  "generated_at": "2026-01-19T21:00:00Z",
+  "generated_by": "STIG",
+  "agent_id": "EC-003_2026_PRODUCTION",
+
+  "_CEO_LANGUAGE_NOTE": "Konvertering fra diagnostisk funn til penger i banken via Alpaca Options",
+
+  "executive_summary": {
+    "headline": "IoS-012-B G0 SUBMITTED - Shadow Mode Until 2026-02-02",
+    "purpose": "Convert systematic STRESS@99%+ miscalibration into alpha via signal inversion",
+    "strategy": "Vertical Bull Call Spreads on inverted equity signals",
+    "status": "G0_SUBMITTED",
+    "mode": "SHADOW_ONLY"
+  },
+
+  "module_specification": {
+    "module_id": "IoS-012-B",
+    "module_name": "Synthetic Inversion Module",
+    "parent_module": "IoS-012 (Execution Engine)",
+    "owner": "STIG",
+    "validator": "VEGA",
+
+    "dependencies": [
+      "IoS-012 (Execution Engine)",
+      "IoS-008 (Runtime Decision Engine)",
+      "CEO-DIR-2026-078 (G4 Canonicalized Inversion Layer)",
+      "CEO-DIR-2026-105 (Hindsight Firewall)"
+    ],
+
+    "adr_alignment": [
+      "ADR-004 (Change Gates)",
+      "ADR-012 (Economic Safety)",
+      "ADR-013 (Infrastructure Sovereignty)",
+      "ADR-016 (DEFCON Circuit Breaker)"
+    ]
+  },
+
+  "alpha_signal_foundation": {
+    "discovery_directive": "CEO-DIR-2026-105",
+    "finding": "STRESS@99%+ equity signals have 0% hit rate across 37 signals",
+
+    "statistics": {
+      "total_signals": 37,
+      "equity_signals": 31,
+      "crypto_signals": 6,
+      "hit_rate": "0.00%",
+      "original_brier": 0.9942,
+      "inverted_brier": 0.0058,
+      "alpha_potential": "EXTRAORDINARY"
+    },
+
+    "canonical_universe": {
+      "tickers": ["ADBE", "ADSK", "AIG", "AZO", "GIS", "HNR1.DE", "INTU", "LEN", "NOW", "PGR"],
+      "asset_class": "EQUITY",
+      "total_tickers": 10,
+      "canonicalization_status": "G4_CANONICALIZED",
+      "canonicalization_directive": "CEO-DIR-2026-078"
+    },
+
+    "excluded_assets": {
+      "FLOW-USD": {
+        "reason": "VEGA G3 asset class boundary - crypto excluded",
+        "reference": "Day 18 Report Section 14"
+      }
+    }
+  },
+
+  "strategy_specification": {
+    "instrument": "Vertical Bull Call Spread",
+    "rationale": "Inverted STRESS signals are bullish - defined risk, synthetic exposure",
+
+    "trigger_conditions": {
+      "regime": "STRESS",
+      "confidence_threshold": 0.99,
+      "asset_class": "EQUITY",
+      "ticker_filter": "canonical_universe"
+    },
+
+    "position_sizing": {
+      "max_position_per_ticker": "2.5% NAV",
+      "max_total_exposure": "25% NAV",
+      "premium_budget_per_trade": "0.5% NAV"
+    },
+
+    "strike_selection": {
+      "long_strike": "ATM or 1-2% OTM",
+      "short_strike": "K1 + $5-10",
+      "expiration_dte": "14-30 days",
+      "delta_target": 0.45
+    },
+
+    "exit_rules": [
+      {
+        "rule": "TAKE_PROFIT",
+        "trigger": "50% of max profit reached",
+        "priority": 10
+      },
+      {
+        "rule": "STOP_LOSS",
+        "trigger": "25% of premium remaining",
+        "priority": 20
+      },
+      {
+        "rule": "TIME_DECAY",
+        "trigger": "5 DTE remaining",
+        "priority": 30
+      },
+      {
+        "rule": "REGIME_CHANGE",
+        "trigger": "STRESS regime exits",
+        "priority": 40
+      }
+    ]
+  },
+
+  "risk_controls": {
+    "auto_disable_threshold": {
+      "metric": "Inverted Hit Rate",
+      "threshold": 0.80,
+      "lookback_days": 30,
+      "action": "Disable IoS-012-B and alert LARS"
+    },
+
+    "circuit_breakers": [
+      {
+        "condition": "Regime model undefined",
+        "action": "Block signal"
+      },
+      {
+        "condition": "Ticker not in universe",
+        "action": "Reject signal"
+      },
+      {
+        "condition": "Hindsight contamination detected",
+        "action": "System halt"
+      }
+    ]
+  },
+
+  "hindsight_firewall_compliance": {
+    "is_retrospective": true,
+    "non_eligibility_start": "2026-01-19",
+    "non_eligibility_end": "2026-02-02",
+    "learning_cycles_required": 2,
+    "current_mode": "SHADOW_ONLY",
+
+    "permitted_actions": [
+      "Shadow signal generation",
+      "Paper trading simulation",
+      "Performance tracking",
+      "Evidence collection for G4 review"
+    ],
+
+    "prohibited_actions": [
+      "Live execution on Alpaca",
+      "SkillDamper parameter modification",
+      "Model retraining based on inversion data",
+      "Autonomous trading activation"
+    ],
+
+    "compliance_status": "COMPLIANT"
+  },
+
+  "implementation_artifacts": {
+    "specification_document": {
+      "path": "02_IOS/IoS-012-B_SYNTHETIC_INVERSION_MODULE.md",
+      "status": "CREATED"
+    },
+    "database_migration": {
+      "path": "04_DATABASE/MIGRATIONS/313_ios012b_inversion_overlay_infrastructure.sql",
+      "status": "CREATED",
+      "tables_created": [
+        "fhq_alpha.inversion_universe",
+        "fhq_alpha.inversion_overlay_shadow",
+        "fhq_governance.inversion_health_metrics",
+        "fhq_alpha.inversion_exit_rules",
+        "fhq_alpha.inversion_hindsight_compliance"
+      ],
+      "views_created": [
+        "fhq_alpha.v_inversion_overlay_performance",
+        "fhq_alpha.v_inversion_overlay_system_performance"
+      ],
+      "functions_created": [
+        "fhq_alpha.check_inversion_health()"
+      ]
+    },
+    "python_module": {
+      "path": "03_FUNCTIONS/ios012b_synthetic_inversion_module.py",
+      "status": "CREATED",
+      "classes": [
+        "SyntheticInversionModule",
+        "InversionSignal",
+        "OptionsSpread",
+        "InversionConfig"
+      ]
+    }
+  },
+
+  "governance_gates": {
+    "G0": {
+      "status": "SUBMITTED",
+      "date": "2026-01-19",
+      "evidence": "This document"
+    },
+    "G1": {
+      "status": "PENDING",
+      "requirement": "Technical validation by STIG"
+    },
+    "G2": {
+      "status": "PENDING",
+      "requirement": "Governance validation by VEGA"
+    },
+    "G3": {
+      "status": "PENDING",
+      "requirement": "Integration testing (Shadow Mode)"
+    },
+    "G4": {
+      "status": "BLOCKED",
+      "requirement": "CEO approval + date >= 2026-02-02",
+      "blocking_reason": "Hindsight Firewall Non-Eligibility Clause"
+    }
+  },
+
+  "next_steps": {
+    "immediate": [
+      "Execute Migration 313 on database",
+      "Begin shadow signal tracking",
+      "Set up Alpaca Paper Trading account integration"
+    ],
+    "by_2026_01_26": [
+      "Complete G1 technical validation",
+      "Begin G2 governance review"
+    ],
+    "by_2026_02_02": [
+      "Complete G3 integration testing",
+      "Collect 14+ days shadow performance data",
+      "Prepare G4 activation package"
+    ],
+    "post_2026_02_02": [
+      "Request G4 CEO approval if shadow performance >= 80% hit rate",
+      "Activate live trading on Alpaca"
+    ]
+  },
+
+  "acceptance_criteria": {
+    "shadow_mode": {
+      "requirement": "Shadow tracking operational",
+      "metric": "fhq_alpha.inversion_overlay_shadow populated",
+      "status": "PENDING_MIGRATION"
+    },
+    "g4_activation": {
+      "requirement": "Inverted Hit Rate >= 80% in shadow mode",
+      "metric": "fhq_alpha.v_inversion_overlay_system_performance.inverted_hit_rate_pct",
+      "status": "PENDING_DATA"
+    }
+  },
+
+  "evidence_chain": {
+    "foundation": "CEO-DIR-2026-105 (Regime-Conditional Miscalibration Analysis)",
+    "canonicalization": "CEO-DIR-2026-078 (G4 Canonicalized Inversion Layer)",
+    "retrospective_calibration": "CEO_DIR_2026_105_RETROSPECTIVE_CALIBRATION.json",
+    "miscalibration_analysis": "CEO_DIR_2026_105_REGIME_CONDITIONAL_MISCALIBRATION.json"
+  },
+
+  "evidence_hash": "sha256:IOS012B_G0_SUBMISSION_20260119"
+}

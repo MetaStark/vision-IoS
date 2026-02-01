@@ -1,0 +1,151 @@
+{
+  "directive": "CEO-DIR-2026-065",
+  "title": "Learning Delta Observation Window & Autonomy Promotion Gate",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T02:45:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "effective": "IMMEDIATE",
+
+  "purpose": {
+    "context": "CEO-DIR-2026-064R har etablert operativt kalibreringsinngrep med målbar effekt",
+    "goal": "Avgjøre om systemet faktisk lærer, ikke bare reagerer korrekt én gang",
+    "constraint": "Autonomi er eksplisitt forbudt før dette er bevist"
+  },
+
+  "learning_delta_observation_window": {
+    "acronym": "LDOW",
+    "binding": true,
+    "duration": {
+      "minimum": "2 komplette holdout-evalueringssykluser",
+      "unit": "holdout_cycles"
+    },
+    "holdout": {
+      "id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+      "status": "FROZEN",
+      "isolation": "UNCHANGED"
+    },
+    "damper": {
+      "task": "forecast_confidence_damper",
+      "version": "HASH_LOCKED",
+      "modifications_allowed": false
+    },
+    "purpose": "Observasjon, ikke forbedring"
+  },
+
+  "intervention_freeze": {
+    "binding": true,
+    "hard_rule": true,
+
+    "allowed": [
+      "forecast_confidence_damper: AKTIV, men uendret",
+      "Normal forecast-produksjon",
+      "Normal logging og evaluering"
+    ],
+
+    "forbidden": [
+      "Endring av damper-parametere",
+      "Aktivering av regime_sanity_gate",
+      "Nye FMCL-tasks",
+      "Feature-endringer",
+      "Regime-spesifikke optimaliseringer",
+      "Adaptive eller autonome policy-endringer"
+    ],
+
+    "violation_consequence": "Ethvert brudd invaliderer observasjonsvinduet"
+  },
+
+  "learning_evidence_criteria": {
+    "nature": "EVIDENCE_REQUIREMENTS_NOT_TARGETS",
+    "evaluation_basis": "Mellom to påfølgende holdout-evalueringer",
+
+    "required_signals": {
+      "calibration_error": {
+        "requirement": "Monotonisk fallende eller stabilt fallende",
+        "baseline": 0.5411
+      },
+      "brier_score": {
+        "requirement": "Negativ delta (lavere enn forrige evaluering)",
+        "baseline": 0.5158
+      },
+      "delta_fss": {
+        "requirement": ">= 0 (ingen tap av prediksjonskraft)",
+        "ios_ref": "IoS-005"
+      },
+      "latency": {
+        "requirement": "p95 <= 500ms, ingen økning > 50ms vs baseline",
+        "ios_ref": "IoS-008"
+      }
+    },
+
+    "interpretation_rule": {
+      "single_measurement": "NOT_SUFFICIENT",
+      "trend_requirement": "Konsistent og reproduserbar"
+    }
+  },
+
+  "autonomy_promotion_gate": {
+    "trigger_type": "SINGLE_TRIGGER",
+    "all_conditions_required": [
+      "LDOW er fullført uten regelbrudd",
+      "STIG har levert full evidenspakke",
+      "VEGA har attestert læringsdelta",
+      "CEO utsteder eksplisitt nytt direktiv"
+    ],
+    "implicit_escalation": "FORBIDDEN"
+  },
+
+  "explicit_non_actions": {
+    "binding": true,
+    "this_directive_does_NOT": [
+      "Aktivere Autonomous Evolution Loop (AEL)",
+      "Gi orchestrator write-access",
+      "Autorisere selv-modifiserende atferd"
+    ],
+    "nature": "Bevisst stopp-punkt"
+  },
+
+  "strategic_rationale": {
+    "normative": true,
+    "principles": [
+      "Effekt ≠ læring",
+      "Læring ≠ autonomi",
+      "Autonomi uten læring = systemisk risiko"
+    ],
+    "protects": [
+      "Kausal sporbarhet",
+      "Epistemisk disiplin",
+      "Fremtidig autonomi fra falsk trygghet"
+    ]
+  },
+
+  "exit_condition": {
+    "trigger": "LDOW fullført OG kriteriene i Seksjon 4 oppfylt",
+    "next_directive": "CEO-DIR-2026-066",
+    "next_phase": "Autonomous Evaluation Loop – Read-Only Phase",
+    "constraint": "Ikke før"
+  },
+
+  "final_declaration": {
+    "system_shall": [
+      "Observere stille",
+      "Måle nøkternt",
+      "Bevise forbedring"
+    ],
+    "principle": "Systemet skal ikke løpe foran sin egen forståelse"
+  },
+
+  "execution_assignment": {
+    "FINN_CRIO": "Maintain intervention freeze",
+    "STIG": "Evidence collection & trend analysis",
+    "VEGA": "Attestation of learning delta"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T02:45:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

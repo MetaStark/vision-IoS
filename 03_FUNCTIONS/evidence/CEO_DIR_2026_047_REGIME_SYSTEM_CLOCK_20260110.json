@@ -1,0 +1,111 @@
+{
+  "directive_id": "CEO-DIR-2026-047",
+  "directive_name": "REGIME AS A MANDATORY SYSTEM CLOCK",
+  "authority": "CEO (Orjan Skjold)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T21:30:00Z",
+  "status": "DEPLOYED",
+  "constitutional_decision": "REGIME IS THE SYSTEM CLOCK. ACI may not exist in time without a fresh regime.",
+  "context": {
+    "predecessor": "CEO-DIR-2026-046 (Regime Reality Continuity)",
+    "root_cause": "Regime refresh was not scheduled as a first-class system obligation",
+    "solution": "Regime is now the mandatory system clock with automatic enforcement"
+  },
+  "three_hard_rules": {
+    "rule_1_mandatory_regime_scheduler": {
+      "task": "ios003_daily_regime_update_v4",
+      "priority": "P0",
+      "mandatory": true,
+      "non_skippable": true,
+      "non_daemon": true,
+      "interval_hours": 3,
+      "grace_period_hours": 1,
+      "owner": "FINN",
+      "configurable": false,
+      "failure_action": "DATA_BLACKOUT:REGIME_CLOCK_STOPPED"
+    },
+    "rule_2_regime_first_order": {
+      "execution_order": [
+        "1. Regime refresh (ios003)",
+        "2. Price ingestion",
+        "3. Forecast generation",
+        "4. Calibration gates",
+        "5. Learning",
+        "6. Cognition"
+      ],
+      "step1_failure_action": "All later steps abort immediately"
+    },
+    "rule_3_self_healing_recovery": {
+      "retry_attempts": 3,
+      "backoff_strategy": "exponential",
+      "backoff_seconds": [30, 60, 120],
+      "all_retries_failed_action": "System remains in DATA_BLACKOUT",
+      "manual_intervention": "NOT ALLOWED - human removed from loop"
+    }
+  },
+  "implementation_details": {
+    "orchestrator_config": {
+      "REGIME_CLOCK_INTERVAL_HOURS": 3,
+      "REGIME_CLOCK_GRACE_HOURS": 1,
+      "REGIME_CLOCK_MAX_HOURS": 4,
+      "REGIME_CLOCK_RETRY_ATTEMPTS": 3,
+      "REGIME_CLOCK_RETRY_BACKOFF": [30, 60, 120],
+      "REGIME_FIRST_TASK": "ios003_daily_regime_update_v4"
+    },
+    "database_functions": {
+      "fhq_governance.check_regime_clock": "Returns clock_running, last_refresh, hours_since, status",
+      "fhq_governance.trigger_regime_clock_blackout": "Triggers REGIME_CLOCK_STOPPED blackout"
+    },
+    "orchestrator_methods": {
+      "check_regime_clock": "OrchestratorDatabase.check_regime_clock()",
+      "trigger_regime_clock_blackout": "OrchestratorDatabase.trigger_regime_clock_blackout()"
+    }
+  },
+  "final_manual_run": {
+    "timestamp": "2026-01-10T21:29:00Z",
+    "action_id": "6e4197c5-04dc-4d17-9537-5363a17f9d0e",
+    "note": "This was the LAST time a human made a regime refresh decision"
+  },
+  "governance_lock": {
+    "attestation_date": "2026-01-10",
+    "rule": "Any manual regime-refresh after attestation is a P0 governance breach",
+    "enforced_by": "VEGA"
+  },
+  "success_criteria": {
+    "regime_max_age": "Never exceeds 6h in normal operation",
+    "manual_intervention": "Never needed - system is autonomous",
+    "cognitive_queries": "Either work (fresh regime) or system stops honestly (blackout)"
+  },
+  "standing_order": "Prices tell us what happened. Regime tells us what world we are in. Without a world, intelligence is forbidden.",
+  "vega_attestation": {
+    "attestation_id": "5b742599-5d7b-4ad5-861e-b4c90661713d",
+    "decision": "APPROVED",
+    "verification": {
+      "ios003_scheduled": true,
+      "visible_in_cycles": true,
+      "has_fresh_heartbeat": true
+    }
+  },
+  "files_modified": [
+    "05_ORCHESTRATOR/orchestrator_v1.py",
+    "03_FUNCTIONS/data_liveness_checker.py"
+  ],
+  "consistency_fix": {
+    "issue": "data_liveness_checker used fhq_meta.regime_state (102h stale) while regime clock used fhq_perception.model_belief_state (0.2h fresh)",
+    "resolution": "Updated data_liveness_checker to query fhq_perception.model_belief_state for regime_state domain",
+    "result": "Both CEO-DIR-2026-046 and CEO-DIR-2026-047 now use same authoritative regime source"
+  },
+  "database_objects_created": [
+    "fhq_governance.check_regime_clock()",
+    "fhq_governance.trigger_regime_clock_blackout()"
+  ],
+  "governance_compliance": {
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_006": "VEGA attestation obtained",
+    "adr_012": "Economic safety constraints respected",
+    "adr_016": "DEFCON protocol integration",
+    "court_proof": "All changes documented with audit trail"
+  },
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-10T21:30:00Z"
+}

@@ -1,0 +1,109 @@
+{
+  "directive_id": "CEO-DIR-2026-045",
+  "directive_name": "Calibration Gates Deployment - Phase 1 (Non-Adaptive)",
+  "authority": "CEO (Orjan Skjold)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T19:27:00Z",
+  "status": "DEPLOYED",
+  "phase": "Phase 1 - Static Gates",
+  "context": {
+    "predecessor": "CEO-DIR-2026-032 (The Diagnostic Pivot)",
+    "problem": "Catastrophic Inverse Calibration - higher confidence correlates with LOWER accuracy",
+    "solution": "Constitutional constraint: confidence <= proven historical accuracy + margin"
+  },
+  "calibration_gates": {
+    "price_direction": [
+      {"band": "95-100%", "forecasts": 305, "accuracy": "35.08%", "ceiling": "40.08%"},
+      {"band": "80-95%", "forecasts": 1776, "accuracy": "38.12%", "ceiling": "43.12%"},
+      {"band": "60-80%", "forecasts": 4761, "accuracy": "47.51%", "ceiling": "52.51%"},
+      {"band": "40-60%", "forecasts": 9429, "accuracy": "57.30%", "ceiling": "62.30%"},
+      {"band": "0-40%", "forecasts": 376, "accuracy": "56.12%", "ceiling": "61.12%"}
+    ],
+    "regime": [
+      {"band": "95-100%", "forecasts": 56, "accuracy": "19.64%", "ceiling": "24.64%"},
+      {"band": "80-95%", "forecasts": 38, "accuracy": "31.58%", "ceiling": "36.58%"},
+      {"band": "60-80%", "forecasts": 30, "accuracy": "16.67%", "ceiling": "21.67%"},
+      {"band": "40-60%", "forecasts": 12, "accuracy": "25.00%", "ceiling": "30.00%"}
+    ]
+  },
+  "implementation_steps": {
+    "step_1_tables": {
+      "status": "COMPLETED",
+      "tables_created": [
+        "fhq_governance.confidence_calibration_gates",
+        "fhq_governance.gate_violation_log",
+        "fhq_governance.calibration_gate_history"
+      ],
+      "functions_created": [
+        "fhq_governance.get_active_confidence_ceiling",
+        "fhq_governance.enforce_calibration_gate"
+      ]
+    },
+    "step_2_vega_attestation": {
+      "status": "COMPLETED",
+      "attestation_id": "7c553af5-984b-401a-8643-6b77bf822d79",
+      "gates_attested": 9
+    },
+    "step_3_enforcement": {
+      "status": "COMPLETED",
+      "enforcement_points": [
+        "Database function fhq_governance.enforce_calibration_gate",
+        "Python CalibrationGateEnforcer class",
+        "CLI: calibration_gate_enforcer.py"
+      ],
+      "violations_logged": true
+    }
+  },
+  "explicit_prohibitions_enforced": {
+    "no_adaptive_updates": "ENFORCED - recalculate function disabled",
+    "no_confidence_inflation": "ENFORCED - ceiling = accuracy + 5% max",
+    "no_manual_overrides": "ENFORCED - only VEGA-attested gates active",
+    "no_vega_exceptions": "ENFORCED - all gates require VEGA attestation",
+    "no_testing_loosening": "ENFORCED - no override mechanism exists"
+  },
+  "files_modified": [
+    "04_DATABASE/MIGRATIONS/226_calibration_gates.sql",
+    "03_FUNCTIONS/calibration_gate_enforcer.py"
+  ],
+  "verification": {
+    "test_95_percent": {
+      "input": "95%",
+      "output": "40.08%",
+      "reduction": "54.92%",
+      "status": "CAPPED"
+    },
+    "test_75_percent": {
+      "input": "75%",
+      "output": "52.51%",
+      "reduction": "22.49%",
+      "status": "CAPPED"
+    },
+    "test_50_percent": {
+      "input": "50%",
+      "output": "50.00%",
+      "reduction": "0%",
+      "status": "PASSED"
+    }
+  },
+  "success_criteria": {
+    "all_paper_trades_show_capped_confidence": "PENDING - awaiting next trading cycle",
+    "violation_logs_exist_and_non_empty": "VERIFIED - 10+ violations logged",
+    "brier_score_begins_to_move": "PENDING - requires observation period"
+  },
+  "next_phase_unlock_requirements": {
+    "consecutive_days_required": 7,
+    "current_days": 0,
+    "criteria": [
+      "Adaptive gate widening may be proposed",
+      "Confidence bands may be re-estimated",
+      "Capital scaling discussion may begin"
+    ]
+  },
+  "governance_compliance": {
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_006": "VEGA attestation obtained",
+    "court_proof": "All changes documented with audit trail"
+  },
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-10T19:27:00Z"
+}

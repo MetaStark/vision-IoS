@@ -1,0 +1,182 @@
+{
+  "evidence_id": "PHASE3_FRESHNESS_POLICY_RECONCILIATION",
+  "evidence_type": "FRESHNESS_POLICY_AUDIT",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "task": "3.3",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T03:00:00Z",
+
+  "executive_summary": {
+    "headline": "No execution possible - all golden needles are 4-5 days stale (99-128h vs 12h threshold)",
+    "blocking_factor": "NEEDLE_GENERATION_HALTED",
+    "last_needle_created": "2026-01-08T21:42:55Z",
+    "days_since_last_needle": 4.5,
+    "freshness_gate_status": "ALL_BLOCKED",
+    "root_cause": "FINN hunt session process not running since Jan 5"
+  },
+
+  "freshness_thresholds": {
+    "lids_gate_daemon": {
+      "location": "signal_executor_daemon.py:1743",
+      "threshold_hours": 12,
+      "directive": "CEO-DIR-2026-019",
+      "default_if_unknown": 999
+    },
+    "data_liveness_checker": {
+      "location": "data_liveness_checker.py:75-80",
+      "thresholds": {
+        "regime_state": {"hours": 6, "directive": "CEO-DIR-2026-046"},
+        "market_prices": {"hours": 12, "directive": "CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001 P1"},
+        "evidence_nodes": {"hours": 24, "directive": "CEO-DIR-2026-009-B"},
+        "causal_edges": {"hours": 48, "directive": "CEO-DIR-2026-009-B"}
+      }
+    },
+    "crypto_price_staleness": {
+      "location": "data_liveness_checker.py:83-87",
+      "max_ok_hours": 6,
+      "warn_hours": 12,
+      "blackout_hours": 12
+    }
+  },
+
+  "current_staleness_status": {
+    "golden_needles": {
+      "freshest_needle": {
+        "needle_id": "ef2b8a45-c56d-473b-b20c-1105c4f6e47a",
+        "created_at": "2026-01-08T21:42:55Z",
+        "hours_old": 98.96,
+        "threshold_hours": 12,
+        "exceeds_threshold_by": "8.2x"
+      },
+      "oldest_current_needle": {
+        "needle_id": "3966d4cd-e5fd-4bad-bfc0-6a21ba970a7b",
+        "created_at": "2026-01-07T16:34:29Z",
+        "hours_old": 128.1,
+        "threshold_hours": 12,
+        "exceeds_threshold_by": "10.7x"
+      },
+      "total_current_needles": 10,
+      "needles_within_12h": 0,
+      "needles_within_24h": 0,
+      "all_needles_stale": true
+    },
+    "market_prices": {
+      "heartbeat_status": "WARNING",
+      "heartbeat_timestamp": "2026-01-13T00:13:30Z",
+      "assets": [
+        {"asset": "BTC-USD", "type": "CRYPTO", "staleness_hours": 24.23, "status": "WARNING"},
+        {"asset": "ETH-USD", "type": "CRYPTO", "staleness_hours": 24.23, "status": "WARNING"},
+        {"asset": "SOL-USD", "type": "CRYPTO", "staleness_hours": 24.23, "status": "WARNING"},
+        {"asset": "SPY", "type": "EQUITY", "staleness_hours": 24.23, "status": "HEALTHY"},
+        {"asset": "QQQ", "type": "EQUITY", "staleness_hours": 24.23, "status": "HEALTHY"},
+        {"asset": "EURUSD=X", "type": "FX", "staleness_hours": 24.23, "status": "HEALTHY"}
+      ],
+      "note": "24h staleness acceptable for equity/FX due to weekend, WARNING for crypto"
+    }
+  },
+
+  "needle_generation_analysis": {
+    "last_finn_activity": {
+      "action_type": "FINN_COUNTER_EVIDENCE_MANDATE",
+      "timestamp": "2026-01-05T23:12:29Z",
+      "days_ago": 7.2
+    },
+    "last_ceo_needle_activation": {
+      "action_type": "CEO_DIRECTIVE_NEEDLE_ACTIVATION",
+      "timestamp": "2026-01-05T23:12:06Z",
+      "days_ago": 7.2
+    },
+    "needle_creation_history": [
+      {"date": "2026-01-08", "needles_created": 5, "last_needle": "2026-01-08T21:42:55Z"},
+      {"date": "2026-01-07", "needles_created": 11, "last_needle": "2026-01-07T22:31:22Z"},
+      {"date": "2026-01-06", "needles_created": 4, "last_needle": "2026-01-06T22:27:04Z"},
+      {"date": "2025-12-25", "needles_created": 16, "last_needle": "2025-12-24T23:35:06Z"},
+      {"date": "2025-12-24", "needles_created": 444, "last_needle": "2025-12-24T22:58:07Z"}
+    ],
+    "observation": "Needle generation dropped dramatically after Dec 25 - from 400+/day to <15/day, then stopped after Jan 8"
+  },
+
+  "execution_blockage_chain": {
+    "level_1": {
+      "blocker": "LIDS Confidence Gate (Bug)",
+      "status": "BLOCKS_ALL",
+      "reason": "Field name mismatch causes confidence=0.00",
+      "fixable": true,
+      "fix_complexity": "TRIVIAL"
+    },
+    "level_2": {
+      "blocker": "LIDS Freshness Gate",
+      "status": "WOULD_BLOCK_ALL_EVEN_IF_L1_FIXED",
+      "reason": "All needles 99-128h old, threshold is 12h",
+      "fixable": false,
+      "resolution": "Requires new needle generation"
+    },
+    "level_3": {
+      "blocker": "Needle Generation Process",
+      "status": "NOT_RUNNING",
+      "reason": "FINN hunt session not triggered since Jan 5",
+      "fixable": true,
+      "resolution": "Restart FINN hunt session orchestration"
+    }
+  },
+
+  "policy_reconciliation": {
+    "current_lids_threshold": 12,
+    "data_liveness_crypto_blackout": 12,
+    "are_aligned": true,
+    "recommendation": "Thresholds are aligned (12h). Issue is not threshold mismatch but lack of fresh data."
+  },
+
+  "freshness_policy_definition": {
+    "LIVE": {
+      "definition": "Data within acceptable freshness window",
+      "golden_needles": "<= 12 hours old",
+      "market_prices_crypto": "<= 6 hours (max_ok)",
+      "market_prices_equity": "<= 2 hours (trading hours)",
+      "regime_state": "<= 6 hours"
+    },
+    "WARNING": {
+      "definition": "Data approaching staleness, graded confidence penalty applies",
+      "golden_needles": "12-24 hours old",
+      "market_prices_crypto": "6-12 hours",
+      "market_prices_equity": "2-4 hours",
+      "regime_state": "N/A (no warning tier)"
+    },
+    "STALE": {
+      "definition": "Data too old for execution, HARD BLOCK",
+      "golden_needles": "> 12 hours (current 99-128h)",
+      "market_prices_crypto": "> 12 hours (current 24h)",
+      "market_prices_equity": "> 8 hours",
+      "regime_state": "> 6 hours"
+    }
+  },
+
+  "remediation_path": {
+    "step_1": {
+      "action": "Fix LIDS confidence field mismatch",
+      "priority": "HIGH",
+      "impact": "Removes false confidence=0.00 blocks",
+      "status": "REQUIRES_CEO_APPROVAL"
+    },
+    "step_2": {
+      "action": "Restart FINN hunt session orchestration",
+      "priority": "CRITICAL",
+      "impact": "Generates fresh golden needles within 12h threshold",
+      "status": "REQUIRES_INVESTIGATION"
+    },
+    "step_3": {
+      "action": "Verify market price ingest running",
+      "priority": "HIGH",
+      "impact": "Ensures fresh price data for new needles",
+      "status": "CRYPTO_WARNING_24H_STALE"
+    }
+  },
+
+  "task_3_3_acceptance": {
+    "freshness_policy_documented": true,
+    "live_warning_stale_defined": true,
+    "current_staleness_quantified": true,
+    "needle_generation_gap_identified": true,
+    "status": "COMPLETE"
+  }
+}

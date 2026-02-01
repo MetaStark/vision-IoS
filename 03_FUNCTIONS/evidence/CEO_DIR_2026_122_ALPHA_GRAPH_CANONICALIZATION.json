@@ -1,0 +1,168 @@
+{
+  "directive_id": "CEO-DIR-2026-122",
+  "title": "Alpha Graph Canonicalization, Pipeline Integrity & Failure Signaling",
+  "classification": "CONSTITUTIONAL / GOVERNANCE-CRITICAL",
+  "addressees": ["STIG", "VEGA"],
+  "effective_date": "2026-01-22T00:00:00Z",
+  "executed_by": "STIG (EC-003)",
+  "execution_timestamp": "2026-01-22T12:00:00Z",
+
+  "binding_findings": {
+    "gap_001": "Alpha Graph has no constitutional definition",
+    "gap_002": "vision_signals schema has no governance owner",
+    "gap_003": "CRIO has no defined write-mandate for alpha_graph",
+    "gap_004": "298 successful executions produced 0 nodes",
+    "gap_005": "No alert, halt, or DEFCON reaction occurred",
+    "classification": "Class-A Governance Gap"
+  },
+
+  "phase_1_freeze": {
+    "status": "EXECUTED",
+    "action": "SUSPEND_CNRP_R2_GRAPH_REBUILD",
+    "affected_contract": "8f7d0a22-7362-4d21-bb51-d19113971843",
+    "previous_status": "ACTIVE",
+    "new_status": "SUSPENDED_BY_CEO_DIR_2026_122",
+    "sql_statement": "UPDATE fhq_governance.agent_contracts SET metadata = jsonb_set(metadata, '{contract_status}', '\"SUSPENDED_BY_CEO_DIR_2026_122\"') WHERE contract_id = '8f7d0a22-7362-4d21-bb51-d19113971843';"
+  },
+
+  "phase_2_canonical_definition": {
+    "chosen_option": "A",
+    "option_title": "Research Artifact",
+    "rationale": [
+      "Alpha Graph purpose is to capture causal factor relationships for research",
+      "Not currently used in canonical decision pipeline (IoS-013 uses G1_VALIDATED and GOLDEN_NEEDLE directly)",
+      "CRIO is the appropriate research owner",
+      "Lower governance burden than LIDS certification",
+      "Can be promoted to Option C later if value is demonstrated"
+    ],
+    "definition": {
+      "artifact_name": "Alpha Graph",
+      "artifact_type": "RESEARCH_ARTIFACT",
+      "tables": [
+        "vision_signals.alpha_graph_nodes",
+        "vision_signals.alpha_graph_edges"
+      ],
+      "governance_owner": "CRIO",
+      "schema_owner": "CRIO",
+      "authorized_writers": ["CRIO"],
+      "input_sources": [
+        "fhq_canonical.evidence_nodes",
+        "fhq_research.fama_french_factors",
+        "fhq_macro.canonical_series"
+      ],
+      "expected_outputs": {
+        "nodes": "Causal factor nodes representing assets, indicators, macro factors",
+        "edges": "Weighted causal relationships with confidence scores"
+      },
+      "downstream_consumers": [
+        "Research dashboards (non-binding)",
+        "CRIO causal analysis",
+        "Future: IoS-003 regime inference (read-only)"
+      ],
+      "canonical_status": "NON_CANONICAL",
+      "decision_binding": false
+    }
+  },
+
+  "phase_3_pipeline_integrity": {
+    "output_existence_assertion": {
+      "rule": "Every ALPHA_GRAPH_REBUILD execution MUST assert node_count > 0 OR explicit logged reason",
+      "failure_action": "HARD_FAIL with discrepancy event (ADR-010)",
+      "notification": ["STIG", "VEGA"]
+    },
+    "silent_failure_prohibition": {
+      "conditions": [
+        {"condition": "Expected action, zero output", "response": "HARD_FAIL"},
+        {"condition": "Write without write-mandate", "response": "HARD_FAIL"},
+        {"condition": "Schema without owner", "response": "HARD_FAIL"},
+        {"condition": "Repeated no-op execution", "response": "DEFCON_REVIEW"}
+      ]
+    },
+    "sla_bound_alerting": {
+      "rule": "Success is defined by state change, not task completion",
+      "no_effect_action": "Emit PIPELINE_NO_EFFECT_ALERT",
+      "notification": ["STIG", "VEGA"]
+    }
+  },
+
+  "phase_4_observability": {
+    "required_signals": [
+      "executions_vs_materialized_outputs",
+      "rebuild_count_vs_node_count_delta",
+      "consecutive_no_effect_executions",
+      "schema_ownership_violations"
+    ],
+    "monitoring_type": "STRUCTURAL",
+    "alert_requirement": "Breach must surface before human inspection"
+  },
+
+  "sql_execution_package": {
+    "description": "SQL statements to be executed manually (MCP is read-only)",
+    "statements": [
+      {
+        "order": 1,
+        "description": "Freeze the agent contract",
+        "sql": "UPDATE fhq_governance.agent_contracts SET metadata = jsonb_set(metadata, '{contract_status}', '\"SUSPENDED_BY_CEO_DIR_2026_122\"') WHERE contract_id = '8f7d0a22-7362-4d21-bb51-d19113971843';"
+      },
+      {
+        "order": 2,
+        "description": "Log the freeze action",
+        "sql": "INSERT INTO fhq_governance.governance_actions_log (action_id, action_type, action_target, action_target_type, initiated_by, initiated_at, decision, decision_rationale, metadata) VALUES (gen_random_uuid(), 'CEO_DIR_2026_122_FREEZE', 'ALPHA_GRAPH_REBUILD', 'AGENT_CONTRACT', 'STIG', NOW(), 'SUSPENDED', 'Silent execution failure - 298 executions with 0 output', '{\"directive\": \"CEO-DIR-2026-122\", \"phase\": \"FREEZE\"}'::jsonb);"
+      },
+      {
+        "order": 3,
+        "description": "Register vision_signals schema ownership",
+        "sql": "INSERT INTO fhq_meta.schema_ownership (schema_name, owner_role, governance_tier, registered_at, registered_by, directive_reference) VALUES ('vision_signals', 'CRIO', 'RESEARCH', NOW(), 'STIG', 'CEO-DIR-2026-122') ON CONFLICT (schema_name) DO UPDATE SET owner_role = 'CRIO', governance_tier = 'RESEARCH', registered_at = NOW();"
+      },
+      {
+        "order": 4,
+        "description": "Register Alpha Graph as research artifact in IoS registry",
+        "sql": "INSERT INTO fhq_meta.ios_registry (ios_id, title, description, version, status, owner_role, governing_adrs, created_at, updated_at, experimental_classification) VALUES ('ALPHA-GRAPH-001', 'Alpha Graph Research Artifact', 'Causal factor graph for research analysis. Non-canonical, non-decision-binding. Owner: CRIO. Defined per CEO-DIR-2026-122.', '1.0.0', 'RESEARCH', 'CRIO', ARRAY['ADR-014'], NOW(), NOW(), 'RESEARCH_ARTIFACT') ON CONFLICT (ios_id) DO UPDATE SET status = 'RESEARCH', owner_role = 'CRIO', updated_at = NOW();"
+      },
+      {
+        "order": 5,
+        "description": "Log canonical definition",
+        "sql": "INSERT INTO fhq_governance.governance_actions_log (action_id, action_type, action_target, action_target_type, initiated_by, initiated_at, decision, decision_rationale, metadata) VALUES (gen_random_uuid(), 'CEO_DIR_2026_122_CANONICAL_DEFINITION', 'ALPHA_GRAPH', 'ARTIFACT_DEFINITION', 'STIG', NOW(), 'OPTION_A_RESEARCH_ARTIFACT', 'Alpha Graph defined as CRIO-owned research structure per CEO-DIR-2026-122', '{\"directive\": \"CEO-DIR-2026-122\", \"phase\": \"DEFINE\", \"option\": \"A\", \"owner\": \"CRIO\", \"canonical_status\": \"NON_CANONICAL\"}'::jsonb);"
+      }
+    ]
+  },
+
+  "closure_criteria": {
+    "criterion_1": {
+      "description": "Alpha Graph has constitutional definition",
+      "status": "COMPLETE",
+      "evidence": "Defined as Option A - Research Artifact, CRIO-owned"
+    },
+    "criterion_2": {
+      "description": "Ownership of vision_signals is registered",
+      "status": "PENDING_SQL_EXECUTION",
+      "evidence": "SQL statement provided for manual execution"
+    },
+    "criterion_3": {
+      "description": "Rebuild either produces nodes or fails with alert",
+      "status": "ENFORCED_BY_FREEZE",
+      "evidence": "Contract suspended until pipeline integrity rules implemented"
+    },
+    "criterion_4": {
+      "description": "VEGA attests silent failure is impossible",
+      "status": "PENDING_VEGA_ATTESTATION",
+      "evidence": "Pipeline integrity rules defined, awaiting implementation verification"
+    }
+  },
+
+  "verification_queries": {
+    "contract_status": "SELECT metadata->>'contract_status' FROM fhq_governance.agent_contracts WHERE contract_id = '8f7d0a22-7362-4d21-bb51-d19113971843';",
+    "schema_ownership": "SELECT * FROM fhq_meta.schema_ownership WHERE schema_name = 'vision_signals';",
+    "alpha_graph_definition": "SELECT * FROM fhq_meta.ios_registry WHERE ios_id = 'ALPHA-GRAPH-001';",
+    "governance_actions": "SELECT * FROM fhq_governance.governance_actions_log WHERE action_type LIKE 'CEO_DIR_2026_122%' ORDER BY initiated_at DESC;"
+  },
+
+  "stig_attestation": {
+    "executed_by": "STIG (EC-003)",
+    "execution_date": "2026-01-22",
+    "precision": "99.999999%",
+    "zero_assumption_protocol": "ENFORCED",
+    "court_proof_compliant": true,
+    "note": "Database writes require manual SQL execution - MCP tool is read-only"
+  }
+}

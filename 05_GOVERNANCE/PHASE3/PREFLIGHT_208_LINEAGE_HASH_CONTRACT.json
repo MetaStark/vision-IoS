@@ -1,0 +1,100 @@
+{
+  "document_id": "PREFLIGHT-208-LINEAGE-HASH-CONTRACT",
+  "document_type": "GOVERNANCE_SPECIFICATION",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL",
+  "directive": "CEO-DIR-2026-001",
+  "migration": "208_ceo_dir_2026_001_epistemic_separation.sql",
+  "timestamp": "2026-01-06T21:00:00Z",
+  "author": "STIG",
+
+  "section_1_hash_computation_formula": {
+    "algorithm": "SHA-256",
+    "encoding": "UTF-8",
+    "delimiter": "|",
+
+    "belief_hash_formula": {
+      "inputs": [
+        "asset_id",
+        "belief_timestamp (ISO 8601)",
+        "technical_regime",
+        "belief_confidence (6 decimal places)",
+        "belief_distribution (JSON string, keys sorted)"
+      ],
+      "formula": "SHA256(asset_id || '|' || belief_timestamp || '|' || technical_regime || '|' || belief_confidence || '|' || belief_distribution_json)",
+      "example": {
+        "input": "BTC-USD|2026-01-06T15:00:00Z|NEUTRAL|0.7500|{\"BEAR\":0.10,\"BULL\":0.10,\"NEUTRAL\":0.75,\"STRESS\":0.05}",
+        "output": "a1b2c3d4e5f6..."
+      }
+    },
+
+    "implementation_note": "belief_distribution keys MUST be sorted alphabetically for deterministic hashing"
+  },
+
+  "section_2_chain_hash_linking": {
+    "description": "Each belief record links to previous record via chain hash",
+
+    "chain_structure": {
+      "first_record": {
+        "lineage_hash": "SHA256(belief_hash || '|' || 'GENESIS')",
+        "prev_hash": "GENESIS"
+      },
+      "subsequent_records": {
+        "lineage_hash": "SHA256(belief_hash || '|' || prev_lineage_hash)",
+        "prev_hash": "lineage_hash of previous record for same asset_id"
+      }
+    },
+
+    "chain_ordering": {
+      "scope": "Per asset_id",
+      "order": "belief_timestamp ASC",
+      "uniqueness": "Each (asset_id, belief_timestamp) produces unique chain position"
+    }
+  },
+
+  "section_3_verification_query": {
+    "purpose": "Verify chain integrity for an asset",
+
+    "sql": "WITH ordered_beliefs AS (\n    SELECT\n        belief_id,\n        asset_id,\n        belief_timestamp,\n        lineage_hash,\n        LAG(lineage_hash) OVER (PARTITION BY asset_id ORDER BY belief_timestamp) as prev_hash\n    FROM fhq_perception.model_belief_state\n    WHERE asset_id = $1\n    ORDER BY belief_timestamp\n),\nchain_check AS (\n    SELECT\n        belief_id,\n        belief_timestamp,\n        lineage_hash,\n        prev_hash,\n        CASE\n            WHEN prev_hash IS NULL THEN lineage_hash LIKE '%GENESIS%'\n            ELSE lineage_hash LIKE '%' || LEFT(prev_hash, 8) || '%'\n        END as chain_valid\n    FROM ordered_beliefs\n)\nSELECT\n    COUNT(*) as total_records,\n    SUM(CASE WHEN chain_valid THEN 1 ELSE 0 END) as valid_records,\n    SUM(CASE WHEN NOT chain_valid THEN 1 ELSE 0 END) as broken_links\nFROM chain_check;",
+
+    "expected_result": {
+      "total_records": "N",
+      "valid_records": "N",
+      "broken_links": "0"
+    }
+  },
+
+  "section_4_governance_hash_integration": {
+    "existing_infrastructure": {
+      "governance_hash_chain": "fhq_governance.hash_chain_log",
+      "adr_chain_hash": "fhq_meta.adr_registry.chain_hash"
+    },
+
+    "integration_approach": {
+      "method": "Periodic snapshot hashing",
+      "frequency": "Daily",
+      "snapshot_hash": "SHA256 of all lineage_hashes for day D",
+      "target_table": "fhq_governance.hash_chain_log",
+      "entry_type": "EPISTEMIC_DAILY_SNAPSHOT"
+    },
+
+    "adr_011_compliance": {
+      "replay_capability": "Full replay possible by recomputing hashes from stored data",
+      "determinism": "Same inputs produce same hashes",
+      "verification": "Third party can verify chain integrity"
+    }
+  },
+
+  "section_5_implementation_guidance": {
+    "python_example": "import hashlib\nimport json\n\ndef compute_belief_hash(asset_id, timestamp, regime, confidence, distribution):\n    # Sort distribution keys for determinism\n    sorted_dist = json.dumps(distribution, sort_keys=True, separators=(',', ':'))\n    data = f\"{asset_id}|{timestamp}|{regime}|{confidence:.4f}|{sorted_dist}\"\n    return hashlib.sha256(data.encode('utf-8')).hexdigest()\n\ndef compute_lineage_hash(belief_hash, prev_lineage_hash):\n    if prev_lineage_hash is None:\n        prev_lineage_hash = 'GENESIS'\n    data = f\"{belief_hash}|{prev_lineage_hash}\"\n    return hashlib.sha256(data.encode('utf-8')).hexdigest()",
+
+    "sql_example": "-- PostgreSQL implementation\nCREATE OR REPLACE FUNCTION fhq_perception.compute_lineage_hash(\n    p_asset_id TEXT,\n    p_timestamp TIMESTAMPTZ,\n    p_regime TEXT,\n    p_confidence NUMERIC,\n    p_distribution JSONB,\n    p_prev_hash TEXT DEFAULT 'GENESIS'\n) RETURNS TEXT AS $$\nDECLARE\n    v_belief_data TEXT;\n    v_belief_hash TEXT;\n    v_lineage_data TEXT;\nBEGIN\n    v_belief_data := p_asset_id || '|' || p_timestamp::TEXT || '|' || p_regime || '|' || \n                     TO_CHAR(p_confidence, 'FM0.0000') || '|' || \n                     (SELECT string_agg(kv, ',' ORDER BY kv) FROM (\n                         SELECT key || ':' || value as kv FROM jsonb_each_text(p_distribution)\n                     ) sub);\n    v_belief_hash := encode(sha256(v_belief_data::bytea), 'hex');\n    v_lineage_data := v_belief_hash || '|' || p_prev_hash;\n    RETURN encode(sha256(v_lineage_data::bytea), 'hex');\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:00:00Z",
+    "status": "APPROVED"
+  }
+}

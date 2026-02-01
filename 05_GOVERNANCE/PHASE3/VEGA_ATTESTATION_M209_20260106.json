@@ -1,0 +1,234 @@
+{
+  "attestation_id": "VEGA-ATT-M209-20260106",
+  "attestation_type": "IMMUTABILITY_ENFORCEMENT",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-003",
+  "migration": "209_epistemic_immutability_controls.sql",
+  "timestamp": "2026-01-06T22:00:00Z",
+  "attesting_agent": "VEGA",
+  "verifying_agent": "STIG",
+
+  "executive_summary": {
+    "verdict": "MIGRATION_EXECUTED_TESTS_PASSED",
+    "preflight_artifacts": 3,
+    "preflight_artifacts_required": 3,
+    "compliance_status": "COMPLIANT",
+    "execution_status": "DEPLOYED",
+    "test_status": "ALL_CRITICAL_TESTS_PASSED"
+  },
+
+  "section_1_preflight_artifact_inventory": {
+    "artifacts": [
+      {
+        "artifact_id": 1,
+        "name": "Write-Path Evidence",
+        "file": "M209_PREFLIGHT_WRITEPATH_EVIDENCE.json",
+        "status": "DELIVERED",
+        "ceo_dir_section": "3.1",
+        "verification": "PASS - Write paths identified, no existing controls found"
+      },
+      {
+        "artifact_id": 2,
+        "name": "Constitutional Justification",
+        "file": "M209_CONSTITUTIONAL_JUSTIFICATION.json",
+        "status": "DELIVERED",
+        "ceo_dir_section": "3.2",
+        "verification": "PASS - ADR-013, ADR-004, CEO-DIR-2026-001 alignment documented"
+      },
+      {
+        "artifact_id": 3,
+        "name": "VEGA Test Suite",
+        "file": "VEGA_TEST_M209_IMMUTABILITY.sql",
+        "status": "DELIVERED",
+        "ceo_dir_section": "3.3",
+        "verification": "PASS - UPDATE/DELETE/INSERT tests defined and executed"
+      }
+    ],
+    "completion_rate": "100%"
+  },
+
+  "section_2_migration_specification": {
+    "migration_file": "04_DATABASE/MIGRATIONS/209_epistemic_immutability_controls.sql",
+    "execution_timestamp": "2026-01-06T20:49:00.002Z",
+    "execution_status": "SUCCESS",
+
+    "controls_deployed": [
+      {
+        "control": "trg_model_belief_state_immutable",
+        "type": "BEFORE UPDATE OR DELETE TRIGGER",
+        "target": "fhq_perception.model_belief_state",
+        "action": "RAISE EXCEPTION + governance logging",
+        "status": "ACTIVE"
+      },
+      {
+        "control": "fhq_perception.enforce_belief_immutability()",
+        "type": "TRIGGER FUNCTION",
+        "purpose": "Block UPDATE/DELETE and log violations",
+        "status": "DEPLOYED"
+      },
+      {
+        "control": "fhq_perception.validate_belief_distribution()",
+        "type": "VALIDATION FUNCTION",
+        "purpose": "Ensure belief_distribution has required keys and sums to 1.0",
+        "status": "DEPLOYED"
+      },
+      {
+        "control": "fhq_perception.compute_entropy()",
+        "type": "COMPUTATION FUNCTION",
+        "purpose": "Calculate Shannon entropy of belief distribution",
+        "status": "DEPLOYED"
+      },
+      {
+        "control": "fhq_perception.compute_lineage_hash()",
+        "type": "COMPUTATION FUNCTION",
+        "purpose": "Generate SHA-256 lineage hash for chain verification",
+        "status": "DEPLOYED"
+      }
+    ]
+  },
+
+  "section_3_acceptance_criteria_checklist": {
+    "criteria": [
+      {
+        "id": "AC1",
+        "requirement": "Append-only guarantee: UPDATE fails deterministically",
+        "ceo_dir_section": "5.1",
+        "status": "PASSED",
+        "test": "VEGA_TEST_M209 Test 1",
+        "evidence": "UPDATE blocked with IMMUTABILITY_VIOLATION exception"
+      },
+      {
+        "id": "AC2",
+        "requirement": "Append-only guarantee: DELETE fails deterministically",
+        "ceo_dir_section": "5.1",
+        "status": "PASSED",
+        "test": "VEGA_TEST_M209 Test 2",
+        "evidence": "DELETE blocked with IMMUTABILITY_VIOLATION exception"
+      },
+      {
+        "id": "AC3",
+        "requirement": "Operational continuity: INSERT succeeds",
+        "ceo_dir_section": "5.2",
+        "status": "PASSED",
+        "test": "VEGA_TEST_M209 Test 3",
+        "evidence": "INSERT succeeded with belief_id: 73f8bcb2-e873-49da-9beb-812aa88b4714"
+      },
+      {
+        "id": "AC4",
+        "requirement": "Audit trail: Violations logged to governance_actions_log",
+        "ceo_dir_section": "5.3",
+        "status": "NOTED_WITH_LIMITATION",
+        "test": "VEGA_TEST_M209 Test 4",
+        "evidence": "Audit INSERT executed but rolled back with blocked transaction",
+        "limitation": "PostgreSQL has no autonomous transactions - audit log rolls back when main transaction aborts",
+        "mitigation": "Violation is still blocked; audit can be enhanced via dblink or external logging in future"
+      },
+      {
+        "id": "AC5",
+        "requirement": "Learning safety: Systems read from v_canonical_belief",
+        "ceo_dir_section": "5.4",
+        "status": "DOCUMENTED",
+        "note": "Integration task - verified via M209_CONSTITUTIONAL_JUSTIFICATION.json Section 6"
+      }
+    ],
+    "overall_status": "ALL_CRITICAL_CRITERIA_MET"
+  },
+
+  "section_4_gate_status": {
+    "g0_submission": {
+      "status": "COMPLETE",
+      "evidence": "CEO-DIR-2026-003 issued 2026-01-06",
+      "authorized_by": "CEO"
+    },
+    "g1_technical": {
+      "status": "COMPLETE",
+      "evidence": "M209_PREFLIGHT_WRITEPATH_EVIDENCE.json delivered",
+      "validated_by": "STIG"
+    },
+    "g2_governance": {
+      "status": "COMPLETE",
+      "evidence": "CEO directive provides governance approval",
+      "authorized_by": "CEO (via CEO-DIR-2026-003)"
+    },
+    "g3_audit": {
+      "status": "COMPLETE",
+      "evidence": "VEGA_TEST_M209_IMMUTABILITY.sql executed - all critical tests passed",
+      "verified_by": "VEGA",
+      "timestamp": "2026-01-06T20:49:08Z"
+    },
+    "g4_ceo": {
+      "status": "NOT_REQUIRED",
+      "evidence": "CEO-DIR-2026-003 Section 4 waives G4 for scope-limited immutability controls"
+    }
+  },
+
+  "section_5_test_results": {
+    "status": "EXECUTED",
+    "test_file": "VEGA_TEST_M209_IMMUTABILITY.sql",
+    "execution_timestamp": "2026-01-06T20:49:08Z",
+    "results": {
+      "test_1_update": {
+        "status": "PASSED",
+        "detail": "UPDATE blocked with IMMUTABILITY_VIOLATION",
+        "target_belief_id": "3e39d938-6727-44b2-8df1-dbcb48c6e49c"
+      },
+      "test_2_delete": {
+        "status": "PASSED",
+        "detail": "DELETE blocked with IMMUTABILITY_VIOLATION",
+        "target_belief_id": "3e39d938-6727-44b2-8df1-dbcb48c6e49c"
+      },
+      "test_3_insert": {
+        "status": "PASSED",
+        "detail": "INSERT succeeded",
+        "new_belief_id": "73f8bcb2-e873-49da-9beb-812aa88b4714"
+      },
+      "test_4_audit": {
+        "status": "NOTED",
+        "detail": "Audit logging rolls back with blocked transaction (PostgreSQL limitation)",
+        "recommendation": "Consider dblink or external logging for persistent violation audit"
+      }
+    },
+    "test_records_created": 2
+  },
+
+  "section_6_attestation_statement": {
+    "pre_execution_statement": "VEGA confirms that the Migration 209 Preflight Evidence Pack is COMPLETE and COMPLIANT with CEO-DIR-2026-003. Migration 209 is CLEARED for execution.",
+
+    "post_execution_statement": "VEGA hereby attests that Migration 209 has been SUCCESSFULLY EXECUTED and all critical acceptance criteria are MET. The epistemic belief layer (fhq_perception.model_belief_state) is now IMMUTABLE per CEO-DIR-2026-003. UPDATE and DELETE operations are blocked at the database level. INSERT operations continue to function for authorized write-paths.",
+
+    "conditions_met": [
+      "UPDATE blocked deterministically - VERIFIED",
+      "DELETE blocked deterministically - VERIFIED",
+      "INSERT continues to function - VERIFIED",
+      "No scope expansion beyond model_belief_state immutability - VERIFIED"
+    ],
+
+    "known_limitations": [
+      "Audit log entries for violations roll back with blocked transaction (PostgreSQL architectural limitation)",
+      "Superuser can bypass trigger via session configuration (acknowledged in M209_CONSTITUTIONAL_JUSTIFICATION.json)"
+    ],
+
+    "validity": {
+      "valid_from": "2026-01-06T20:49:08Z",
+      "valid_indefinitely": true,
+      "note": "Immutability control remains active until explicitly disabled by CEO directive"
+    }
+  },
+
+  "signatures": {
+    "vega_attestation": {
+      "agent": "VEGA",
+      "role": "Verification & Governance Authority",
+      "timestamp": "2026-01-06T20:50:00Z",
+      "status": "ATTESTED",
+      "statement": "Migration 209 verified and attested"
+    },
+    "stig_verification": {
+      "agent": "STIG",
+      "role": "Chief Technology Officer",
+      "timestamp": "2026-01-06T20:50:00Z",
+      "status": "VERIFIED",
+      "statement": "Migration 209 executed and verified"
+    }
+  }
+}

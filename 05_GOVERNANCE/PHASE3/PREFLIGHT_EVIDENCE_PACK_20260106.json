@@ -1,0 +1,62 @@
+{
+  "evidence_pack_id": "PREFLIGHT-2026-0106-001",
+  "directive_reference": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "phase": "PHASE_0_PRECONDITIONS",
+  "timestamp": "2026-01-06T18:36:06Z",
+  "actor": "STIG",
+  "status": "PASS",
+
+  "checks": {
+    "database_connectivity": {
+      "status": "PASS",
+      "host": "127.0.0.1",
+      "port": 54322,
+      "database": "postgres"
+    },
+    "canonical_schemas_reachable": {
+      "status": "PASS",
+      "schemas": {
+        "fhq_canonical": true,
+        "fhq_market": true,
+        "fhq_perception": true,
+        "fhq_execution": true,
+        "fhq_governance": true,
+        "fhq_indicators": true,
+        "vision_signals": true
+      }
+    },
+    "qdrant_reachable": {
+      "status": "PASS",
+      "endpoint": "http://localhost:6333",
+      "collections": ["evidence_nodes", "finn_embeddings", "causal_claims"],
+      "evidence_nodes_vectors": 1019
+    },
+    "orchestrator_config_present": {
+      "status": "PASS",
+      "path": "05_ORCHESTRATOR/orchestrator_v1.py"
+    },
+    "api_keys_present": {
+      "status": "PASS",
+      "keys_verified": ["ALPACA_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "PGPASSWORD"]
+    },
+    "defcon_status": {
+      "status": "PASS",
+      "level": "GREEN",
+      "since": "2025-12-11T15:28:46.437Z",
+      "triggered_by": "STIG"
+    }
+  },
+
+  "evidence_hashes": {
+    "schema_check_hash": "SHA256_PENDING",
+    "qdrant_check_hash": "SHA256_PENDING"
+  },
+
+  "verdict": "ALL_PRECONDITIONS_MET",
+  "safe_to_proceed": true,
+
+  "attestation": {
+    "stig_signature": "STIG_PREFLIGHT_VERIFIED",
+    "timestamp": "2026-01-06T18:36:06Z"
+  }
+}

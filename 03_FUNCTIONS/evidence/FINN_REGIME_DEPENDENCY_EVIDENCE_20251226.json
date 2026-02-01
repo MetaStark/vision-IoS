@@ -1,0 +1,111 @@
+{
+  "specification_id": "FINN_REGIME_DEPENDENCY_SPEC_20251226",
+  "timestamp": "2025-12-26T15:52:20.072917",
+  "generating_agent": "FINN",
+  "purpose": "CEO-DIR-2025-EQS-005 Priority 2: Regime Dependency Documentation",
+  "queries": {
+    "regime_distribution": {
+      "query": "\nSELECT \n    regime_technical,\n    COUNT(*) as count,\n    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) as percentage\nFROM fhq_canonical.golden_needles\nGROUP BY regime_technical\nORDER BY count DESC;\n",
+      "results": [
+        {
+          "regime": "NEUTRAL",
+          "count": 1764,
+          "percentage": 99.94
+        },
+        {
+          "regime": "MEAN_REVERSION",
+          "count": 1,
+          "percentage": 0.06
+        }
+      ],
+      "result_hash": "8ea1297d0f55eceac1bbebd5f53f30e88acacf145412740c5e92f0a13a9c5cc4"
+    },
+    "regime_diversity_status": {
+      "query": "SELECT * FROM fhq_canonical.v_regime_diversity_status;",
+      "results": [
+        {
+          "regime": "NEUTRAL",
+          "signal_count": "1172",
+          "pct_of_total": "100.00",
+          "earliest_signal": "2025-12-18 15:33:55.591372+01:00",
+          "latest_signal": "2025-12-25 00:35:06.138729+01:00",
+          "diversity_status": "COLLAPSED",
+          "finn_guidance": "EQS regime-sensitivity BLOCKED until classifier produces BULL/BEAR/NEUTRAL variance"
+        }
+      ],
+      "result_hash": "db37a94bb58368c99a19450702088c561e63d30e36184bbaa4cd40747189d248"
+    },
+    "factor_regime_alignment_distribution": {
+      "query": "\nSELECT \n    factor_regime_alignment,\n    COUNT(*) as count,\n    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) as percentage\nFROM fhq_canonical.golden_needles\nGROUP BY factor_regime_alignment;\n",
+      "results": [
+        {
+          "aligned": false,
+          "count": 213,
+          "percentage": 12.07
+        },
+        {
+          "aligned": true,
+          "count": 1552,
+          "percentage": 87.93
+        }
+      ],
+      "result_hash": "6563417643f9cf6f7c98efa98602754d7d8175610097c06e2ff496d47975fd2e"
+    },
+    "regime_30day_history": {
+      "query": "\nSELECT \n    created_at::date as date,\n    regime_technical,\n    COUNT(*) as count\nFROM fhq_canonical.golden_needles\nWHERE created_at >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY created_at::date, regime_technical\nORDER BY date DESC\nLIMIT 30;\n",
+      "results": [
+        {
+          "date": "2025-12-25",
+          "regime": "NEUTRAL",
+          "count": 16
+        },
+        {
+          "date": "2025-12-24",
+          "regime": "NEUTRAL",
+          "count": 444
+        },
+        {
+          "date": "2025-12-23",
+          "regime": "NEUTRAL",
+          "count": 461
+        },
+        {
+          "date": "2025-12-22",
+          "regime": "NEUTRAL",
+          "count": 104
+        },
+        {
+          "date": "2025-12-21",
+          "regime": "NEUTRAL",
+          "count": 49
+        },
+        {
+          "date": "2025-12-20",
+          "regime": "NEUTRAL",
+          "count": 308
+        },
+        {
+          "date": "2025-12-19",
+          "regime": "NEUTRAL",
+          "count": 111
+        },
+        {
+          "date": "2025-12-18",
+          "regime": "MEAN_REVERSION",
+          "count": 1
+        },
+        {
+          "date": "2025-12-18",
+          "regime": "NEUTRAL",
+          "count": 270
+        },
+        {
+          "date": "2025-12-17",
+          "regime": "NEUTRAL",
+          "count": 1
+        }
+      ],
+      "result_hash": "9c15c53a659780f9b1f24128a98706047a7bd4ef19648f11d5e200903fd4af61"
+    }
+  }
+}

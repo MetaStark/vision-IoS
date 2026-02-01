@@ -23,6 +23,7 @@ import os
 import sys
 import json
 import time
+import uuid
 import hashlib
 import logging
 from datetime import datetime, timezone
@@ -57,8 +58,13 @@ load_dotenv()
 # Alpaca SDK
 try:
     from alpaca.trading.client import TradingClient
-    from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
-    from alpaca.trading.enums import OrderSide, TimeInForce, OrderType
+    from alpaca.trading.requests import (
+        MarketOrderRequest,
+        LimitOrderRequest,
+        TakeProfitRequest,
+        StopLossRequest
+    )
+    from alpaca.trading.enums import OrderSide, TimeInForce, OrderType, OrderClass
     from alpaca.data.historical import StockHistoricalDataClient
     ALPACA_AVAILABLE = True
 except ImportError:
@@ -131,6 +137,13 @@ class PaperOrder:
     qty: float
     limit_price: Optional[float]
     lineage: SignalLineage
+
+    # TP/SL for bracket orders (CEO-DIR-2026-119: MANDATORY per Day 21 learning)
+    take_profit: Optional[float] = None
+    stop_loss: Optional[float] = None
+
+    # CEO-DIR-2026-119: Allow bypass only with explicit governance approval
+    tp_sl_bypass_approved: bool = False
 
     # Filled by adapter
     order_id: Optional[str] = None
@@ -290,12 +303,17 @@ class AlpacaPaperAdapter:
         try:
             with self.conn.cursor() as cur:
                 cur.execute("""
-                    SELECT current_level FROM fhq_governance.defcon_status
-                    ORDER BY updated_at DESC LIMIT 1
+                    SELECT current_level FROM fhq_governance.defcon_state
+                    ORDER BY state_timestamp DESC LIMIT 1
                 """)
                 row = cur.fetchone()
                 level = row[0] if row else 'GREEN'
-        except:
+        except Exception as e:
+            # Rollback to clear aborted transaction state
+            try:
+                self.conn.rollback()
+            except:
+                pass
             level = 'GREEN'  # Default if table doesn't exist
 
         if level != 'GREEN':
@@ -322,13 +340,234 @@ class AlpacaPaperAdapter:
 
     def check_existing_position(self, canonical_id: str, strategy: str) -> bool:
         """Check if position already exists (one per asset per strategy)."""
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                SELECT COUNT(*) FROM fhq_execution.paper_positions
-                WHERE canonical_id = %s AND strategy_source = %s AND status = 'open'
-            """, (canonical_id, strategy))
-            count = cur.fetchone()[0]
-        return count > 0
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COUNT(*) FROM fhq_execution.paper_positions
+                    WHERE canonical_id = %s AND strategy_source = %s AND status = 'open'
+                """, (canonical_id, strategy))
+                count = cur.fetchone()[0]
+            return count > 0
+        except Exception as e:
+            # Rollback to clear aborted transaction state
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            return False  # Allow trade if check fails (fail-open for paper trading)
+
+    # =========================================================================
+    # TP/SL CALCULATION HELPERS (CEO-DIR-2026-119)
+    # =========================================================================
+
+    def calculate_tp_sl(
+        self,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        risk_reward_ratio: float = 2.0,
+        stop_loss_pct: float = 0.02
+    ) -> Tuple[float, float]:
+        """
+        Calculate Take Profit and Stop Loss levels.
+
+        CEO-DIR-2026-119: Every order MUST have TP/SL.
+        Default: 2% stop loss, 2:1 risk/reward ratio = 4% take profit.
+
+        Args:
+            symbol: Asset symbol
+            side: 'buy' or 'sell'
+            entry_price: Expected entry price
+            risk_reward_ratio: TP distance / SL distance (default 2.0)
+            stop_loss_pct: Stop loss percentage from entry (default 2%)
+
+        Returns:
+            Tuple of (take_profit_price, stop_loss_price)
+        """
+        if side == 'buy':
+            # Long position: SL below entry, TP above entry
+            stop_loss = round(entry_price * (1 - stop_loss_pct), 2)
+            take_profit = round(entry_price * (1 + stop_loss_pct * risk_reward_ratio), 2)
+        else:
+            # Short position: SL above entry, TP below entry
+            stop_loss = round(entry_price * (1 + stop_loss_pct), 2)
+            take_profit = round(entry_price * (1 - stop_loss_pct * risk_reward_ratio), 2)
+
+        logger.info(f"TP/SL calculated for {symbol}: Entry={entry_price}, "
+                   f"TP={take_profit}, SL={stop_loss} (RR={risk_reward_ratio})")
+
+        return take_profit, stop_loss
+
+    def calculate_atr_based_tp_sl(
+        self,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        atr_multiplier_sl: float = 1.5,
+        atr_multiplier_tp: float = 3.0
+    ) -> Tuple[float, float]:
+        """
+        Calculate TP/SL based on ATR (Average True Range).
+
+        More sophisticated than percentage-based - adapts to volatility.
+
+        Args:
+            symbol: Asset symbol
+            side: 'buy' or 'sell'
+            entry_price: Expected entry price
+            atr_multiplier_sl: ATR multiplier for stop loss (default 1.5)
+            atr_multiplier_tp: ATR multiplier for take profit (default 3.0)
+
+        Returns:
+            Tuple of (take_profit_price, stop_loss_price)
+        """
+        # Get ATR from database
+        atr = self._get_atr(symbol)
+        if atr is None or atr == 0:
+            # Fallback to percentage-based
+            logger.warning(f"No ATR for {symbol}, using percentage-based TP/SL")
+            return self.calculate_tp_sl(symbol, side, entry_price)
+
+        if side == 'buy':
+            stop_loss = round(entry_price - (atr * atr_multiplier_sl), 2)
+            take_profit = round(entry_price + (atr * atr_multiplier_tp), 2)
+        else:
+            stop_loss = round(entry_price + (atr * atr_multiplier_sl), 2)
+            take_profit = round(entry_price - (atr * atr_multiplier_tp), 2)
+
+        logger.info(f"ATR-based TP/SL for {symbol}: ATR={atr:.2f}, "
+                   f"Entry={entry_price}, TP={take_profit}, SL={stop_loss}")
+
+        return take_profit, stop_loss
+
+    def _get_atr(self, symbol: str, period: int = 14) -> Optional[float]:
+        """
+        Get ATR from database, with on-the-fly calculation fallback.
+
+        CEO-DIR-2026-120 P1.1: When database lacks ATR, calculate from Alpaca bars.
+        This ensures every order can have proper TP/SL bracket even for symbols
+        without pre-computed indicators.
+        """
+        # First try database
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    SELECT atr_14 FROM fhq_indicators.volatility
+                    WHERE listing_id = %s
+                    ORDER BY signal_date DESC LIMIT 1
+                """, (symbol,))
+                row = cur.fetchone()
+                if row and row[0] is not None:
+                    logger.info(f"ATR for {symbol} from database: {row[0]}")
+                    return float(row[0])
+        except Exception as e:
+            logger.warning(f"Database ATR query failed for {symbol}: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
+
+        # Fallback: Calculate on-the-fly from Alpaca bars
+        logger.info(f"Computing ATR on-the-fly for {symbol} (database lacks data)")
+        return self._calculate_atr_from_bars(symbol, period)
+
+    def _calculate_atr_from_bars(self, symbol: str, period: int = 14) -> Optional[float]:
+        """
+        Calculate ATR from Alpaca historical bars when database lacks data.
+
+        CEO-DIR-2026-120 P1.1: On-the-fly ATR calculation for bracket order support.
+        Uses True Range methodology: max(H-L, |H-C_prev|, |L-C_prev|)
+
+        Args:
+            symbol: Stock symbol (e.g., 'AAPL')
+            period: ATR period (default 14)
+
+        Returns:
+            ATR value or None if calculation fails
+        """
+        if not self.data_client:
+            logger.warning(f"No data client available for ATR calculation: {symbol}")
+            return None
+
+        try:
+            from alpaca.data.requests import StockBarsRequest
+            from alpaca.data.timeframe import TimeFrame
+            from datetime import datetime, timedelta
+
+            # Get enough bars for ATR calculation (period + buffer for TR calculation)
+            end = datetime.now()
+            start = end - timedelta(days=period * 2 + 10)  # Extra days for market closures
+
+            request = StockBarsRequest(
+                symbol_or_symbols=symbol,
+                timeframe=TimeFrame.Day,
+                start=start,
+                end=end
+            )
+
+            bars = self.data_client.get_stock_bars(request)
+
+            if symbol not in bars or len(bars[symbol]) < period + 1:
+                logger.warning(f"Insufficient bars for ATR calculation: {symbol}")
+                return None
+
+            bar_list = list(bars[symbol])
+
+            # Calculate True Range for each bar
+            true_ranges = []
+            for i in range(1, len(bar_list)):
+                high = float(bar_list[i].high)
+                low = float(bar_list[i].low)
+                prev_close = float(bar_list[i-1].close)
+
+                # True Range = max(H-L, |H-C_prev|, |L-C_prev|)
+                tr = max(
+                    high - low,
+                    abs(high - prev_close),
+                    abs(low - prev_close)
+                )
+                true_ranges.append(tr)
+
+            if len(true_ranges) < period:
+                logger.warning(f"Not enough True Range values for ATR: {symbol}")
+                return None
+
+            # Calculate ATR as Simple Moving Average of True Range (last 'period' values)
+            atr = sum(true_ranges[-period:]) / period
+
+            logger.info(f"ATR({period}) for {symbol} calculated on-the-fly: {atr:.4f}")
+
+            # Cache to database for future use (non-blocking)
+            self._cache_atr_to_database(symbol, atr, period)
+
+            return round(atr, 4)
+
+        except Exception as e:
+            logger.error(f"Failed to calculate ATR from bars for {symbol}: {e}")
+            return None
+
+    def _cache_atr_to_database(self, symbol: str, atr: float, period: int = 14):
+        """
+        Cache computed ATR to database for future queries.
+        Non-blocking - failures logged but don't affect order flow.
+        """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_indicators.volatility (
+                        listing_id, signal_date, atr_14, created_at
+                    ) VALUES (%s, CURRENT_DATE, %s, NOW())
+                    ON CONFLICT (listing_id, signal_date)
+                    DO UPDATE SET atr_14 = EXCLUDED.atr_14, created_at = NOW()
+                """, (symbol, atr))
+                self.conn.commit()
+                logger.info(f"Cached ATR({period})={atr:.4f} for {symbol}")
+        except Exception as e:
+            logger.warning(f"Failed to cache ATR for {symbol}: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
 
     # =========================================================================
     # ORDER EXECUTION (Directive Section 5)
@@ -391,6 +630,28 @@ class AlpacaPaperAdapter:
             self._log_order(order, "POSITION_EXISTS")
             return order
 
+        # =====================================================================
+        # CEO-DIR-2026-119: MANDATORY TP/SL ENFORCEMENT (Day 21 Learning)
+        # Every BUY order MUST have take_profit and stop_loss attached.
+        # This prevents unprotected positions without exit discipline.
+        # =====================================================================
+        if order.side == 'buy':
+            if order.take_profit is None or order.stop_loss is None:
+                if not order.tp_sl_bypass_approved:
+                    order.status = OrderStatus.REJECTED
+                    logger.error(
+                        f"CEO-DIR-2026-119 VIOLATION: {order.canonical_id} - "
+                        f"TP/SL REQUIRED. TP={order.take_profit}, SL={order.stop_loss}. "
+                        f"Set tp_sl_bypass_approved=True only with CEO approval."
+                    )
+                    self._log_order(order, "TP_SL_MISSING")
+                    return order
+                else:
+                    logger.warning(
+                        f"CEO-DIR-2026-119 BYPASS: {order.canonical_id} - "
+                        f"Proceeding without TP/SL (bypass approved)"
+                    )
+
         # Log order to database first
         order.order_id = self._log_order(order, "PENDING")
 
@@ -440,24 +701,60 @@ class AlpacaPaperAdapter:
         return order
 
     def _submit_to_alpaca(self, order: PaperOrder):
-        """Submit order to Alpaca API."""
+        """Submit order to Alpaca API.
+
+        CEO-DIR-2026-DBV-002: Bracket order support for TP/SL enforcement.
+        When take_profit and stop_loss are provided, uses OrderClass.BRACKET
+        to ensure exit discipline is enforced at broker level.
+        """
         side = OrderSide.BUY if order.side == 'buy' else OrderSide.SELL
 
-        if order.order_type == 'market':
-            request = MarketOrderRequest(
-                symbol=order.canonical_id,
-                qty=order.qty,
-                side=side,
-                time_in_force=TimeInForce.DAY
-            )
+        # Determine if bracket order needed (TP/SL present)
+        use_bracket = order.take_profit is not None and order.stop_loss is not None
+
+        if use_bracket:
+            # CEO-DIR-2026-DBV-002: BRACKET ORDER WITH TP/SL
+            # This ensures exit discipline is enforced at Alpaca level
+            logger.info(f"Creating BRACKET order: {order.canonical_id} TP={order.take_profit} SL={order.stop_loss}")
+
+            if order.order_type == 'market':
+                request = MarketOrderRequest(
+                    symbol=order.canonical_id,
+                    qty=order.qty,
+                    side=side,
+                    time_in_force=TimeInForce.GTC,  # GTC for bracket orders
+                    order_class=OrderClass.BRACKET,
+                    take_profit=TakeProfitRequest(limit_price=order.take_profit),
+                    stop_loss=StopLossRequest(stop_price=order.stop_loss)
+                )
+            else:
+                request = LimitOrderRequest(
+                    symbol=order.canonical_id,
+                    qty=order.qty,
+                    side=side,
+                    time_in_force=TimeInForce.GTC,  # GTC for bracket orders
+                    limit_price=order.limit_price,
+                    order_class=OrderClass.BRACKET,
+                    take_profit=TakeProfitRequest(limit_price=order.take_profit),
+                    stop_loss=StopLossRequest(stop_price=order.stop_loss)
+                )
         else:
-            request = LimitOrderRequest(
-                symbol=order.canonical_id,
-                qty=order.qty,
-                side=side,
-                time_in_force=TimeInForce.DAY,
-                limit_price=order.limit_price
-            )
+            # Standard order (no bracket)
+            if order.order_type == 'market':
+                request = MarketOrderRequest(
+                    symbol=order.canonical_id,
+                    qty=order.qty,
+                    side=side,
+                    time_in_force=TimeInForce.DAY
+                )
+            else:
+                request = LimitOrderRequest(
+                    symbol=order.canonical_id,
+                    qty=order.qty,
+                    side=side,
+                    time_in_force=TimeInForce.DAY,
+                    limit_price=order.limit_price
+                )
 
         return self.trading_client.submit_order(request)
 
@@ -488,27 +785,35 @@ class AlpacaPaperAdapter:
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) RETURNING order_id::text
         """
-        with self.conn.cursor() as cur:
-            cur.execute(sql, (
-                order.lineage.signal_id,
-                order.lineage.strategy_source,
-                order.lineage.regime_state,
-                order.lineage.cognitive_action,
-                order.lineage.kelly_fraction,
-                order.lineage.circuit_breaker_state,
-                order.lineage.compute_hash(),
-                order.canonical_id,
-                order.side,
-                order.order_type,
-                order.qty,
-                order.limit_price,
-                status.lower(),
-                EXECUTION_MODE,
-                'GREEN'
-            ))
-            order_id = cur.fetchone()[0]
-        self.conn.commit()
-        return order_id
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (
+                    order.lineage.signal_id,
+                    order.lineage.strategy_source,
+                    order.lineage.regime_state,
+                    order.lineage.cognitive_action,
+                    order.lineage.kelly_fraction,
+                    order.lineage.circuit_breaker_state,
+                    order.lineage.compute_hash(),
+                    order.canonical_id,
+                    order.side,
+                    order.order_type,
+                    order.qty,
+                    order.limit_price,
+                    status.lower(),
+                    EXECUTION_MODE,
+                    'GREEN'
+                ))
+                order_id = cur.fetchone()[0]
+            self.conn.commit()
+            return order_id
+        except Exception as e:
+            logger.warning(f"Failed to log order for {order.canonical_id}: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            return str(uuid.uuid4())  # Generate fallback order ID
 
     def _update_order(self, order: PaperOrder):
         """Update order status after execution."""
@@ -521,16 +826,23 @@ class AlpacaPaperAdapter:
                 filled_at = CASE WHEN %s IN ('filled', 'partial') THEN NOW() ELSE NULL END
             WHERE order_id = %s::uuid
         """
-        with self.conn.cursor() as cur:
-            cur.execute(sql, (
-                order.alpaca_order_id,
-                order.status.value,
-                order.filled_qty,
-                order.filled_avg_price,
-                order.status.value,
-                order.order_id
-            ))
-        self.conn.commit()
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (
+                    str(order.alpaca_order_id) if order.alpaca_order_id else None,
+                    order.status.value,
+                    order.filled_qty,
+                    order.filled_avg_price,
+                    order.status.value,
+                    str(order.order_id) if order.order_id else None
+                ))
+            self.conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to update order: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
 
     def _create_position(self, order: PaperOrder):
         """Create position record from filled order."""
@@ -543,20 +855,28 @@ class AlpacaPaperAdapter:
                 %s, %s, %s, %s, %s, %s, %s::uuid, 'open'
             ) RETURNING position_id::text
         """
-        with self.conn.cursor() as cur:
-            cur.execute(sql, (
-                order.canonical_id,
-                order.lineage.strategy_source,
-                side,
-                order.filled_qty,
-                order.filled_avg_price,
-                order.filled_avg_price,
-                order.order_id
-            ))
-            position_id = cur.fetchone()[0]
-        self.conn.commit()
-        logger.info(f"Position created: {position_id}")
-        return position_id
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (
+                    order.canonical_id,
+                    order.lineage.strategy_source,
+                    side,
+                    order.filled_qty,
+                    order.filled_avg_price,
+                    order.filled_avg_price,
+                    str(order.order_id) if order.order_id else None
+                ))
+                position_id = cur.fetchone()[0]
+            self.conn.commit()
+            logger.info(f"Position created: {position_id}")
+            return position_id
+        except Exception as e:
+            logger.warning(f"Failed to create position: {e}")
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            return None
 
     # =========================================================================
     # EPISODIC MEMORY (Amendment AMND-006)

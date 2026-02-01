@@ -1,0 +1,111 @@
+{
+  "document_id": "PREFLIGHT-208-BELIEF-DISTRIBUTION-SCHEMA",
+  "document_type": "GOVERNANCE_SPECIFICATION",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL",
+  "directive": "CEO-DIR-2026-001",
+  "migration": "208_ceo_dir_2026_001_epistemic_separation.sql",
+  "timestamp": "2026-01-06T21:00:00Z",
+  "author": "STIG",
+
+  "section_1_jsonb_schema_definition": {
+    "column": "belief_distribution",
+    "type": "JSONB NOT NULL",
+    "location": "fhq_perception.model_belief_state",
+    "migration_line": "41",
+
+    "schema": {
+      "type": "object",
+      "required": ["BULL", "BEAR", "NEUTRAL", "STRESS"],
+      "properties": {
+        "BULL": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Probability of BULL regime"
+        },
+        "BEAR": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Probability of BEAR regime"
+        },
+        "NEUTRAL": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Probability of NEUTRAL regime"
+        },
+        "STRESS": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Probability of STRESS regime"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "example_valid": {
+      "BULL": 0.15,
+      "BEAR": 0.10,
+      "NEUTRAL": 0.70,
+      "STRESS": 0.05
+    }
+  },
+
+  "section_2_sum_to_one_constraint": {
+    "principle": "Probabilities must sum to 1.0 (valid probability distribution)",
+
+    "tolerance": {
+      "exact_sum": 1.0,
+      "floating_point_tolerance": 0.0001,
+      "acceptable_range": "0.9999 to 1.0001"
+    },
+
+    "check_constraint": {
+      "name": "belief_distribution_sum_to_one",
+      "expression": "CHECK (\n    ABS(\n        (belief_distribution->>'BULL')::numeric +\n        (belief_distribution->>'BEAR')::numeric +\n        (belief_distribution->>'NEUTRAL')::numeric +\n        (belief_distribution->>'STRESS')::numeric - 1.0\n    ) < 0.0001\n)",
+      "enforcement": "DATABASE_LEVEL",
+      "note": "Not in Migration 208 - recommended for Migration 209"
+    },
+
+    "validation_query": "SELECT\n    belief_id,\n    belief_distribution,\n    (belief_distribution->>'BULL')::numeric +\n    (belief_distribution->>'BEAR')::numeric +\n    (belief_distribution->>'NEUTRAL')::numeric +\n    (belief_distribution->>'STRESS')::numeric as total_prob,\n    CASE\n        WHEN ABS(\n            (belief_distribution->>'BULL')::numeric +\n            (belief_distribution->>'BEAR')::numeric +\n            (belief_distribution->>'NEUTRAL')::numeric +\n            (belief_distribution->>'STRESS')::numeric - 1.0\n        ) < 0.0001 THEN 'VALID'\n        ELSE 'INVALID'\n    END as validation_status\nFROM fhq_perception.model_belief_state\nWHERE belief_distribution IS NOT NULL;"
+  },
+
+  "section_3_validation_function": {
+    "function_name": "fhq_perception.validate_belief_distribution",
+    "purpose": "Application-level validation before INSERT",
+
+    "sql": "CREATE OR REPLACE FUNCTION fhq_perception.validate_belief_distribution(\n    p_distribution JSONB\n) RETURNS BOOLEAN AS $$\nDECLARE\n    v_bull NUMERIC;\n    v_bear NUMERIC;\n    v_neutral NUMERIC;\n    v_stress NUMERIC;\n    v_sum NUMERIC;\nBEGIN\n    -- Check required keys exist\n    IF NOT (p_distribution ? 'BULL' AND p_distribution ? 'BEAR' AND\n            p_distribution ? 'NEUTRAL' AND p_distribution ? 'STRESS') THEN\n        RAISE EXCEPTION 'belief_distribution must contain BULL, BEAR, NEUTRAL, STRESS keys';\n    END IF;\n\n    -- Extract values\n    v_bull := (p_distribution->>'BULL')::numeric;\n    v_bear := (p_distribution->>'BEAR')::numeric;\n    v_neutral := (p_distribution->>'NEUTRAL')::numeric;\n    v_stress := (p_distribution->>'STRESS')::numeric;\n\n    -- Check range [0, 1]\n    IF v_bull < 0 OR v_bull > 1 OR v_bear < 0 OR v_bear > 1 OR\n       v_neutral < 0 OR v_neutral > 1 OR v_stress < 0 OR v_stress > 1 THEN\n        RAISE EXCEPTION 'All probabilities must be between 0 and 1';\n    END IF;\n\n    -- Check sum to one\n    v_sum := v_bull + v_bear + v_neutral + v_stress;\n    IF ABS(v_sum - 1.0) > 0.0001 THEN\n        RAISE EXCEPTION 'Probabilities must sum to 1.0, got %', v_sum;\n    END IF;\n\n    RETURN TRUE;\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
+  },
+
+  "section_4_entropy_computation": {
+    "purpose": "entropy column measures uncertainty in belief distribution",
+
+    "formula": "H(X) = -SUM(p_i * log2(p_i)) for all p_i > 0",
+
+    "interpretation": {
+      "entropy_0": "Perfect certainty (one regime has probability 1.0)",
+      "entropy_2": "Maximum uncertainty (all 4 regimes equally probable at 0.25)",
+      "typical_range": "0.5 to 1.5 for meaningful classifications"
+    },
+
+    "sql_function": "CREATE OR REPLACE FUNCTION fhq_perception.compute_entropy(\n    p_distribution JSONB\n) RETURNS NUMERIC AS $$\nDECLARE\n    v_entropy NUMERIC := 0;\n    v_prob NUMERIC;\n    v_key TEXT;\nBEGIN\n    FOR v_key IN SELECT jsonb_object_keys(p_distribution)\n    LOOP\n        v_prob := (p_distribution->>v_key)::numeric;\n        IF v_prob > 0 THEN\n            v_entropy := v_entropy - (v_prob * log(2, v_prob));\n        END IF;\n    END LOOP;\n    RETURN ROUND(v_entropy, 4);\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
+  },
+
+  "section_5_dominant_regime_derivation": {
+    "column": "dominant_regime",
+    "derivation": "argmax(belief_distribution)",
+    "constraint": "dominant_regime = key with highest probability in belief_distribution",
+
+    "validation": "SELECT belief_id,\n       belief_distribution,\n       dominant_regime,\n       (SELECT key FROM jsonb_each_text(belief_distribution) ORDER BY value::numeric DESC LIMIT 1) as computed_dominant,\n       CASE WHEN dominant_regime = (SELECT key FROM jsonb_each_text(belief_distribution) ORDER BY value::numeric DESC LIMIT 1)\n            THEN 'VALID' ELSE 'MISMATCH' END as validation\nFROM fhq_perception.model_belief_state;"
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:00:00Z",
+    "status": "APPROVED"
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "directive_id": "CEO-DIR-2026-016",
+  "artifact_type": "DDATP_PRODUCTION_PROMOTION",
+  "status": "PROMOTED_TO_PRODUCTION",
+  "generated_at": "2026-01-07T16:30:00Z",
+  "generated_by": "STIG",
+  "authorized_by": "CEO",
+
+  "promotion_decision": {
+    "decision": "APPROVED",
+    "effective": "IMMEDIATELY",
+    "previous_state": "SHADOW_ONLY",
+    "new_state": "PRODUCTION",
+    "supersedes": "SHADOW_ONLY constraints for DDATP only"
+  },
+
+  "validation_basis": {
+    "vega_validation_bundle": {
+      "artifact": "CEO_DIR_2026_015C_VEGA_DDATP_VALIDATION_20260107_153524.json",
+      "result": "PASSED",
+      "consecutive_outputs": 50,
+      "violations": 0,
+      "sentiment_claims": 0,
+      "gate_passed": true
+    },
+    "schema_migration": {
+      "migration_id": 176,
+      "status": "COMPLETED",
+      "lineage_preserved": true
+    },
+    "finn_deployment": {
+      "artifact": "CEO_DIR_2026_015B_FINN_PROMPT_DEPLOYMENT_20260107.json",
+      "prompt_deployed": true,
+      "parser_deployed": true,
+      "write_path_deployed": true
+    }
+  },
+
+  "production_scope": {
+    "enabled": [
+      "driver_claim field",
+      "driver_basis field",
+      "input_coverage field",
+      "fallback_reason field",
+      "technical_feature_set field",
+      "VEGA integrity triggers",
+      "FINN nightly outputs emitting DDATP fields",
+      "Downstream analytics and reporting consumption"
+    ],
+    "explicitly_excluded": [
+      "Regime classification logic",
+      "Hysteresis thresholds",
+      "Policy thresholds",
+      "Execution logic",
+      "Trading impact",
+      "Capital allocation impact"
+    ],
+    "scope_note": "Truth-layer promotion only"
+  },
+
+  "operational_constraints_reaffirmed": {
+    "constraint_1": {
+      "rule": "SENTIMENT may only be claimed when sentiment_used = true",
+      "enforcement": "VEGA trigger"
+    },
+    "constraint_2": {
+      "rule": "OBSERVED_DATA requires verified external feed usage",
+      "enforcement": "VEGA trigger"
+    },
+    "constraint_3": {
+      "rule": "fallback_reason is mandatory when driver_basis != OBSERVED_DATA",
+      "enforcement": "VEGA trigger"
+    },
+    "constraint_4": {
+      "rule": "VEGA trigger violations result in immediate write-path rejection",
+      "enforcement": "Database constraint"
+    },
+    "constraint_5": {
+      "rule": "All DDATP fields are descriptive, not prescriptive",
+      "enforcement": "Architectural design"
+    },
+    "violation_policy": "Any violation is a governance incident, not a tuning opportunity"
+  },
+
+  "telemetry_mandate": {
+    "required_from": "First production cycle",
+    "responsible_agent": "STIG",
+    "daily_visibility_required": [
+      "driver_basis distribution",
+      "FALLBACK_UNKNOWN rate",
+      "Correlation: attribution quality vs oscillation frequency",
+      "Correlation: attribution quality vs suppression counts",
+      "Correlation: attribution quality vs regret classifications (when available)"
+    ],
+    "mode": "OBSERVATIONAL_ONLY",
+    "note": "Until explicitly authorized otherwise"
+  },
+
+  "relationship_to_ongoing": {
+    "CEO-DIR-2026-014A": {
+      "directive": "BTC Confirmation Watch",
+      "impact": "UNCHANGED"
+    },
+    "regime_layers": "UNCHANGED",
+    "hysteresis_layers": "UNCHANGED",
+    "execution_layers": "UNCHANGED",
+    "future_learning_directives": "Must assume DDATP as canonical truth source"
+  },
+
+  "execution_acknowledgment": {
+    "shadow_only_restriction": "REMOVED",
+    "production_write_path": "ENABLED",
+    "vega_notified": true,
+    "activation_confirmed": true,
+    "executed_by": "STIG",
+    "executed_at": "2026-01-07T16:30:00Z"
+  },
+
+  "ceo_closing_statement": "We do not optimize systems by guessing why they acted. We optimize them by knowing. DDATP is now part of the production truth fabric of FjordHQ.",
+
+  "lineage_hash": "e4f7a2b8c9d1e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0"
+}

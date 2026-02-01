@@ -1,0 +1,360 @@
+{
+  "directive": "CEO-DIR-2026-110",
+  "title": "Signal Freshness & Traceability Audit + Regime-Conditional Signal Expansion",
+  "classification": "MANDATORY - P0 DIAGNOSIS",
+  "executed_at": "2026-01-20T00:31:28.041Z",
+  "completed_at": "2026-01-20T00:55:00.000Z",
+  "db_clock_verified": "2026-01-20T00:31:28.041Z",
+  "implementor": "STIG",
+  "status": "COMPLETE",
+
+  "mandate_a_signal_freshness_audit": {
+    "A1_population_frequency": {
+      "status": "COMPLETE",
+      "g2_decision_plans": {
+        "total_signals": 15,
+        "expired_count": 15,
+        "pct_expired": 100.00,
+        "avg_age_days": 30.09,
+        "median_age_days": 30.09,
+        "oldest_signal": "2025-12-20T22:19:24.820Z",
+        "newest_signal": "2025-12-20T22:19:24.820Z",
+        "days_with_signals": 1,
+        "signals_per_day": 15.00,
+        "breakdown_by_instrument": {
+          "BTC-USD": {
+            "BULL": 10,
+            "STRESS": 5
+          }
+        }
+      },
+      "g1_validated_signals": {
+        "total": 100,
+        "last_created": "2025-12-16T19:42:15.666Z",
+        "days_stale": 34
+      },
+      "fhq_finn_ensemble_signals": {
+        "total": 0,
+        "status": "EMPTY",
+        "critical_finding": "SOURCE IS DEAD"
+      },
+      "summary": "GENERATION GAP - No new signals for 30+ days"
+    },
+
+    "A2_end_to_end_traceability": {
+      "status": "COMPLETE",
+      "pipeline_map": [
+        {
+          "pathway": "Canonical",
+          "stage": "0_FINN_Ensemble",
+          "table": "fhq_finn.ensemble_signals",
+          "records": 0,
+          "last_activity": null,
+          "status": "NEVER_POPULATED"
+        },
+        {
+          "pathway": "Canonical",
+          "stage": "1_G1_Validated",
+          "table": "fhq_alpha.g1_validated_signals",
+          "records": 100,
+          "last_activity": "2025-12-16T19:42:15.666Z",
+          "status": "STALE_34_DAYS"
+        },
+        {
+          "pathway": "Canonical",
+          "stage": "2_G2_DecisionPlans",
+          "table": "fhq_alpha.g2_decision_plans",
+          "records": 15,
+          "last_activity": "2025-12-20T22:19:24.820Z",
+          "status": "STALE_30_DAYS"
+        },
+        {
+          "pathway": "Canonical",
+          "stage": "3_CPTO_Handoff",
+          "table": "fhq_alpha.cpto_line_handoff",
+          "records": 0,
+          "last_activity": null,
+          "status": "NEVER_USED"
+        },
+        {
+          "pathway": "Execution",
+          "stage": "4_Paper_Orders",
+          "table": "fhq_execution.paper_orders",
+          "records": 30,
+          "last_activity": "2026-01-19T20:03:12.764Z",
+          "status": "ACTIVE"
+        }
+      ],
+      "critical_finding": {
+        "issue": "CANONICAL PIPELINE COMPLETELY DISCONNECTED FROM EXECUTION",
+        "details": [
+          "Paper orders (30) exist but signal_ids match 0 canonical records",
+          "All 30 paper orders come from strategy_source='IOS012B_INVERSION'",
+          "IOS012B is an ALTERNATE pathway, not canonical IoS-007 -> IoS-008",
+          "CPTO has NEVER received a signal (cpto_line_handoff = 0)"
+        ],
+        "execution_pathway_analysis": {
+          "canonical_path_active": false,
+          "alternate_path_active": true,
+          "alternate_strategy": "IOS012B_INVERSION",
+          "paper_orders_from_canonical": 0,
+          "paper_orders_from_alternate": 30
+        }
+      }
+    },
+
+    "A3_bottleneck_attribution": {
+      "status": "COMPLETE",
+      "root_cause": "GENERATION_GAP",
+      "bottleneck_type": "GENERATION",
+      "severity": "CRITICAL",
+      "evidence": {
+        "primary": {
+          "issue": "FINN not producing ensemble_signals",
+          "table": "fhq_finn.ensemble_signals",
+          "record_count": 0,
+          "status": "EMPTY"
+        },
+        "secondary": {
+          "issue": "ios007/ios008 not executing",
+          "cnrp_execution_log_matches": 0,
+          "note": "Tasks enabled in task_registry but no execution evidence"
+        },
+        "tertiary": {
+          "issue": "BATCH_DECISION dormant",
+          "last_batch_decision": "2025-12-16",
+          "days_since_last": 35
+        }
+      },
+      "task_registry_status": {
+        "ios007_g1_global_execution": {
+          "assigned_to": "LARS",
+          "enabled": true,
+          "last_updated": "2025-12-15T10:21:51.720Z",
+          "status": "NO_EXECUTION_EVIDENCE"
+        },
+        "ios008_g1_validation": {
+          "assigned_to": "VEGA",
+          "enabled": true,
+          "last_updated": "2025-12-15T10:21:51.720Z",
+          "status": "NO_EXECUTION_EVIDENCE"
+        },
+        "FINN_COGNITIVE_GATEWAY": {
+          "assigned_to": "FINN",
+          "enabled": true,
+          "mode": "OFF",
+          "note": "Cognitive gateway set to OFF"
+        }
+      },
+      "breakdown": {
+        "generation_gap": {
+          "detected": true,
+          "severity": 1.0,
+          "description": "FINN ensemble signal generator completely dormant"
+        },
+        "filter_gap": {
+          "detected": false,
+          "note": "Cannot assess - no signals to filter"
+        },
+        "scheduler_gap": {
+          "detected": true,
+          "severity": 0.8,
+          "description": "ios007/ios008 enabled but not executing"
+        },
+        "ttl_gap": {
+          "detected": true,
+          "severity": 1.0,
+          "description": "100% of existing signals TTL-expired"
+        }
+      }
+    }
+  },
+
+  "mandate_b_regime_conditional_expansion": {
+    "status": "COMPLETE",
+
+    "B1_signal_class_definition": {
+      "status": "COMPLETE",
+      "migration": "322_ceo_dir_2026_110_inversion_candidate_signal_class.sql",
+      "signal_classes_defined": [
+        {
+          "class": "STANDARD",
+          "description": "Normal signal flow - standard CPTO processing",
+          "required_gates": ["TTL_CHECK", "DEFCON_CHECK", "LIQUIDITY_CHECK"]
+        },
+        {
+          "class": "LOW_CONFIDENCE_INVERSION_CANDIDATE",
+          "description": "STRESS regime inversion candidate - requires verified_inverted evidence",
+          "required_gates": ["TTL_CHECK", "DEFCON_CHECK", "LIQUIDITY_CHECK", "INVERSION_VERIFICATION"],
+          "special_friction_handling": "FINN escalation on refusal (CEO R2)"
+        },
+        {
+          "class": "HIGH_CONFIDENCE_VERIFIED",
+          "description": "Verified high-confidence signal with full evidence chain",
+          "required_gates": ["TTL_CHECK", "DEFCON_CHECK"]
+        },
+        {
+          "class": "EXPERIMENTAL",
+          "description": "Research/shadow signals - logging only, no execution",
+          "required_gates": ["TTL_CHECK"],
+          "mode": "SHADOW_ONLY"
+        }
+      ],
+      "database_changes": [
+        "Added signal_class column to fhq_alpha.g2_decision_plans",
+        "Added inversion_metadata JSONB column to fhq_alpha.g2_decision_plans",
+        "Created signal_class_type enum type",
+        "Added check constraint for valid signal classes"
+      ]
+    },
+
+    "B2_cpto_gating": {
+      "status": "COMPLETE",
+      "file_modified": "03_FUNCTIONS/cpto_precision_engine.py",
+      "version_upgraded": "1.1.0 -> 1.2.0",
+      "changes_implemented": [
+        {
+          "feature": "signal_class parameter added to transform_signal()",
+          "purpose": "Accept signal class for conditional processing"
+        },
+        {
+          "feature": "inversion_metadata parameter added",
+          "purpose": "Pass inversion-specific evidence for verification"
+        },
+        {
+          "feature": "_verify_inversion_candidate() method added",
+          "purpose": "Gate inversion candidates - require verified_inverted=true"
+        },
+        {
+          "feature": "_record_inversion_refusal() method added",
+          "purpose": "Log refusals to inversion_candidate_evidence table with FINN escalation"
+        },
+        {
+          "feature": "_check_inversion_friction_escalation() method added",
+          "purpose": "CEO R3: 50% threshold triggers Strategic Friction Report to LARS"
+        }
+      ],
+      "parameter_set_additions": [
+        "inversion_friction_threshold_pct: 0.50",
+        "inversion_escalation_target: LARS",
+        "inversion_refusal_escalation_target: FINN",
+        "valid_signal_classes: [STANDARD, LOW_CONFIDENCE_INVERSION_CANDIDATE, HIGH_CONFIDENCE_VERIFIED, EXPERIMENTAL]"
+      ]
+    },
+
+    "B3_evidence_requirements": {
+      "status": "COMPLETE",
+      "tables_created": [
+        {
+          "table": "fhq_alpha.cpto_inversion_friction_log",
+          "purpose": "Track inversion candidate friction rate for CEO R3 escalation"
+        },
+        {
+          "table": "fhq_alpha.inversion_candidate_evidence",
+          "purpose": "Store evidence for inversion candidate processing decisions"
+        }
+      ],
+      "columns_added_to_existing": [
+        "fhq_alpha.cpto_precision_log.signal_class",
+        "fhq_alpha.cpto_precision_log.inversion_gate_passed",
+        "fhq_alpha.cpto_friction_log.refused_inversion_unverified",
+        "fhq_alpha.cpto_friction_log.inversion_candidate_total",
+        "fhq_alpha.cpto_friction_log.inversion_refusal_rate"
+      ],
+      "required_evidence_fields": [
+        "verified_inverted (boolean) - must be true",
+        "inversion_verification_source (text) - e.g., 'IoS-012B', 'CEO-DIR-2026-105'",
+        "historical_inversion_evidence (jsonb) - past regime-vs-outcome data"
+      ]
+    }
+  },
+
+  "ceo_refinement_responses": {
+    "R1_ttl_calibration": {
+      "metric": "TIME_TO_STALE_SECONDS",
+      "current_state": {
+        "all_signals_expired": true,
+        "median_signal_age_days": 30.09,
+        "average_ttl_minutes_at_creation": "24h (1440 min) typical",
+        "note": "Cannot compute time-to-stale: no fresh signals exist"
+      },
+      "recommended_action": "Resume signal generation before TTL calibration meaningful"
+    },
+    "R2_inversion_feedback_loop": {
+      "status": "IMPLEMENTED",
+      "implementation": [
+        "Inversion candidate refusals logged to fhq_alpha.inversion_candidate_evidence",
+        "friction_escalation_target set to FINN for individual refusals",
+        "CPTO v1.2.0 calls _record_inversion_refusal() for all inversion blocks"
+      ],
+      "escalation_target": "FINN",
+      "note": "Ready to activate once canonical signals resume"
+    },
+    "R3_friction_escalation_50pct": {
+      "status": "IMPLEMENTED",
+      "threshold": 0.50,
+      "window_hours": 24,
+      "minimum_signals_for_rate": 3,
+      "escalation_target": "LARS",
+      "implementation": [
+        "_check_inversion_friction_escalation() computes rolling 24h refusal rate",
+        "When rate >= 50%, logs to cpto_inversion_friction_log with strategic_friction_report_triggered=true",
+        "governance_actions_log entry created with action_type=STRATEGIC_FRICTION_REPORT"
+      ]
+    }
+  },
+
+  "recommendations": {
+    "P0_immediate": [
+      {
+        "action": "Diagnose FINN cognitive gateway OFF state",
+        "owner": "FINN",
+        "reference": "FINN_COGNITIVE_GATEWAY.task_config.mode = 'OFF'"
+      },
+      {
+        "action": "Investigate ios007/ios008 scheduler execution failure",
+        "owner": "STIG",
+        "reference": "cnrp_execution_log shows 0 runs"
+      }
+    ],
+    "P1_short_term": [
+      {
+        "action": "Resume ensemble signal generation",
+        "owner": "FINN",
+        "target_table": "fhq_finn.ensemble_signals"
+      },
+      {
+        "action": "Verify canonical path once signals resume",
+        "owner": "VEGA",
+        "verification_points": ["G1 validation", "G2 decision creation", "CPTO handoff"]
+      },
+      {
+        "action": "Test LOW_CONFIDENCE_INVERSION_CANDIDATE signal class with IoS-012B",
+        "owner": "STIG",
+        "reference": "IOS012B_INVERSION already producing signals - candidate for class assignment"
+      }
+    ],
+    "P2_structural": [
+      {
+        "action": "Reconcile IOS012B_INVERSION with canonical path",
+        "note": "Currently operating as independent bypass"
+      },
+      {
+        "action": "Integrate inversion candidates into canonical IoS-007 -> IoS-008 -> CPTO flow",
+        "note": "Required for R2/R3 friction feedback to function"
+      }
+    ]
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/322_ceo_dir_2026_110_inversion_candidate_signal_class.sql"
+  ],
+  "files_modified": [
+    "03_FUNCTIONS/cpto_precision_engine.py (v1.1.0 -> v1.2.0)"
+  ],
+
+  "evidence_hash": "b7d4e8f2a1c36940",
+  "mandate_a_status": "COMPLETE",
+  "mandate_b_status": "COMPLETE",
+  "overall_status": "COMPLETE"
+}

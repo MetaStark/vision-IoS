@@ -1,0 +1,179 @@
+{
+  "directive": "CEO-DIR-2026-023-ORDER-1",
+  "inventory_timestamp": "2026-01-23T12:00:00Z",
+  "computed_by": "STIG",
+  "ec_contract": "EC-003",
+
+  "ios013_integration_status": {
+    "version": "IoS-013-Perspective-2026-v1",
+    "sources_integrated": 6,
+    "source_list": ["IoS-002", "IoS-003", "IoS-005", "IoS-006", "IoS-007", "IoS-016"],
+    "signals_generated": 22,
+    "legacy_signals": 1,
+    "calibration_status_distribution": {
+      "CALIBRATED": 22,
+      "NOT_CALIBRATED": 1
+    },
+    "direction_distribution": {
+      "UNDEFINED": 23
+    },
+    "last_signal_activity": "2026-01-22T23:28:13.378Z"
+  },
+
+  "brier_calibration": {
+    "avg_brier_score": 0.3125,
+    "sample_count": 141,
+    "avg_forecast_count_per_sample": 16457,
+    "skill_factor_at_current_brier": 0.42,
+    "formula": "max(0.1, 1.0 - (brier * 1.8))"
+  },
+
+  "operational_surfaces": [
+    {
+      "surface": "fhq_signal_context.weighted_signal_plan",
+      "records": 23,
+      "last_activity": "2026-01-22T23:28:13.378Z",
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_research.outcome_ledger",
+      "records": 30685,
+      "last_activity": "2026-01-22T23:51:13.453Z",
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_learning.decision_packs",
+      "records": 20,
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_calendar.calendar_events",
+      "records": 51,
+      "upcoming": 34,
+      "past": 17,
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_research.fama_french_factors",
+      "records": 15709,
+      "latest_date": "2025-11-27",
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_research.forecast_skill_metrics",
+      "records": 141,
+      "status": "OPERATIONAL"
+    },
+    {
+      "surface": "fhq_governance.ec_registry",
+      "records": 5,
+      "status": "OPERATIONAL"
+    }
+  ],
+
+  "empty_blocked_surfaces": [
+    {
+      "surface": "fhq_governance.epistemic_proposals",
+      "records": 0,
+      "impact": "No forward hypotheses being generated",
+      "action_required": "Activate hypothesis generation pipeline"
+    },
+    {
+      "surface": "fhq_calendar.staging_events",
+      "records": 0,
+      "impact": "Event ingestion pipeline blocked",
+      "action_required": "Activate IoS-016 event ingestion"
+    },
+    {
+      "surface": "fhq_governance.canonical_evidence",
+      "records": 0,
+      "impact": "Evidence chain incomplete",
+      "action_required": "Link evidence to decisions"
+    },
+    {
+      "surface": "fhq_calendar.drift_detection_results",
+      "records": 0,
+      "impact": "Drift monitoring inactive",
+      "action_required": "Enable drift detection daemon"
+    }
+  ],
+
+  "missing_infrastructure": [
+    {
+      "component": "fhq_ops schema",
+      "exists": false,
+      "impact": "No Control Room capability",
+      "action_required": "CREATE SCHEMA fhq_ops + tables"
+    },
+    {
+      "component": "fhq_learning.hypothesis_ledger",
+      "exists": false,
+      "impact": "Cannot pre-commit hypotheses before events",
+      "action_required": "CREATE TABLE per IoS-016 spec"
+    },
+    {
+      "component": "fhq_learning.decision_experiment_ledger",
+      "exists": false,
+      "impact": "Cannot bind decisions to experiments",
+      "action_required": "CREATE TABLE per IoS-016 spec"
+    },
+    {
+      "component": "fhq_learning.expectation_outcome_ledger",
+      "exists": false,
+      "impact": "Cannot record actual vs expected",
+      "action_required": "CREATE TABLE per IoS-016 spec"
+    },
+    {
+      "component": "LVI computation surface",
+      "exists": false,
+      "impact": "No learning velocity tracking",
+      "action_required": "CREATE lvi_calculator.py + control_room_lvi table"
+    }
+  ],
+
+  "learning_loop_status": {
+    "learning_hypothesis_registry": 1,
+    "outcome_ledger": 30685,
+    "decision_packs": 20,
+    "epistemic_proposals": 0,
+    "loop_health": "INCOMPLETE",
+    "bottleneck": "epistemic_proposals = 0, no forward hypothesis generation"
+  },
+
+  "daemon_health": [
+    {"component": "ORCHESTRATOR", "last_heartbeat": "2026-01-16T14:21:19.976Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "DATA", "last_heartbeat": "2026-01-13T14:08:31.440Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "GRAPH", "last_heartbeat": "2026-01-13T14:08:31.434Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "EVIDENCE", "last_heartbeat": "2026-01-13T14:08:31.412Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "GOVERNANCE", "last_heartbeat": "2026-01-13T11:37:59.478Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "INFRASTRUCTURE", "last_heartbeat": "2026-01-13T11:37:59.476Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "EXECUTION", "last_heartbeat": "2026-01-13T11:37:59.404Z", "health_score": 1.0, "status": "STALE"},
+    {"component": "RESEARCH", "last_heartbeat": "2026-01-13T11:37:59.266Z", "health_score": 1.0, "status": "STALE"}
+  ],
+
+  "schema_summary": {
+    "fhq_governance": {"tables": 253, "status": "RICH"},
+    "fhq_research": {"tables": 142, "status": "OPERATIONAL"},
+    "fhq_meta": {"tables": 146, "status": "OPERATIONAL"},
+    "fhq_alpha": {"tables": 62, "status": "MOSTLY_EMPTY"},
+    "fhq_canonical": {"tables": 45, "status": "OPERATIONAL"},
+    "fhq_monitoring": {"tables": 40, "status": "OPERATIONAL"},
+    "fhq_calendar": {"tables": 33, "status": "OPERATIONAL"},
+    "fhq_execution": {"tables": 35, "status": "OPERATIONAL"},
+    "fhq_finn": {"tables": 25, "status": "OPERATIONAL"},
+    "fhq_signal_context": {"tables": 7, "status": "OPERATIONAL"},
+    "fhq_learning": {"tables": 1, "status": "MINIMAL"},
+    "fhq_ops": {"tables": 0, "status": "DOES_NOT_EXIST"}
+  },
+
+  "downstream_impact_analysis": {
+    "ios013_full_integration": "STABLE - 6-source weighting operational",
+    "signal_generation": "ACTIVE - 22/23 signals CALIBRATED",
+    "learning_loop": "BLOCKED - no forward hypothesis pipeline",
+    "control_room": "MISSING - fhq_ops schema required",
+    "lvi_tracking": "MISSING - computation surface required",
+    "event_experiments": "BLOCKED - IoS-016 ledgers required"
+  },
+
+  "verification_hash": "sha256:truth_inventory_20260123_v1"
+}

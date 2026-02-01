@@ -1,0 +1,158 @@
+{
+  "directive": "CEO-DIR-2026-109",
+  "scope": "CEO Amendments A, B, C - CPTO Dominance Engine",
+  "classification": "MANDATORY - ALPHA AMPLIFICATION",
+  "execution_timestamp": "2026-01-20T00:25:00Z",
+  "implementor": "STIG",
+  "status": "EXECUTED_CEO_APPROVED",
+  "ceo_verdict": "The last 5% is not polish - it is power",
+
+  "amendment_summary": {
+    "A": {
+      "name": "Inversion-Aware STRESS Logic",
+      "status": "IMPLEMENTED",
+      "change": "Added VERIFIED_INVERTED_STRESS regime with aggression 0.002",
+      "rationale": "CEO-DIR-2026-105 evidence: STRESS signals often systematically inverted",
+      "governance_impact": "Ignoring documented knowledge is a governance failure, not a trading choice",
+      "implementation": {
+        "parameter": "regime_aggression.VERIFIED_INVERTED_STRESS",
+        "value": 0.002,
+        "version": "1.1.0"
+      }
+    },
+    "B": {
+      "name": "Alpha Attribution - Slippage Saved",
+      "status": "IMPLEMENTED",
+      "change": "Added estimated_slippage_saved_bps and mid_market_at_signal fields",
+      "rationale": "Cannot optimize what you cannot measure",
+      "governance_impact": "CPTO contribution now quantifiable and defensible",
+      "implementation": {
+        "table": "fhq_alpha.cpto_precision_log",
+        "fields_added": [
+          "estimated_slippage_saved_bps",
+          "mid_market_at_signal"
+        ],
+        "formula": {
+          "BUY": "(mid_market - limit_price) / mid_market * 10000",
+          "SELL": "(limit_price - mid_market) / mid_market * 10000"
+        }
+      }
+    },
+    "C": {
+      "name": "Friction Feedback Loop",
+      "status": "IMPLEMENTED",
+      "change": "Added friction tracking with 30%/24h escalation to LARS",
+      "rationale": "High friction indicates strategy-market mismatch, not CPTO malfunction",
+      "governance_impact": "Early detection of strategy drift",
+      "implementation": {
+        "table": "fhq_alpha.cpto_friction_log",
+        "threshold_pct": 0.30,
+        "window_hours": 24,
+        "escalation_target": "LARS",
+        "functions": [
+          "fhq_alpha.compute_cpto_friction()",
+          "fhq_alpha.trigger_friction_escalation()"
+        ]
+      }
+    }
+  },
+
+  "parameter_version_upgrade": {
+    "from": "1.0.0",
+    "to": "1.1.0",
+    "supersession_verified": true,
+    "v110_active": true,
+    "regime_aggression": {
+      "STRONG_BULL": 0.002,
+      "NEUTRAL": 0.003,
+      "VOLATILE": 0.005,
+      "STRESS": 0.007,
+      "VERIFIED_INVERTED_STRESS": 0.002
+    },
+    "extended_params": {
+      "friction_escalation_threshold_pct": 0.30,
+      "friction_escalation_window_hours": 24,
+      "shadow_fill_log_enabled": true
+    }
+  },
+
+  "database_objects_created": [
+    {
+      "object": "fhq_alpha.cpto_precision_log.estimated_slippage_saved_bps",
+      "type": "COLUMN",
+      "amendment": "B"
+    },
+    {
+      "object": "fhq_alpha.cpto_precision_log.mid_market_at_signal",
+      "type": "COLUMN",
+      "amendment": "B"
+    },
+    {
+      "object": "fhq_alpha.cpto_friction_log",
+      "type": "TABLE",
+      "amendment": "C"
+    },
+    {
+      "object": "fhq_alpha.compute_cpto_friction()",
+      "type": "FUNCTION",
+      "amendment": "C"
+    },
+    {
+      "object": "fhq_alpha.trigger_friction_escalation()",
+      "type": "FUNCTION",
+      "amendment": "C"
+    },
+    {
+      "object": "fhq_alpha.cpto_parameter_versions.extended_params",
+      "type": "COLUMN",
+      "amendment": "ALL"
+    }
+  ],
+
+  "verification_assertions": [
+    "PASS: Amendment B: estimated_slippage_saved_bps column added",
+    "PASS: Amendment C: cpto_friction_log table created",
+    "PASS: Amendment A: v1.1.0 active with VERIFIED_INVERTED_STRESS",
+    "PASS: v1.0.0 properly superseded by v1.1.0",
+    "PASS: Task config updated with CEO amendments"
+  ],
+
+  "ec015_status": {
+    "contract_number": "EC-015",
+    "employee": "CPTO",
+    "status": "PENDING_VEGA",
+    "parameter_version": "1.1.0",
+    "contract_document": "10_EMPLOYMENT CONTRACTS/EC-015_2026_PRODUCTION_CPTO.md",
+    "activation_requires": "VEGA attestation via vega_attest_ec_activation('EC-015')"
+  },
+
+  "ceo_meta_analysis_incorporated": {
+    "lens_a_mechanical_precision": "PASS",
+    "lens_b_institutional_governance": "PASS",
+    "lens_c_alpha_survivability": "PASS (with amendments)",
+    "transformation": "Precision clerk -> Systemic alpha amplifier"
+  },
+
+  "migrations_executed": [
+    {
+      "migration": "320_ec015_cpto_registration.sql",
+      "status": "EXECUTED",
+      "scope": "EC-015 registration + G4 gate checklist"
+    },
+    {
+      "migration": "321_ceo_amendments_abc_cpto_dominance.sql",
+      "status": "EXECUTED",
+      "scope": "CEO Amendments A, B, C - Dominance Engine"
+    }
+  ],
+
+  "activation_workflow_remaining": [
+    "1. VEGA reviews EC-015 contract at 10_EMPLOYMENT CONTRACTS/EC-015_2026_PRODUCTION_CPTO.md",
+    "2. VEGA verifies CEO amendments A, B, C are implemented",
+    "3. VEGA verifies parameter version 1.1.0 is active",
+    "4. VEGA calls vega_attest_ec_activation('EC-015')",
+    "5. EC status changes to ACTIVE",
+    "6. Task binding enabled_state changes to true",
+    "7. CPTO begins processing signals as dominance engine"
+  ]
+}

@@ -39,11 +39,47 @@ EXECUTION_FREEZE = False  # LIFTED by CEO 2025-12-22 after successful liquidatio
 
 import os
 import logging
+import psycopg2
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 logger = logging.getLogger('UNIFIED_GATEWAY')
+
+# =============================================================================
+# DATABASE CONNECTION FOR EXECUTION STATE
+# =============================================================================
+
+def _get_execution_state():
+    """CEO-DIR-2026-020 D4: Read execution_state for cognitive fasting check."""
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv('PGHOST', '127.0.0.1'),
+            port=os.getenv('PGPORT', '54322'),
+            database=os.getenv('PGDATABASE', 'postgres'),
+            user=os.getenv('PGUSER', 'postgres'),
+            password=os.getenv('PGPASSWORD', 'postgres')
+        )
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT cognitive_fasting, fasting_reason, defcon_level
+                FROM fhq_governance.execution_state
+                ORDER BY state_id DESC
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+        conn.close()
+        if row:
+            return {
+                'cognitive_fasting': row[0],
+                'fasting_reason': row[1],
+                'defcon_level': row[2]
+            }
+        return {'cognitive_fasting': False, 'fasting_reason': None, 'defcon_level': 'NORMAL'}
+    except Exception as e:
+        logger.error(f"Failed to read execution_state: {e}")
+        # Fail-closed: assume fasting if we can't read state
+        return {'cognitive_fasting': True, 'fasting_reason': 'STATE_READ_FAILED', 'defcon_level': 'UNKNOWN'}
 
 # =============================================================================
 # EXECUTION DECISION (Non-Negotiable Contract)
@@ -206,6 +242,25 @@ def validate_execution_permission(
             reason="CEO DIRECTIVE 2025-12-21: EXECUTION FREEZE - Cascade failure containment",
             execution_scope='BLOCKED',
             asset_class='FROZEN',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
+    # =========================================================================
+    # CEO-DIR-2026-020 D4: COGNITIVE FASTING CHECK
+    # Block execution when system is in cognitive fasting state
+    # =========================================================================
+    exec_state = _get_execution_state()
+    if exec_state.get('cognitive_fasting', False):
+        fasting_reason = exec_state.get('fasting_reason', 'Unknown')
+        logger.warning(
+            f"COGNITIVE FASTING ACTIVE: {symbol} blocked - {fasting_reason}"
+        )
+        return ExecutionDecision(
+            allowed=False,
+            reason=f"CEO-DIR-2026-020: COGNITIVE FASTING - {fasting_reason}",
+            execution_scope='BLOCKED',
+            asset_class='FASTING',
             symbol=symbol,
             timestamp=timestamp
         )

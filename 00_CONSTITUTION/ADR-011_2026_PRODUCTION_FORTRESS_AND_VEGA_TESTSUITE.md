@@ -19,7 +19,7 @@ The Production Fortress verifies:
 
 cryptographic subsystem integrity
 
-governance invariants (ADR-009, ADR-010)
+governance invariants (ADR-009, ADR-025)
 
 orchestrator determinism
 
@@ -47,7 +47,7 @@ All test layers – Unit → Services → Worker/API → Integration → Tier-3 
 
 2. Problem Statement
 
-ADR-001 through ADR-010 define constitutional, cryptographic, and governance foundations.
+ADR-001 through ADR-025 define constitutional, cryptographic, and governance foundations.
 However, they do not define:
 
 how FjordHQ proves correctness

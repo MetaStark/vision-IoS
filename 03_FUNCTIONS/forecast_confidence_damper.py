@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-CEO-DIR-2026-053: Forecast Confidence Damper
+CEO-DIR-2026-063R: Forecast Confidence Damper (G1 Controlled Activation)
+Updated per CEO-DIR-2026-064R: FMCL Execution Gap Closure
 
 PURPOSE: Eliminate systematic over-confidence by forcing predicted confidence
          to historically documented reality.
@@ -9,11 +10,16 @@ MANDATE:
   - Fetch confidence_ceiling from fhq_governance.confidence_calibration_gates
   - Hard-cap ALL raw model confidence at this ceiling
   - NO model, agent, or post-processor may bypass this layer
+  - Cold-start fallback: global_ceiling = 0.40 (Section 3.4)
 
 SUCCESS CRITERION:
-  - 7-day rolling calibration gap < 0.15 for all confidence buckets
+  - Calibration Error < 0.20 (P0 success)
+  - Calibration Error < 0.30 (P1 success)
+  - ΔFSS >= 0 (IoS-005)
+  - p95 latency <= 500ms (IoS-008)
 
 OWNER: FINN (implementation), STIG (integration), VEGA (validation)
+LINEAGE: CEO-DIR-2026-061 → CEO-DIR-2026-063R → CEO-DIR-2026-064R
 """
 
 import os
@@ -64,7 +70,7 @@ class ForecastConfidenceDamper:
     NO BYPASS ALLOWED.
     """
 
-    DIRECTIVE = "CEO-DIR-2026-053"
+    DIRECTIVE = "CEO-DIR-2026-063R"
 
     def __init__(self, db_conn=None):
         """Initialize with database connection."""
@@ -196,11 +202,12 @@ class ForecastConfidenceDamper:
         gates = self._get_gates(forecast_type, regime)
 
         if not gates:
-            # SAFETY: If no gates found, apply conservative default ceiling
-            default_ceiling = 0.50
+            # SAFETY: If no gates found, apply CEO-DIR-2026-064R Section 3.4 fallback
+            # Cold-start fallback: global_ceiling = 0.40 (explicit, not heuristic)
+            default_ceiling = 0.40
             logger.warning(
                 f"[{self.DIRECTIVE}] No calibration gates found for {forecast_type}:{regime}. "
-                f"Applying conservative default ceiling of {default_ceiling}"
+                f"Applying CEO-DIR-2026-064R cold-start ceiling of {default_ceiling}"
             )
             damped = min(raw_confidence, default_ceiling)
             return {
@@ -380,7 +387,7 @@ def damp_confidence(
 
 if __name__ == "__main__":
     # Test the damper
-    print(f"CEO-DIR-2026-053: Forecast Confidence Damper Test")
+    print(f"CEO-DIR-2026-063R: Forecast Confidence Damper Test (Updated per 064R)")
     print("=" * 60)
 
     damper = ForecastConfidenceDamper()

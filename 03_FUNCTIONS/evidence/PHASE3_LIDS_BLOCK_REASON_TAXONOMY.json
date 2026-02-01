@@ -1,0 +1,157 @@
+{
+  "evidence_id": "PHASE3_LIDS_BLOCK_REASON_TAXONOMY",
+  "evidence_type": "LIDS_GATE_FORENSICS",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "task": "3.2",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T02:50:00Z",
+
+  "executive_summary": {
+    "headline": "LIDS gate has two hard gates (confidence + freshness) - current block is field mismatch bug, not actual low confidence",
+    "legitimate_blocks": 0,
+    "bug_induced_blocks": 8,
+    "conclusion": "All blocks are FALSE NEGATIVES caused by code bug"
+  },
+
+  "lids_gate_architecture": {
+    "gate_1_confidence": {
+      "location": "signal_executor_daemon.py:1694-1720",
+      "threshold": 0.70,
+      "directive": "CEO-DIR-2026-019",
+      "purpose": "Block signals with insufficient belief confidence (ACI 1.0 Learning Activation)",
+      "check_code": "if lids_confidence < LIDS_MIN_CONFIDENCE"
+    },
+    "gate_2_freshness": {
+      "location": "signal_executor_daemon.py:1726-1765",
+      "threshold": "12 hours",
+      "directive": "CEO-DIR-2026-019",
+      "purpose": "Block signals based on stale data",
+      "check_code": "if lids_freshness_hours > LIDS_MAX_FRESHNESS_HOURS"
+    }
+  },
+
+  "block_reason_taxonomy": {
+    "LIDS_BLOCKED_CONFIDENCE_BUG": {
+      "description": "Block caused by field name mismatch - code looks for wrong field",
+      "symptom": "confidence=0.00 when actual confidence is HIGH",
+      "root_cause": "CODE_BUG_FIELD_MISMATCH",
+      "affected_signals": 8,
+      "false_negative": true
+    },
+    "LIDS_BLOCKED_CONFIDENCE_LEGITIMATE": {
+      "description": "Block caused by genuinely low confidence signal",
+      "symptom": "confidence < 0.70 from actual data",
+      "root_cause": "SIGNAL_QUALITY_INSUFFICIENT",
+      "affected_signals": 0,
+      "false_negative": false
+    },
+    "LIDS_BLOCKED_FRESHNESS_BUG": {
+      "description": "Block caused by missing data_timestamp field",
+      "symptom": "freshness=999h when data is fresh",
+      "root_cause": "CODE_BUG_MISSING_FIELD",
+      "affected_signals": "Not yet traced",
+      "false_negative": "Unknown"
+    },
+    "LIDS_BLOCKED_FRESHNESS_LEGITIMATE": {
+      "description": "Block caused by genuinely stale data",
+      "symptom": "data_timestamp > 12 hours old",
+      "root_cause": "DATA_STALENESS",
+      "affected_signals": "Not yet traced",
+      "false_negative": false
+    }
+  },
+
+  "current_block_analysis": {
+    "total_blocks_observed": 8,
+    "block_breakdown": [
+      {
+        "needle_id": "ef2b8a45-c56d-473b-b20c-1105c4f6e47a",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "86f80e9c-4af8-4b0c-a593-4dbb2ff3c143",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "9af40a26-a023-457a-8e59-99b3d609e0f2",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "65d65616-2b0a-468c-a08e-18b480e40378",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "fc02df8d-1005-4e8a-b53c-93a257b899df",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "1d0c845e-d804-4df0-9024-27977b745aae",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "2a858109-60ce-49fa-9392-bb0e8c03c164",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      },
+      {
+        "needle_id": "541339b5-5e29-45b3-947f-761eaa5f868d",
+        "reported_confidence": 0.00,
+        "actual_sitc_confidence_level": "HIGH",
+        "actual_mapped_confidence": 0.85,
+        "block_type": "LIDS_BLOCKED_CONFIDENCE_BUG",
+        "should_have_passed": true
+      }
+    ]
+  },
+
+  "governance_implication": {
+    "safety_posture": "OVERLY_CONSERVATIVE",
+    "explanation": "The bug causes ALL signals to be blocked regardless of quality. While this is safe (no bad trades), it prevents ANY execution, defeating the purpose of the system.",
+    "risk_if_bug_fixed": "Signals with sitc_confidence_level='HIGH' (0.85) would pass confidence gate, but still subject to freshness gate",
+    "economic_impact": "Zero execution, zero PnL, zero learning from paper trades"
+  },
+
+  "fix_authorization_requirements": {
+    "requires_ceo_approval": true,
+    "rationale": "Fix would enable execution (paper mode), which is a material change",
+    "testing_required": [
+      "Unit test: field lookup returns correct value",
+      "Integration test: HIGH confidence signal passes gate",
+      "End-to-end test: paper trade executes successfully"
+    ],
+    "rollback_procedure": "git revert <commit_hash>"
+  },
+
+  "phase_3_status": {
+    "task_3_1_schema_alignment": "COMPLETE",
+    "task_3_2_lids_forensics": "COMPLETE",
+    "task_3_3_freshness_policy": "PENDING"
+  }
+}

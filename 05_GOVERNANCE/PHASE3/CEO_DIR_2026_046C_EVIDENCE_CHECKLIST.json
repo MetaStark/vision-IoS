@@ -1,0 +1,141 @@
+{
+  "directive_response": "CEO-DIR-2026-046",
+  "response_id": "CEO-DIR-2026-046C",
+  "title": "Court-Proof Evidence Checklist",
+  "response_type": "EVIDENCE_OR_FALSE",
+  "issued_by": "STIG",
+  "issued_at": "2026-01-13T22:30:00Z",
+  "classification": "Full Activation Proof",
+
+  "section_a_aci_activation": {
+    "verdict": "TRUE",
+    "summary": "ACI cycles are LIVE. 3,655 forecasts and 562 Brier evaluations in last 72h.",
+    "tables": [
+      {
+        "table": "fhq_governance.brier_score_ledger",
+        "total_rows": 1716,
+        "rows_72h": 562,
+        "max_created_at": "2026-01-13T00:05:04Z"
+      },
+      {
+        "table": "fhq_research.forecast_ledger",
+        "total_rows": 22599,
+        "rows_72h": 3655,
+        "max_created_at": "2026-01-13T22:29:31Z"
+      },
+      {
+        "table": "fhq_governance.epistemic_health_daily",
+        "total_rows": 1,
+        "rows_72h": 0,
+        "max_created_at": "2026-01-09T23:00:00Z",
+        "status": "STALE"
+      }
+    ],
+    "brier_definition": {
+      "table": "fhq_governance.brier_score_ledger",
+      "column": "squared_error",
+      "formula": "(forecast_probability - actual_outcome)²",
+      "generator": "STIG_PHASE3_DAEMON",
+      "avg_brier_all_time": 0.610
+    }
+  },
+
+  "section_b_holdout": {
+    "verdict": "INFRASTRUCTURE_EXISTS_DATA_ABSENT",
+    "tables": [
+      {
+        "table": "fhq_governance.frozen_holdout_registry",
+        "exists": true,
+        "row_count": 0,
+        "last_modified": null
+      },
+      {
+        "table": "fhq_governance.holdout_evaluation_results",
+        "exists": true,
+        "row_count": 0,
+        "last_modified": null
+      }
+    ],
+    "immutability_mechanism": "is_frozen flag + data_hash for verification",
+    "split_logic": "time-based via period_start / period_end",
+    "frozen_holdout_exists": false
+  },
+
+  "section_c_shared_state_binding": {
+    "shared_state_snapshots": {
+      "latest_snapshot": "2025-12-07T14:30:33Z",
+      "days_stale": 37,
+      "is_valid": true,
+      "created_by": "STIG"
+    },
+    "execution_state": {
+      "hash_chain_id": null,
+      "state_version": 59,
+      "last_updated_at": "2026-01-13T01:13:33Z"
+    },
+    "forecast_hash_binding_72h": {
+      "total_forecasts": 3655,
+      "with_state_vector_hash": 3655,
+      "with_hash_chain_id": 3655,
+      "with_state_snapshot_id": 1161,
+      "hash_coverage_pct": 100.0
+    },
+    "verdict": "FORECASTS_ARE_HASH_BOUND",
+    "mechanism": "Per-forecast state_vector_hash + hash_chain_id (100% coverage)"
+  },
+
+  "section_d_registries": {
+    "adr_registry": {
+      "total": 22,
+      "approved": 22,
+      "draft": 0,
+      "last_change": "2026-01-04T19:43:09Z"
+    },
+    "ios_registry": {
+      "total": 18,
+      "active": 17,
+      "g0_submitted": 1,
+      "last_change": "2025-12-20T21:13:03Z"
+    },
+    "ec_registry": {
+      "total": 4,
+      "active": 4,
+      "contracts": ["EC-018", "EC-020", "EC-021", "EC-022"],
+      "last_change": "2025-12-31T23:51:17Z"
+    }
+  },
+
+  "section_e_contradiction_reconciliation": {
+    "original_claim": "If Brier learning is happening, why does the audit say forecasts are not hash-bound and shared_state stale?",
+    "resolution": "AUDIT_PARTIALLY_WRONG",
+    "explanation": {
+      "shared_state_stale": "TRUE - shared_state_snapshots table is 37 days stale",
+      "execution_state_hash_null": "TRUE - execution_state.hash_chain_id is NULL",
+      "forecasts_not_hash_bound": "FALSE - Forecasts ARE hash-bound via state_vector_hash (100% coverage)"
+    },
+    "two_mechanisms": {
+      "legacy": "shared_state_snapshots table (stale, not maintained)",
+      "active": "Per-forecast state_vector_hash + hash_chain_id (100% coverage)"
+    },
+    "conclusion": "Brier learning uses mechanism #2, not #1"
+  },
+
+  "phase2_activation_decision": {
+    "prerequisites": {
+      "holdout_exists": false,
+      "shared_state_binding_exists": true
+    },
+    "decision": "CANNOT_ESCALATE_TO_LEARNING_MODE",
+    "blocker": "Holdout is missing",
+    "required_action": "FINN must freeze a holdout in frozen_holdout_registry covering 2026-01-09 to 2026-01-12",
+    "current_mode": "LEARNING_PREPARATION_MODE"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-13T22:30:00Z",
+    "data_source": "PostgreSQL fhq_* schemas",
+    "verification_method": "Direct SQL queries"
+  }
+}

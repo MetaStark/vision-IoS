@@ -1,0 +1,65 @@
+{
+  "directive": "CEO-DIR-2026-114",
+  "phase": 4,
+  "phase_name": "LEARNING_CHANNEL_DIVERSIFICATION",
+  "timestamp": "2026-01-20T11:55:00.901398+00:00",
+  "executor": "STIG",
+  "learning_channels": {
+    "INVERSION_DELTA_LEARNING": {
+      "status": "ACTIVE",
+      "attribution_count": 2,
+      "last_attribution": "2026-01-20T01:48:47.959Z",
+      "definition": "attribution_count >= 1"
+    },
+    "FRICTION_REFUSAL_LEARNING": {
+      "status": "INACTIVE",
+      "attribution_count": 0,
+      "reason": "No BLOCKED decisions in recent evaluations - all ACCEPTED",
+      "definition": ">= 1 blocked attribution from real gate",
+      "note": "SHADOW mode means no real gate blocks occur yet"
+    },
+    "CALIBRATION_BRIER_LEARNING": {
+      "status": "READY",
+      "infrastructure": "Complete",
+      "brier_score_ledger_records": 3601,
+      "calibration_curve_data_records": 0,
+      "definition": "Pipeline ready + (records > 0 OR documented as awaiting outcomes)",
+      "note": "Brier scores being captured; calibration curves need generation"
+    }
+  },
+  "infrastructure_verified": {
+    "brier_score_ledger": true,
+    "calibration_curve_data": true,
+    "calibration_audit_log": true,
+    "learning_channel_attribution": true
+  },
+  "gate_assessment": {
+    "inversion_delta": {
+      "target": "ACTIVE",
+      "achieved": true
+    },
+    "friction_refusal": {
+      "target": "ACTIVE",
+      "achieved": false,
+      "reason": "No real gate blocks in shadow mode"
+    },
+    "calibration_brier": {
+      "target": "READY",
+      "achieved": true
+    },
+    "overall_status": "PARTIAL"
+  },
+  "actions_taken": [
+    "Verified learning_channel_attribution table",
+    "Confirmed INVERSION_DELTA has 2 attributions",
+    "Confirmed no FRICTION_REFUSAL attributions (shadow mode)",
+    "Verified calibration infrastructure (3,601 Brier scores)",
+    "Documented channel status per Improvement C definitions"
+  ],
+  "recommendations": [
+    "Friction learning will activate when shadow mode ends (2026-02-02)",
+    "Generate calibration curves from existing Brier score data",
+    "Monitor for natural TTL expiry or liquidity blocks"
+  ],
+  "evidence_hash": "f7568cbb51cf1f821c9b953bd3e8bd4c42940776ce9574d83ad7684f4da51812"
+}

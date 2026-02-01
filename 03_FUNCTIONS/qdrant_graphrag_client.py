@@ -265,21 +265,44 @@ class QdrantGraphRAGClient:
             )
 
         try:
-            # Use query() for newer qdrant-client versions
-            results = self.qdrant.query_points(
-                collection_name=collection,
-                query=embedding,
-                limit=effective_top_k,
-                query_filter=query_filter,
-                score_threshold=score_threshold
-            ).points
+            # Use REST API for compatibility with Qdrant 1.7.x server
+            # The Python client 1.16+ uses /points/query which doesn't exist in 1.7.x
+            import requests
+
+            search_payload = {
+                "vector": embedding,
+                "limit": effective_top_k,
+                "with_payload": True
+            }
+
+            if score_threshold and score_threshold > 0:
+                search_payload["score_threshold"] = score_threshold
+
+            if query_filter:
+                # Convert filter to REST format
+                search_payload["filter"] = {
+                    "must": [{"key": "domain", "match": {"value": domain_filter}}]
+                } if domain_filter else None
+
+            resp = requests.post(
+                f"http://{self.qdrant_host}:{self.qdrant_port}/collections/{collection}/points/search",
+                json=search_payload,
+                timeout=10
+            )
+
+            if resp.status_code != 200:
+                logger.error(f"[GraphRAG] Qdrant REST search failed: {resp.status_code}")
+                return []
+
+            data = resp.json()
+            results = data.get("result", [])
 
             candidates = []
             for hit in results:
                 candidates.append({
-                    "qdrant_point_id": str(hit.id),
-                    "score": hit.score,
-                    "payload": hit.payload or {}
+                    "qdrant_point_id": str(hit["id"]),
+                    "score": hit["score"],
+                    "payload": hit.get("payload", {})
                 })
 
             logger.info(f"[GraphRAG] Step 1: Found {len(candidates)} candidates (DEFCON {self.defcon.level})")

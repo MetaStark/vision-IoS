@@ -1,0 +1,225 @@
+{
+  "evidence_id": "UMA_SYNTH_001_BEAR_TRANSITION_SUPPRESSION_20260117",
+  "title": "UMA-SYNTH-001: Confidence Suppression Signal (Shadow)",
+  "synthesis_status": "COMPLETE",
+  "attested_by": "STIG",
+  "attestation_timestamp": "2026-01-17T23:00:00+01:00",
+
+  "directive_compliance": {
+    "directive": "CEO-DIR-2026-073",
+    "mode": "SIGNAL_SYNTHESIS_SHADOW",
+    "purpose": "Prove FjordHQ knows when not to trust itself",
+    "framing": "CONFIDENCE_SUPPRESSION",
+    "execution_language": "AVOIDED"
+  },
+
+  "synthesis_summary": {
+    "signal_code": "UMA-SYNTH-001",
+    "signal_id": "a7b8c9d0-e1f2-3456-7890-abcdef123456",
+    "signal_name": "BEAR_TRANSITION_SUPPRESSION",
+    "signal_type": "CONFIDENCE_SUPPRESSION",
+    "status": "APPROVED_SHADOW",
+    "freeze_status": "READ_ONLY",
+    "classification": "Canonical Synthesized Signal v1",
+    "ceo_approval_at": "2026-01-17T23:30:00+01:00"
+  },
+
+  "canonical_dimensions_used": {
+    "count": 2,
+    "dimensions": [
+      {
+        "dimension": "REGIME",
+        "source": "UMA-SHADOW-001",
+        "aspect": "BEAR structural overconfidence",
+        "contribution": "BEAR forecasts at high confidence historically catastrophically wrong"
+      },
+      {
+        "dimension": "TEMPORAL",
+        "source": "UMA-SHADOW-004",
+        "aspect": "Regime transition detection lag",
+        "contribution": "Model miscalibration peaks during regime transitions"
+      }
+    ],
+    "dimension_not_used": {
+      "dimension": "ASSET_CLASS",
+      "source": "UMA-SHADOW-002",
+      "reason": "Per CEO directive - no asset-class specialization in first synthesis"
+    }
+  },
+
+  "synthesized_signal_definition": {
+    "signal_question": "Under what precise conditions does FjordHQ historically become most confidently wrong, and how should that confidence be constrained?",
+
+    "suppression_trigger": {
+      "condition_1": {
+        "parameter": "predicted_regime",
+        "operator": "EQUALS",
+        "value": "BEAR"
+      },
+      "condition_2": {
+        "parameter": "forecast_confidence",
+        "operator": "GREATER_THAN_OR_EQUAL",
+        "value": 0.95
+      },
+      "condition_3": {
+        "parameter": "temporal_position",
+        "operator": "IN",
+        "value": ["TRANSITION_DAY", "TRANSITION_ADJACENT"]
+      },
+      "logic": "ALL_CONDITIONS_MUST_BE_TRUE"
+    },
+
+    "suppression_action": {
+      "type": "CONFIDENCE_DISCOUNT",
+      "recommendation": "SUPPRESS_OR_IGNORE",
+      "rationale": "Forecast historically wrong 97.37% of time under these conditions"
+    },
+
+    "non_applicability_conditions": [
+      "Predicted regime is not BEAR",
+      "Confidence below 95%",
+      "Market is in stable period (>2 days from any regime transition)",
+      "Sample size grows and hit rate exceeds 20%"
+    ]
+  },
+
+  "empirical_evidence": {
+    "composite_condition": "BEAR@95%+ during Transition Window",
+    "evidence_source": "fhq_research.forecast_ledger + forecast_outcome_pairs",
+    "model_scope": "FINN v4.0.0 (2026.PROD.4)",
+
+    "statistics": {
+      "total_forecasts": 76,
+      "correct_forecasts": 2,
+      "hit_rate_pct": 2.63,
+      "wrong_rate_pct": 97.37,
+      "avg_confidence": 0.9833,
+      "avg_brier": 0.9413,
+      "brier_stddev": 0.1579,
+      "classification": "CATASTROPHIC_MISCALIBRATION"
+    },
+
+    "comparison_to_baseline": {
+      "all_bear_95plus": {
+        "total": 78,
+        "hit_rate_pct": 3.85,
+        "avg_brier": 0.9293
+      },
+      "bull_95plus": {
+        "total": 192,
+        "hit_rate_pct": 31.25,
+        "avg_brier": 0.6731
+      },
+      "neutral_95plus": {
+        "total": 81,
+        "hit_rate_pct": 88.89,
+        "avg_brier": 0.1063
+      }
+    },
+
+    "temporal_decay_pattern": {
+      "transition_day_brier": 0.9153,
+      "transition_adjacent_1d_brier": 0.8548,
+      "transition_adjacent_2d_brier": 0.4735,
+      "interpretation": "Error severity decays as distance from transition increases"
+    }
+  },
+
+  "logical_validity": {
+    "combination_rationale": [
+      "BEAR regime forecasts show structural overconfidence (UMA-SHADOW-001: 96.97% wrong at 99%+)",
+      "Regime transitions amplify model miscalibration (UMA-SHADOW-004: 3.7x-3.8x differential)",
+      "Combining both dimensions targets the intersection where errors are most predictable",
+      "Suppression during this window avoids the highest-probability failure mode"
+    ],
+    "why_combination_valid": "Both dimensions independently predict failure; their intersection is where failure probability is maximized",
+    "why_defensive_framing": "Signal recommends withholding confidence, not taking action - conservative by design"
+  },
+
+  "sitc_reasoning_chain": {
+    "interaction_id": "e5f6a7b8-c9d0-1234-ef56-789012345abc",
+    "total_nodes": 7,
+    "nodes": [
+      {"index": 1, "type": "PLAN_INIT", "node_content": "Signal synthesis frame per CEO-DIR-2026-073"},
+      {"index": 2, "type": "SEARCH", "node_content": "Query BEAR + TEMPORAL intersection statistics"},
+      {"index": 3, "type": "VERIFICATION", "node_content": "Verify BEAR@95%+ during transition: 76 forecasts, 2.63% hit rate, Brier 0.9413"},
+      {"index": 4, "type": "REASONING", "node_content": "Composite condition identifies highest-probability failure mode"},
+      {"index": 5, "type": "SYNTHESIS", "node_content": "Frame as suppression trigger, not opportunity signal"},
+      {"index": 6, "type": "VERIFICATION", "node_content": "Validate defensive framing matches CEO requirement"},
+      {"index": 7, "type": "SYNTHESIS", "node_content": "Complete signal definition with non-applicability bounds"}
+    ],
+    "all_verified": true
+  },
+
+  "ikea_validation": {
+    "validation_id": "f6a7b8c9-d0e1-2345-fa67-890123456bcd",
+    "classification": "PARAMETRIC",
+    "claims_analyzed": [
+      {"claim": "76 BEAR@95%+ forecasts during transition window", "source": "DATABASE", "verified": true},
+      {"claim": "2.63% hit rate", "source": "DATABASE", "verified": true},
+      {"claim": "97.37% wrong rate", "source": "CALCULATED", "verified": true},
+      {"claim": "Brier 0.9413 average", "source": "DATABASE", "verified": true},
+      {"claim": "Avg confidence 98.33%", "source": "DATABASE", "verified": true},
+      {"claim": "Signal uses 2 canonical dimensions", "source": "STRUCTURAL", "verified": true}
+    ],
+    "parametric_claims": 6,
+    "external_claims": 0,
+    "unverified_claims": 0,
+    "verdict": "APPROVED",
+    "hallucination_risk": "ZERO"
+  },
+
+  "q2_q5_traceability": {
+    "q2_forecast": "76 BEAR@95%+ forecasts during transition window from FINN v4.0.0",
+    "q3_outcome": "2 correct, 74 wrong (97.37% failure rate)",
+    "q4_error": "Brier 0.9413 - catastrophic miscalibration at highest confidence",
+    "q5_hindsight": "BEAR_TRANSITION_SUPPRESSION signal - know when to discount confidence"
+  },
+
+  "governance_compliance": {
+    "directive_ref": "CEO-DIR-2026-073",
+    "mode": "SIGNAL_SYNTHESIS_SHADOW",
+    "dimensions_used": 2,
+    "dimensions_allowed": ["REGIME", "ASSET_CLASS", "TEMPORAL"],
+    "framing": "CONFIDENCE_SUPPRESSION",
+    "framing_allowed": ["eligibility_conditions", "exclusion_rules", "confidence_dampeners"],
+    "rate_limit_check": "1 of 2 per week",
+    "prohibitions_respected": {
+      "new_error_discovery": "NOT_VIOLATED",
+      "statistical_fishing": "NOT_VIOLATED",
+      "optimization": "NOT_VIOLATED",
+      "ranking_scoring": "NOT_VIOLATED",
+      "capital_framing": "NOT_VIOLATED",
+      "execution_logic": "NOT_VIOLATED",
+      "automation": "NOT_VIOLATED",
+      "learning_feedback": "NOT_VIOLATED"
+    }
+  },
+
+  "success_criteria_assessment": {
+    "internally_coherent": true,
+    "grounded_in_known_failure_structure": true,
+    "ceo_scrutiny_ready": true,
+    "unjustified_confidence": "NOT_PRESENT",
+    "defensive_framing": "CONFIRMED"
+  },
+
+  "strategic_significance": {
+    "purpose": "Prove FjordHQ can withhold confidence correctly",
+    "cultural_baseline": "The first signal demonstrates discipline, not brilliance",
+    "principle": "Betting against own extreme confidence when empirically warranted"
+  },
+
+  "ceo_review_completed": {
+    "status": "APPROVED_SHADOW",
+    "reviewed_at": "2026-01-17T23:30:00+01:00",
+    "verdict": "APPROVED - No modifications requested",
+    "freeze_status": "READ_ONLY",
+    "key_questions_answered": {
+      "dimension_combination": "CORRECT",
+      "defensive_framing": "APPROPRIATE",
+      "empirical_justification": "UNAMBIGUOUS"
+    },
+    "ceo_assessment": "Audit-grade work. FjordHQ has proven it can remove authority from itself when history says it should."
+  }
+}

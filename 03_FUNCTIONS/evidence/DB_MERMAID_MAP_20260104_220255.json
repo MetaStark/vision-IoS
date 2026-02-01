@@ -1,0 +1,179 @@
+{
+  "directive": "CEO-DIR-2026-VISUAL-TRUTH-001",
+  "type": "DB_SOURCED_MERMAID_MAP",
+  "timestamp": "2026-01-04T22:02:55.293616+00:00",
+  "environment": {
+    "db_host": "127.0.0.1",
+    "db_port": "54322",
+    "db_name": "postgres",
+    "qdrant_host": "localhost:6333"
+  },
+  "verification": {
+    "mermaid_hash": "a368d0108133e9fa426783b479de37d042c8b88924577c3421c790da074833b3",
+    "sql_queries_hash": "b8c2dc3d51f01a2fcc7892a58c6fa2f056dab2de464d41d11d1496a90b0bbd35",
+    "combined_hash": "b476b6a340ecdf1bc0f1d6e71c91b06b6af4ebe64a881025224cb7f831ecbfee"
+  },
+  "sql_queries": [
+    {
+      "description": "Table row counts",
+      "tables_queried": [
+        "fhq_memory.conversations",
+        "fhq_memory.conversation_messages",
+        "fhq_memory.embedding_store",
+        "fhq_memory.archival_store",
+        "fhq_canonical.evidence_nodes",
+        "fhq_canonical.evidence_bundles",
+        "fhq_canonical.evidence_relationships",
+        "fhq_governance.inforage_query_log",
+        "fhq_graph.nodes",
+        "fhq_graph.edges"
+      ]
+    },
+    {
+      "description": "FK relationships from information_schema",
+      "relationships_found": 9
+    },
+    {
+      "description": "Qdrant sync status from evidence_nodes",
+      "synced": 1019,
+      "total": 1019
+    }
+  ],
+  "table_stats": {
+    "fhq_memory.conversations": {
+      "row_count": 0,
+      "col_count": 11,
+      "exists": true
+    },
+    "fhq_memory.conversation_messages": {
+      "row_count": 0,
+      "col_count": 9,
+      "exists": true
+    },
+    "fhq_memory.embedding_store": {
+      "row_count": 5,
+      "col_count": 13,
+      "exists": true
+    },
+    "fhq_memory.archival_store": {
+      "row_count": 14,
+      "col_count": 10,
+      "exists": true
+    },
+    "fhq_canonical.evidence_nodes": {
+      "row_count": 1019,
+      "col_count": 28,
+      "exists": true
+    },
+    "fhq_canonical.evidence_bundles": {
+      "row_count": 14,
+      "col_count": 12,
+      "exists": true
+    },
+    "fhq_canonical.evidence_relationships": {
+      "row_count": 0,
+      "col_count": 7,
+      "exists": true
+    },
+    "fhq_governance.inforage_query_log": {
+      "row_count": 14,
+      "col_count": 19,
+      "exists": true
+    },
+    "fhq_graph.nodes": {
+      "row_count": 196,
+      "col_count": 23,
+      "exists": true
+    },
+    "fhq_graph.edges": {
+      "row_count": 18,
+      "col_count": 42,
+      "exists": true
+    }
+  },
+  "fk_relationships": [
+    {
+      "from_table": "fhq_canonical.evidence_relationships",
+      "from_column": "from_evidence_id",
+      "to_table": "fhq_canonical.evidence_nodes",
+      "to_column": "evidence_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_canonical.evidence_relationships",
+      "from_column": "to_evidence_id",
+      "to_table": "fhq_canonical.evidence_nodes",
+      "to_column": "evidence_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_graph.edges",
+      "from_column": "from_node_id",
+      "to_table": "fhq_graph.nodes",
+      "to_column": "node_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_graph.edges",
+      "from_column": "to_node_id",
+      "to_table": "fhq_graph.nodes",
+      "to_column": "node_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_memory.archival_store",
+      "from_column": "source_message_id",
+      "to_table": "fhq_memory.conversation_messages",
+      "to_column": "message_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_memory.archival_store",
+      "from_column": "source_conversation_id",
+      "to_table": "fhq_memory.conversations",
+      "to_column": "conversation_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_memory.conversation_messages",
+      "from_column": "parent_message_id",
+      "to_table": "fhq_memory.conversation_messages",
+      "to_column": "message_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_memory.conversation_messages",
+      "from_column": "conversation_id",
+      "to_table": "fhq_memory.conversations",
+      "to_column": "conversation_id",
+      "verified": true
+    },
+    {
+      "from_table": "fhq_memory.conversation_messages",
+      "from_column": "embedding_id",
+      "to_table": "fhq_memory.embedding_store",
+      "to_column": "id",
+      "verified": true
+    }
+  ],
+  "qdrant_collections": {
+    "evidence_nodes": {
+      "points_count": 1019,
+      "status": "green"
+    },
+    "finn_embeddings": {
+      "points_count": 0,
+      "status": "green"
+    },
+    "causal_claims": {
+      "points_count": 0,
+      "status": "green"
+    }
+  },
+  "qdrant_sync": {
+    "total_evidence": 1019,
+    "synced_to_qdrant": 1019,
+    "collections_used": 1
+  },
+  "mermaid_output": "%%{init: {\n  \"theme\": \"base\",\n  \"themeVariables\": {\n    \"background\": \"#0d1117\",\n    \"primaryColor\": \"#1e3a5f\",\n    \"primaryTextColor\": \"#c9d1d9\",\n    \"primaryBorderColor\": \"#30363d\",\n    \"secondaryColor\": \"#21262d\",\n    \"secondaryTextColor\": \"#8b949e\",\n    \"tertiaryColor\": \"#161b22\",\n    \"lineColor\": \"#58a6ff\",\n    \"textColor\": \"#c9d1d9\",\n    \"mainBkg\": \"#161b22\",\n    \"nodeBorder\": \"#30363d\",\n    \"clusterBkg\": \"#0d1117\",\n    \"clusterBorder\": \"#21262d\",\n    \"titleColor\": \"#58a6ff\",\n    \"edgeLabelBackground\": \"#161b22\",\n    \"nodeTextColor\": \"#c9d1d9\"\n  }\n}}%%\n\nflowchart TD\n\n    subgraph PIPELINE[\"\ud83d\udd37 COGNITIVE ENGINE PIPELINE\"]\n        direction LR\n        P0[\"P0: Data Liveness\"]\n        P1[\"P1: Embedding Gen\"]\n        P2[\"P2: Hybrid Retrieval\"]\n        P3[\"P3: IKEA Grounding\"]\n        P4[\"P4: Memory Stack\"]\n        P5[\"P5: Evidence Bundle\"]\n        P0 --> P1 --> P2 --> P3 --> P4 --> P5\n    end\n\n    subgraph MEMORY[\"\ud83d\udcbe fhq_memory\"]\n        direction TB\n        CONVERSATIONS[\"conversations\\n(0 rows)\"]\n        CONVERSATION_MESSAGES[\"conversation_messages\\n(0 rows)\"]\n        EMBEDDING_STORE[\"embedding_store\\n(5 rows)\"]\n        ARCHIVAL_STORE[\"archival_store\\n(14 rows)\"]\n    end\n\n    subgraph CANONICAL[\"\ud83d\udcdc fhq_canonical\"]\n        direction TB\n        EVIDENCE_NODES[\"evidence_nodes\\n(1019 rows)\"]\n        EVIDENCE_BUNDLES[\"evidence_bundles\\n(14 rows)\"]\n        EVIDENCE_RELATIONSHIPS[\"evidence_relationships\\n(0 rows)\"]\n    end\n\n    subgraph GOVERNANCE[\"\u2696\ufe0f fhq_governance\"]\n        direction TB\n        INFORAGE_QUERY_LOG[\"inforage_query_log\\n(14 rows)\"]\n    end\n\n    subgraph GRAPH[\"\ud83d\udd78\ufe0f fhq_graph\"]\n        direction TB\n        GRAPH_NODES[\"nodes\\n(196 rows)\"]\n        GRAPH_EDGES[\"edges\\n(18 rows)\"]\n    end\n\n    subgraph QDRANT[\"\ud83d\udd0d Qdrant Vector Store\"]\n        direction TB\n        QDRANT_EVIDENCE_NODES[\"evidence_nodes\\n(1019 vectors)\\nstatus: green\"]\n        QDRANT_FINN_EMBEDDINGS[\"finn_embeddings\\n(0 vectors)\\nstatus: green\"]\n        QDRANT_CAUSAL_CLAIMS[\"causal_claims\\n(0 vectors)\\nstatus: green\"]\n    end\n\n    %% FK Relationships (DB-Verified)\n    EVIDENCE_RELATIONSHIPS -->|from_evidence_id| EVIDENCE_NODES\n    GRAPH_EDGES -->|from_node_id| GRAPH_NODES\n    ARCHIVAL_STORE -->|source_message_id| CONVERSATION_MESSAGES\n    ARCHIVAL_STORE -->|source_conversation_id| CONVERSATIONS\n    CONVERSATION_MESSAGES -->|parent_message_id| CONVERSATION_MESSAGES\n    CONVERSATION_MESSAGES -->|conversation_id| CONVERSATIONS\n    CONVERSATION_MESSAGES -->|embedding_id| EMBEDDING_STORE\n\n    %% Qdrant Sync Linkage\n    EVIDENCE_NODES -.->|1019 synced| QDRANT_EVIDENCE_NODES\n\n    %% Pipeline Phase Connections\n    P1 -.-> EMBEDDING_STORE\n    P2 -.-> EVIDENCE_NODES\n    P2 -.-> QDRANT_EVIDENCE_NODES\n    P3 -.-> EVIDENCE_BUNDLES\n    P4 -.-> ARCHIVAL_STORE\n    P5 -.-> INFORAGE_QUERY_LOG\n\n    %% Styling\n    classDef memory fill:#1a365d,stroke:#2c5282,color:#bee3f8\n    classDef canonical fill:#234e52,stroke:#319795,color:#b2f5ea\n    classDef governance fill:#553c9a,stroke:#805ad5,color:#e9d8fd\n    classDef graph fill:#744210,stroke:#d69e2e,color:#fefcbf\n    classDef qdrant fill:#702459,stroke:#b83280,color:#fed7e2\n    classDef pipeline fill:#1e3a5f,stroke:#58a6ff,color:#c9d1d9\n\n    class CONVERSATIONS,CONVERSATION_MESSAGES,EMBEDDING_STORE,ARCHIVAL_STORE memory\n    class EVIDENCE_NODES,EVIDENCE_BUNDLES,EVIDENCE_RELATIONSHIPS canonical\n    class INFORAGE_QUERY_LOG governance\n    class GRAPH_NODES,GRAPH_EDGES graph\n    class QDRANT_EVIDENCE_NODES,QDRANT_FINN_EMBEDDINGS,QDRANT_CAUSAL_CLAIMS qdrant\n    class P0,P1,P2,P3,P4,P5 pipeline"
+}

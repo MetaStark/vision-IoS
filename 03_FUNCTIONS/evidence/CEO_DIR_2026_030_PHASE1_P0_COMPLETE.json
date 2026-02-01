@@ -1,0 +1,138 @@
+{
+  "directive_id": "CEO-DIR-2026-030",
+  "action": "PHASE_1_P0_COMPLETE",
+  "classification": "COVERAGE_TARGET_ACHIEVED",
+  "executed_by": "STIG (coordinating CEIO)",
+  "execution_timestamp": "2026-01-09T23:50:00Z",
+
+  "objective": "Achieve >90% Forecast-Outcome Coverage via CEIO GLD/TLT Price Backfill",
+  "status": "SUCCESS",
+
+  "execution_summary": {
+    "step_1": {
+      "action": "Register GLD/TLT in fhq_meta.assets",
+      "result": "COMPLETE",
+      "assets_registered": 2
+    },
+    "step_2": {
+      "action": "Backfill GLD prices from yfinance",
+      "result": "COMPLETE",
+      "prices_inserted": 28,
+      "date_range": "2025-12-01 to 2026-01-09"
+    },
+    "step_3": {
+      "action": "Backfill TLT prices from yfinance",
+      "result": "COMPLETE",
+      "prices_inserted": 28,
+      "date_range": "2025-12-01 to 2026-01-09"
+    },
+    "step_4": {
+      "action": "Reconcile GLD/TLT forecasts with outcomes",
+      "result": "COMPLETE",
+      "gld_reconciled": 440,
+      "tlt_reconciled": 190,
+      "total_reconciled": 630
+    }
+  },
+
+  "coverage_metrics": {
+    "before": {
+      "total_forecasts": 17675,
+      "reconciled": 13652,
+      "coverage_pct": 77.2
+    },
+    "after": {
+      "total_forecasts": 17693,
+      "reconciled": 16698,
+      "coverage_pct": 94.4
+    },
+    "improvement": {
+      "absolute": 3046,
+      "percentage_points": 17.2
+    },
+    "by_type": {
+      "PRICE_DIRECTION": {
+        "total": 16629,
+        "reconciled": 16570,
+        "coverage_pct": 99.6
+      },
+      "REGIME": {
+        "total": 1064,
+        "reconciled": 128,
+        "coverage_pct": 12.0,
+        "note": "Blocked by CEO-DIR-2026-020 circular reference protection"
+      }
+    }
+  },
+
+  "calibration_metrics": {
+    "before": {
+      "avg_brier_score": 0.3171,
+      "hit_rate_pct": 40.7,
+      "correct": 5561,
+      "incorrect": 8091
+    },
+    "after": {
+      "avg_brier_score": 0.3146,
+      "hit_rate_pct": 41.4,
+      "correct": 6954,
+      "incorrect": 9828
+    },
+    "improvement": {
+      "brier_delta": -0.0025,
+      "hit_rate_delta": 0.7
+    }
+  },
+
+  "phase_1_target_status": {
+    "coverage_95": {
+      "target": ">95%",
+      "achieved": "94.4%",
+      "status": "NEARLY_MET",
+      "gap": "0.6%",
+      "blocked_by": "REGIME forecasts require non-circular evidence source"
+    },
+    "brier_028": {
+      "target": "<0.28",
+      "achieved": "0.3146",
+      "status": "NOT_MET",
+      "gap": "0.0346",
+      "next_action": "FINN prediction failure mode diagnosis"
+    },
+    "hit_rate_50": {
+      "target": ">50%",
+      "achieved": "41.4%",
+      "status": "NOT_MET",
+      "gap": "8.6%",
+      "next_action": "FINN systematic bias correction"
+    }
+  },
+
+  "remaining_work": {
+    "regime_forecasts": {
+      "count": 936,
+      "blocker": "CEO-DIR-2026-020 circular reference protection",
+      "required_action": "Develop non-circular REGIME outcome evidence source"
+    },
+    "calibration_improvement": {
+      "owner": "FINN",
+      "required_diagnosis": "TYPE_D (Regime misclassification) vs TYPE_E (Correlation breakdown)",
+      "target_deadline": "2026-01-16"
+    }
+  },
+
+  "governance_compliance": {
+    "evidence_logged": true,
+    "governance_actions_logged": 3,
+    "hash_chain_ids": [
+      "CEO-DIR-2026-030-GLD",
+      "CEO-DIR-2026-030-TLT"
+    ]
+  },
+
+  "closing_statement": {
+    "text": "Phase 1 P0 action complete. Coverage improved from 77.2% to 94.4%. PRICE_DIRECTION forecasts at 99.6% coverage. Calibration metrics slightly improved but still above threshold. FINN diagnosis required for Phase 1 completion.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-09"
+  }
+}

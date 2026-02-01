@@ -1,0 +1,225 @@
+{
+  "directive_id": "CEO-DIR-2026-014A",
+  "document_type": "T0_BASELINE_SNAPSHOT",
+  "status": "ACTIVE_WATCH",
+  "generated_at": "2026-01-07T14:45:00Z",
+  "generated_by": "STIG",
+  "parent_lineage": "86d0642e4f97fa91349b7c70037405446043884111287e9c123f9db4b5d9efd8",
+
+  "btc_baseline_snapshot": {
+    "asset_id": "BTC-USD",
+    "snapshot_timestamp": "2026-01-06T23:00:00Z",
+    "capture_timestamp": "2026-01-07T14:45:00Z",
+
+    "belief_state": {
+      "belief_regime": "BULL",
+      "belief_confidence": 0.9011,
+      "policy_regime": "STRESS",
+      "policy_confidence": 0.9511,
+      "regime_divergence": "BULL_vs_STRESS",
+      "divergence_severity": "CRITICAL"
+    },
+
+    "full_probability_vector": {
+      "BULL": 0.9011191875432952,
+      "NEUTRAL": 0.09653166143970156,
+      "BEAR": 0.0015960197381399575,
+      "STRESS": 0.0007531312788634484
+    },
+
+    "confirmation_state": {
+      "current_confirms": 1,
+      "threshold_required": 3,
+      "confirms_remaining": 2,
+      "awaiting_direction": "BULL_or_STRESS"
+    },
+
+    "entropy_level": {
+      "value": 0.4127,
+      "calculation": "-sum(p * ln(p)) over probability vector",
+      "interpretation": "LOW_ENTROPY - high conviction BULL belief",
+      "note": "Dominated by single regime (BULL at 90.1%)"
+    },
+
+    "confidence_gradient": {
+      "delta_conf_24h": "+0.7598",
+      "direction": "INCREASING_BULL",
+      "trajectory": [
+        {"date": "2026-01-02", "bull_prob": 0.0263, "regime": "NEUTRAL"},
+        {"date": "2026-01-03", "bull_prob": 0.1228, "regime": "NEUTRAL"},
+        {"date": "2026-01-04", "bull_prob": 0.0650, "regime": "NEUTRAL"},
+        {"date": "2026-01-05", "bull_prob": 0.1409, "regime": "STRESS"},
+        {"date": "2026-01-06", "bull_prob": 0.9011, "regime": "BULL"}
+      ],
+      "interpretation": "Dramatic BULL conviction surge on 2026-01-06 (+0.76 in 24h)"
+    },
+
+    "suppression_history": {
+      "first_suppression": "2026-01-06T23:00:00Z",
+      "suppression_duration_hours": 15.75,
+      "suppression_reason": "HYSTERESIS: 1/3 confirms - awaiting confirmation",
+      "policy_override_source": "STRESS regime from previous state"
+    },
+
+    "crio_context": {
+      "dominant_driver": "SENTIMENT",
+      "override_reason": null,
+      "engine_version": "v4.0.0"
+    }
+  },
+
+  "lead_lag_comparison_assets": {
+    "index_etfs": [
+      {
+        "asset_id": "SPY",
+        "belief_regime": "NEUTRAL",
+        "belief_confidence": 0.9906,
+        "policy_regime": "BEAR",
+        "confirms": "1/5",
+        "divergence": "NEUTRAL_vs_BEAR"
+      },
+      {
+        "asset_id": "QQQ",
+        "belief_regime": "NEUTRAL",
+        "belief_confidence": 0.9428,
+        "policy_regime": "BEAR",
+        "confirms": "1/5",
+        "divergence": "NEUTRAL_vs_BEAR"
+      },
+      {
+        "asset_id": "VTI",
+        "belief_regime": "NEUTRAL",
+        "belief_confidence": 0.9898,
+        "policy_regime": "BEAR",
+        "confirms": "1/5",
+        "divergence": "NEUTRAL_vs_BEAR"
+      },
+      {
+        "asset_id": "IWM",
+        "belief_regime": "NEUTRAL",
+        "belief_confidence": 0.9840,
+        "policy_regime": "BEAR",
+        "confirms": "1/5",
+        "divergence": "NEUTRAL_vs_BEAR"
+      }
+    ],
+    "sector_etfs": [
+      {
+        "asset_id": "XLK",
+        "belief_regime": "NEUTRAL",
+        "belief_confidence": 0.9542,
+        "policy_regime": "BEAR",
+        "confirms": "1/5",
+        "divergence": "NEUTRAL_vs_BEAR"
+      },
+      {
+        "asset_id": "XLI",
+        "belief_regime": "BULL",
+        "belief_confidence": 0.7385,
+        "policy_regime": "NEUTRAL",
+        "confirms": "1/5",
+        "divergence": "BULL_vs_NEUTRAL"
+      }
+    ],
+    "technology_cluster": {
+      "dominant_belief": "NEUTRAL",
+      "dominant_policy": "BEAR",
+      "avg_belief_confidence": 0.7526,
+      "assets_tracked": 8,
+      "high_conf_assets": ["SAP.DE", "TEAM", "MDB"]
+    },
+    "industrials_cluster": {
+      "dominant_belief": "MIXED",
+      "dominant_policy": "NEUTRAL",
+      "avg_belief_confidence": 0.7089,
+      "assets_tracked": 12,
+      "high_conf_assets": ["ROK", "FDX", "SHL.DE", "HON", "UPS", "SIE.DE"]
+    }
+  },
+
+  "current_regime_alignment": {
+    "btc_vs_index_etfs": {
+      "btc_belief": "BULL",
+      "index_belief": "NEUTRAL",
+      "alignment": "DIVERGENT",
+      "interpretation": "BTC more bullish than equity indices"
+    },
+    "btc_vs_tech": {
+      "btc_belief": "BULL",
+      "tech_belief": "NEUTRAL/BEAR",
+      "alignment": "DIVERGENT",
+      "interpretation": "BTC decoupled from tech sentiment"
+    },
+    "btc_vs_industrials": {
+      "btc_belief": "BULL",
+      "industrials_belief": "MIXED",
+      "alignment": "PARTIAL",
+      "interpretation": "Some industrials (FDX, HON) share BULL belief"
+    }
+  },
+
+  "trigger_conditions": {
+    "bull_confirmation_trigger": {
+      "condition": "BTC-USD reaches 3/3 BULL confirmation",
+      "current_state": "1/3",
+      "remaining": 2,
+      "status": "WATCHING"
+    },
+    "stress_confirmation_trigger": {
+      "condition": "BTC-USD reaches 3/3 STRESS confirmation",
+      "current_state": "0/3 (policy is STRESS but not confirming)",
+      "remaining": 3,
+      "status": "WATCHING"
+    },
+    "non_confirmation_trigger": {
+      "condition": "72h window expires without either confirmation",
+      "window_start": "2026-01-07T14:45:00Z",
+      "window_end": "2026-01-10T14:45:00Z",
+      "status": "ACTIVE"
+    }
+  },
+
+  "safety_constraints": {
+    "price_feed_staleness": {
+      "threshold_hours": 6,
+      "current_staleness_hours": 0,
+      "status": "FRESH"
+    },
+    "cross_domain_correlation": {
+      "threshold": 0.7,
+      "measurement": "Spearman, 24h rolling",
+      "current_estimate": "LOW (timing separation 3h)",
+      "status": "WITHIN_BOUNDS"
+    },
+    "defcon_status": "GREEN"
+  },
+
+  "outputs_pending": {
+    "on_bull_confirmation": [
+      "BTC_CONFIRM_EVENT {direction=BULL}",
+      "Lead-Lag Regime Resolution Matrix",
+      "BTC-Anchored Regret Sensitivity Note"
+    ],
+    "on_stress_confirmation": [
+      "BTC_CONFIRM_EVENT {direction=STRESS}",
+      "Lead-Lag Regime Resolution Matrix",
+      "BTC-Anchored Regret Sensitivity Note"
+    ],
+    "on_non_confirmation": [
+      "BTC_NONCONFIRM_EVENT",
+      "Confirmation Resistance Analysis",
+      "Lead-Lag Matrix (partial)"
+    ]
+  },
+
+  "statistical_disclaimer": "N=1 observation window. All lead-lag findings are DESCRIPTIVE ONLY. No causal claims permitted. Hypothesis-generating analysis.",
+
+  "integration": {
+    "parent_directive": "CEO-DIR-2026-013B",
+    "parent_lineage_hash": "86d0642e4f97fa91349b7c70037405446043884111287e9c123f9db4b5d9efd8",
+    "decision_envelope_section": "Section 6: Crypto Leading Indicator Analysis",
+    "delivery_milestone": "T+72h"
+  },
+
+  "lineage_hash": "58abb6564f955054a141fe586e45e95f75c7f3b3aa13c55b97c99765ab5ad2c0"
+}

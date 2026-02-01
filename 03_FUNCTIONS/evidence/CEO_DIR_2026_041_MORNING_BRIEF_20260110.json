@@ -1,0 +1,115 @@
+{
+  "directive_id": "CEO-DIR-2026-041",
+  "title": "Orchestrator Single-Path Enforcement - Night Failure Root Cause and Repair",
+  "classification": "CEO_MORNING_BRIEF",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T13:50:00Z",
+
+  "section_1_what_failed": {
+    "classification": "PATH_RESOLUTION_BUG",
+    "description": "Orchestrator generated double path segments (03_FUNCTIONS/03_FUNCTIONS/) causing function file not found errors",
+    "evidence": {
+      "error_pattern": "Function file not found: C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\03_FUNCTIONS\\vega_epistemic_integrity_monitor.py",
+      "affected_tasks": 4,
+      "cycle_impact": "13 failures per cycle (29/42 success rate)"
+    }
+  },
+
+  "section_2_why_failed": {
+    "root_cause": "INCONSISTENT_PATH_STORAGE_AND_RESOLUTION",
+    "technical_detail": {
+      "bug_location": "orchestrator_v1.py line 392",
+      "bug_code": "function_path = f'03_FUNCTIONS/{script}'",
+      "bug_description": "Code unconditionally prepended 03_FUNCTIONS/ to script field, even when script already contained 03_FUNCTIONS/ prefix",
+      "path_patterns_found": [
+        {"pattern": "03_FUNCTIONS/file.py", "count": 19, "type": "relative_with_prefix"},
+        {"pattern": "C:\\...\\03_FUNCTIONS\\file.py", "count": 8, "type": "absolute_windows"},
+        {"pattern": "script='03_FUNCTIONS/file.py'", "count": 4, "type": "script_with_prefix_BUG"},
+        {"pattern": "script='file.py'", "count": 8, "type": "script_without_prefix"}
+      ]
+    }
+  },
+
+  "section_3_what_disabled": {
+    "duplicate_paths_normalized": 4,
+    "tasks_normalized": [
+      "ceio_evidence_refresh_daemon",
+      "crio_alpha_graph_rebuild",
+      "cdmo_data_hygiene_attestation",
+      "vega_epistemic_integrity_monitor"
+    ],
+    "action": "Removed redundant 03_FUNCTIONS/ prefix from script field in task_registry"
+  },
+
+  "section_4_what_remains_enabled": {
+    "canonical_orchestrator": {
+      "job_id": "orchestrator_v1.py",
+      "mode": "CONTINUOUS",
+      "interval_seconds": 3600,
+      "owner": "LARS"
+    },
+    "canonical_ingestion_tasks": [
+      {"task_name": "ios001_daily_ingest", "owner": "CEIO", "schedule": "*/15 * * * *", "enabled": true},
+      {"task_name": "daily_ingest_worker", "owner": "CEIO", "schedule": "*/10 * * * *", "enabled": true},
+      {"task_name": "ios006_g2_macro_ingest", "owner": "CEIO", "schedule": "0 */4 * * *", "enabled": true}
+    ],
+    "total_enabled_tasks": 39
+  },
+
+  "section_5_proof_of_execution": {
+    "dry_run_verification": {
+      "timestamp": "2026-01-10T13:50:36Z",
+      "result": "ALL 39 TASKS RESOLVE CORRECTLY",
+      "sample_resolutions": [
+        {"task": "vega_epistemic_integrity_monitor", "resolved_to": "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\vega_epistemic_integrity_monitor.py", "status": "CORRECT"},
+        {"task": "price_freshness_heartbeat", "resolved_to": "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\price_freshness_heartbeat.py", "status": "CORRECT"},
+        {"task": "ios001_daily_ingest", "resolved_to": "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\ios001_daily_ingest.py", "status": "CORRECT"}
+      ]
+    },
+    "historical_cycles": {
+      "last_10_cycles_analyzed": true,
+      "consistent_failure_pattern": "13 failures per cycle",
+      "root_cause_confirmed": "PATH_RESOLUTION_BUG"
+    }
+  },
+
+  "section_6_path_uniqueness_proof": {
+    "single_orchestrator": true,
+    "single_task_registry": true,
+    "no_parallel_schedulers": true,
+    "no_external_cron_jobs": true,
+    "all_ingestion_owned_by_ceio": true
+  },
+
+  "code_fix_applied": {
+    "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+    "lines_modified": "386-416",
+    "fix_description": "Added path normalization to handle all three path patterns: absolute, relative with prefix, and script field with/without prefix",
+    "commit_reference": "CEO-DIR-2026-041"
+  },
+
+  "database_repair_applied": {
+    "table": "fhq_governance.task_registry",
+    "action": "Normalized script fields to remove redundant 03_FUNCTIONS/ prefix",
+    "tasks_updated": 4,
+    "immutability_trigger": "Temporarily disabled then re-enabled per CEO authorization"
+  },
+
+  "standing_order_compliance": {
+    "rule": "One intent, one job, one owner, one schedule, one execution path",
+    "status": "COMPLIANT",
+    "verification": "All 39 enabled tasks have unique names, single owner, and now single resolution path"
+  },
+
+  "vega_gate_status": {
+    "path_uniqueness_proven": true,
+    "consecutive_clean_cycles": "PENDING - awaiting next 2 cycles",
+    "evidence_stored": true
+  },
+
+  "stig_attestation": {
+    "statement": "I, STIG (CTO), attest that the overnight failure was caused by a PATH_RESOLUTION_BUG in orchestrator_v1.py. The bug caused double path segments (03_FUNCTIONS/03_FUNCTIONS/) for 4 tasks. The fix has been applied to both the code and database. Dry-run verification confirms all 39 tasks now resolve correctly. The system is ready for 2 consecutive clean cycles to satisfy VEGA gate requirements.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

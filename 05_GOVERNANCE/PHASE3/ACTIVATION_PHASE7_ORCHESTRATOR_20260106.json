@@ -1,0 +1,142 @@
+{
+  "evidence_id": "ACTIVATION-PHASE7-20260106",
+  "directive": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "phase": "7",
+  "phase_name": "Orchestrator and Task Scheduler",
+  "timestamp": "2026-01-06T23:45:00Z",
+  "executed_by": "STIG",
+
+  "verification_results": {
+    "defcon_status": {
+      "current_level": "GREEN",
+      "trigger_reason": "G4 Activation Order - Sovereign Autonomy Release. Precondition met: discrepancy 0.0318 < 0.05. SAFE_TO_LIFT validated.",
+      "triggered_at": "2025-12-11T15:28:46.437Z",
+      "triggered_by": "STIG",
+      "is_current": true,
+      "status": "PASS"
+    },
+    "orchestrator_files": {
+      "orchestrator_v1.py": {
+        "path": "05_ORCHESTRATOR/orchestrator_v1.py",
+        "agent": "LARS",
+        "version": "1.0.0",
+        "compliance": ["ADR-007", "ADR-010", "ADR-002"],
+        "modes": ["single-cycle", "continuous", "dry-run", "function-specific"],
+        "status": "READY"
+      },
+      "orchestrator_daemon.py": {
+        "path": "05_ORCHESTRATOR/orchestrator_daemon.py",
+        "directive": "ARO-20251209/LINK_THE_BRAIN",
+        "purpose": "Market Events → DeepSeek Speciale → Alpha Graph",
+        "status": "READY"
+      }
+    },
+    "task_registry": {
+      "total_tasks": 9,
+      "enabled_tasks": 9,
+      "gate_distribution": {
+        "G1": 1,
+        "G2": 2,
+        "G3": 4,
+        "G4": 2
+      },
+      "owner_distribution": {
+        "VEGA": 1,
+        "STIG": 2,
+        "LINE": 3,
+        "LARS": 2,
+        "FINN": 1
+      },
+      "tasks": [
+        {
+          "task_name": "cognitive_killswitch_sentinel",
+          "gate_level": "G1",
+          "owned_by": "VEGA",
+          "schedule": "*/5 * * * *",
+          "purpose": "Constitutional safety monitor"
+        },
+        {
+          "task_name": "ios_canonical_freshness_sentinel",
+          "gate_level": "G2",
+          "owned_by": "STIG",
+          "schedule": "*/30 * * * *",
+          "purpose": "Data freshness monitoring"
+        },
+        {
+          "task_name": "ios003_regime_freshness_sentinel",
+          "gate_level": "G2",
+          "owned_by": "STIG",
+          "schedule": "*/15 * * * *",
+          "purpose": "Regime classification freshness"
+        },
+        {
+          "task_name": "signal_executor_daemon",
+          "gate_level": "G3",
+          "owned_by": "LINE",
+          "schedule": "*/5 * * * *",
+          "purpose": "Signal execution"
+        },
+        {
+          "task_name": "exit_detection_daemon",
+          "gate_level": "G3",
+          "owned_by": "LINE",
+          "schedule": "*/5 * * * *",
+          "purpose": "Exit detection and management"
+        },
+        {
+          "task_name": "broker_reconciliation_daemon",
+          "gate_level": "G3",
+          "owned_by": "LINE",
+          "schedule": "0 * * * *",
+          "purpose": "Broker state reconciliation"
+        },
+        {
+          "task_name": "epistemic_proposal_daemon",
+          "gate_level": "G3",
+          "owned_by": "FINN",
+          "schedule": "0 0 * * 0",
+          "purpose": "Weekly epistemic proposals"
+        },
+        {
+          "task_name": "ceo_gateway_daemon",
+          "gate_level": "G4",
+          "owned_by": "LARS",
+          "schedule": "*/1 * * * *",
+          "purpose": "CEO command gateway"
+        },
+        {
+          "task_name": "IOS013_HCP_LAB_G4_RUNNER",
+          "gate_level": "G4",
+          "owned_by": "LARS",
+          "schedule": "*/15 9-16 * * 1-5",
+          "purpose": "Market hours lab runner"
+        }
+      ]
+    },
+    "ios_module_bindings": {
+      "IoS-003": "ios003_regime_freshness_sentinel",
+      "IoS-008": "signal_executor_daemon",
+      "IoS-012": "exit_detection_daemon",
+      "IoS-013": "IOS013_HCP_LAB_G4_RUNNER",
+      "Canonical": "ios_canonical_freshness_sentinel",
+      "Broker": "broker_reconciliation_daemon",
+      "Safety": "cognitive_killswitch_sentinel"
+    }
+  },
+
+  "phase_7_summary": {
+    "total_checks": 4,
+    "passed": 4,
+    "failed": 0,
+    "orchestrator_ready": true,
+    "tasks_bound_to_ios": true
+  },
+
+  "decision": "PHASE 7 PASS - PROCEED TO G3 CHECKPOINT C (FINAL)",
+
+  "attestation": {
+    "actor": "STIG",
+    "timestamp": "2026-01-06T23:45:00Z",
+    "statement": "Phase 7 Orchestrator and Task Scheduler verified. DEFCON GREEN (G4 Activation Order). orchestrator_v1.py ready with dry-run, continuous modes. 9 scheduled tasks registered across G1-G4 gates, owned by VEGA/STIG/LINE/LARS/FINN. All tasks bound to correct IoS modules. Orchestrator infrastructure ready for activation."
+  }
+}

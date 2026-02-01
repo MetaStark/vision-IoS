@@ -1,0 +1,120 @@
+{
+  "evidence_id": "IOS013_PERSPECTIVE_G0_REGISTRATION_20260120",
+  "evidence_type": "IOS_G0_REGISTRATION",
+  "classification": "GOVERNANCE-CRITICAL",
+  "created_at": "2026-01-20T23:15:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "directive_chain": ["ADR-004"],
+  "protocol": "ADR-004 G0 (Draft for Review)",
+
+  "registration_details": {
+    "ios_id": "IoS-013",
+    "title": "Cognitive Signal Weighting & Decision Context Engine",
+    "version": "G0",
+    "status": "G0_PENDING",
+    "owner_role": "STIG",
+    "co_owners": ["LARS", "VEGA"],
+    "supersedes": "IoS-013.HCP-LAB (deprecated)"
+  },
+
+  "document_verification": {
+    "file_path": "02_IOS/IoS-013-Perspective_2026.md",
+    "sha256_hash": "1afa5eed6f0234c1b2c9207e472c4051fec69abc9fd7044b10794487516708fb",
+    "document_date": "2026-01-21",
+    "document_version": "G0 (Draft for ADR-004 Review)"
+  },
+
+  "governing_adrs": [
+    {"adr": "ADR-001", "role": "Constitutional Foundation"},
+    {"adr": "ADR-003", "role": "Immutable Doctrine"},
+    {"adr": "ADR-004", "role": "Change Gates Architecture (G0-G4)"},
+    {"adr": "ADR-005", "role": "Evidence Requirements"},
+    {"adr": "ADR-007", "role": "Verification Protocol"},
+    {"adr": "ADR-013", "role": "Canonical Lineage"},
+    {"adr": "ADR-014", "role": "Subexecutive Governance"},
+    {"adr": "ADR-016", "role": "DEFCON Circuit Breaker"},
+    {"adr": "ADR-018", "role": "Fail-Closed Mandate"}
+  ],
+
+  "dependencies": [
+    {"ios": "IoS-002", "role": "Technical Indicators Input"},
+    {"ios": "IoS-003", "role": "Regime Classification Input"},
+    {"ios": "IoS-005", "role": "Forecasts & Brier Score Input"},
+    {"ios": "IoS-006", "role": "Macro Features Input"},
+    {"ios": "IoS-007", "role": "Causal Alpha Graph Input"},
+    {"ios": "IoS-010", "role": "Prediction Ledger Input"},
+    {"ios": "IoS-016", "role": "Event Proximity Tags Input"}
+  ],
+
+  "outputs_to": [
+    {"ios": "IoS-008", "output": "context_weighted_signal_plan for Decision Engine"},
+    {"ec": "EC-016 VALKYRIE", "output": "Explainability narrative"},
+    {"ec": "EC-014 UMA", "output": "Training events for learning"}
+  ],
+
+  "core_model": {
+    "output_type": "context_weighted_signal_plan",
+    "fields": [
+      "asset_id: str",
+      "regime_context: str",
+      "raw_signals: List[Signal]",
+      "weighted_signals: List[WeightedSignal]",
+      "confidence_score: float",
+      "explainability_trace: str",
+      "semantic_conflicts: Optional[List[str]]"
+    ]
+  },
+
+  "weighting_factors": [
+    {"dimension": "Regime-samsvar", "method": "Regime vs signal-type alignment", "range": "0.2 - 1.0"},
+    {"dimension": "Forecast skill", "method": "Brier score per signal-kilde", "range": "0.1 - 1.0"},
+    {"dimension": "Causal linkage", "method": "Signal position in causal graph", "range": "0.3 - 1.2"},
+    {"dimension": "Redundansfilter", "method": "Cohesion score, multikilde-overlapp", "range": "-0.2 to -0.5"},
+    {"dimension": "Event proximity", "method": "EVENT_ADJACENT weight reduction", "range": "-0.1 to -0.3"}
+  ],
+
+  "success_criteria": [
+    "Same signal gives same confidence_score per regime",
+    "All decisions in IoS-008 linked to context_id",
+    "VALKYRIE receives explained narrative from same signal plan",
+    "14-day test shows consistent weighting across DEFCON levels",
+    "LVI improved >= 0.03 after activation"
+  ],
+
+  "governance_path": {
+    "G0": {
+      "status": "REGISTERED",
+      "timestamp": "2026-01-20T23:15:00Z",
+      "actor": "STIG"
+    },
+    "G1": {
+      "status": "PENDING",
+      "requirement": "Technical Validation by STIG",
+      "tables_required": ["fhq_signal_context.weighted_signal_plan", "fhq_signal_context.signal_conflict_registry"]
+    },
+    "G2": {
+      "status": "PENDING",
+      "requirement": "LARS and VEGA signing per ADR-004"
+    },
+    "G3": {
+      "status": "PENDING",
+      "requirement": "Audit & Attestation"
+    },
+    "G4": {
+      "status": "PENDING",
+      "requirement": "Constitutional Activation"
+    }
+  },
+
+  "migration_file": "04_DATABASE/MIGRATIONS/331_ios013_perspective_g0_registration.sql",
+
+  "verification": {
+    "adr_004_verified": true,
+    "document_hash_verified": true,
+    "dependencies_declared": true,
+    "governing_adrs_declared": true
+  },
+
+  "hash": "sha256:1afa5eed6f0234c1b2c9207e472c4051fec69abc9fd7044b10794487516708fb"
+}

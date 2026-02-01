@@ -1,0 +1,179 @@
+{
+  "directive": "CEO-DIR-2026-110",
+  "sub_task": "P0 DIAGNOSIS - FINN Cognitive Gateway OFF State",
+  "classification": "DIAGNOSTIC EVIDENCE",
+  "executed_at": "2026-01-20T01:15:00.000Z",
+  "implementor": "STIG",
+
+  "executive_summary": {
+    "root_cause": "FINN_COGNITIVE_GATEWAY mode=OFF (never activated)",
+    "impact": "Canonical signal pipeline completely dormant for 30+ days",
+    "severity": "CRITICAL",
+    "resolution_path": "CEO approval required for OFF → SHADOW → LIVE transition"
+  },
+
+  "diagnosis_chain": {
+    "finding_1": {
+      "issue": "FINN_COGNITIVE_GATEWAY created with mode=OFF as default",
+      "evidence": {
+        "task_name": "FINN_COGNITIVE_GATEWAY",
+        "task_config.mode": "OFF",
+        "created_at": "2026-01-04T22:59:45.127Z",
+        "updated_at": "2026-01-04T22:59:45.127Z",
+        "note": "updated_at = created_at proves mode was NEVER changed"
+      }
+    },
+    "finding_2": {
+      "issue": "Gateway designed to require explicit CEO activation",
+      "evidence": {
+        "source": "finn_cognitive_gateway.py header",
+        "design": {
+          "mode_options": ["OFF", "SHADOW", "LIVE"],
+          "default_mode": "OFF",
+          "activation_path": "OFF → SHADOW (48h observation) → LIVE (CEO approval)",
+          "OFF_behavior": "Returns NoSignal immediately without invoking FINN"
+        }
+      }
+    },
+    "finding_3": {
+      "issue": "VEGA attestation 'UNBLOCKED' referred to EVIDENCE FRESHNESS, not gateway mode",
+      "evidence": {
+        "attestation_file": "VEGA_ATTESTATION_CNRP001_COMPLETION_20260107.json",
+        "cognitive_gateway_status": {
+          "previous_status": "BLOCKED",
+          "previous_staleness": "50.15h",
+          "current_status": "UNBLOCKED",
+          "current_staleness": "0.35h",
+          "threshold": "24h"
+        },
+        "clarification": "UNBLOCKED = evidence freshness within threshold. Does NOT mean mode changed from OFF."
+      }
+    },
+    "finding_4": {
+      "issue": "No governance action exists to activate gateway",
+      "evidence": {
+        "governance_actions_log_search": "FINN activation|SHADOW mode|gateway mode change",
+        "result": "ZERO matches",
+        "conclusion": "Activation never occurred"
+      }
+    },
+    "finding_5": {
+      "issue": "fhq_finn.ensemble_signals is EMPTY",
+      "evidence": {
+        "table": "fhq_finn.ensemble_signals",
+        "record_count": 0,
+        "conclusion": "FINN has never produced signals to this table"
+      }
+    },
+    "finding_6": {
+      "issue": "ios007/ios008 enabled but never executed",
+      "evidence": {
+        "ios007_g1_global_execution": {
+          "enabled": true,
+          "assigned_to": "LARS",
+          "cnrp_execution_log_matches": 0,
+          "status": "REGISTERED_BUT_NEVER_RUN"
+        },
+        "ios008_g1_validation": {
+          "enabled": true,
+          "assigned_to": "VEGA",
+          "cnrp_execution_log_matches": 0,
+          "status": "REGISTERED_BUT_NEVER_RUN"
+        }
+      }
+    }
+  },
+
+  "cascade_effect": {
+    "step_1": {
+      "component": "FINN_COGNITIVE_GATEWAY",
+      "state": "mode=OFF",
+      "effect": "Returns NoSignal without invoking FINN LLM"
+    },
+    "step_2": {
+      "component": "fhq_finn.ensemble_signals",
+      "state": "EMPTY (0 records)",
+      "effect": "No raw signals for ios007 to process"
+    },
+    "step_3": {
+      "component": "ios007_g1_global_execution",
+      "state": "NEVER_EXECUTED",
+      "effect": "No g1 signals created"
+    },
+    "step_4": {
+      "component": "ios008_g1_validation",
+      "state": "NEVER_EXECUTED",
+      "effect": "No g1_validated_signals created"
+    },
+    "step_5": {
+      "component": "g2_decision_plans",
+      "state": "STALE_30_DAYS",
+      "effect": "Only historical signals from 2025-12-20 exist"
+    },
+    "step_6": {
+      "component": "CPTO/LINE canonical path",
+      "state": "NEVER_USED",
+      "effect": "cpto_line_handoff = 0 records"
+    }
+  },
+
+  "workaround_in_use": {
+    "strategy": "IOS012B_INVERSION",
+    "status": "ACTIVE",
+    "paper_orders_generated": 30,
+    "note": "This is an ALTERNATE pathway bypassing canonical ios007 → ios008 flow"
+  },
+
+  "activation_requirements": {
+    "step_1": {
+      "action": "CEO approval for OFF → SHADOW transition",
+      "implementation": "UPDATE fhq_governance.task_registry SET task_config = task_config || '{\"mode\": \"SHADOW\"}' WHERE task_name = 'FINN_COGNITIVE_GATEWAY'",
+      "observation_period": "48 hours per gateway design"
+    },
+    "step_2": {
+      "action": "Monitor SHADOW mode execution",
+      "verification": [
+        "fhq_finn.ensemble_signals receives records",
+        "No cost overruns (cost_cap_usd = 0.5)",
+        "DEFCON compliance verified"
+      ]
+    },
+    "step_3": {
+      "action": "CEO approval for SHADOW → LIVE transition",
+      "implementation": "UPDATE task_config.mode = 'LIVE'",
+      "prerequisite": "48h successful SHADOW observation"
+    }
+  },
+
+  "blocking_factors": {
+    "constitutional": {
+      "ADR-012": "Economic safety requires explicit CEO authorization for LLM spend",
+      "ADR-020": "Autonomous cognitive operations require governance gates"
+    },
+    "operational": {
+      "cost_cap": "0.50 USD per invocation (configured in task_config)",
+      "defcon_max": "ORANGE (configured in task_config)"
+    }
+  },
+
+  "recommendations": {
+    "immediate": [
+      {
+        "action": "CEO decision on FINN gateway activation",
+        "options": [
+          "A: Activate to SHADOW for 48h observation",
+          "B: Keep OFF and rely on IOS012B alternate pathway",
+          "C: Remediate other issues first (data freshness, scheduler)"
+        ]
+      }
+    ],
+    "if_activated": [
+      "Verify ios007/ios008 scheduler will pick up new signals",
+      "Monitor fhq_finn.ensemble_signals for signal generation",
+      "Track cost via cost_cap enforcement"
+    ]
+  },
+
+  "evidence_hash": "d4e8a7c2f1b36950",
+  "status": "DIAGNOSIS_COMPLETE"
+}

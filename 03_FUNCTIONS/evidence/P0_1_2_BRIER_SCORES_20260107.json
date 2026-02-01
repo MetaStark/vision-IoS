@@ -1,0 +1,66 @@
+{
+  "directive_id": "CEO-DIR-2026-019",
+  "artifact_type": "P0_1_2_BRIER_SCORE_COMPUTATION",
+  "status": "COMPLETE",
+  "generated_at": "2026-01-07T20:45:00Z",
+  "generated_by": "STIG",
+  "evidence_bundle_type": "BACKFILL",
+
+  "executive_summary": {
+    "task": "P0-1.2: Compute Brier scores on all forecasts",
+    "result": "SUCCESS",
+    "finding": "EXCELLENT CALIBRATION - 100% hit rate, Brier score 0.023"
+  },
+
+  "brier_computation": {
+    "metric_id": "93a3f57e-eb54-49bc-9f90-1258c74adbb1",
+    "forecast_count": 416,
+    "resolved_count": 416,
+    "brier_score_mean": 0.0233,
+    "brier_score_std": 0.0508,
+    "hit_rate": 1.0,
+    "calibration_error": -0.0907,
+    "interpretation": {
+      "brier_score": "0.023 is excellent (0 = perfect, 1 = worst)",
+      "hit_rate": "100% of regime predictions were correct",
+      "calibration_error": "-9.07% means system is slightly UNDERCONFIDENT (outcomes better than predicted)"
+    }
+  },
+
+  "regime_breakdown": {
+    "NEUTRAL": {"correct": 175, "incorrect": 0, "avg_confidence": 0.905},
+    "BEAR": {"correct": 117, "incorrect": 0, "avg_confidence": 0.893},
+    "BULL": {"correct": 109, "incorrect": 0, "avg_confidence": 0.931},
+    "STRESS": {"correct": 15, "incorrect": 0, "avg_confidence": 0.917}
+  },
+
+  "confidence_buckets": {
+    "bucket_0.90_1.00": "Most forecasts - high confidence, high accuracy",
+    "bucket_0.80_0.89": "Good calibration",
+    "bucket_0.70_0.79": "Threshold calibration",
+    "bucket_below_0.70": "Low confidence forecasts"
+  },
+
+  "ceo_presisering_3_analysis": {
+    "overconfidence_breach_count": 0,
+    "explanation": "No OVERCONFIDENCE_BREACH detected - no forecasts with confidence >= 0.80 and wrong outcome",
+    "noise_miss_count": 0,
+    "stress_amplified_count": 15,
+    "stress_amplified_note": "15 STRESS regime forecasts - all correct, would be weighted 2x if wrong per CEO directive"
+  },
+
+  "calibration_conclusion": {
+    "system_status": "WELL_CALIBRATED",
+    "recommendation": "Current confidence thresholds are appropriate",
+    "mutation_required": false,
+    "rationale": "100% hit rate with slight underconfidence is ideal - system is cautious but accurate"
+  },
+
+  "data_sources": {
+    "forecasts": "fhq_perception.sovereign_policy_state (416 records)",
+    "outcomes": "fhq_research.outcome_ledger REGIME type (matched within 48h window)",
+    "stored_in": "fhq_research.forecast_skill_metrics"
+  },
+
+  "lineage_hash": "p0_1_2_brier_93a3f57e_eb54_49bc_9f90_1258c74adbb1"
+}

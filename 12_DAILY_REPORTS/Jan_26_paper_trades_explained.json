@@ -1,0 +1,339 @@
+{
+  "document_id": "JAN_26_PAPER_TRADES_EXPLAINED",
+  "classification": "CANONICAL_TRUTH_SOURCE",
+  "created_at": "2026-01-20T22:30:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+  "directive_chain": ["CEO-DIR-2026-115", "CEO-DIR-2026-106", "CEO-DIR-2026-078"],
+
+  "executive_summary": {
+    "total_positions_broker": 4,
+    "total_positions_ios012b": 4,
+    "state_divergence": true,
+    "direction_issue": "IDENTIFIED - P0_DIRECTION_LOGIC_FIX already applied",
+    "hindsight_firewall": "POSITIVE - Learning in shadow mode before production"
+  },
+
+  "hindsight_firewall_positive_value": {
+    "status": "SHADOW_MODE_ACTIVE",
+    "end_date": "2026-02-02",
+    "days_remaining": 13,
+    "why_positive": [
+      "Allows paper trading to discover bugs BEFORE real capital deployment",
+      "The P0_DIRECTION_LOGIC_FIX was discovered in shadow/paper mode",
+      "State divergence between broker and internal tracking was caught",
+      "2 learning cycles required ensures statistical significance",
+      "No real capital lost despite direction bug in some orders"
+    ],
+    "learning_value": {
+      "bug_discovered": "Direction logic had inversion bug",
+      "fix_applied": "SPOT orders CANCELLED with P0_DIRECTION_LOGIC_FIX",
+      "remaining_issue": "State divergence between broker and IOS012B tracking",
+      "next_action": "Reconcile broker state with internal state"
+    }
+  },
+
+  "state_divergence_analysis": {
+    "broker_positions": [
+      {
+        "ticker": "ADBE",
+        "shares": 7,
+        "direction": "LONG",
+        "entry_price": 293.34,
+        "current_price": 292.31,
+        "unrealized_pnl": -7.22,
+        "ios012b_status": "NOT_TRACKED",
+        "issue": "ORPHAN - Position at broker but not in IOS012B tracking"
+      },
+      {
+        "ticker": "GIS",
+        "shares": 46,
+        "direction": "LONG",
+        "entry_price": 44.60,
+        "current_price": 44.53,
+        "unrealized_pnl": -3.45,
+        "ios012b_status": "MISMATCH",
+        "ios012b_shares": 54,
+        "issue": "SHARE_COUNT_MISMATCH - Broker has 46, IOS012B has 54"
+      },
+      {
+        "ticker": "INTU",
+        "shares": 3,
+        "direction": "LONG",
+        "entry_price": 540.18,
+        "current_price": 531.16,
+        "unrealized_pnl": -27.07,
+        "ios012b_status": "NOT_TRACKED",
+        "issue": "ORPHAN - Position at broker but not in IOS012B tracking"
+      },
+      {
+        "ticker": "NOW",
+        "shares": 15,
+        "direction": "LONG",
+        "entry_price": 127.89,
+        "current_price": 127.04,
+        "unrealized_pnl": -12.81,
+        "ios012b_status": "NOT_TRACKED",
+        "issue": "ORPHAN - Position at broker but not in IOS012B tracking"
+      }
+    ],
+    "total_unrealized_pnl": -50.55
+  },
+
+  "ios012b_positions_analysis": [
+    {
+      "ticker": "ADSK",
+      "shares": 9,
+      "direction": "UP",
+      "entry_price": 261.04,
+      "canonical_stop_loss": 247.53,
+      "canonical_take_profit": 277.91,
+      "r_value": 13.50,
+      "atr_at_entry": 6.75,
+      "strategy_type": "SPOT_CANONICAL",
+      "broker_status": "NOT_AT_BROKER",
+      "inversion_assessment": {
+        "in_inversion_universe": true,
+        "original_brier": 0.9971,
+        "inverted_brier": 0.0058,
+        "direction_correct_for_inversion": false,
+        "reasoning": "LONG (UP) direction has 0% hit rate. Should be SHORT (DOWN) per inversion logic."
+      }
+    },
+    {
+      "ticker": "AIG",
+      "shares": 33,
+      "direction": "UP",
+      "entry_price": 73.66,
+      "canonical_stop_loss": 69.75,
+      "canonical_take_profit": 78.55,
+      "r_value": 3.91,
+      "atr_at_entry": 1.95,
+      "strategy_type": "SPOT_CANONICAL",
+      "broker_status": "NOT_AT_BROKER",
+      "inversion_assessment": {
+        "in_inversion_universe": true,
+        "original_brier": 0.998,
+        "inverted_brier": 0.0058,
+        "direction_correct_for_inversion": false,
+        "reasoning": "LONG (UP) direction has 0% hit rate. Should be SHORT (DOWN) per inversion logic."
+      }
+    },
+    {
+      "ticker": "GIS",
+      "shares": 54,
+      "direction": "UP",
+      "entry_price": 45.51,
+      "canonical_stop_loss": 43.58,
+      "canonical_take_profit": 47.94,
+      "r_value": 1.94,
+      "atr_at_entry": 0.97,
+      "strategy_type": "SPOT_CANONICAL",
+      "broker_status": "PARTIAL_MATCH",
+      "broker_shares": 46,
+      "inversion_assessment": {
+        "in_inversion_universe": true,
+        "original_brier": 0.979,
+        "inverted_brier": 0.0058,
+        "direction_correct_for_inversion": false,
+        "reasoning": "LONG (UP) direction has 0% hit rate. Should be SHORT (DOWN) per inversion logic."
+      }
+    },
+    {
+      "ticker": "PGR",
+      "shares": 12,
+      "direction": "UP",
+      "entry_price": 205.25,
+      "canonical_stop_loss": 194.75,
+      "canonical_take_profit": 218.37,
+      "r_value": 10.49,
+      "atr_at_entry": 5.25,
+      "strategy_type": "SPOT_CANONICAL",
+      "broker_status": "NOT_AT_BROKER",
+      "inversion_assessment": {
+        "in_inversion_universe": true,
+        "original_brier": 0.993,
+        "inverted_brier": 0.0058,
+        "direction_correct_for_inversion": false,
+        "reasoning": "LONG (UP) direction has 0% hit rate. Should be SHORT (DOWN) per inversion logic."
+      }
+    }
+  ],
+
+  "direction_logic_analysis": {
+    "finding": "SPOT_CANONICAL positions are LONG (UP) direction",
+    "inversion_evidence": "All 4 assets are in inversion_universe with 0% hit rate on UP",
+    "correct_direction": "DOWN (SHORT) per inversion logic",
+    "current_direction": "UP (LONG)",
+    "assessment": "POSITIONS ARE WRONG DIRECTION for inversion strategy",
+    "prior_fix": "P0_DIRECTION_LOGIC_FIX cancelled some SPOT orders but SPOT_CANONICAL remain",
+    "pending_sell_orders": {
+      "status": "30 SELL orders submitted (IOS012B_INVERSION)",
+      "purpose": "Would close/offset the wrong-direction LONG positions",
+      "blocked_by": "MLK Day - market closed"
+    }
+  },
+
+  "position_closure_recommendation": {
+    "orphan_positions_broker": {
+      "ADBE": {"action": "CLOSE", "reason": "Not tracked in IOS012B, no TP/SL governance"},
+      "INTU": {"action": "CLOSE", "reason": "Not tracked in IOS012B, no TP/SL governance"},
+      "NOW": {"action": "CLOSE", "reason": "Not tracked in IOS012B, no TP/SL governance"}
+    },
+    "wrong_direction_positions": {
+      "GIS_broker": {"action": "CLOSE", "reason": "LONG direction wrong per inversion (0% hit rate)"},
+      "ADSK_ios012b": {"action": "CANCEL", "reason": "LONG direction wrong, not at broker anyway"},
+      "AIG_ios012b": {"action": "CANCEL", "reason": "LONG direction wrong, not at broker anyway"},
+      "GIS_ios012b": {"action": "CANCEL", "reason": "LONG direction wrong, share count mismatch"},
+      "PGR_ios012b": {"action": "CANCEL", "reason": "LONG direction wrong, not at broker anyway"}
+    }
+  },
+
+  "learnings_from_paper_trades": [
+    {
+      "learning_id": "LEARN-20260120-001",
+      "category": "STATE_DIVERGENCE",
+      "description": "Broker state and internal tracking can diverge silently",
+      "root_cause": "No real-time reconciliation between Alpaca and IOS012B tracking",
+      "action": "Implement broker state reconciliation daemon",
+      "severity": "HIGH"
+    },
+    {
+      "learning_id": "LEARN-20260120-002",
+      "category": "DIRECTION_BUG",
+      "description": "SPOT_CANONICAL strategy opened LONG positions on inversion universe assets",
+      "root_cause": "SPOT_CANONICAL not aware of inversion logic",
+      "action": "Add inversion universe check to SPOT_CANONICAL entry logic",
+      "severity": "HIGH"
+    },
+    {
+      "learning_id": "LEARN-20260120-003",
+      "category": "ORPHAN_POSITIONS",
+      "description": "3 positions (ADBE, INTU, NOW) at broker without internal tracking",
+      "root_cause": "Unknown - positions appeared without IOS012B record",
+      "action": "Investigate source of orphan positions",
+      "severity": "HIGH"
+    },
+    {
+      "learning_id": "LEARN-20260120-004",
+      "category": "HINDSIGHT_FIREWALL_VALUE",
+      "description": "Shadow mode allowed discovery of direction bug with zero capital loss",
+      "root_cause": "N/A - This is positive",
+      "action": "Maintain 2-cycle hindsight firewall for all new strategies",
+      "severity": "POSITIVE"
+    }
+  ],
+
+  "tp_sl_analysis": {
+    "positions_with_tpsl": 4,
+    "positions_without_tpsl": 4,
+    "ios012b_tpsl_status": "SET",
+    "broker_orphan_tpsl_status": "NONE",
+    "risk": "Orphan positions (ADBE, INTU, NOW) have NO stop loss protection"
+  },
+
+  "limit_order_analysis": {
+    "paper_orders_type": "MARKET",
+    "limit_price_set": false,
+    "observation": "All 30 paper orders are MARKET orders with no limit price",
+    "recommendation": "Consider limit orders for better price execution in production"
+  },
+
+  "next_actions": [
+    {
+      "priority": "P0",
+      "action": "Close orphan broker positions (ADBE, INTU, NOW, GIS)",
+      "reason": "No governance, no TP/SL, wrong direction",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P0",
+      "action": "Cancel IOS012B SPOT_CANONICAL positions (ADSK, AIG, GIS, PGR)",
+      "reason": "Wrong direction (LONG) for inversion strategy",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P1",
+      "action": "Implement broker state reconciliation",
+      "reason": "Prevent future state divergence",
+      "owner": "STIG"
+    },
+    {
+      "priority": "P1",
+      "action": "Add inversion universe check to SPOT_CANONICAL",
+      "reason": "Prevent opening wrong-direction positions",
+      "owner": "STIG"
+    }
+  ],
+
+  "verification_queries": {
+    "broker_state": "SELECT * FROM fhq_execution.broker_state_snapshots ORDER BY captured_at DESC LIMIT 1",
+    "ios012b_positions": "SELECT * FROM fhq_alpha.ios012b_paper_positions WHERE status = 'OPEN'",
+    "paper_orders": "SELECT * FROM fhq_execution.paper_orders WHERE status = 'submitted'",
+    "inversion_universe": "SELECT * FROM fhq_alpha.inversion_universe"
+  },
+
+  "CLOSURE_ACTIONS_EXECUTED": {
+    "executed_at": "2026-01-20T21:07:00Z",
+    "executed_by": "STIG (EC-003_2026_PRODUCTION)",
+    "directive": "CEO-DIR-2026-DBV-003",
+
+    "database_actions": {
+      "ios012b_positions_closed": {
+        "count": 4,
+        "tickers": ["ADSK", "AIG", "GIS", "PGR"],
+        "exit_reason": "WRONG_FUNDAMENT: LONG on inversion universe with 0% hit rate on UP. Correct direction is SHORT.",
+        "status": "COMPLETED"
+      },
+      "paper_orders_cancelled": {
+        "count": 30,
+        "strategy_source": "IOS012B_INVERSION",
+        "original_status": ["submitted", "pending"],
+        "new_status": "cancelled",
+        "status": "COMPLETED"
+      }
+    },
+
+    "broker_actions": {
+      "positions_to_close": {
+        "ADBE": {"qty": 7, "entry": 293.34, "current": 292.75, "pnl": -4.14},
+        "GIS": {"qty": 46, "entry": 44.60, "current": 44.43, "pnl": -7.82},
+        "INTU": {"qty": 3, "entry": 540.18, "current": 527.61, "pnl": -37.72},
+        "NOW": {"qty": 15, "entry": 127.89, "current": 125.54, "pnl": -35.32}
+      },
+      "total_unrealized_pnl": -84.99,
+      "status": "AWAITING_MANUAL_CLOSURE",
+      "blocker": "Alpaca credentials not configured in environment",
+      "resolution": "CEO to close via Alpaca dashboard or configure ALPACA_PAPER_API_KEY"
+    },
+
+    "tp_sl_finding": {
+      "finding": "NONE of the 4 broker positions had TP/SL attached at Alpaca",
+      "root_cause": "Bracket order support was just implemented (CEO-DIR-2026-DBV-002)",
+      "timing": "Positions opened BEFORE bracket order fix was deployed",
+      "fix_applied": "alpaca_paper_adapter.py now uses OrderClass.BRACKET with TakeProfitRequest/StopLossRequest"
+    },
+
+    "learnings_added": [
+      "LEARN-20260120-005: ADBE direction violation",
+      "LEARN-20260120-006: GIS direction violation",
+      "LEARN-20260120-007: INTU direction violation",
+      "LEARN-20260120-008: NOW direction violation",
+      "LEARN-20260120-009: TP/SL not enforced at broker level",
+      "LEARN-20260120-010: State divergence detection",
+      "LEARN-20260120-011: Order pipeline stuck in pending"
+    ],
+
+    "meta_analysis_next_trade": {
+      "checklist": [
+        "Verify asset NOT in inversion_universe (or invert direction if it is)",
+        "Calculate TP/SL using 2R formula with ATR",
+        "Submit as BRACKET order with TakeProfitRequest + StopLossRequest",
+        "Verify alpaca_order_id returned within 60s",
+        "Verify position appears in broker_state_snapshots within 5 min",
+        "Log entry in ios012b_paper_positions with full lineage"
+      ]
+    }
+  },
+
+  "hash": "f9a3e5c7b2d4a8e6c1f0b5d9a2e8f3c1"
+}

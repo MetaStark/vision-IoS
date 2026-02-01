@@ -1,0 +1,414 @@
+2026-01-17 02:00:07,450 | INFO | ======================================================================
+2026-01-17 02:00:07,450 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-01-17 02:00:07,450 | INFO | ======================================================================
+2026-01-17 02:00:07,450 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-01-17 02:00:07,450 | INFO | Executor: STIG (EC-003)
+2026-01-17 02:00:07,450 | INFO | Time: 2026-01-17T01:00:07.450000+00:00
+2026-01-17 02:00:07,450 | INFO | Asset Class Filter: EQUITY
+2026-01-17 02:00:07,450 | INFO | Dry Run: False
+2026-01-17 02:00:07,450 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-01-17 02:00:07,460 | INFO | ======================================================================
+2026-01-17 02:00:07,555 | INFO | Found 421 canonical assets
+2026-01-17 02:00:09,121 | INFO | ============================================================
+2026-01-17 02:00:09,121 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-01-17 02:00:09,131 | INFO | Assets: 421, Rate limit: 200/min
+2026-01-17 02:00:09,131 | INFO | ============================================================
+2026-01-17 02:00:09,141 | INFO |   [1COV.DE] Stale (601.0h > 18h) - fetching
+2026-01-17 02:00:09,142 | INFO |   [ABBV] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:10,208 | WARNING |   [ABBV] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-17 02:00:10,712 | INFO |   [ABNB] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:10,834 | WARNING |   [ABNB] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-17 02:00:11,342 | INFO |   [ABT] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:11,471 | WARNING |   [ABT] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-17 02:00:11,975 | INFO |   [ACA.PA] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:11,975 | INFO |   [ADBE] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:12,105 | WARNING |   [ADBE] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-01-17 02:00:12,606 | INFO |   [ADI] Stale (25.0h > 18h) - fetching
+2026-01-17 02:00:12,731 | WARNING |   [ADI] SIP subscription error (5 consecutive)
+2026-01-17 02:00:12,739 | WARNING |   EARLY TERMINATION: Alpaca SIP subscription not available
+2026-01-17 02:00:12,739 | WARNING |   Skipping remaining 414 Alpaca assets - will use fallback provider
+2026-01-17 02:00:12,742 | INFO | Alpaca: Updated 0 assets, 421 remaining
+2026-01-17 02:00:13,407 | INFO | ============================================================
+2026-01-17 02:00:13,407 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2026-01-17 02:00:13,407 | INFO | Assets: 421, Using BATCH DOWNLOAD (efficient)
+2026-01-17 02:00:13,407 | INFO | ============================================================
+2026-01-17 02:00:13,407 | INFO |   Checking Yahoo Finance rate limit status...
+2026-01-17 02:00:16,554 | ERROR | 
+1 Failed download:
+2026-01-17 02:00:16,554 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2026-01-17 02:00:16,595 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2026-01-17 02:00:16,595 | WARNING |   Skipping Yahoo and marking all assets as failed
+2026-01-17 02:00:16,595 | INFO | Yahoo: Updated 0 assets, 421 remaining
+2026-01-17 02:00:16,595 | INFO | ============================================================
+2026-01-17 02:00:16,595 | INFO | ATTEMPTING TWELVEDATA EQUITY INGEST (Backup Provider)
+2026-01-17 02:00:16,595 | INFO | Assets: 421, Rate limit: 7/min (90% of free tier)
+2026-01-17 02:00:16,595 | INFO | Daily limit: 720 calls (90% of 800)
+2026-01-17 02:00:16,595 | INFO | ============================================================
+2026-01-17 02:00:16,605 | INFO |   Equity assets: 421, Non-equity: 0
+2026-01-17 02:00:17,372 | WARNING |   [1COV.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:00:26,973 | WARNING |   [ABBV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:00:36,637 | WARNING |   [ABNB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:00:45,946 | WARNING |   [ABT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:01:04,654 | WARNING |   [ADBE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:01:13,919 | WARNING |   [ADI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:01:23,300 | WARNING |   [ADS.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:01:32,824 | WARNING |   [ADSK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:01:42,635 | WARNING |   [AEP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:01:51,786 | WARNING |   [AFL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:02:11,386 | WARNING |   [AIG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:02:20,515 | WARNING |   [AIR.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:02:39,204 | WARNING |   [AKAM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:03:27,898 | WARNING |   [ALB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:03:36,983 | WARNING |   [ALL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:03:55,559 | WARNING |   [ALV.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:04:04,862 | WARNING |   [AMAT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:04:18,972 | WARNING |   [AMD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:04:28,390 | WARNING |   [AMGN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:04:37,629 | WARNING |   [AMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:04:47,437 | WARNING |   [AMZN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:04:57,098 | WARNING |   [AON] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:05:06,987 | WARNING |   [APD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:05:16,079 | WARNING |   [ASML] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:01,718 | WARNING |   [AVB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:11,027 | WARNING |   [AVGO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:20,125 | WARNING |   [AWK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:31,450 | WARNING |   [AXP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:49,720 | WARNING |   [AZO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:06:58,884 | WARNING |   [BA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:07:17,102 | WARNING |   [BAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:07:47,452 | WARNING |   [BAS.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:08:05,743 | WARNING |   [BAYN.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:08:14,926 | WARNING |   [BEI.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:08:45,281 | WARNING |   [BKNG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:08:54,353 | WARNING |   [BKR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:09:03,479 | WARNING |   [BLK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:09:12,565 | WARNING |   [BMW.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:09:21,703 | WARNING |   [BMY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:09:51,571 | WARNING |   [BNR.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:10:10,281 | INFO |   [BRK.B] +1 rows via TWELVEDATA
+2026-01-17 02:10:19,390 | WARNING |   [BSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:10:47,027 | WARNING |   [C] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:10:58,205 | WARNING |   [CAG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:11:16,454 | WARNING |   [CARR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:11:25,533 | WARNING |   [CAT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:11:34,935 | WARNING |   [CB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:11:44,092 | WARNING |   [CBK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:11:53,155 | WARNING |   [CCI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:04,287 | WARNING |   [CDNS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:13,606 | WARNING |   [CF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:22,710 | WARNING |   [CHD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:32,087 | WARNING |   [CHTR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:41,208 | WARNING |   [CI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:50,323 | WARNING |   [CL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:12:59,447 | WARNING |   [CLX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:10,959 | WARNING |   [CMCSA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:20,038 | WARNING |   [CME] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:29,225 | WARNING |   [CMG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:38,656 | WARNING |   [COF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:47,788 | WARNING |   [COIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:13:57,047 | WARNING |   [CON.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:14:06,192 | WARNING |   [COP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:14:17,970 | WARNING |   [COST] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:14:36,361 | WARNING |   [CRM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:14:45,550 | WARNING |   [CRWD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:04,732 | WARNING |   [CSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:13,956 | WARNING |   [CTAS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:23,099 | WARNING |   [CTVA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:32,231 | WARNING |   [CVS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:41,371 | WARNING |   [CVX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:50,487 | WARNING |   [D] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:15:59,640 | WARNING |   [DAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 02:16:08,714 | WARNING |   [DBK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:16:17,865 | INFO |   [DD] +1 rows via TWELVEDATA
+2026-01-17 02:16:27,992 | INFO |   [DDOG] +1 rows via TWELVEDATA
+2026-01-17 02:16:37,444 | INFO |   [DE] +1 rows via TWELVEDATA
+2026-01-17 02:16:46,680 | INFO |   [DECK] +1 rows via TWELVEDATA
+2026-01-17 02:17:14,313 | WARNING |   [DHER.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:17:24,469 | INFO |   [DHI] +1 rows via TWELVEDATA
+2026-01-17 02:17:36,135 | WARNING |   [DHL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:17:45,456 | INFO |   [DHR] +1 rows via TWELVEDATA
+2026-01-17 02:17:54,766 | INFO |   [DIA] +1 rows via TWELVEDATA
+2026-01-17 02:18:04,066 | INFO |   [DIS] +1 rows via TWELVEDATA
+2026-01-17 02:18:13,802 | INFO |   [DLR] +1 rows via TWELVEDATA
+2026-01-17 02:18:32,361 | INFO |   [DOCU] +1 rows via TWELVEDATA
+2026-01-17 02:18:45,321 | INFO |   [DOW] +1 rows via TWELVEDATA
+2026-01-17 02:18:54,680 | INFO |   [DPZ] +1 rows via TWELVEDATA
+2026-01-17 02:19:13,511 | WARNING |   [DTE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:19:22,701 | INFO |   [DUK] +1 rows via TWELVEDATA
+2026-01-17 02:19:31,793 | INFO |   [DVN] +1 rows via TWELVEDATA
+2026-01-17 02:19:40,883 | INFO |   [DXCM] +1 rows via TWELVEDATA
+2026-01-17 02:19:53,543 | INFO |   [EA] +1 rows via TWELVEDATA
+2026-01-17 02:20:02,977 | INFO |   [EBAY] +1 rows via TWELVEDATA
+2026-01-17 02:20:12,245 | INFO |   [ECL] +1 rows via TWELVEDATA
+2026-01-17 02:20:21,566 | INFO |   [ED] +1 rows via TWELVEDATA
+2026-01-17 02:20:30,843 | INFO |   [EIX] +1 rows via TWELVEDATA
+2026-01-17 02:20:40,393 | INFO |   [EL] +1 rows via TWELVEDATA
+2026-01-17 02:21:09,812 | INFO |   [ELV] +1 rows via TWELVEDATA
+2026-01-17 02:21:18,952 | INFO |   [EMR] +1 rows via TWELVEDATA
+2026-01-17 02:21:46,228 | WARNING |   [ENR.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:22:05,630 | WARNING |   [EOAN.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:22:14,716 | INFO |   [EOG] +1 rows via TWELVEDATA
+2026-01-17 02:22:23,789 | INFO |   [EQIX] +1 rows via TWELVEDATA
+2026-01-17 02:22:42,053 | INFO |   [EQR] +1 rows via TWELVEDATA
+2026-01-17 02:23:00,302 | INFO |   [ES] +1 rows via TWELVEDATA
+2026-01-17 02:23:11,067 | INFO |   [ETN] +1 rows via TWELVEDATA
+2026-01-17 02:23:20,156 | INFO |   [ETSY] +1 rows via TWELVEDATA
+2026-01-17 02:23:29,308 | INFO |   [EW] +1 rows via TWELVEDATA
+2026-01-17 02:23:38,505 | INFO |   [EXC] +1 rows via TWELVEDATA
+2026-01-17 02:23:47,933 | INFO |   [F] +1 rows via TWELVEDATA
+2026-01-17 02:23:57,120 | INFO |   [FANG] +1 rows via TWELVEDATA
+2026-01-17 02:23:57,120 | INFO |   Progress: 150/421 assets, 150 API calls
+2026-01-17 02:24:06,256 | INFO |   [FCX] +1 rows via TWELVEDATA
+2026-01-17 02:24:16,950 | INFO |   [FDX] +1 rows via TWELVEDATA
+2026-01-17 02:24:26,143 | INFO |   [FIVN] +1 rows via TWELVEDATA
+2026-01-17 02:24:35,310 | INFO |   [FOX] +1 rows via TWELVEDATA
+2026-01-17 02:24:44,413 | WARNING |   [FRE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:25:02,778 | INFO |   [FTNT] +1 rows via TWELVEDATA
+2026-01-17 02:25:11,962 | INFO |   [GD] +1 rows via TWELVEDATA
+2026-01-17 02:25:22,463 | INFO |   [GE] +1 rows via TWELVEDATA
+2026-01-17 02:25:32,042 | INFO |   [GILD] +1 rows via TWELVEDATA
+2026-01-17 02:25:41,361 | INFO |   [GIS] +1 rows via TWELVEDATA
+2026-01-17 02:26:18,050 | INFO |   [GM] +1 rows via TWELVEDATA
+2026-01-17 02:26:28,621 | INFO |   [GOOG] +1 rows via TWELVEDATA
+2026-01-17 02:26:37,932 | INFO |   [GOOGL] +1 rows via TWELVEDATA
+2026-01-17 02:26:47,002 | INFO |   [GS] +1 rows via TWELVEDATA
+2026-01-17 02:27:14,383 | INFO |   [HAL] +1 rows via TWELVEDATA
+2026-01-17 02:27:23,534 | INFO |   [HD] +1 rows via TWELVEDATA
+2026-01-17 02:27:35,169 | WARNING |   [HEN3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:27:44,299 | WARNING |   [HFG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:27:53,407 | INFO |   [HLT] +1 rows via TWELVEDATA
+2026-01-17 02:28:02,521 | WARNING |   [HNR1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:28:20,892 | INFO |   [HON] +1 rows via TWELVEDATA
+2026-01-17 02:28:40,630 | INFO |   [HSY] +1 rows via TWELVEDATA
+2026-01-17 02:28:50,081 | INFO |   [HUBS] +1 rows via TWELVEDATA
+2026-01-17 02:28:59,198 | INFO |   [HUM] +1 rows via TWELVEDATA
+2026-01-17 02:29:17,360 | INFO |   [ICE] +1 rows via TWELVEDATA
+2026-01-17 02:29:26,560 | INFO |   [IFF] +1 rows via TWELVEDATA
+2026-01-17 02:29:35,705 | WARNING |   [IFX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:29:55,703 | INFO |   [INTC] +1 rows via TWELVEDATA
+2026-01-17 02:30:04,982 | INFO |   [INTU] +1 rows via TWELVEDATA
+2026-01-17 02:30:14,070 | INFO |   [ISRG] +1 rows via TWELVEDATA
+2026-01-17 02:30:23,288 | INFO |   [ITW] +1 rows via TWELVEDATA
+2026-01-17 02:30:33,115 | INFO |   [IWM] +1 rows via TWELVEDATA
+2026-01-17 02:30:42,254 | INFO |   [JNJ] +1 rows via TWELVEDATA
+2026-01-17 02:30:51,712 | INFO |   [JPM] +1 rows via TWELVEDATA
+2026-01-17 02:31:10,845 | INFO |   [KHC] +1 rows via TWELVEDATA
+2026-01-17 02:31:29,091 | INFO |   [KLAC] +1 rows via TWELVEDATA
+2026-01-17 02:31:38,416 | INFO |   [KMB] +1 rows via TWELVEDATA
+2026-01-17 02:31:47,536 | INFO |   [KMI] +1 rows via TWELVEDATA
+2026-01-17 02:31:47,537 | INFO |   Progress: 200/421 assets, 200 API calls
+2026-01-17 02:31:58,489 | INFO |   [KO] +1 rows via TWELVEDATA
+2026-01-17 02:32:16,675 | INFO |   [KR] +1 rows via TWELVEDATA
+2026-01-17 02:32:25,844 | INFO |   [LCID] +1 rows via TWELVEDATA
+2026-01-17 02:32:35,383 | INFO |   [LEN] +1 rows via TWELVEDATA
+2026-01-17 02:32:53,645 | INFO |   [LHX] +1 rows via TWELVEDATA
+2026-01-17 02:33:05,178 | INFO |   [LIN] +1 rows via TWELVEDATA
+2026-01-17 02:33:23,562 | INFO |   [LLY] +1 rows via TWELVEDATA
+2026-01-17 02:33:32,615 | INFO |   [LMT] +1 rows via TWELVEDATA
+2026-01-17 02:33:41,721 | INFO |   [LOW] +1 rows via TWELVEDATA
+2026-01-17 02:33:59,993 | INFO |   [LRCX] +1 rows via TWELVEDATA
+2026-01-17 02:34:19,162 | INFO |   [LULU] +1 rows via TWELVEDATA
+2026-01-17 02:34:29,637 | INFO |   [LUV] +1 rows via TWELVEDATA
+2026-01-17 02:34:38,809 | INFO |   [LYFT] +1 rows via TWELVEDATA
+2026-01-17 02:34:48,547 | INFO |   [LYV] +1 rows via TWELVEDATA
+2026-01-17 02:34:57,787 | INFO |   [MA] +1 rows via TWELVEDATA
+2026-01-17 02:35:06,991 | INFO |   [MAR] +1 rows via TWELVEDATA
+2026-01-17 02:35:16,544 | WARNING |   [MBG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:35:34,942 | INFO |   [MCD] +1 rows via TWELVEDATA
+2026-01-17 02:35:44,115 | INFO |   [MCHP] +1 rows via TWELVEDATA
+2026-01-17 02:35:53,351 | INFO |   [MCK] +1 rows via TWELVEDATA
+2026-01-17 02:36:02,475 | INFO |   [MCO] +1 rows via TWELVEDATA
+2026-01-17 02:36:11,759 | INFO |   [MDB] +1 rows via TWELVEDATA
+2026-01-17 02:36:24,008 | INFO |   [MDLZ] +1 rows via TWELVEDATA
+2026-01-17 02:36:33,232 | INFO |   [MDT] +1 rows via TWELVEDATA
+2026-01-17 02:36:42,356 | INFO |   [MET] +1 rows via TWELVEDATA
+2026-01-17 02:36:51,463 | INFO |   [META] +1 rows via TWELVEDATA
+2026-01-17 02:37:09,740 | INFO |   [MLM] +1 rows via TWELVEDATA
+2026-01-17 02:37:18,898 | INFO |   [MMC] +1 rows via TWELVEDATA
+2026-01-17 02:37:33,643 | INFO |   [MO] +1 rows via TWELVEDATA
+2026-01-17 02:38:01,429 | INFO |   [MPC] +1 rows via TWELVEDATA
+2026-01-17 02:38:10,636 | INFO |   [MRK] +1 rows via TWELVEDATA
+2026-01-17 02:38:19,716 | WARNING |   [MRK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:38:28,903 | INFO |   [MRVL] +1 rows via TWELVEDATA
+2026-01-17 02:38:38,933 | INFO |   [MS] +1 rows via TWELVEDATA
+2026-01-17 02:38:48,058 | INFO |   [MSCI] +1 rows via TWELVEDATA
+2026-01-17 02:38:57,281 | INFO |   [MSFT] +1 rows via TWELVEDATA
+2026-01-17 02:39:06,505 | INFO |   [MTCH] +1 rows via TWELVEDATA
+2026-01-17 02:39:15,608 | WARNING |   [MTX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:39:24,844 | INFO |   [MU] +1 rows via TWELVEDATA
+2026-01-17 02:39:33,920 | WARNING |   [MUV2.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:39:43,308 | INFO |   [NEE] +1 rows via TWELVEDATA
+2026-01-17 02:39:43,318 | INFO |   Progress: 250/421 assets, 250 API calls
+2026-01-17 02:40:01,791 | INFO |   [NEM] +1 rows via TWELVEDATA
+2026-01-17 02:40:11,105 | INFO |   [NET] +1 rows via TWELVEDATA
+2026-01-17 02:40:20,194 | INFO |   [NFLX] +1 rows via TWELVEDATA
+2026-01-17 02:40:55,096 | INFO |   [NKE] +1 rows via TWELVEDATA
+2026-01-17 02:41:04,532 | INFO |   [NOC] +1 rows via TWELVEDATA
+2026-01-17 02:41:23,336 | INFO |   [NOW] +1 rows via TWELVEDATA
+2026-01-17 02:41:32,547 | INFO |   [NSC] +1 rows via TWELVEDATA
+2026-01-17 02:41:41,706 | INFO |   [NUE] +1 rows via TWELVEDATA
+2026-01-17 02:41:50,886 | INFO |   [NVDA] +1 rows via TWELVEDATA
+2026-01-17 02:42:00,098 | INFO |   [NVR] +1 rows via TWELVEDATA
+2026-01-17 02:42:18,593 | INFO |   [NXPI] +1 rows via TWELVEDATA
+2026-01-17 02:42:27,731 | INFO |   [OKE] +1 rows via TWELVEDATA
+2026-01-17 02:42:36,856 | INFO |   [OKTA] +1 rows via TWELVEDATA
+2026-01-17 02:43:16,091 | INFO |   [ORCL] +1 rows via TWELVEDATA
+2026-01-17 02:43:34,454 | INFO |   [ORLY] +1 rows via TWELVEDATA
+2026-01-17 02:43:43,572 | INFO |   [OTIS] +1 rows via TWELVEDATA
+2026-01-17 02:43:52,702 | INFO |   [OXY] +1 rows via TWELVEDATA
+2026-01-17 02:44:01,926 | WARNING |   [P911.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:44:13,185 | WARNING |   [PAH3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:44:22,608 | INFO |   [PANW] +1 rows via TWELVEDATA
+2026-01-17 02:44:31,783 | INFO |   [PCG] +1 rows via TWELVEDATA
+2026-01-17 02:44:40,919 | INFO |   [PEP] +1 rows via TWELVEDATA
+2026-01-17 02:44:50,018 | INFO |   [PFE] +1 rows via TWELVEDATA
+2026-01-17 02:44:59,222 | INFO |   [PG] +1 rows via TWELVEDATA
+2026-01-17 02:45:08,342 | INFO |   [PGR] +1 rows via TWELVEDATA
+2026-01-17 02:45:19,422 | INFO |   [PH] +1 rows via TWELVEDATA
+2026-01-17 02:45:28,575 | INFO |   [PHM] +1 rows via TWELVEDATA
+2026-01-17 02:45:47,031 | INFO |   [PLD] +1 rows via TWELVEDATA
+2026-01-17 02:45:56,243 | INFO |   [PLTR] +1 rows via TWELVEDATA
+2026-01-17 02:46:05,392 | INFO |   [PM] +1 rows via TWELVEDATA
+2026-01-17 02:46:14,470 | INFO |   [PNC] +1 rows via TWELVEDATA
+2026-01-17 02:46:25,557 | INFO |   [POOL] +1 rows via TWELVEDATA
+2026-01-17 02:46:34,669 | INFO |   [PPG] +1 rows via TWELVEDATA
+2026-01-17 02:46:52,876 | INFO |   [PSA] +1 rows via TWELVEDATA
+2026-01-17 02:47:02,006 | INFO |   [PSX] +1 rows via TWELVEDATA
+2026-01-17 02:47:20,458 | INFO |   [PYPL] +1 rows via TWELVEDATA
+2026-01-17 02:47:29,900 | INFO |   [QCOM] +1 rows via TWELVEDATA
+2026-01-17 02:47:39,217 | WARNING |   [QIA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:47:48,373 | INFO |   [QQQ] +1 rows via TWELVEDATA
+2026-01-17 02:47:57,493 | INFO |   [REGN] +1 rows via TWELVEDATA
+2026-01-17 02:48:15,734 | WARNING |   [RHM.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:48:43,304 | INFO |   [RIVN] +1 rows via TWELVEDATA
+2026-01-17 02:49:19,959 | INFO |   [ROK] +1 rows via TWELVEDATA
+2026-01-17 02:49:29,181 | INFO |   [ROKU] +1 rows via TWELVEDATA
+2026-01-17 02:49:38,301 | INFO |   [ROST] +1 rows via TWELVEDATA
+2026-01-17 02:49:56,640 | INFO |   [RSG] +1 rows via TWELVEDATA
+2026-01-17 02:50:05,787 | INFO |   [RTX] +1 rows via TWELVEDATA
+2026-01-17 02:50:14,900 | WARNING |   [RWE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:50:52,101 | WARNING |   [SAP.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:51:01,302 | INFO |   [SBAC] +1 rows via TWELVEDATA
+2026-01-17 02:51:10,425 | INFO |   [SBUX] +1 rows via TWELVEDATA
+2026-01-17 02:51:28,632 | INFO |   [SCHW] +1 rows via TWELVEDATA
+2026-01-17 02:51:57,367 | WARNING |   [SHL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:52:06,661 | INFO |   [SHOP] +1 rows via TWELVEDATA
+2026-01-17 02:52:15,813 | INFO |   [SHW] +1 rows via TWELVEDATA
+2026-01-17 02:52:24,924 | WARNING |   [SIE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:52:34,363 | INFO |   [SLB] +1 rows via TWELVEDATA
+2026-01-17 02:52:43,420 | INFO |   [SNOW] +1 rows via TWELVEDATA
+2026-01-17 02:52:54,138 | INFO |   [SNPS] +1 rows via TWELVEDATA
+2026-01-17 02:53:03,608 | INFO |   [SO] +1 rows via TWELVEDATA
+2026-01-17 02:53:12,731 | INFO |   [SPG] +1 rows via TWELVEDATA
+2026-01-17 02:53:21,888 | INFO |   [SPGI] +1 rows via TWELVEDATA
+2026-01-17 02:53:31,008 | INFO |   [SPY] +1 rows via TWELVEDATA
+2026-01-17 02:53:40,144 | INFO |   [SRE] +1 rows via TWELVEDATA
+2026-01-17 02:53:49,365 | WARNING |   [SRT3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:54:25,727 | INFO |   [STLD] +1 rows via TWELVEDATA
+2026-01-17 02:54:43,924 | INFO |   [STZ] +1 rows via TWELVEDATA
+2026-01-17 02:55:11,147 | WARNING |   [SY1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 02:55:20,330 | INFO |   [SYK] +1 rows via TWELVEDATA
+2026-01-17 02:55:20,330 | INFO |   Progress: 350/421 assets, 350 API calls
+2026-01-17 02:55:29,586 | INFO |   [SYY] +1 rows via TWELVEDATA
+2026-01-17 02:55:38,680 | INFO |   [T] +1 rows via TWELVEDATA
+2026-01-17 02:55:47,801 | INFO |   [TEAM] +1 rows via TWELVEDATA
+2026-01-17 02:56:15,157 | INFO |   [TFC] +1 rows via TWELVEDATA
+2026-01-17 02:56:33,568 | INFO |   [TGT] +1 rows via TWELVEDATA
+2026-01-17 02:56:42,755 | INFO |   [TJX] +1 rows via TWELVEDATA
+2026-01-17 02:56:52,052 | INFO |   [TMO] +1 rows via TWELVEDATA
+2026-01-17 02:57:01,261 | INFO |   [TMUS] +1 rows via TWELVEDATA
+2026-01-17 02:57:19,591 | INFO |   [TRV] +1 rows via TWELVEDATA
+2026-01-17 02:57:37,959 | INFO |   [TSLA] +1 rows via TWELVEDATA
+2026-01-17 02:57:56,274 | INFO |   [TTWO] +1 rows via TWELVEDATA
+2026-01-17 02:58:05,456 | INFO |   [TXN] +1 rows via TWELVEDATA
+2026-01-17 02:58:14,643 | INFO |   [UAL] +1 rows via TWELVEDATA
+2026-01-17 02:58:23,883 | INFO |   [UBER] +1 rows via TWELVEDATA
+2026-01-17 02:58:42,241 | INFO |   [UNH] +1 rows via TWELVEDATA
+2026-01-17 02:58:51,353 | INFO |   [UNP] +1 rows via TWELVEDATA
+2026-01-17 02:59:00,574 | INFO |   [UPS] +1 rows via TWELVEDATA
+2026-01-17 02:59:18,879 | INFO |   [USB] +1 rows via TWELVEDATA
+2026-01-17 02:59:28,040 | INFO |   [V] +1 rows via TWELVEDATA
+2026-01-17 02:59:46,318 | INFO |   [VICI] +1 rows via TWELVEDATA
+2026-01-17 03:00:15,600 | INFO |   [VLO] +1 rows via TWELVEDATA
+2026-01-17 03:00:24,911 | INFO |   [VMC] +1 rows via TWELVEDATA
+2026-01-17 03:00:34,157 | WARNING |   [VNA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 03:00:52,704 | INFO |   [VOO] +1 rows via TWELVEDATA
+2026-01-17 03:01:02,166 | INFO |   [VOW3.DE] +1 rows via TWELVEDATA
+2026-01-17 03:01:11,422 | INFO |   [VRTX] +1 rows via TWELVEDATA
+2026-01-17 03:01:20,545 | INFO |   [VTI] +1 rows via TWELVEDATA
+2026-01-17 03:01:29,826 | INFO |   [VZ] +1 rows via TWELVEDATA
+2026-01-17 03:01:48,148 | INFO |   [WBD] +1 rows via TWELVEDATA
+2026-01-17 03:01:57,317 | INFO |   [WDAY] +1 rows via TWELVEDATA
+2026-01-17 03:02:06,480 | INFO |   [WEC] +1 rows via TWELVEDATA
+2026-01-17 03:02:15,666 | WARNING |   [WELL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:02:24,876 | WARNING |   [WFC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:02:43,424 | WARNING |   [WM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:02:52,663 | WARNING |   [WMB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:01,877 | WARNING |   [WMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:11,087 | WARNING |   [XEL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:20,183 | WARNING |   [XLB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:29,357 | WARNING |   [XLC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:38,531 | WARNING |   [XLE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:47,692 | WARNING |   [XLF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:03:56,790 | WARNING |   [XLI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:05,942 | WARNING |   [XLK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:15,027 | WARNING |   [XLP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:24,165 | WARNING |   [XLRE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:33,386 | WARNING |   [XLU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:42,655 | WARNING |   [XLV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:04:51,874 | WARNING |   [XLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:05:00,968 | WARNING |   [XOM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:05:19,384 | WARNING |   [YUM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:05:28,563 | WARNING |   [ZAL.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-01-17 03:05:37,668 | WARNING |   [ZM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:05:46,777 | WARNING |   [ZS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:05:55,901 | WARNING |   [ZTS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:06:14,781 | WARNING |   [AAPL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-01-17 03:06:14,809 | INFO |   TwelveData ingest complete: 193 updated, 228 failed, 421 API calls
+2026-01-17 03:06:14,826 | INFO | TwelveData: Updated 193 equity assets, 228 total remaining
+2026-01-17 03:06:14,837 | INFO | 
+============================================================
+2026-01-17 03:06:14,837 | INFO | VERIFICATION: Checking Data Freshness
+2026-01-17 03:06:14,838 | INFO | ============================================================
+2026-01-17 03:06:15,587 | WARNING | VERIFICATION FAILED: 6 assets are stale
+2026-01-17 03:06:15,587 | WARNING |   - BT.A.L: 33 days stale (last: 2025-12-15)
+2026-01-17 03:06:15,592 | WARNING |   - 1COV.DE: 25 days stale (last: 2025-12-23)
+2026-01-17 03:06:15,592 | WARNING |   - UNI-USD: 10 days stale (last: 2026-01-07)
+2026-01-17 03:06:15,592 | WARNING |   - TLT: 8 days stale (last: 2026-01-09)
+2026-01-17 03:06:15,592 | WARNING |   - GLD: 7 days stale (last: 2026-01-10)
+2026-01-17 03:06:15,592 | WARNING |   - GRT-USD: 3 days stale (last: 2026-01-14)
+2026-01-17 03:06:16,045 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 6 assets still stale after ingest! Updated: 193, Rows: 193
+2026-01-17 03:06:16,057 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2026-01-17 03:06:16,057 | WARNING | ALERT [WARNING]: PARTIAL INGEST: 228 assets could not be updated via any provider
+2026-01-17 03:06:16,057 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2026-01-17 03:06:16,057 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2026-01-17 03:06:16,067 | INFO | 
+======================================================================
+2026-01-17 03:06:16,067 | INFO | BULLETPROOF INGEST COMPLETE
+2026-01-17 03:06:16,067 | INFO | ======================================================================
+2026-01-17 03:06:16,067 | INFO | Status: PARTIAL
+2026-01-17 03:06:16,067 | INFO | Assets Updated: 193
+2026-01-17 03:06:16,067 | INFO | Rows Inserted: 193
+2026-01-17 03:06:16,067 | INFO | Providers Used: ALPACA, YAHOO, TWELVEDATA
+2026-01-17 03:06:16,067 | INFO | Verification: FAILED (6 stale)
+2026-01-17 03:06:16,067 | INFO | Elapsed: 3968.6s
+2026-01-17 03:06:16,067 | INFO | 
+Freshness by Asset Class:
+2026-01-17 03:06:16,067 | INFO |   CRYPTO: 44/50 fresh (88.0%)
+2026-01-17 03:06:16,067 | INFO |   EQUITY: 419/422 fresh (99.3%)
+2026-01-17 03:06:16,067 | INFO |   ETF: 0/2 fresh (0.0%)
+2026-01-17 03:06:16,067 | INFO |   FX: 24/25 fresh (96.0%)
+2026-01-17 03:06:16,067 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_52c296bd_20260117_030616.json
+2026-01-17 03:06:16,067 | INFO | ======================================================================

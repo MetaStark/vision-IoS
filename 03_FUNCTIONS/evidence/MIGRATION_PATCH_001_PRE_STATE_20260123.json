@@ -1,0 +1,126 @@
+{
+  "migration_id": "AGENT_CONTRACT_ALIGNMENT_PATCH_001",
+  "directive": "CEO-DIR-2026-AGENT-CONTRACT-ALIGNMENT-002",
+  "phase": "I",
+  "captured_at": "2026-01-23T18:03:51.961Z",
+  "captured_by": "STIG",
+  "purpose": "Pre-state snapshot for rollback capability",
+
+  "pre_state": {
+    "agent_ec_mapping": [
+      {
+        "agent_short_name": "LARS",
+        "ec_id": "EC-001",
+        "agent_full_name": "LARS - Learning & Adaptive Research Strategist",
+        "role_description": "Strategic direction",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "INCORRECT - Should be VEGA"
+      },
+      {
+        "agent_short_name": "STIG",
+        "ec_id": "EC-003",
+        "agent_full_name": "STIG - System for Technical Implementation & Governance",
+        "role_description": "Technical execution",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "CORRECT"
+      },
+      {
+        "agent_short_name": "FINN",
+        "ec_id": "EC-004",
+        "agent_full_name": "FINN - Forecasting Intelligence Neural Network",
+        "role_description": "Signal generation and regime detection",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "CORRECT"
+      },
+      {
+        "agent_short_name": "LINE",
+        "ec_id": "EC-005",
+        "agent_full_name": "LINE - Liquid Investment Navigation Engine",
+        "role_description": "Execution and position management",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "CORRECT"
+      },
+      {
+        "agent_short_name": "VEGA",
+        "ec_id": "EC-006",
+        "agent_full_name": "VEGA - Verification & Governance Authority",
+        "role_description": "Attestation and compliance",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "INCORRECT - Should be CODE"
+      },
+      {
+        "agent_short_name": "CDMO",
+        "ec_id": "EC-007",
+        "agent_full_name": "CDMO - Chief Data Management Officer",
+        "role_description": "Data quality and hygiene",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "INCORRECT - Should be CFAO"
+      },
+      {
+        "agent_short_name": "CEIO",
+        "ec_id": "EC-008",
+        "agent_full_name": "CEIO - Chief External Intelligence Officer",
+        "role_description": "External data ingestion",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "INCORRECT - EC-008 is NOT an agent (Enterprise Charter)"
+      },
+      {
+        "agent_short_name": "CRIO",
+        "ec_id": "EC-009",
+        "agent_full_name": "CRIO - Chief Research Intelligence Officer",
+        "role_description": "Alpha graph and research",
+        "created_at": "2026-01-22T18:19:52.938Z",
+        "STATUS": "INCORRECT - Should be CEIO"
+      }
+    ],
+
+    "ec_registry": [
+      {"ec_id": "EC-014", "title": "Learning Velocity & ROI Acceleration Charter", "role_type": "Tier-2 Meta-Executive", "parent_executive": "CEO", "status": "ACTIVE"},
+      {"ec_id": "EC-018", "title": "Meta-Alpha & Freedom Optimizer", "role_type": "Tier-2 Cognitive Authority", "parent_executive": "CEO", "status": "ACTIVE"},
+      {"ec_id": "EC-020", "title": "SitC - Search-in-the-Chain", "role_type": "Tier-2 Cognitive Authority (Reasoning)", "parent_executive": "LARS", "status": "ACTIVE"},
+      {"ec_id": "EC-021", "title": "InForage - Information Economist", "role_type": "Tier-2 Cognitive Authority (Search)", "parent_executive": "FINN", "status": "ACTIVE"},
+      {"ec_id": "EC-022", "title": "IKEA - Knowledge Boundary Officer", "role_type": "Tier-2 Cognitive Authority (Hallucination Firewall)", "parent_executive": "VEGA", "status": "ACTIVE"}
+    ],
+
+    "agent_mandates": [
+      {"agent_name": "CDMO", "mandate_type": "subexecutive", "authority_type": "DATASET", "parent_agent": "STIG"},
+      {"agent_name": "CEIO", "mandate_type": "subexecutive", "authority_type": "OPERATIONAL", "parent_agent": "STIG"},
+      {"agent_name": "CFAO", "mandate_type": "subexecutive", "authority_type": "OPERATIONAL", "parent_agent": "LARS"},
+      {"agent_name": "CRIO", "mandate_type": "subexecutive", "authority_type": "MODEL", "parent_agent": "FINN"},
+      {"agent_name": "CSEO", "mandate_type": "subexecutive", "authority_type": "OPERATIONAL", "parent_agent": "LARS"},
+      {"agent_name": "FINN", "mandate_type": "executive", "authority_type": "METHODOLOGICAL", "parent_agent": "LARS"},
+      {"agent_name": "IKEA", "mandate_type": "aci_cognitive", "authority_type": "VALIDATION", "parent_agent": "VEGA"},
+      {"agent_name": "InForage", "mandate_type": "aci_cognitive", "authority_type": "SEARCH", "parent_agent": "FINN"},
+      {"agent_name": "LARS", "mandate_type": "executive", "authority_type": "STRATEGIC", "parent_agent": "CEO"},
+      {"agent_name": "LINE", "mandate_type": "executive", "authority_type": "EXECUTION", "parent_agent": "LARS"},
+      {"agent_name": "SitC", "mandate_type": "aci_cognitive", "authority_type": "REASONING", "parent_agent": "LARS"},
+      {"agent_name": "STIG", "mandate_type": "executive", "authority_type": "INFRASTRUCTURE", "parent_agent": "LARS"},
+      {"agent_name": "UMA", "mandate_type": "Learning Velocity & ROI Acceleration Charter", "authority_type": "Tier-2 Meta-Executive", "parent_agent": "CEO"},
+      {"agent_name": "VEGA", "mandate_type": "constitutional", "authority_type": "GOVERNANCE", "parent_agent": "CEO"}
+    ]
+  },
+
+  "discrepancies_identified": {
+    "agent_ec_mapping_errors": 5,
+    "ec_registry_missing": 15,
+    "agent_mandates_missing": 4,
+    "ec008_misclassification": true
+  },
+
+  "rollback_sql": "-- To rollback, execute:\nDELETE FROM fhq_governance.agent_ec_mapping;\nINSERT INTO fhq_governance.agent_ec_mapping (agent_short_name, ec_id, agent_full_name, role_description) VALUES\n('LARS', 'EC-001', 'LARS - Learning & Adaptive Research Strategist', 'Strategic direction'),\n('STIG', 'EC-003', 'STIG - System for Technical Implementation & Governance', 'Technical execution'),\n('FINN', 'EC-004', 'FINN - Forecasting Intelligence Neural Network', 'Signal generation and regime detection'),\n('LINE', 'EC-005', 'LINE - Liquid Investment Navigation Engine', 'Execution and position management'),\n('VEGA', 'EC-006', 'VEGA - Verification & Governance Authority', 'Attestation and compliance'),\n('CDMO', 'EC-007', 'CDMO - Chief Data Management Officer', 'Data quality and hygiene'),\n('CEIO', 'EC-008', 'CEIO - Chief External Intelligence Officer', 'External data ingestion'),\n('CRIO', 'EC-009', 'CRIO - Chief Research Intelligence Officer', 'Alpha graph and research');",
+
+  "expected_post_state": {
+    "agent_ec_mapping_count": 19,
+    "ec_registry_count": 20,
+    "agent_mandates_count": 18,
+    "ec008_in_agent_mapping": false,
+    "mismatch_count": 0
+  },
+
+  "multi_parent_gap_noted": {
+    "CEIO": ["STIG", "LINE"],
+    "CFAO": ["LARS", "VEGA"],
+    "UMA": ["CEO", "STIG", "LARS"],
+    "resolution": "Primary parent stored in DB, secondary parents documented as known gap for Phase II schema extension decision"
+  }
+}

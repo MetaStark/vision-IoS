@@ -1,0 +1,297 @@
+{
+  "artifact_id": "ROI_DIRECTION_LEDGER_EQUITY_v1",
+  "artifact_type": "CANONICAL_LEDGER_SPECIFICATION",
+  "asset_class": "EQUITY",
+  "asset_class_hardcoded": true,
+  "created_at": "2026-01-18T03:30:00Z",
+  "created_by": "STIG (EC-003)",
+  "directive_ref": "CEO-DIR-2026-080",
+  "status": "CANONICAL",
+
+  "SECTION_1_PURPOSE": {
+    "why_this_must_exist_now": [
+      "Signal is canonical",
+      "Failure mode is deterministic",
+      "Shadow mode is live",
+      "Options expertise is being incubated"
+    ],
+
+    "what_happens_without_it": [
+      "Options structure will start looking good even if signal degrades",
+      "Cannot prove, in court or to capital, that ROI came from alpha, not leverage"
+    ],
+
+    "single_question_answered": "When the system said 'this is catastrophically wrong', was the market directionally exploitable?",
+
+    "principle": "This ledger is the single source of economic truth for inversion. It must exist before paper trading, not during."
+  },
+
+  "SECTION_2_NAMING_STANDARD": {
+    "table_name": "roi_direction_ledger_equity",
+    "schema": "fhq_research",
+    "full_qualified_name": "fhq_research.roi_direction_ledger_equity",
+
+    "why_equity_in_name": {
+      "legal_audit_separation": "When crypto is analyzed later, must be impossible to blend equity and crypto histories",
+      "cognitive_hygiene": "Anyone working in system sees immediately: this applies to equity-inversion only",
+      "future_fork_discipline": "When crypto regimes solved, copy structure - do not reuse artifacts"
+    },
+
+    "future_crypto_equivalent": "roi_direction_ledger_crypto",
+    "crypto_requirements": ["Own ADR", "Own IoS branch", "Own Brier targets", "Zero blending in ROI discussion"]
+  },
+
+  "SECTION_3_SCHEMA_SPECIFICATION": {
+    "_constraint": "NO GREEKS. NO IV. NO STRATEGY. NO PNL.",
+
+    "identity_fields": {
+      "event_id": {
+        "type": "UUID",
+        "constraint": "PRIMARY KEY",
+        "description": "Immutable event identifier"
+      },
+      "ticker": {
+        "type": "VARCHAR(20)",
+        "constraint": "NOT NULL",
+        "description": "Equity ticker symbol"
+      },
+      "asset_class": {
+        "type": "VARCHAR(10)",
+        "constraint": "NOT NULL DEFAULT 'EQUITY' CHECK (asset_class = 'EQUITY')",
+        "description": "Hard-coded to EQUITY - prevents contamination"
+      },
+      "signal_timestamp": {
+        "type": "TIMESTAMPTZ",
+        "constraint": "NOT NULL",
+        "description": "t0 - moment of signal generation"
+      },
+      "reference_epoch_id": {
+        "type": "VARCHAR(50)",
+        "constraint": "NOT NULL DEFAULT 'EPOCH-001'",
+        "description": "Reference to canonical epoch"
+      }
+    },
+
+    "signal_truth_fields": {
+      "original_prediction": {
+        "type": "VARCHAR(20)",
+        "constraint": "NOT NULL DEFAULT 'STRESS'",
+        "description": "Original regime prediction (always STRESS for this ledger)"
+      },
+      "confidence": {
+        "type": "DECIMAL(6,4)",
+        "constraint": "NOT NULL CHECK (confidence >= 0.99)",
+        "description": "Confidence level (must be >= 99%)"
+      },
+      "inversion_direction": {
+        "type": "VARCHAR(20)",
+        "constraint": "NOT NULL DEFAULT 'CONTRARIAN_DOWN'",
+        "description": "Implicit inversion direction - NOT inferred later"
+      },
+      "forecast_id": {
+        "type": "UUID",
+        "constraint": "REFERENCES fhq_research.forecast_ledger(forecast_id)",
+        "description": "Link to original forecast"
+      }
+    },
+
+    "market_truth_fields": {
+      "price_t0": {
+        "type": "DECIMAL(18,6)",
+        "constraint": "NOT NULL",
+        "description": "Underlying price at signal time"
+      },
+      "price_t0_plus_1d": {
+        "type": "DECIMAL(18,6)",
+        "constraint": "NULL until captured",
+        "description": "Price at t0 + 1 trading day"
+      },
+      "price_t0_plus_3d": {
+        "type": "DECIMAL(18,6)",
+        "constraint": "NULL until captured",
+        "description": "Price at t0 + 3 trading days"
+      },
+      "price_t0_plus_5d": {
+        "type": "DECIMAL(18,6)",
+        "constraint": "NULL until captured",
+        "description": "Price at t0 + 5 trading days"
+      }
+    },
+
+    "economic_truth_fields": {
+      "return_1d": {
+        "type": "DECIMAL(10,6)",
+        "constraint": "COMPUTED: (price_t0_plus_1d - price_t0) / price_t0",
+        "description": "Percentage return at 1D horizon"
+      },
+      "return_3d": {
+        "type": "DECIMAL(10,6)",
+        "constraint": "COMPUTED",
+        "description": "Percentage return at 3D horizon"
+      },
+      "return_5d": {
+        "type": "DECIMAL(10,6)",
+        "constraint": "COMPUTED",
+        "description": "Percentage return at 5D horizon"
+      },
+      "correct_direction_1d": {
+        "type": "BOOLEAN",
+        "constraint": "COMPUTED: return_1d < 0 (contrarian = price should drop)",
+        "description": "Was inverted direction correct at 1D?"
+      },
+      "correct_direction_3d": {
+        "type": "BOOLEAN",
+        "constraint": "COMPUTED",
+        "description": "Was inverted direction correct at 3D?"
+      },
+      "correct_direction_5d": {
+        "type": "BOOLEAN",
+        "constraint": "COMPUTED",
+        "description": "Was inverted direction correct at 5D?"
+      }
+    },
+
+    "quality_control_fields": {
+      "inverted_brier_at_event": {
+        "type": "DECIMAL(10,6)",
+        "constraint": "NOT NULL",
+        "description": "Inverted Brier score at time of event"
+      },
+      "anomaly_flag": {
+        "type": "BOOLEAN",
+        "constraint": "DEFAULT FALSE",
+        "description": "True if any anomaly detected at event time"
+      },
+      "kill_switch_state_at_event": {
+        "type": "VARCHAR(20)",
+        "constraint": "DEFAULT 'ARMED'",
+        "description": "State of kill switches at event time"
+      },
+      "created_at": {
+        "type": "TIMESTAMPTZ",
+        "constraint": "DEFAULT NOW()",
+        "description": "Record creation timestamp"
+      }
+    }
+  },
+
+  "SECTION_4_DERIVED_METRICS": {
+    "_note": "Derived, not optimized. Observation only.",
+
+    "daily_ev_line": {
+      "description": "Rolling expected value by horizon",
+      "metrics": [
+        "rolling_ev_1d",
+        "rolling_ev_3d",
+        "rolling_ev_5d"
+      ],
+      "window": "30-day rolling",
+      "purpose": "Tells you when the weapon dulls"
+    },
+
+    "hit_rate_decay": {
+      "description": "Rolling hit rate by horizon",
+      "metrics": [
+        "hit_rate_1d_rolling",
+        "hit_rate_3d_rolling",
+        "hit_rate_5d_rolling"
+      ],
+      "window": "30-day rolling"
+    },
+
+    "sample_size_tracking": {
+      "description": "Cumulative and rolling sample counts",
+      "metrics": [
+        "total_events",
+        "events_30d_rolling"
+      ],
+      "alert_threshold": "< 5 events in 30 days = sample collapse"
+    },
+
+    "edge_per_activation": {
+      "description": "How much directional edge per trigger event",
+      "formula": "average(abs(return_Xd)) where correct_direction = TRUE",
+      "purpose": "Tells you if scarcity is working in your favor",
+      "note": "Not ROI. Not Sharpe. Not PnL. Just edge per trigger."
+    }
+  },
+
+  "SECTION_5_INVERSION_DEFINITION_FREEZE": {
+    "status": "FROZEN",
+    "frozen_at": "2026-01-18T03:30:00Z",
+    "frozen_by": "CEO",
+
+    "definition": {
+      "trigger": "predicted_regime = STRESS AND confidence >= 0.99 AND asset_class = EQUITY",
+      "action": "Invert directional implication (CONTRARIAN_DOWN)",
+      "scope": "EQUITY ONLY"
+    },
+
+    "prohibitions": [
+      "No tweaking",
+      "No threshold drift",
+      "No 'just one more condition'"
+    ],
+
+    "principle": "Edge dies when definitions move."
+  },
+
+  "SECTION_6_LINE_CONTAINMENT": {
+    "agent": "LINE",
+    "role": "Options Microstructure & Risk Authority",
+    "mode": "DOWNSTREAM_ONLY",
+
+    "mandate_in_shadow_mode": [
+      "Learn Alpaca options mechanics",
+      "Learn payoff convexity",
+      "Learn risk envelopes",
+      "Map which option structures best express a known directional edge"
+    ],
+
+    "must_not": [
+      "Back-fit strategies to past signals",
+      "Influence signal thresholds",
+      "Feed options performance back into inversion logic"
+    ],
+
+    "principle": "Alpha speaks first. Instruments listen."
+  },
+
+  "SECTION_7_PROHIBITED_ACTIONS": {
+    "_warning": "This is where systems die",
+
+    "do_not": [
+      "Add more signals",
+      "Combine inversion with anything else",
+      "Touch BULL inversion yet",
+      "Paper trade 'just to see'",
+      "Let options simulations look like profits"
+    ],
+
+    "rationale": "You already have something rare. Most systems fail because they cannot wait once they see green numbers."
+  },
+
+  "SECTION_8_GOVERNANCE_REQUIREMENTS": {
+    "ledger_is_canonical_economic_truth": true,
+    "must_exist_before_paper_trading": true,
+
+    "degradation_consequence": "If this ledger ever degrades, everything else is irrelevant.",
+
+    "future_crypto_separation": {
+      "table": "roi_direction_ledger_crypto",
+      "requires": ["Own ADR", "Own IoS branch", "Own Brier targets"],
+      "constraint": "Equity-alpha can live even if crypto takes longer"
+    }
+  },
+
+  "FINAL_NOTE": {
+    "ceo_bottom_line": [
+      "Create the Direction-Only ROI ledger now",
+      "Lock it as the canonical economic truth",
+      "Train LINE aggressively, but keep her downstream",
+      "Let 30 days of boring shadow data pass"
+    ],
+    "position": "You are not late. You are early – and alive.",
+    "survival": "FjordHQ can live and prosper because you are doing this slowly."
+  }
+}

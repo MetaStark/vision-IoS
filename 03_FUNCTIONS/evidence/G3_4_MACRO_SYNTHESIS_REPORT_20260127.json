@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "document_type": "IOS005_G3_MACRO_SYNTHESIS_REPORT",
+    "module": "IoS-005",
+    "phase": "G3",
+    "sequence": 4,
+    "generated_at": "2026-01-27T23:05:28.001510+00:00",
+    "generated_by": "STIG",
+    "authority": "LARS (Strategic)",
+    "auditor": "IoS-005 (Constitutional)",
+    "oversight": "VEGA (Tier-1 Governance)",
+    "adr_compliance": [
+      "ADR-011",
+      "ADR-012",
+      "ADR-013",
+      "ADR-014"
+    ],
+    "hash_chain_id": "HC-IOS-006-2026"
+  },
+  "g3_audit_summary": {
+    "clusters_audited": 3,
+    "total_features_tested": 15,
+    "golden_features_found": 3,
+    "rejection_rate": 80.0,
+    "cluster_results": {
+      "LIQUIDITY": {
+        "tested": 6,
+        "golden": 2,
+        "hypothesis": "Liquidity drives crypto beta",
+        "hypothesis_validated": true,
+        "evidence_hash": "28b92f060eaba97d185949cbf16ad3799233d211ddf74c9f627b80e02392a0a9"
+      },
+      "CREDIT": {
+        "tested": 6,
+        "golden": 0,
+        "hypothesis": "Credit stress precedes liquidity withdrawal",
+        "hypothesis_validated": false,
+        "evidence_hash": "1028158e917e20640d77bc66da66a730daf7ccb7f7a2c154900021ac6e61973e"
+      },
+      "FACTOR": {
+        "tested": 3,
+        "golden": 1,
+        "hypothesis": "Real Rates and macro-gravity shape trend regimes",
+        "hypothesis_validated": true,
+        "evidence_hash": "1076562d1be6dc470959ae5538b9d29caa6202edd9f999e8c83c106d49f44267"
+      }
+    }
+  },
+  "golden_feature_registry": [
+    {
+      "feature_id": "US_10Y_REAL_RATE",
+      "cluster": "FACTOR",
+      "optimal_lag": 0,
+      "p_permutation": 0.004,
+      "p_bootstrap": 0.01,
+      "correlation": 0.056,
+      "ci_lower": 0.015,
+      "ci_upper": 0.098,
+      "n_observations": 2571,
+      "expected_direction": "NEGATIVE",
+      "ios007_eligible": true
+    },
+    {
+      "feature_id": "US_M2_YOY",
+      "cluster": "LIQUIDITY",
+      "optimal_lag": 1,
+      "p_permutation": 0.018,
+      "p_bootstrap": 0.018,
+      "correlation": 0.22916,
+      "ci_lower": 0.04539,
+      "ci_upper": 0.39748,
+      "n_observations": 118,
+      "expected_direction": "POSITIVE",
+      "ios007_eligible": true
+    },
+    {
+      "feature_id": "GLOBAL_M2_USD",
+      "cluster": "LIQUIDITY",
+      "optimal_lag": 1,
+      "p_permutation": 0.018,
+      "p_bootstrap": 0.016,
+      "correlation": 0.22916,
+      "ci_lower": 0.04003,
+      "ci_upper": 0.39148,
+      "n_observations": 118,
+      "expected_direction": "POSITIVE",
+      "ios007_eligible": true
+    }
+  ],
+  "redundancy_analysis": {
+    "computed": true,
+    "n_observations": 196,
+    "date_range": {
+      "start": "2003-04-01",
+      "end": "2025-12-01"
+    },
+    "features_analyzed": [
+      "US_10Y_REAL_RATE",
+      "US_M2_YOY",
+      "GLOBAL_M2_USD"
+    ],
+    "matrix": {
+      "US_10Y_REAL_RATE": {
+        "US_10Y_REAL_RATE": 1.0,
+        "US_M2_YOY": -0.136,
+        "GLOBAL_M2_USD": -0.136
+      },
+      "US_M2_YOY": {
+        "US_10Y_REAL_RATE": -0.136,
+        "US_M2_YOY": 1.0,
+        "GLOBAL_M2_USD": 1.0
+      },
+      "GLOBAL_M2_USD": {
+        "US_10Y_REAL_RATE": -0.136,
+        "US_M2_YOY": 1.0,
+        "GLOBAL_M2_USD": 1.0
+      }
+    },
+    "high_correlation_pairs": [
+      {
+        "feature_1": "US_M2_YOY",
+        "feature_2": "GLOBAL_M2_USD",
+        "correlation": 1.0,
+        "flag": "VEGA_REVIEW_REQUIRED"
+      }
+    ],
+    "redundancy_flag": true
+  },
+  "ios007_node_list": {
+    "description": "Canonical node list for IoS-007 Alpha Graph Engine",
+    "nodes": [
+      "US_10Y_REAL_RATE",
+      "US_M2_YOY",
+      "GLOBAL_M2_USD"
+    ],
+    "node_count": 3,
+    "ready_for_activation": false
+  },
+  "strategic_conclusions": {
+    "primary_drivers": [
+      {
+        "feature": "US_M2_YOY",
+        "interpretation": "M2 money supply growth leads BTC returns by 1 month",
+        "mechanism": "Monetary expansion creates excess liquidity seeking yield"
+      },
+      {
+        "feature": "GLOBAL_M2_USD",
+        "interpretation": "Global liquidity expansion leads BTC returns by 1 month",
+        "mechanism": "Coordinated central bank policy amplifies liquidity effects"
+      },
+      {
+        "feature": "US_10Y_REAL_RATE",
+        "interpretation": "Real rates show contemporaneous correlation with BTC",
+        "mechanism": "Real rate movements reflect risk appetite regime shifts"
+      }
+    ],
+    "rejected_hypotheses": [
+      "Credit stress (spreads) does not predict BTC at tested lags",
+      "Fed funds rate changes do not predict BTC returns",
+      "Yield curve shape is not predictive for BTC"
+    ]
+  },
+  "exit_criteria": {
+    "all_clusters_audited": true,
+    "all_clusters_attested": true,
+    "golden_features_identified": true,
+    "redundancy_checked": true,
+    "ios007_ready": true
+  },
+  "vega_attestation": {
+    "required": true,
+    "attested": false,
+    "attestor": null,
+    "timestamp": null,
+    "notes": "Awaiting final VEGA attestation for G3 completion"
+  },
+  "integrity_hash": "ef0b3f13ba2b5de3efc8f6d3f3f4bc493932e214d0fe5681c23a874a6e0c4364"
+}

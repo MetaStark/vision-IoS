@@ -1,20 +1,31 @@
 #!/usr/bin/env python3
 """
-Calibration Gate Enforcer - CEO-DIR-2026-032
+Calibration Gate Enforcer - CEO-DIR-2026-045
 STIG (CTO) - System for Technical Implementation & Governance
+
+CONSTITUTIONAL CONSTRAINT - NOT A TUNING PARAMETER
 
 This script enforces confidence calibration gates based on historical accuracy.
 It prevents "Algorithmic Arrogance" by capping confidence at proven accuracy levels.
 
-HARDENING UPGRADES:
-1. Sample-size floor: Gates only activate when n >= 100
-2. Asymmetric safety margin: +5% below 50%, +2% at 50-60%, +0% above 60%
-3. Regime precedence: exact match > forecast_type+ALL > global fallback
+PHASE 1: STATIC GATES (per CEO-DIR-2026-045)
+- Gates are computed once from empirical data
+- Gates are READ-ONLY - no adaptive updates
+- Every gate requires VEGA attestation
+- No recalibration until CEO authorizes Phase 2
+
+CALIBRATION BANDS (derived from forecast_outcome_pairs):
+  PRICE_DIRECTION:
+    95-100% confidence -> 35.08% accuracy -> ceiling 40.08%
+    80-95%  confidence -> 38.12% accuracy -> ceiling 43.12%
+    60-80%  confidence -> 47.51% accuracy -> ceiling 52.51%
+    40-60%  confidence -> 57.30% accuracy -> ceiling 62.30%
+    0-40%   confidence -> 56.12% accuracy -> ceiling 61.12%
 
 Usage:
-    python calibration_gate_enforcer.py --recalculate   # Weekly recalibration
     python calibration_gate_enforcer.py --status        # Show current gates
     python calibration_gate_enforcer.py --violations    # Show recent violations
+    python calibration_gate_enforcer.py --test          # Test enforcement
 """
 
 import os
@@ -27,9 +38,9 @@ from datetime import datetime
 from uuid import uuid4
 from decimal import Decimal
 
-DIRECTIVE_ID = "CEO-DIR-2026-032"
-MIN_SAMPLE_SIZE = 100
-WINDOW_DAYS = 30
+DIRECTIVE_ID = "CEO-DIR-2026-045"
+PHASE = "Phase 1 - Static Gates"
+MIN_SAMPLE_SIZE = 10  # Lowered for Phase 1 to include all bands
 
 
 def get_db_connection():
@@ -59,42 +70,47 @@ def calculate_asymmetric_safety_margin(accuracy: float) -> float:
         return 0.00
 
 
-def get_confidence_ceiling(conn, forecast_type: str, regime: str = 'ALL') -> dict:
+def get_confidence_ceiling(conn, forecast_type: str, raw_confidence: float, regime: str = 'ALL') -> dict:
     """
-    Get active confidence ceiling using precedence rules (Hardening #3).
+    Get active confidence ceiling for a specific raw confidence value.
+
+    The function finds the appropriate band for the raw_confidence and returns
+    the ceiling for that band.
 
     Precedence order:
-    1. Exact match: (forecast_type, regime)
-    2. Type + ALL: (forecast_type, 'ALL')
-    3. Global fallback: 0.45
+    1. Band match: (forecast_type, regime, band containing raw_confidence)
+    2. Type + ALL fallback
+    3. Global fallback: 0.50
     """
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Try exact match
+    # Get ceiling for the specific confidence band
     cursor.execute("""
-        SELECT ceiling, gate_id, match_type, historical_accuracy, sample_size
-        FROM fhq_governance.get_active_confidence_ceiling(%s, %s)
-    """, (forecast_type, regime))
+        SELECT ceiling, gate_id, match_type, historical_accuracy, sample_size, band_matched
+        FROM fhq_governance.get_active_confidence_ceiling(%s, %s, %s)
+    """, (forecast_type, raw_confidence, regime))
 
     result = cursor.fetchone()
     cursor.close()
 
     if result:
         return {
-            'ceiling': float(result['ceiling']),
+            'ceiling': float(result['ceiling']) if result['ceiling'] else 0.50,
             'gate_id': str(result['gate_id']) if result['gate_id'] else None,
             'match_type': result['match_type'],
             'historical_accuracy': float(result['historical_accuracy']) if result['historical_accuracy'] else None,
-            'sample_size': result['sample_size']
+            'sample_size': result['sample_size'],
+            'band_matched': result['band_matched']
         }
 
     # Fallback (shouldn't reach here if function works correctly)
     return {
-        'ceiling': 0.45,
+        'ceiling': 0.50,
         'gate_id': None,
         'match_type': 'GLOBAL_FALLBACK',
         'historical_accuracy': None,
-        'sample_size': None
+        'sample_size': None,
+        'band_matched': None
     }
 
 
@@ -357,7 +373,7 @@ def main():
                 result = enforce_gate(conn, test_forecast_id, test_conf,
                                        'PRICE_DIRECTION', 'ALL')
                 status = "CAPPED" if result['was_capped'] else "PASSED"
-                print(f"\n  Input: {test_conf*100:.0f}% → Output: "
+                print(f"\n  Input: {test_conf*100:.0f}% -> Output: "
                       f"{result['adjusted_confidence']*100:.1f}% [{status}]")
                 print(f"    Match: {result['match_type']}")
                 if result['was_capped']:

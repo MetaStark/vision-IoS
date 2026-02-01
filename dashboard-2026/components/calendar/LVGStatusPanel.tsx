@@ -3,11 +3,13 @@
  *
  * Section 5.5 Correction: LVG Status in Daily Reports.
  * Monitors: Entropy Score, Thrashing Index, Governor Action.
+ *
+ * CEO-DIR-2026-DAY25 UPDATE: Show cumulative totals, not just daily.
  */
 
 'use client'
 
-import { Gauge, Brain, Activity, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Gauge, Brain, Activity, AlertTriangle, CheckCircle, XCircle, Pause, Play } from 'lucide-react'
 
 interface LVGStatus {
   hypothesesBornToday: number
@@ -16,6 +18,13 @@ interface LVGStatus {
   thrashingIndex: number | null
   governorAction: string
   velocityBrakeActive: boolean
+  // Cumulative totals (CEO-DIR-2026-DAY25)
+  totalHypotheses?: number
+  totalFalsified?: number
+  totalActive?: number
+  deathRatePct?: number
+  lastHypothesisTime?: string
+  daemonStatus?: 'RUNNING' | 'STOPPED' | 'UNKNOWN'
 }
 
 interface ShadowTierStatus {
@@ -51,8 +60,35 @@ export function LVGStatusPanel({ lvg, shadowTier }: LVGStatusPanelProps) {
     return 'text-green-400'
   }
 
+  // Determine daemon status based on last hypothesis time
+  const getDaemonStatus = () => {
+    if (lvg.daemonStatus) return lvg.daemonStatus
+    if (!lvg.lastHypothesisTime) return 'UNKNOWN'
+    const lastTime = new Date(lvg.lastHypothesisTime)
+    const hoursSince = (Date.now() - lastTime.getTime()) / (1000 * 60 * 60)
+    return hoursSince < 1 ? 'RUNNING' : 'STOPPED'
+  }
+
+  const daemonStatus = getDaemonStatus()
+
   return (
     <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+      {/* Daemon Status Banner */}
+      {daemonStatus === 'STOPPED' && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Pause className="h-4 w-4 text-yellow-400" />
+            <span className="text-sm text-yellow-400 font-medium">Learning Paused</span>
+          </div>
+          <p className="text-xs text-yellow-400/70 mt-1">
+            FINN scheduler not running. No new hypotheses being generated.
+            {lvg.lastHypothesisTime && (
+              <> Last activity: {new Date(lvg.lastHypothesisTime).toLocaleString()}</>
+            )}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 mb-6">
         <Gauge className="h-5 w-5 text-purple-400" />
         <h3 className="text-lg font-semibold text-white">Learning Velocity Governor</h3>
@@ -61,7 +97,35 @@ export function LVGStatusPanel({ lvg, shadowTier }: LVGStatusPanelProps) {
             BRAKE ACTIVE
           </span>
         )}
+        {daemonStatus === 'RUNNING' && (
+          <span className="ml-auto px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
+            <Play className="h-3 w-3" /> ACTIVE
+          </span>
+        )}
       </div>
+
+      {/* Cumulative Totals (CEO-DIR-2026-DAY25) */}
+      {(lvg.totalHypotheses !== undefined || lvg.totalFalsified !== undefined) && (
+        <div className="mb-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Cumulative Learning</p>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-2xl font-bold text-white">{lvg.totalHypotheses ?? 0}</p>
+              <p className="text-xs text-gray-500">Total Tested</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-400">{lvg.totalFalsified ?? 0}</p>
+              <p className="text-xs text-gray-500">Falsified</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-400">
+                {lvg.deathRatePct !== undefined ? `${lvg.deathRatePct.toFixed(0)}%` : 'N/A'}
+              </p>
+              <p className="text-xs text-gray-500">Death Rate</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Hypotheses Born */}

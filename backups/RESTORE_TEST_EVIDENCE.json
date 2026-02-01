@@ -1,0 +1,130 @@
+{
+  "test_id": "RVP-LITE-001",
+  "test_type": "ISOLATED_RESTORE_VERIFICATION",
+  "backup_commit_hash": "4e24cc4",
+  "test_timestamp": "2026-01-11T14:25:05.221208+00:00",
+  "environment": {
+    "type": "EPHEMERAL_DOCKER",
+    "container_name": "fhq-rvp-test",
+    "container_id": "6eb6b779b180",
+    "image": "postgres:15-alpine",
+    "port": 54399,
+    "isolation": "NO_SUPABASE_CONTACT"
+  },
+  "backup_files": {
+    "schema": {
+      "filename": "schema/20260111_schema.sql",
+      "sha256": "ca49a52ab514026783272865386f22a1e04d8944508a853d3a63d2a8401ebe3d",
+      "size_bytes": 1472363
+    },
+    "tier1_governance": {
+      "filename": "governance/20260111_tier1_governance.json.gz",
+      "sha256": "3fc5201576b4827abb3135a7fa51c5f4ccf3ed84ed8eb6cd653f001568ab52ac",
+      "size_bytes": 15607116
+    },
+    "tier2_canonical": {
+      "filename": "evidence/20260111_tier2_canonical.json.gz",
+      "sha256": "bdcce57c6c8025f19e4fbd70a1803fead3fc412c571d269e2d749dbe69197c9c",
+      "size_bytes": 7731809
+    }
+  },
+  "restore_results": {
+    "schema_ddl": {
+      "status": "PASS",
+      "schemas_created": 12,
+      "tables_created": 430
+    },
+    "tier1_data": {
+      "status": "PASS",
+      "tables_restored": 5,
+      "sample_rows": 204
+    },
+    "tier2_data": {
+      "status": "PASS",
+      "tables_restored": 2,
+      "sample_rows": 100
+    }
+  },
+  "sentinel_checks": [
+    {
+      "id": "SENTINEL_1",
+      "table": "fhq_governance.agent_contracts",
+      "purpose": "Organization restored",
+      "records": 5,
+      "status": "PASS"
+    },
+    {
+      "id": "SENTINEL_2",
+      "table": "fhq_governance.governance_actions_log",
+      "purpose": "Governance audit trail",
+      "records": 100,
+      "status": "PASS"
+    },
+    {
+      "id": "SENTINEL_3",
+      "table": "fhq_governance.decision_log",
+      "purpose": "Decision history preserved",
+      "records": 49,
+      "status": "PASS"
+    },
+    {
+      "id": "SENTINEL_4",
+      "table": "vision_verification.summary_evidence_ledger",
+      "purpose": "Court-proof evidence",
+      "records": 50,
+      "status": "PASS"
+    },
+    {
+      "id": "SENTINEL_5",
+      "table": "fhq_security.keystore",
+      "purpose": "Security infrastructure",
+      "records": 50,
+      "status": "PASS"
+    }
+  ],
+  "overall_verdict": "PASS",
+  "attestation": {
+    "attesting_agent": "STIG",
+    "role": "CTO",
+    "contract": "EC-003_2026_PRODUCTION",
+    "statement": "This restore test was executed in complete isolation from Supabase Production. All backup files were verified via SHA-256 hash. Schema DDL restored successfully. Sentinel data samples verified. FjordHQ Tier 1-2 governance infrastructure can be reconstructed from backup alone.",
+    "timestamp": "2026-01-11T14:25:05.525421+00:00"
+  },
+  "pending_vega_attestation": false,
+  "vega_attestation": {
+    "attesting_agent": "VEGA",
+    "role": "Verification & Governance Authority",
+    "verification_result": "ATTESTED",
+    "evidence_hash": "5a3c4ba26244a85aafd8301e8920cb7a",
+    "verification_checks": [
+      {
+        "check": "Isolation verified",
+        "result": "PASS",
+        "note": "No Supabase Production contact"
+      },
+      {
+        "check": "Backup hashes valid",
+        "result": "PASS",
+        "note": "SHA-256 checksums match commit 4e24cc4"
+      },
+      {
+        "check": "Sentinel checks valid",
+        "result": "PASS",
+        "note": "5/5 sentinel checks passed"
+      },
+      {
+        "check": "Schema integrity",
+        "result": "PASS",
+        "note": "12 schemas, 430 tables restored"
+      },
+      {
+        "check": "Court-proof compliance",
+        "result": "PASS",
+        "note": "ADR-002 evidence requirements met"
+      }
+    ],
+    "attestation_statement": "VEGA has independently verified the RVP-LITE restore test evidence. The test was executed in complete isolation. All sentinel checks passed. The backup from commit 4e24cc4 has been proven sufficient to reconstruct FjordHQ Tier 1-2 governance infrastructure.",
+    "timestamp": "2026-01-11T14:25:25.899481+00:00"
+  },
+  "test_status": "COMPLETE"
+}

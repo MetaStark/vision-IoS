@@ -1,0 +1,58 @@
+{
+  "change_record_id": "CHANGE_RECORD_P3_3_2_LIDS_CONFIDENCE_FIX",
+  "change_type": "CODE_FIX",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "task": "3.2",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-13T03:20:00Z",
+  "status": "COMPLETE",
+
+  "executive_summary": {
+    "headline": "Fixed LIDS confidence field mismatch - signals with HIGH confidence now pass gate",
+    "commit": "3cd7750",
+    "lines_changed": 3,
+    "file_modified": "03_FUNCTIONS/signal_executor_daemon.py"
+  },
+
+  "root_cause": {
+    "description": "Code looked for 'confidence' or 'belief_confidence' fields, but SELECT query provides 'sitc_confidence_level'",
+    "location": "signal_executor_daemon.py:1698",
+    "impact": "All signals defaulted to confidence=0.00 and were blocked"
+  },
+
+  "fix_applied": {
+    "before": "lids_confidence = needle.get('confidence', needle.get('belief_confidence', 0.0))",
+    "after": "lids_confidence = needle.get('sitc_confidence_level', needle.get('confidence', needle.get('belief_confidence', 0.0)))",
+    "logic": "Look for sitc_confidence_level first (from SELECT), fall back to other fields for backwards compatibility"
+  },
+
+  "string_to_numeric_mapping": {
+    "HIGH": 0.85,
+    "MEDIUM": 0.70,
+    "LOW": 0.50,
+    "threshold": 0.70,
+    "note": "HIGH (0.85) and MEDIUM (0.70) will pass the 0.70 threshold"
+  },
+
+  "expected_behavior_change": {
+    "before": "All 8 signals blocked with confidence=0.00",
+    "after": "Signals with sitc_confidence_level='HIGH' pass with confidence=0.85",
+    "signals_affected": 8,
+    "new_status": "Will pass confidence gate, still subject to freshness gate"
+  },
+
+  "remaining_blocker": {
+    "gate": "LIDS Freshness",
+    "issue": "All needles 99-128 hours old vs 12h threshold",
+    "resolution": "Requires new needle generation (FINN hunt session restart)"
+  },
+
+  "verification_status": {
+    "code_change_applied": true,
+    "commit_created": true,
+    "runtime_verification": "PENDING - awaiting daemon restart",
+    "expected_log_output": "[LIDS-GATE] Confidence PASSED: 0.85 >= 0.70"
+  },
+
+  "rollback_procedure": "git revert 3cd7750"
+}

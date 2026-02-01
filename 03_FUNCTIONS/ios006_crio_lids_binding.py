@@ -36,6 +36,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
+# CEO-DIR-2026-020 D2: Mandatory Evidence Attachment
+try:
+    from mandatory_evidence_contract import attach_evidence, MissingEvidenceViolation
+    EVIDENCE_CONTRACT_ENABLED = True
+except ImportError:
+    EVIDENCE_CONTRACT_ENABLED = False
+
 
 # =================================================================
 # LOGGING
@@ -216,7 +223,7 @@ class CRIOLIDSBinding:
             logger.info(f"  Rule: {lids_reason}")
             logger.info(f"  Quad Hash: {quad_hash}")
 
-            return {
+            result = {
                 'success': True,
                 'insight_id': str(insight_id),
                 'lids_verified': lids_valid,
@@ -225,6 +232,41 @@ class CRIOLIDSBinding:
                 'quad_hash': quad_hash,
                 'lineage': lineage
             }
+
+            # CEO-DIR-2026-020 D2: Attach court-proof evidence for LIDS binding
+            if EVIDENCE_CONTRACT_ENABLED:
+                try:
+                    raw_query = f"""
+                    SELECT insight_id, research_date, fragility_score, dominant_driver,
+                           regime_assessment, confidence, reasoning_summary, lids_verified
+                    FROM fhq_research.nightly_insights
+                    WHERE insight_id = '{insight_id}'
+                    -- LIDS binding verification query
+                    """
+                    summary_id = f"LIDS-BINDING-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{str(insight_id)[:8]}"
+                    evidence_result = attach_evidence(
+                        conn=self.conn,
+                        summary_id=summary_id,
+                        summary_type='LIDS_BINDING',
+                        generating_agent='STIG',
+                        raw_query=raw_query,
+                        query_result=dict(insight),
+                        summary_content={
+                            'insight_id': str(insight_id),
+                            'lids_verified': lids_valid,
+                            'confidence': float(insight.get('confidence', 0)),
+                            'reason': lids_reason,
+                            'canonical_hash': canonical_hash[:16],
+                            'quad_hash': quad_hash
+                        },
+                        evidence_sources=['fhq_research.nightly_insights']
+                    )
+                    result['evidence_id'] = evidence_result['evidence_id']
+                    logger.info(f"[EVIDENCE-D2] LIDS binding evidence attached: {evidence_result['evidence_id']}")
+                except Exception as e:
+                    logger.error(f"[EVIDENCE-D2] Failed to attach LIDS evidence: {e}")
+
+            return result
 
     def bind_pending_insights(self) -> Dict[str, Any]:
         """

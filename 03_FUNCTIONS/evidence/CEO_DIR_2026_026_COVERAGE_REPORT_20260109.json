@@ -1,0 +1,155 @@
+{
+  "directive_id": "CEO-DIR-2026-026",
+  "report_type": "FORECAST_OUTCOME_COVERAGE_REMEDIATION",
+  "classification": "CRITICAL_PATH_EXECUTION",
+  "executed_by": "STIG",
+  "execution_timestamp": "2026-01-09T21:53:42Z",
+  "report_timestamp": "2026-01-09T21:58:00Z",
+
+  "executive_summary": {
+    "objective": "Raise Forecast-Outcome Coverage from baseline to ≥90%",
+    "baseline_coverage_pct": 4.5,
+    "achieved_coverage_pct": 77.1,
+    "delta_improvement_pct": 72.6,
+    "forecasts_reconciled": 12860,
+    "remaining_orphaned": 4066,
+    "status": "PARTIAL_SUCCESS"
+  },
+
+  "reconciliation_results": {
+    "total_forecasts": 17718,
+    "with_outcome": 13652,
+    "orphaned": 4066,
+    "coverage_pct": 77.1,
+
+    "price_direction_reconciled": {
+      "count": 12860,
+      "batches_processed": 26,
+      "skipped": 0
+    },
+
+    "regime_reconciled": {
+      "count": 0,
+      "reason": "Blocked by CEO-DIR-2026-020 circular reference protection",
+      "required_action": "REGIME forecasts require independent evidence source (not model_belief_state)"
+    }
+  },
+
+  "remaining_gaps": {
+    "gld_forecasts": {
+      "asset": "GLD",
+      "orphan_count": 2431,
+      "forecast_type": "PRICE_DIRECTION",
+      "date_range": {
+        "earliest": "2025-12-12",
+        "latest": "2026-01-08"
+      },
+      "required_action": "CEIO price backfill from yfinance/Alpha Vantage"
+    },
+    "tlt_forecasts": {
+      "asset": "TLT",
+      "orphan_count": 689,
+      "forecast_type": "PRICE_DIRECTION",
+      "date_range": {
+        "earliest": "2025-12-12",
+        "latest": "2026-01-08"
+      },
+      "required_action": "CEIO price backfill from yfinance/Alpha Vantage"
+    },
+    "regime_forecasts": {
+      "count": 946,
+      "forecast_type": "REGIME",
+      "blocked_by": "CEO-DIR-2026-020",
+      "required_action": "Develop non-circular REGIME outcome evidence source"
+    }
+  },
+
+  "calibration_metrics": {
+    "total_pairs_evaluated": 13652,
+    "avg_brier_score": 0.3171,
+    "hit_rate_pct": 40.7,
+    "correct_predictions": 5561,
+    "incorrect_predictions": 8091,
+
+    "per_asset_summary": [
+      {"asset": "BTC-USD", "count": 2453, "brier": 0.3127, "hit_rate": 37.9},
+      {"asset": "ETH-USD", "count": 2380, "brier": 0.3016, "hit_rate": 41.5},
+      {"asset": "SPY", "count": 2327, "brier": 0.3077, "hit_rate": 39.8},
+      {"asset": "SOL-USD", "count": 1665, "brier": 0.2967, "hit_rate": 41.7},
+      {"asset": "MSFT", "count": 724, "brier": 0.3338, "hit_rate": 43.9},
+      {"asset": "IWM", "count": 704, "brier": 0.3240, "hit_rate": 40.8},
+      {"asset": "NVDA", "count": 701, "brier": 0.3320, "hit_rate": 43.9},
+      {"asset": "GOOGL", "count": 660, "brier": 0.3161, "hit_rate": 44.2},
+      {"asset": "AAPL", "count": 655, "brier": 0.3407, "hit_rate": 41.5},
+      {"asset": "AMZN", "count": 646, "brier": 0.3470, "hit_rate": 39.3},
+      {"asset": "QQQ", "count": 607, "brier": 0.3244, "hit_rate": 43.3}
+    ],
+
+    "calibration_warning": {
+      "threshold": 0.30,
+      "current": 0.3171,
+      "status": "ABOVE_THRESHOLD",
+      "recommendation": "Per CEO-DIR-2026-025, system is overconfident. Hit rate 40.7% < 50% baseline indicates systematic bias."
+    }
+  },
+
+  "ceio_backfill_request": {
+    "request_id": "CEIO-BACKFILL-2026-026-001",
+    "requested_by": "STIG",
+    "priority": "HIGH",
+    "assets": [
+      {
+        "canonical_id": "GLD",
+        "asset_class": "ETF",
+        "date_range_start": "2025-12-01",
+        "date_range_end": "2026-01-09",
+        "preferred_source": "yfinance",
+        "fallback_source": "Alpha Vantage (Tier 3)"
+      },
+      {
+        "canonical_id": "TLT",
+        "asset_class": "ETF",
+        "date_range_start": "2025-12-01",
+        "date_range_end": "2026-01-09",
+        "preferred_source": "yfinance",
+        "fallback_source": "Alpha Vantage (Tier 3)"
+      }
+    ],
+    "estimated_forecasts_unlocked": 3120,
+    "target_coverage_after_backfill_pct": 94.7
+  },
+
+  "next_steps": [
+    {
+      "step": 1,
+      "action": "CEIO executes GLD/TLT price backfill",
+      "owner": "CEIO",
+      "blocking": true
+    },
+    {
+      "step": 2,
+      "action": "Re-run reconciliation script for GLD/TLT forecasts",
+      "owner": "STIG",
+      "blocking": false
+    },
+    {
+      "step": 3,
+      "action": "Develop independent REGIME outcome source (not model_belief_state)",
+      "owner": "FINN/STIG",
+      "blocking": false
+    },
+    {
+      "step": 4,
+      "action": "Recompute Brier ledger and weekly_learning_metrics",
+      "owner": "STIG",
+      "blocking": false
+    }
+  ],
+
+  "governance_compliance": {
+    "hash_chain_id": "CEO-DIR-2026-026-RECONCILE",
+    "evidence_attached": true,
+    "court_proof_status": "COMPLIANT",
+    "ceo_dir_2020_respected": true
+  }
+}

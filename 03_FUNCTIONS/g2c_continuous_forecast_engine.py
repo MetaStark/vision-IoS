@@ -47,6 +47,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
+# CEO-DIR-2026-064R Section 3.1: Code-Level Injection Point (Hard Enforcement)
+# Import the mandatory confidence damper - NO BYPASS ALLOWED
+from forecast_confidence_damper import ForecastConfidenceDamper, get_damper
+
 # =================================================================
 # LOGGING
 # =================================================================
@@ -241,8 +245,24 @@ class G2CForecastEngine:
         # Forecast direction
         direction = "UP" if direction_probability > 0.5 else "DOWN"
 
-        # Confidence (based on regime confidence + randomness)
-        forecast_confidence = regime_confidence * random.uniform(0.7, 1.0)
+        # CEO-DIR-2026-064R Section 3.1: MANDATORY CONFIDENCE DAMPENING
+        # Step 1: Generate raw model confidence (original logic preserved for lineage)
+        raw_confidence = regime_confidence * random.uniform(0.7, 1.0)
+
+        # Step 2: Apply CEO-DIR-2026-063R damper - THIS IS DIRECTIVE-MANDATED
+        # No raw confidence > historical ceiling shall be persisted
+        damper = get_damper()
+        dampening_result = damper.damp_confidence(
+            raw_confidence=raw_confidence,
+            forecast_type="PRICE_DIRECTION",
+            regime=regime,
+            log_dampening=True
+        )
+
+        # Step 3: Extract dampening data (full dict returned by class method)
+        forecast_confidence = dampening_result.get('damped_confidence', raw_confidence)
+        dampening_delta = dampening_result.get('dampening_delta', 0.0)
+        ceiling_applied = dampening_result.get('ceiling_applied', None)
 
         # Horizon
         horizon_minutes = strategy_config["horizon_minutes"]
@@ -251,6 +271,11 @@ class G2CForecastEngine:
         # Generate context hash (includes valid_until per CEO directive)
         hash_input = f"{strategy_id}|{asset}|{now.isoformat()}|{valid_until.isoformat()}|{direction}|{direction_probability}"
         context_hash = hashlib.sha256(hash_input.encode()).hexdigest()
+
+        # Generate damper version hash for lineage (IoS-010)
+        damper_version_hash = hashlib.sha256(
+            f"CEO-DIR-2026-063R|{ceiling_applied or 0.40}|{now.isoformat()}".encode()
+        ).hexdigest()[:16]
 
         forecast = {
             "forecast_id": str(uuid.uuid4()),
@@ -265,7 +290,14 @@ class G2CForecastEngine:
             "valid_until": valid_until,
             "context_hash": context_hash,
             "regime_at_forecast": regime,
-            "defcon_at_forecast": context.get("defcon_level", "GREEN")
+            "defcon_at_forecast": context.get("defcon_level", "GREEN"),
+            # CEO-DIR-2026-064R Section 3.3: Lineage data for IoS-010
+            "raw_confidence": round(raw_confidence, 4),
+            "damped_confidence": round(forecast_confidence, 4),
+            "dampening_delta": round(dampening_delta, 4),
+            "ceiling_applied": round(ceiling_applied, 4) if ceiling_applied else None,
+            "damper_version_hash": damper_version_hash,
+            "damper_directive": "CEO-DIR-2026-063R"
         }
 
         return forecast

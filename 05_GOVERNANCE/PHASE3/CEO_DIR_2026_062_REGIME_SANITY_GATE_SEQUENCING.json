@@ -1,0 +1,97 @@
+{
+  "directive": "CEO-DIR-2026-062",
+  "title": "Regime Sanity Gate Registration & Sequencing Lock",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T01:00:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "AUTHORIZATION_TO_REGISTER",
+  "system_mode": "LEARNING_MODE",
+
+  "context": {
+    "predecessor": {
+      "task": "forecast_confidence_damper",
+      "task_id": "da236371-17d9-4764-9f15-590d25f61304",
+      "status": "Registered as P0/G1, sole authorized active FMCL intervention"
+    },
+    "target_failure_mode": "Anti-correlated regime predictions, especially in BEAR/STRESS transitions",
+    "critical_principle": "Sequence is critical"
+  },
+
+  "decision": {
+    "action": "Register regime_sanity_gate as P1 task",
+    "constraint": "Activation FORBIDDEN until explicit CEO approval after observed calibration delta",
+    "lock_type": "SEQUENCING_LOCK (not technical limitation)"
+  },
+
+  "task_registration": {
+    "task_id": "cb018261-820d-44c3-8b4e-453a72c2f6c1",
+    "task_name": "regime_sanity_gate",
+    "task_type": "FMCL_REGIME_CONSISTENCY",
+    "priority": "P1",
+    "change_gate": "G1 (Controlled Activation)",
+    "status": "pending",
+    "enabled": false,
+    "owner": "FINN",
+    "verifier_runtime": "STIG",
+    "verifier_governance": "VEGA"
+  },
+
+  "hard_scope_boundary": {
+    "statement": "Operates post-prediction. Enforces logical and probabilistic consistency across regime outputs. Does NOT modify feature space, training data, or model parameters.",
+    "binding": true
+  },
+
+  "activation_preconditions": {
+    "non_negotiable": true,
+    "all_must_be_true": [
+      {
+        "condition": "forecast_confidence_damper has produced negative delta in Calibration Error",
+        "verifier": "STIG"
+      },
+      {
+        "condition": "Result verified by STIG",
+        "verifier": "STIG"
+      },
+      {
+        "condition": "Result attested by VEGA",
+        "verifier": "VEGA"
+      },
+      {
+        "condition": "CEO has issued explicit activation directive (new CEO-DIR)",
+        "verifier": "CEO"
+      }
+    ],
+    "implicit_escalation": "FORBIDDEN"
+  },
+
+  "rationale": {
+    "binding": true,
+    "calibration_role": "Corrects how hard the system believes (confidence intensity)",
+    "sanity_gate_role": "Corrects what the system is allowed to believe (logical validity)",
+    "sequence_violation_consequences": [
+      "Learning contamination",
+      "Calibration error masking",
+      "Loss of causal traceability"
+    ],
+    "statement": "This is not optional."
+  },
+
+  "sequencing_declaration": {
+    "active_intervention": "forecast_confidence_damper (P0)",
+    "waiting_interventions": ["regime_sanity_gate (P1)"],
+    "principle": "forecast_confidence_damper is the sole active intervention. Everything else waits."
+  },
+
+  "governance_actions": {
+    "directive_issued": "89707a8a-548e-4f75-a8a0-bd62f3e56797",
+    "task_registered": "82bf5d73-dfbd-45ea-8d2d-44b6a01ffde3"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "registered_by": "STIG",
+    "timestamp": "2026-01-14T01:02:00Z",
+    "artifact_registered": true
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "directive": "CEO-DIR-2026-063R",
+  "title": "forecast_confidence_damper Controlled Activation, Evidence, Rollback & Constitutional Compliance (G1)",
+  "directive_type": "EXECUTION",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T01:30:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "change_gate": "G1",
+  "scope": "FMCL_CALIBRATION (post-prediction / pre-evaluation only)",
+
+  "purpose": {
+    "authorization": "Controlled activation of forecast_confidence_damper as first and only P0 intervention",
+    "objectives": [
+      "Reduce systematic overconfidence",
+      "Preserve prediction power (resolution)",
+      "Comply with latency requirements in decision chain",
+      "Enable deterministic proof of learning effect over time"
+    ],
+    "constitutional_compliance": ["ADR-014", "IoS-005", "IoS-008", "IoS-010"]
+  },
+
+  "hard_scope_boundary": {
+    "binding": true,
+    "must_operate": "Post-prediction and pre-evaluation ONLY",
+    "must_not_modify": [
+      "Feature space",
+      "Training data",
+      "Model parameters",
+      "Training pipeline"
+    ],
+    "violation_consequences": [
+      "Immediate rollback",
+      "Governance deviation logged",
+      "VEGA review triggered"
+    ]
+  },
+
+  "activation_protocol": {
+    "gate": "G1",
+    "task_id": "da236371-17d9-4764-9f15-590d25f61304",
+    "action": "Set enabled = true",
+    "owner": "FINN (CRIO)",
+    "log_requirements": {
+      "change_gate": "G1",
+      "owner": "FINN (CRIO)",
+      "reason": "Calibration Error reduction vs baseline 0.5411"
+    }
+  },
+
+  "evidence_bundle_requirements": {
+    "binding": true,
+    "responsible": "STIG",
+    "sections": {
+      "A_identifiers": {
+        "required": [
+          "Task ID",
+          "Holdout baseline ID",
+          "Evaluated time window",
+          "Hash references (input/output)"
+        ]
+      },
+      "B_quality_metrics": {
+        "required": [
+          {"metric": "Calibration Error", "comparison": "delta vs 0.5411"},
+          {"metric": "Brier Score", "comparison": "delta vs 0.5158"},
+          {"metric": "Hit Rate", "priority": "secondary"}
+        ]
+      },
+      "C_skill_preservation": {
+        "ios_reference": "IoS-005",
+        "requirement": "ΔFSS (FjordHQ Skill Score) MUST be ≥ 0",
+        "purpose": "Ensure calibration does not sacrifice resolution / total prediction power"
+      },
+      "D_latency_enforcement": {
+        "ios_reference": "IoS-008",
+        "requirement": "p95 latency MUST be ≤ 500 ms",
+        "scope": "Entire post-prediction → pre-decision path",
+        "condition": "Measured under realistic load",
+        "violation": "Automatic FAIL"
+      },
+      "E_audit_lineage_integrity": {
+        "ios_reference": "IoS-010",
+        "requirement": "All damped predictions must be logged",
+        "target_table": "fhq_research.forecast_outcome_pairs",
+        "required_columns": [
+          "parent_forecast_id",
+          "damper_version_hash"
+        ],
+        "purpose": [
+          "Deterministic A/B analysis",
+          "Provable learning effect over time"
+        ]
+      }
+    }
+  },
+
+  "pass_fail_gates": {
+    "pass_g1_success": {
+      "all_required": [
+        {"metric": "Calibration Error", "condition": "MUST decrease"},
+        {"metric": "Brier Score", "condition": "MUST be non-positive delta"},
+        {"metric": "ΔFSS", "condition": "MUST be ≥ 0"},
+        {"metric": "p95 latency", "condition": "≤ 500 ms"},
+        {"metric": "Governance violations", "condition": "ZERO"},
+        {"metric": "Evidence bundle", "condition": "COMPLETE"}
+      ]
+    },
+    "fail_auto_rollback": {
+      "trigger": "If ANY condition fails",
+      "actions": [
+        "Task set to enabled = false",
+        "Event logged as G1_FAIL_CALIBRATION",
+        "VEGA triggered automatically"
+      ]
+    }
+  },
+
+  "sequencing_enforcement": {
+    "statement": "This directive does NOT modify CEO-DIR-2026-062",
+    "regime_sanity_gate_status": {
+      "status": "pending",
+      "locked": true,
+      "activation": "EXPLICITLY FORBIDDEN"
+    },
+    "implicit_escalation": "NOT ALLOWED"
+  },
+
+  "baseline_reference": {
+    "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+    "evaluation_id": "fa064665-9511-42f9-8fe0-1c1fb5f383e2",
+    "brier_baseline": 0.5158,
+    "calibration_error_baseline": 0.5411,
+    "hit_rate_baseline": 0.3645
+  },
+
+  "final_declaration": {
+    "constitutional_correctness": true,
+    "metric_completeness": true,
+    "latency_safety": true,
+    "audit_determinism": true,
+    "statement": "This is not just a technical calibration. It is a cognitive upgrade with full traceability."
+  },
+
+  "execution_assignment": {
+    "FINN_CRIO": "Activation (set enabled=true)",
+    "STIG": "Runtime verification & evidence bundle",
+    "VEGA": "Governance attestation"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T01:30:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

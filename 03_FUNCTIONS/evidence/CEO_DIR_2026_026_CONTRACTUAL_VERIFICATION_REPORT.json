@@ -1,0 +1,209 @@
+{
+  "directive_id": "CEO-DIR-2026-026-REVISED",
+  "report_type": "CONTRACTUAL_ACCOUNTABILITY_VERIFICATION",
+  "classification": "GOVERNANCE_VERIFICATION",
+  "produced_by": "STIG",
+  "role": "Contractual Verifier (NOT Executor)",
+  "report_timestamp": "2026-01-09T22:15:00Z",
+
+  "executive_summary": {
+    "purpose": "Per CEO-DIR-2026-026 (Revised): Verify that all unresolved obligations are mapped to EC-defined responsibility with explicit mandate language.",
+    "finding": "MANDATE GAPS IDENTIFIED",
+    "critical_gaps": 3,
+    "ambiguities": 2,
+    "total_obligations_verified": 5
+  },
+
+  "obligation_verification": {
+
+    "1_forecast_outcome_coverage": {
+      "obligation": "Forecast-Outcome Coverage & Reconciliation",
+      "current_state": "77.1% coverage achieved, 4,066 orphaned forecasts remain",
+      "ec_mapping": {
+        "finn_ec004": {
+          "mandate_section": "4.1 Canonical Market Regime Determination",
+          "explicit_language": "FINN is the sole owner of the Canonical Market Regime State stored in fhq_meta.regime_state",
+          "coverage": "PARTIAL - Owns regime truth, NOT reconciliation"
+        },
+        "crio_ec013": {
+          "mandate_section": "Derived from FINN",
+          "explicit_language": "Research & Insight under FINN's methodological authority",
+          "coverage": "PARTIAL - Research methodology, NOT reconciliation execution"
+        },
+        "stig_ec003": {
+          "mandate_section": "4.1 Infrastructure Sovereignty (ADR-013)",
+          "explicit_language": "STIG is the Sole Custodian of all FjordHQ schemas",
+          "coverage": "PARTIAL - Owns schema, NOT reconciliation logic"
+        }
+      },
+      "gap_identified": true,
+      "gap_description": "NO EC explicitly mandates 'Forecast-Outcome Reconciliation'. IoS-010 Reconciliation Engine has no contractual owner. Responsibility is ASSUMED, not DEFINED.",
+      "required_action": "ESCALATION - CEO must define EC-level mandate for Forecast-Outcome Reconciliation ownership",
+      "suggested_owner": "FINN (methodological) + STIG (execution infrastructure)",
+      "severity": "HIGH"
+    },
+
+    "2_external_data_ingest": {
+      "obligation": "External Data Ingest (including GLD/TLT price backfill)",
+      "current_state": "GLD and TLT prices missing from fhq_market.prices",
+      "ec_mapping": {
+        "ceio_ec009": {
+          "mandate_section": "3. Mandate + 4.1 Signal Ingestion & Normalization",
+          "explicit_language": "CEIO's mandate is: 'Fetch. Filter. Format.' ... CEIO serves as the exclusive ingest authority for: (1) Macroeconomic Data (2) Market News & Sentiment (3) On-Chain Metrics (4) External Pricing Feeds",
+          "coverage": "EXPLICIT - CEIO owns external data ingestion"
+        }
+      },
+      "gap_identified": false,
+      "mandate_clear": true,
+      "responsible_ec": "EC-009 (CEIO)",
+      "action_required_from": "CEIO",
+      "action_description": "CEIO must execute GLD/TLT price backfill per Section 4.1 Signal Ingestion mandate",
+      "enforcement_mechanism": "STIG monitors pipeline integrity per EC-003 Section 4.8; VEGA validates lineage per EC-001 Section 5.8"
+    },
+
+    "3_reconciliation_integrity": {
+      "obligation": "Reconciliation Integrity (Data Lineage)",
+      "current_state": "Forecast-Outcome pairs created but no formal reconciliation protocol",
+      "ec_mapping": {
+        "vega_ec001": {
+          "mandate_section": "5.8 Data Lineage Immutability",
+          "explicit_language": "VEGA ensures: Raw Data → Indicators → Regimes → Strategies → Signals → Decisions is untampered and mathematically consistent",
+          "coverage": "EXPLICIT - VEGA owns lineage integrity"
+        },
+        "stig_ec003": {
+          "mandate_section": "4.1 Infrastructure Sovereignty",
+          "explicit_language": "Referential integrity, lineage (BCBS-239) and canonical schema approval are mandatory",
+          "coverage": "EXPLICIT - STIG owns schema integrity"
+        }
+      },
+      "gap_identified": false,
+      "mandate_clear": true,
+      "responsible_ec": "EC-001 (VEGA) + EC-003 (STIG)",
+      "delineation": "VEGA: verification of lineage integrity | STIG: implementation of schema constraints"
+    },
+
+    "4_epistemic_risk_containment": {
+      "obligation": "Epistemic Risk Containment (as defined: 'inability to perceive that all knowing is mediated through interpretive frameworks')",
+      "current_state": "Weekly learning metrics show 16.6% regret rate, 40.7% hit rate",
+      "ec_mapping": {
+        "finn_ec004": {
+          "mandate_section": "4.6 Live-Market Drift Detection",
+          "explicit_language": "FINN must operate drift detection algorithms for: Data anomalies, Regime transitions, Model decay, Feature importance inversion. If drift > 0.08 → FINN must notify STIG to escalate to DEFCON 3",
+          "coverage": "PARTIAL - Drift detection, NOT epistemic blindness"
+        },
+        "cfao_ec007": {
+          "mandate_section": "4.3 Regime Foresight Integration + Weak Signal Detection",
+          "explicit_language": "CFAO must detect pre-conditions for regime shifts",
+          "coverage": "PARTIAL - Regime foresight, NOT epistemic blindness"
+        },
+        "vega_ec001": {
+          "mandate_section": "5.4 Sovereignty Scoring",
+          "explicit_language": "Score every system, model, and component. Detect regressions in autonomy or data quality",
+          "coverage": "PARTIAL - Quality scoring, NOT epistemic blindness"
+        }
+      },
+      "gap_identified": true,
+      "gap_description": "NO EC explicitly addresses 'Epistemic Blindness' as defined in CEO-DIR-2026-026. The directive defines epistemic blindness as 'confusing constructed models of reality with reality itself' - this is a META-COGNITIVE function that no current EC mandates.",
+      "required_action": "ESCALATION - CEO must define EC-level mandate for Epistemic Risk Containment",
+      "suggested_solution": "Either (a) amend VEGA EC-001 to include meta-cognitive audit, or (b) create new EC for Epistemic Oversight",
+      "severity": "CRITICAL"
+    },
+
+    "5_governance_enforcement": {
+      "obligation": "Governance Enforcement (continuous accountability)",
+      "current_state": "VEGA operational, governance_actions_log active",
+      "ec_mapping": {
+        "vega_ec001": {
+          "mandate_section": "Entire document - Constitutional Auditor",
+          "explicit_language": "VEGA is hereby employed as the sole authority for constitutional enforcement inside FjordHQ's quantitative system",
+          "coverage": "EXPLICIT - VEGA owns governance enforcement"
+        },
+        "stig_ec003": {
+          "mandate_section": "4.5 Distributed Guardrail Enforcement",
+          "explicit_language": "STIG enforces model-tier isolation... Signature mismatch → AUTOMATIC BLOCK",
+          "coverage": "EXPLICIT - STIG enforces technical guardrails"
+        }
+      },
+      "gap_identified": false,
+      "mandate_clear": true,
+      "responsible_ec": "EC-001 (VEGA) primary, EC-003 (STIG) technical enforcement"
+    }
+  },
+
+  "critical_findings": {
+    "mandate_gaps": [
+      {
+        "gap_id": "GAP-001",
+        "description": "Forecast-Outcome Reconciliation has no explicit EC mandate",
+        "affected_systems": ["IoS-010", "Brier Score Ledger", "forecast_outcome_pairs"],
+        "risk": "Responsibility is ASSUMED based on role inference, not contractually defined",
+        "severity": "HIGH",
+        "recommendation": "CEO amendment to assign explicit reconciliation mandate"
+      },
+      {
+        "gap_id": "GAP-002",
+        "description": "Epistemic Blindness Containment has no explicit EC mandate",
+        "affected_systems": ["Meta-cognitive audit", "Calibration truth verification"],
+        "risk": "System may confuse model confidence with actual accuracy without detection",
+        "severity": "CRITICAL",
+        "recommendation": "CEO constitutional amendment for meta-cognitive oversight function"
+      },
+      {
+        "gap_id": "GAP-003",
+        "description": "Brier Score Calibration ownership undefined",
+        "affected_systems": ["fhq_governance.brier_score_ledger", "calibration_dashboard"],
+        "risk": "Probabilistic calibration has no accountable owner",
+        "severity": "MEDIUM",
+        "recommendation": "Assign to FINN (methodological) with STIG infrastructure support"
+      }
+    ],
+
+    "ambiguities": [
+      {
+        "ambiguity_id": "AMB-001",
+        "description": "EC-007 database entry shows CDMO, but filesystem EC-007 is CFAO",
+        "affected_systems": ["fhq_meta.vega_employment_contract", "10_EMPLOYMENT CONTRACTS/"],
+        "risk": "EC registry discrepancy between database and canonical documents",
+        "recommendation": "Reconcile database EC registry with filesystem canonical documents"
+      },
+      {
+        "ambiguity_id": "AMB-002",
+        "description": "CDMO contract not found in filesystem EC documents",
+        "affected_systems": ["Data Memory operations", "Synthetic data governance"],
+        "risk": "CDMO operates without explicit canonical EC document accessible in filesystem",
+        "recommendation": "Locate or create canonical CDMO EC document"
+      }
+    ]
+  },
+
+  "enforcement_mechanisms_verified": {
+    "governance_actions_log": true,
+    "hash_chain_integrity": true,
+    "ed25519_signatures": true,
+    "defcon_protocol": true,
+    "vega_audit_capability": true
+  },
+
+  "stig_compliance_statement": {
+    "role_adherence": "STIG has acted as Contractual Verifier per directive",
+    "actions_not_taken": [
+      "Did NOT reassign responsibility",
+      "Did NOT reinterpret contract language",
+      "Did NOT compensate for missing mandate through action"
+    ],
+    "escalation_required": true,
+    "escalation_to": "CEO",
+    "escalation_reason": "Mandate gaps identified for Forecast-Outcome Reconciliation and Epistemic Blindness Containment"
+  },
+
+  "conclusion": {
+    "status": "VERIFICATION_COMPLETE_WITH_GAPS",
+    "summary": "Two critical mandate gaps identified. The system has been operating on ASSUMED responsibility, not CONTRACTUAL responsibility. Per CEO-DIR-2026-026 Section 3.1: 'Where responsibility is unclear, the correct action is escalation, not execution.'",
+    "required_ceo_action": [
+      "Define EC mandate for Forecast-Outcome Reconciliation",
+      "Define EC mandate for Epistemic Blindness Containment",
+      "Reconcile database/filesystem EC discrepancy"
+    ],
+    "no_further_action_authorized": "STIG may not execute further remediation without explicit EC-defined mandate"
+  }
+}

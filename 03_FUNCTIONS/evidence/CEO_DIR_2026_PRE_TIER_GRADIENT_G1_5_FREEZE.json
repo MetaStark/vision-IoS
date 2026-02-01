@@ -1,0 +1,106 @@
+{
+  "evidence_id": "PRE-TIER-G1.5-FREEZE-20260125",
+  "directive": "CEO-DIR-2026-PRE-TIER-GRADIENT-G1.5",
+  "phase": "EMPIRICAL_CALIBRATION",
+  "status": "ACTIVE",
+  "timestamp": "2026-01-25T22:45:00Z",
+  "executor": "STIG",
+  "executor_ec": "EC-003",
+
+  "freeze_order": {
+    "effective_immediately": true,
+    "frozen_parameters": {
+      "weights": {
+        "evidence_density": 0.30,
+        "causal_depth": 0.40,
+        "data_freshness": 0.20,
+        "cross_agent_agreement": 0.10
+      },
+      "thresholds": {
+        "oxygen_score": 75,
+        "oxygen_depth": 3
+      },
+      "agent_roles": {
+        "orchestrator": "VEGA (EC-004)",
+        "validators": ["CEIO", "FINN-E", "GN-S"]
+      },
+      "oxygen_criteria": {
+        "defcon": "GREEN",
+        "depth_minimum": 3,
+        "score_minimum": 75,
+        "extension_hours": 12
+      }
+    },
+    "modification_blocked_until": "n >= 30 hypothesis deaths with pre_tier_score"
+  },
+
+  "calibration_baseline": {
+    "tracked_hypotheses": 12,
+    "deaths_with_score": 0,
+    "calibration_threshold": 30,
+    "progress_percent": 0.0,
+    "calibration_ready": false
+  },
+
+  "birth_scores_locked": [
+    {"code": "CRYPTO-REGI-20260125201419", "birth_score": 70.86, "status": "LOCKED"},
+    {"code": "CRYPTO-VOLA-20260125201420", "birth_score": 70.50, "status": "LOCKED"},
+    {"code": "CRYPTO-REGI-20260125194415", "birth_score": 70.42, "status": "LOCKED"},
+    {"code": "CRYPTO-VOLA-20260125194416", "birth_score": 70.06, "status": "LOCKED"},
+    {"code": "CRYPTO-REGI-20260125191408", "birth_score": 69.98, "status": "LOCKED"},
+    {"code": "CRYPTO-VOLA-20260125191408", "birth_score": 69.62, "status": "LOCKED"},
+    {"code": "CRYPTO-REGI-20260125184404", "birth_score": 69.55, "status": "LOCKED"},
+    {"code": "CRYPTO-VOLA-20260125184404", "birth_score": 69.19, "status": "LOCKED"},
+    {"code": "CRYPTO-REGI-20260125181402", "birth_score": 69.11, "status": "LOCKED"},
+    {"code": "CRYPTO-VOLA-20260125181402", "birth_score": 68.75, "status": "LOCKED"},
+    {"code": "HYP-2026-0009", "birth_score": 65.56, "status": "LOCKED"},
+    {"code": "HYP-2026-0008", "birth_score": 52.15, "status": "LOCKED"}
+  ],
+
+  "metrics_specification": {
+    "primary": {
+      "name": "Spearman Correlation",
+      "variables": ["pre_tier_score_at_birth", "time_to_falsification"],
+      "purpose": "Measure predictive ordering power"
+    },
+    "secondary": [
+      {
+        "name": "Pearson Correlation",
+        "status": "Reported only, not optimized for"
+      },
+      {
+        "name": "Survival by Score Quartiles",
+        "quartiles": ["Q1: <55", "Q2: 55-65", "Q3: 65-70", "Q4: >70"]
+      }
+    ]
+  },
+
+  "vega_interface": {
+    "trigger_condition": "n = 30 deaths with pre_tier_score",
+    "trigger_rule": "Pre-Tier Calibration N30 Trigger",
+    "report_type": "Reasoning-Delta",
+    "report_contents": [
+      "Quartile survival curves",
+      "High-score (>65) vs low-score (<55) survival delta",
+      "Confidence commentary (no tuning recommendations)"
+    ]
+  },
+
+  "migration_file": "04_DATABASE/MIGRATIONS/351_pre_tier_gradient_g1_5_freeze.sql",
+  "migration_result": "COMMIT",
+
+  "schema_changes": {
+    "columns_added": [
+      "pre_tier_score_at_birth NUMERIC(5,2)",
+      "time_to_falsification_hours NUMERIC(10,2)",
+      "death_timestamp TIMESTAMPTZ"
+    ],
+    "views_created": ["fhq_learning.v_pre_tier_calibration_tracker"],
+    "vega_rules_added": ["Pre-Tier Calibration N30 Trigger"]
+  },
+
+  "principle": "Observation beats intervention. Prove ranking power before earning tuning rights.",
+
+  "adr_compliance": ["ADR-011", "ADR-013"],
+  "vega_attestation": "PENDING"
+}

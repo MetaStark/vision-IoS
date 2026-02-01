@@ -1,0 +1,230 @@
+{
+  "$schema": "fhq://governance/orchestrator-schedule/v1",
+  "config_id": "CNRP-001-SCHEDULE",
+  "directive": "CEO-DIR-2026-009-B",
+  "classification": "STRATEGIC-CONSTITUTIONAL",
+  "effective_date": "2026-01-07T00:00:00Z",
+  "approved_by": "CEO",
+  "approved_at": "2026-01-07T02:00:00Z",
+  "approval_pending": false,
+
+  "design_principles": {
+    "primary_executor": "FjordHQ Orchestrator (orchestrator_v1.py)",
+    "secondary_watchdog": "Windows Task Scheduler (health monitor only)",
+    "execution_model": "Causal Chain with Gate Enforcement",
+    "governance_logging": "MANDATORY for all executions"
+  },
+
+  "causal_chain": {
+    "description": "R1 → R2 → R3 → R4 with strict ordering and gate enforcement",
+    "chain": [
+      {"phase": "R1", "depends_on": null},
+      {"phase": "R2", "depends_on": "R1"},
+      {"phase": "R3", "depends_on": "R2"},
+      {"phase": "R4", "depends_on": "R3"}
+    ],
+    "chain_failure_policy": "HALT_AND_ESCALATE"
+  },
+
+  "schedules": {
+    "R1_evidence_refresh": {
+      "task_id": "CNRP-R1-CEIO",
+      "daemon": "ceio_evidence_refresh_daemon.py",
+      "gate": "G2",
+      "authority": "CEIO",
+
+      "schedule": {
+        "type": "interval",
+        "interval_hours": 4,
+        "anchor_time": "00:00:00Z",
+        "execution_times": ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"]
+      },
+
+      "preconditions": [
+        {"check": "database_connection", "required": true},
+        {"check": "defcon_level", "max_level": 3},
+        {"check": "previous_cycle_not_running", "required": true}
+      ],
+
+      "success_criteria": {
+        "min_nodes_refreshed": 1,
+        "max_staleness_hours": 24
+      },
+
+      "on_success": "TRIGGER_R2",
+      "on_failure": "ESCALATE_TO_LINE",
+      "max_retries": 2,
+      "retry_delay_minutes": 5
+    },
+
+    "R2_graph_rebuild": {
+      "task_id": "CNRP-R2-CRIO",
+      "daemon": "crio_alpha_graph_rebuild.py",
+      "gate": "G3",
+      "authority": "CRIO",
+
+      "schedule": {
+        "type": "chained",
+        "trigger": "R1_SUCCESS",
+        "delay_minutes": 5,
+        "comment": "Executes 5 minutes after R1 success (not fixed cron)"
+      },
+
+      "preconditions": [
+        {"check": "R1_completed_within", "max_age_minutes": 30},
+        {"check": "evidence_freshness", "max_staleness_hours": 24}
+      ],
+
+      "success_criteria": {
+        "stale_relationships_removed": true,
+        "fresh_relationships_created": true
+      },
+
+      "on_success": "TRIGGER_R3",
+      "on_failure": "ESCALATE_TO_LINE",
+      "max_retries": 1,
+      "retry_delay_minutes": 2
+    },
+
+    "R3_hygiene_attestation": {
+      "task_id": "CNRP-R3-CDMO",
+      "daemon": "cdmo_data_hygiene_attestation.py",
+      "gate": "G3",
+      "authority": "CDMO",
+
+      "schedule": {
+        "type": "chained",
+        "trigger": "R2_SUCCESS",
+        "delay_minutes": 2,
+        "comment": "Executes 2 minutes after R2 success"
+      },
+
+      "preconditions": [
+        {"check": "R2_completed_within", "max_age_minutes": 15}
+      ],
+
+      "success_criteria": {
+        "attestation_issued": true,
+        "hygiene_status": ["CLEAN", "ATTENTION_REQUIRED"]
+      },
+
+      "on_success": "TRIGGER_R4",
+      "on_failure": "ESCALATE_TO_CDMO",
+      "max_retries": 1,
+      "retry_delay_minutes": 2
+    },
+
+    "R4_integrity_monitor": {
+      "task_id": "CNRP-R4-VEGA",
+      "daemon": "vega_epistemic_integrity_monitor.py",
+      "gate": "G1",
+      "authority": "VEGA",
+
+      "schedule": {
+        "type": "hybrid",
+        "modes": [
+          {
+            "mode": "chained",
+            "trigger": "R3_SUCCESS",
+            "delay_minutes": 1,
+            "comment": "Post-cycle verification"
+          },
+          {
+            "mode": "interval",
+            "interval_minutes": 15,
+            "comment": "Continuous monitoring between cycles"
+          }
+        ]
+      },
+
+      "preconditions": [
+        {"check": "database_connection", "required": true}
+      ],
+
+      "success_criteria": {
+        "all_checks_passed": true,
+        "violations": 0
+      },
+
+      "on_success": "LOG_CYCLE_COMPLETE",
+      "on_failure": "ESCALATE_TO_CEO",
+      "on_violation": "IMMEDIATE_CEO_ESCALATION",
+      "max_retries": 0,
+      "comment": "No retries for integrity monitor - violations must be addressed"
+    }
+  },
+
+  "orchestrator_integration": {
+    "registration_table": "fhq_governance.task_registry",
+    "execution_log": "fhq_governance.cnrp_execution_log",
+    "governance_log": "fhq_governance.governance_actions_log",
+
+    "orchestrator_hooks": {
+      "pre_execution": "validate_gate_authorization",
+      "post_execution": "log_to_governance",
+      "on_chain_complete": "emit_cycle_attestation"
+    }
+  },
+
+  "windows_watchdog": {
+    "role": "HEALTH_MONITOR_ONLY",
+    "execution_authority": "NONE",
+
+    "watchdog_task": {
+      "name": "FjordHQ-Orchestrator-Heartbeat",
+      "schedule": "*/5 * * * *",
+      "command": "python orchestrator_v1.py --healthcheck",
+
+      "alerts": {
+        "orchestrator_down": {
+          "condition": "healthcheck_fails",
+          "action": "ALERT_LINE_AND_CEO"
+        },
+        "task_queue_stalled": {
+          "condition": "no_execution_for_minutes > 30",
+          "action": "ALERT_LINE"
+        },
+        "evidence_staleness_critical": {
+          "condition": "staleness_hours > 20",
+          "action": "ALERT_CEO"
+        }
+      },
+
+      "prohibited_actions": [
+        "EXECUTE_CNRP_DAEMONS",
+        "MODIFY_DATABASE",
+        "BYPASS_ORCHESTRATOR"
+      ]
+    }
+  },
+
+  "escalation_matrix": {
+    "L1_LINE": {
+      "triggers": ["R1_FAILURE", "R2_FAILURE", "ORCHESTRATOR_SLOW"],
+      "response_time": "5 minutes",
+      "authority": "Restart daemon, retry execution"
+    },
+    "L2_CDMO": {
+      "triggers": ["R3_FAILURE", "HYGIENE_CONTAMINATED"],
+      "response_time": "15 minutes",
+      "authority": "Investigate data quality, authorize cleanup"
+    },
+    "L3_CEO": {
+      "triggers": ["R4_VIOLATION", "CHAIN_HALTED", "INTEGRITY_BREACH"],
+      "response_time": "IMMEDIATE",
+      "authority": "Full system authority"
+    }
+  },
+
+  "cycle_attestation": {
+    "emit_on": "R4_SUCCESS after full chain",
+    "attestation_type": "CNRP_CYCLE_COMPLETE",
+    "includes": [
+      "cycle_id",
+      "all_phase_statuses",
+      "evidence_freshness",
+      "integrity_verification",
+      "governance_hash"
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "change_record_id": "CHANGE_RECORD_P3_3_4_DORMANT_DRAIN",
+  "change_type": "STATE_HYGIENE_TRANSITION",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3-D",
+  "task": "3.4",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-13T00:58:17Z",
+  "status": "COMPLETE",
+
+  "explicit_assertion": "No signal execution occurred. No orders placed.",
+
+  "executive_summary": {
+    "headline": "20 stale DORMANT signals transitioned to EXPIRED - VOL-GATE queue deadlock resolved",
+    "signals_transitioned": 20,
+    "transition": "DORMANT -> EXPIRED",
+    "execution_occurred": false,
+    "orders_placed": 0
+  },
+
+  "before_state": {
+    "query": "SELECT current_state, COUNT(*) FROM fhq_canonical.g5_signal_state GROUP BY current_state",
+    "results": {
+      "EXPIRED": 1333,
+      "DUPLICATE_PRUNED": 422,
+      "DORMANT": 20,
+      "PRIMED": 9
+    },
+    "vol_gate_status": "BLOCKED (QUEUE_FULL: 20 >= 20 limit)"
+  },
+
+  "after_state": {
+    "results": {
+      "EXPIRED": 1353,
+      "DUPLICATE_PRUNED": 422,
+      "DORMANT": 0,
+      "PRIMED": 9
+    },
+    "vol_gate_status": "RELEASED (0 < 20 limit)"
+  },
+
+  "signals_transitioned": [
+    {"needle_id": "ef2b8a45-c56d-473b-b20c-1105c4f6e47a", "hours_old": 99.2, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "86f80e9c-4af8-4b0c-a593-4dbb2ff3c143", "hours_old": 100.7, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "9af40a26-a023-457a-8e59-99b3d609e0f2", "hours_old": 116.5, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "65d65616-2b0a-468c-a08e-18b480e40378", "hours_old": 119.5, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "fc02df8d-1005-4e8a-b53c-93a257b899df", "hours_old": 121.0, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "1d0c845e-d804-4df0-9024-27977b745aae", "hours_old": 122.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "2a858109-60ce-49fa-9392-bb0e8c03c164", "hours_old": 125.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "541339b5-5e29-45b3-947f-761eaa5f868d", "hours_old": 125.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "8742b225-e937-4a8b-a228-8891eefe7fbc", "hours_old": 125.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "3966d4cd-e5fd-4bad-bfc0-6a21ba970a7b", "hours_old": 128.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "8a8f3f5f-652f-4114-a46a-b3927d323e3b", "hours_old": 129.9, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "71c02245-eb93-42ef-ae5e-5f2230dba5fd", "hours_old": 131.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "ebebef9c-64f5-4410-8114-fab5ee7c4d62", "hours_old": 131.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "08581909-9fe1-4f7b-b620-0116ce1396ee", "hours_old": 139.0, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "1053465b-f96d-4345-a397-1f90a3abee5a", "hours_old": 140.5, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "2e6a18ae-fef3-4cec-aaf6-075e7997a218", "hours_old": 143.5, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "36513671-e73a-4300-8e1f-2ef246113718", "hours_old": 146.5, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "1d9fc488-dcf1-4b10-9082-cf3915641d25", "hours_old": 153.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "c402818a-ba9f-4e6b-8223-718ffffc2767", "hours_old": 153.4, "from": "DORMANT", "to": "EXPIRED"},
+    {"needle_id": "accdfae8-2bc8-4d26-a9cf-6c89044cf947", "hours_old": 155.8, "from": "DORMANT", "to": "EXPIRED"}
+  ],
+
+  "transition_criteria_met": {
+    "age_exceeds_freshness_threshold": true,
+    "freshness_threshold_hours": 12,
+    "minimum_age_hours": 99.2,
+    "maximum_age_hours": 155.8,
+    "no_execution_history": true,
+    "all_transition_count_zero": true,
+    "blocked_by_lids_confidence_bug": true
+  },
+
+  "governance_log_entry": {
+    "action_id": "7ba13f76-72a0-4e02-adc9-cb6ad43adf25",
+    "action_type": "CEO_DIR_P3D_DORMANT_QUEUE_DRAIN",
+    "initiated_at": "2026-01-13T00:58:17.382332Z"
+  },
+
+  "sql_executed": {
+    "statement": "UPDATE fhq_canonical.g5_signal_state SET current_state = 'EXPIRED', exit_reason = 'CEO_DIR_P3D_STALE_HYGIENE_DRAIN', last_transition = 'DORMANT_TO_EXPIRED_HYGIENE', last_transition_at = NOW(), transition_count = transition_count + 1, updated_at = NOW() WHERE current_state = 'DORMANT' AND transition_count = 0",
+    "rows_affected": 20
+  },
+
+  "compliance_verification": {
+    "no_execution": true,
+    "no_orders_placed": true,
+    "no_parameter_changes": true,
+    "hygiene_only": true,
+    "governance_logged": true
+  },
+
+  "next_step": {
+    "task": "3.5",
+    "action": "FINN Hunt Single-Cycle Regeneration",
+    "status": "PRE_AUTHORIZED",
+    "expected_outcome": "Fresh golden needles < 12h old"
+  }
+}

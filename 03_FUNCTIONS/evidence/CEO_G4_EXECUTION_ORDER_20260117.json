@@ -1,0 +1,126 @@
+{
+  "event": "CEO_G4_EXECUTION_ORDER",
+  "execution_date": "2026-01-17",
+  "execution_timestamp": "2026-01-17T00:45:00Z",
+  "status": "ALL_DIRECTIVES_EXECUTED",
+  "authority": "CEO Direct Order",
+
+  "ceo_principle": "Calibration is not optimization. Calibration is RISK REMOVAL.",
+
+  "baseline_reference": {
+    "snapshot": "G3_BASELINE_DAY17",
+    "brier_score": 0.5358,
+    "hit_rate": 0.3265,
+    "frozen_at": "2026-01-17T00:05:18Z",
+    "principle": "All future ROI measured against this locked baseline"
+  },
+
+  "executed_directives": {
+    "P0_kill_overconfidence": {
+      "status": "EXECUTED",
+      "migration": "281_g4_friction_001_execution.sql",
+      "regime_ceilings": {
+        "STRESS": {"before": 0.91, "after": 0.10, "rationale": "0% hit rate = no confidence warranted"},
+        "BULL": {"before": 0.92, "after": 0.35, "rationale": "Align with 25% hit rate"},
+        "NEUTRAL": {"before": 0.85, "after": 0.39, "rationale": "Align with 29% hit rate"},
+        "BEAR": {"before": 0.86, "after": 0.43, "rationale": "Align with 33% hit rate"}
+      },
+      "function_created": "apply_regime_confidence_ceiling()"
+    },
+
+    "D3_1_ios016_active": {
+      "status": "PROMOTED",
+      "migration": "283_ios016_shadow_to_active.sql",
+      "trigger_status": "ENABLED",
+      "backfilled_forecasts": 3601,
+      "learning_rule": "CLEAN_WINDOWS_ONLY",
+      "treatments": {
+        "EVENT_ADJACENT": "EXCLUDED from punitive learning",
+        "POST_EVENT": "REDUCED_WEIGHT (50%)",
+        "EVENT_NEUTRAL": "FULL_LEARNING"
+      },
+      "expected_improvement": "15-25% false error removed"
+    },
+
+    "D3_2_surprise_classification": {
+      "status": "ENFORCED",
+      "migration": "284_uma_surprise_classification.sql",
+      "classification_types": {
+        "MODEL_DRIFT": "Low surprise + poor outcome → STRUCTURAL CHANGE WARRANTED",
+        "INFORMATION_SHOCK": "High surprise + poor outcome → NO STRUCTURAL CHANGE"
+      },
+      "functions_created": ["classify_degradation()", "uma_classify_recent_degradations()"],
+      "ceo_rule": "Only Model Drift justifies structural change"
+    },
+
+    "ADR_008_confirmed": {
+      "status": "LOCKED",
+      "uma_key_state": "ACTIVE",
+      "uma_key_fingerprint": "2fd377f9be70cea9",
+      "vega_attested": true,
+      "attestation_timestamp": "2026-01-17T00:20:10.966Z",
+      "principle": "No unsigned learning enters history"
+    },
+
+    "measurement_framework": {
+      "status": "ACTIVE",
+      "migration": "285_g4_measurement_framework.sql",
+      "t0_checkpoint_id": "5dbb14e7-07d4-4826-b5a6-d43ac21e6104",
+      "baseline_brier": 0.5358,
+      "stop_loss_threshold": 0.5658,
+      "measurement_deadline": "24-48 hours",
+      "functions_created": ["capture_g4_checkpoint()", "check_g4_stop_loss()"]
+    }
+  },
+
+  "migrations_executed": [
+    "281_g4_friction_001_execution.sql",
+    "282_g4_regime_ceilings_direct.sql",
+    "283_ios016_shadow_to_active.sql",
+    "284_uma_surprise_classification.sql",
+    "285_g4_measurement_framework.sql"
+  ],
+
+  "t0_measurement": {
+    "note": "T0 measures HISTORICAL forecasts (pre-calibration). True effect visible in 24-48h with NEW forecasts.",
+    "current_24h_brier": 0.6599,
+    "regime_breakdown": {
+      "BULL": {"brier": 0.7086, "hit_rate": 0.1512, "confidence": 0.9153, "count": 258},
+      "STRESS": {"brier": 0.8953, "hit_rate": 0.0000, "confidence": 0.9432, "count": 6},
+      "NEUTRAL": {"brier": 0.5588, "hit_rate": 0.2963, "confidence": 0.8747, "count": 54},
+      "BEAR": {"brier": 0.5133, "hit_rate": 0.3621, "confidence": 0.8631, "count": 58}
+    }
+  },
+
+  "success_criteria_24_48h": [
+    "Brier improves materially vs 0.5358",
+    "Confidence curves align with empirical hit rates",
+    "STRESS no longer pretends certainty (max 10% confidence)",
+    "LVI increases because false learning is gone"
+  ],
+
+  "operating_constraints": {
+    "stillness_compliance": "ABSOLUTE outside this directive",
+    "parameter_changes": "NONE beyond approved queue",
+    "execution_autonomy": "NONE",
+    "capital_exposure": "NONE",
+    "learning": "ALLOWED",
+    "chaos": "NOT ALLOWED"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "witnessed_by": "VEGA (cryptographic verification)",
+    "timestamp": "2026-01-17T00:50:00Z",
+    "summary": [
+      "CEO G4 Execution Order COMPLETE",
+      "P0 Kill Overconfidence: 4 regime ceilings set (STRESS 0.10, BULL 0.35, NEUTRAL 0.39, BEAR 0.43)",
+      "IoS-016 promoted to ACTIVE - 3,601 forecasts backfilled, trigger ENABLED",
+      "UMA surprise classification ENFORCED - MODEL_DRIFT vs INFORMATION_SHOCK",
+      "ADR-008 institutional lock CONFIRMED - UMA key VEGA-attested",
+      "24-48h measurement framework ACTIVE - T0 checkpoint captured",
+      "Stop-loss threshold: Brier > 0.5658 blocks further changes",
+      "CEO principle: ROI will not come from brilliance. It will come from not being wrong with confidence."
+    ]
+  }
+}

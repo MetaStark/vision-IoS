@@ -4,41 +4,73 @@
   "consecutive_green": 0,
   "incident_runs": 0,
   "incident_id": null,
-  "escalation_reason": "LVI critical (0.0) - learning loop blocked by coverage_rate=0",
-  "last_updated": "2026-01-23T02:15:00.000000+00:00",
-  "day": 23,
-  "system_status": "OPERATIONAL_LEARNING_LOOP_BLOCKED",
-  "migrations_executed": ["332_fhq_ops_control_room.sql", "333_ios016_experiment_ledgers.sql"],
+  "escalation_reason": "LVI = 0.039 (Grade F, coverage_rate bottleneck at 0.067)",
+  "last_updated": "2026-02-01T14:30:07+01:00",
+  "day": 32,
+  "system_status": "OPERATIONAL_SHADOW_MODE",
+  "migrations_executed": ["332_fhq_ops_control_room.sql", "333_ios016_experiment_ledgers.sql", "340_fix_tag_event_proximity_field_names.sql"],
   "critical_gaps": [
-    "hypothesis_ledger empty - need epistemic_proposal_daemon.py",
-    "epistemic_proposals = 0",
-    "LVI = 0.0 (coverage_rate = 0)"
+    "LVI = 0.039 (Grade F, coverage_rate = 0.067 is bottleneck)",
+    "shadow_roi_calculator heartbeat stale (>22h)"
+  ],
+  "resolved_gaps": [
+    "pg_stat statistics refreshed via ANALYZE (DAY32)",
+    "hypothesis_ledger populated (8 hypotheses, 100% forward coverage)",
+    "tag_event_proximity() schema error FIXED (Migration 340)",
+    "P0 financial tracking gap CLOSED (DAY31)"
   ],
   "active_alerts": {
-    "critical": 1,
+    "critical": 0,
     "warning": 2,
-    "total": 3
+    "total": 2
   },
   "control_room_status": "DEPLOYED",
   "lvi_status": {
-    "score": 0.0,
+    "score": 0.039,
     "grade": "F",
-    "bottleneck": "coverage_rate"
+    "bottleneck": "coverage_rate",
+    "integrity_rate": 1.0,
+    "coverage_rate": 0.067,
+    "time_factor": 0.778,
+    "brier_component": 0.375,
+    "forward_coverage": 1.0,
+    "last_computed": "2026-01-23T19:17:23Z"
   },
-  "dashboard_status": {
-    "ios013_tab": "DEPLOYED",
-    "url": "http://localhost:3000/ios-signals",
-    "db_reconciliation": "VERIFIED",
-    "factor_breakdown": "IMPLEMENTED",
-    "brier_discrepancy_tracked": true,
-    "brier_delta": 0.0108,
-    "lvi_panel": "ACTIVE",
-    "lvi_assets": 324,
-    "lvi_system_avg": 0.1677
+  "database_verification": {
+    "timestamp": "2026-02-01T14:30:07+01:00",
+    "schemas": 42,
+    "tables": 1300,
+    "rows": 35218240,
+    "size_gb": 13,
+    "analyze_executed": true
   },
-  "directives_completed_today": [
-    "CEO-DIR-2026-023",
-    "CEO-DIR-2026-024",
-    "CEO-DIR-2026-025"
-  ]
+  "daemon_health_status": {
+    "total": 21,
+    "healthy": 12,
+    "stale": 1,
+    "stopped": 8,
+    "stale_daemon": "shadow_roi_calculator"
+  },
+  "pipeline_status": {
+    "steps_operational": 9,
+    "steps_total": 9,
+    "mode": "SHADOW",
+    "hypotheses": 1024,
+    "active": 127,
+    "falsified": 897,
+    "promoted": 1,
+    "experiments_running": 1
+  },
+  "quality_gates": {
+    "total": 6,
+    "passed": 6,
+    "adr": "ADR-011"
+  },
+  "run_ledger_today": {
+    "runs": 15,
+    "success": 15,
+    "success_rate": 1.0
+  },
+  "board_summary_generated": true,
+  "evidence_file": "CEO_DIR_2026_DAY32_FULL_DB_VERIFICATION_20260201.json"
 }

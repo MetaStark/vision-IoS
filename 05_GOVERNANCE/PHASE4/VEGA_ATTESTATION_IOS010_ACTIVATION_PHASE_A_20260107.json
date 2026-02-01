@@ -1,0 +1,176 @@
+{
+  "attestation_id": "VEGA-IOS010-ACTIVATION-PHASE-A-20260107",
+  "attestation_type": "IOS010_ORCHESTRATED_ACTIVATION_PHASE_A",
+  "directive": "CEO-DIR-2026-008",
+  "directive_title": "ORCHESTRATED ACTIVATION OF IoS-010",
+  "timestamp": "2026-01-07T00:33:00Z",
+  "issuing_authority": "VEGA",
+
+  "executive_summary": {
+    "headline": "IoS-010 PHASE A ACTIVATION: COMPLETE",
+    "status": "SUCCESS",
+    "execution_method": "ORCHESTRATOR ONLY (per directive mandate)",
+    "strategic_milestone": "FjordHQ epistemic loop is now LIVE. Beliefs materialize to forecasts, outcomes are captured, reconciliation infrastructure operational."
+  },
+
+  "phase_a_verification": {
+    "mandate": "Materialize all existing model_belief_state records (361) into formal forecasts. Begin outcome capture from sovereign_regime_state_v4.",
+
+    "belief_materialization": {
+      "daemon": "ios010_belief_to_forecast_materializer",
+      "execution": "python 05_ORCHESTRATOR/orchestrator_v1.py --function ios010_belief_materializer",
+      "status": "SUCCESS",
+      "beliefs_processed": 361,
+      "forecasts_created": 361,
+      "forecast_type": "REGIME",
+      "horizon_hours": 24,
+      "evidence": "fhq_research.forecast_ledger contains 361 REGIME forecasts"
+    },
+
+    "outcome_capture": {
+      "daemon": "ios010_outcome_capture_daemon",
+      "execution": "python 05_ORCHESTRATOR/orchestrator_v1.py --function ios010_outcome_capture",
+      "status": "SUCCESS",
+      "outcomes_captured": 471,
+      "unique_assets": 471,
+      "outcome_type": "REGIME",
+      "source": "fhq_perception.sovereign_regime_state_v4",
+      "evidence": "fhq_research.outcome_ledger contains 471 REGIME outcomes"
+    },
+
+    "early_reconciliation": {
+      "daemon": "ios010_forecast_reconciliation_daemon",
+      "execution": "python 05_ORCHESTRATOR/orchestrator_v1.py --function ios010_forecast_reconciliation",
+      "status": "SUCCESS",
+      "forecasts_ready": 11,
+      "pairs_created": 0,
+      "forecasts_expired": 11,
+      "forecasts_pending": 350,
+      "note": "11 forecasts expired (FX pairs with no matching outcomes). 350 forecasts pending maturity (T+24h). This is expected behavior."
+    },
+
+    "domain_overlap_analysis": {
+      "forecast_domains": 361,
+      "outcome_domains": 471,
+      "matching_domains": 346,
+      "coverage_rate": "95.8%",
+      "unmatched_forecasts": 15,
+      "note": "15 forecast domains (primarily FX pairs) have no corresponding outcomes in sovereign_regime_state_v4"
+    }
+  },
+
+  "bugs_fixed_during_activation": {
+    "count": 4,
+    "fixes": [
+      {
+        "daemon": "ios010_belief_to_forecast_materializer",
+        "issue": "Used REGIME_CLASSIFICATION but constraint only allows REGIME",
+        "fix": "Changed all references to REGIME (lines 103, 144, 177)"
+      },
+      {
+        "daemon": "ios010_outcome_capture_daemon",
+        "issue": "Column names mismatch with sovereign_regime_state_v4",
+        "fix": "Changed srs.regime to srs.sovereign_regime, srs.confidence to NULL, srs.regime_probabilities to srs.state_probabilities"
+      },
+      {
+        "daemon": "ios010_outcome_capture_daemon",
+        "issue": "Used REGIME_CLASSIFICATION instead of REGIME",
+        "fix": "Changed all references to REGIME"
+      },
+      {
+        "daemon": "ios010_forecast_reconciliation_daemon",
+        "issue": "DB_CONFIG missing password field; ABS(interval) not supported in PostgreSQL",
+        "fix": "Added password to DB_CONFIG; moved ABS() to wrap EXTRACT(EPOCH) result"
+      }
+    ]
+  },
+
+  "constitutional_compliance": {
+    "adr_017_orchestrator_mandate": {
+      "assertion": "All daemon executions via orchestrator_v1.py ONLY",
+      "evidence": [
+        "ios010_belief_materializer: orchestrator_v1.py --function ios010_belief_materializer",
+        "ios010_outcome_capture: orchestrator_v1.py --function ios010_outcome_capture",
+        "ios010_forecast_reconciliation: orchestrator_v1.py --function ios010_forecast_reconciliation"
+      ],
+      "prohibition": "No manual execution, no ad-hoc runs, no parallel pipelines",
+      "status": "COMPLIANT"
+    },
+    "ceo_dir_2026_008_phase_a": {
+      "assertion": "Phase A immediate activation executed",
+      "requirements_met": [
+        "361 beliefs materialized to forecasts",
+        "Outcome capture operational from sovereign_regime_state_v4",
+        "Reconciliation infrastructure verified operational"
+      ],
+      "status": "COMPLETE"
+    }
+  },
+
+  "current_epistemic_loop_state": {
+    "stage_1_beliefs": {
+      "table": "fhq_perception.model_belief_state",
+      "records": 361,
+      "status": "OPERATIONAL"
+    },
+    "stage_2_forecasts": {
+      "table": "fhq_research.forecast_ledger",
+      "regime_forecasts": 361,
+      "pending_resolution": 350,
+      "status": "OPERATIONAL"
+    },
+    "stage_3_outcomes": {
+      "table": "fhq_research.outcome_ledger",
+      "regime_outcomes": 471,
+      "status": "OPERATIONAL"
+    },
+    "stage_4_pairs": {
+      "table": "fhq_research.forecast_outcome_pairs",
+      "pairs": 0,
+      "status": "AWAITING FORECAST MATURITY (T+24h)"
+    },
+    "stage_5_metrics": {
+      "daemon": "ios010_skill_metrics_aggregator",
+      "status": "READY - scheduled weekly Sunday 01:00 UTC"
+    },
+    "stage_6_lessons": {
+      "daemon": "ios010_lesson_extraction_engine",
+      "status": "READY - scheduled weekly Sunday 02:00 UTC"
+    }
+  },
+
+  "next_phases": {
+    "phase_b": {
+      "timing": "T+24h (2026-01-08 00:30 UTC)",
+      "action": "First production reconciliation run",
+      "expected_pairs": "~300-350 (based on matching domains)"
+    },
+    "phase_c": {
+      "timing": "T+48h (2026-01-09)",
+      "action": "Skill metrics aggregation and lesson extraction",
+      "dependencies": "Requires Phase B reconciliation pairs"
+    }
+  },
+
+  "attestation": {
+    "issuing_agent": "VEGA",
+    "role": "Verification & Governance Authority",
+    "timestamp": "2026-01-07T00:33:00Z",
+    "statement": "VEGA hereby attests that CEO-DIR-2026-008 Phase A Activation is COMPLETE. All 361 model beliefs have been materialized to formal forecasts. Outcome capture from sovereign_regime_state_v4 is operational with 471 regime outcomes captured. All daemon executions were performed exclusively via orchestrator_v1.py as mandated. Four bugs were identified and fixed during activation. The epistemic loop is now LIVE and awaiting forecast maturity for Phase B reconciliation.",
+    "signature_placeholder": "VEGA-IOS010-ACTIVATION-PHASE-A-20260107-COMPLETE"
+  },
+
+  "ceo_notification": {
+    "subject": "CEO-DIR-2026-008 Phase A: COMPLETE",
+    "summary": [
+      "361 beliefs materialized to forecasts via orchestrator",
+      "471 outcomes captured from sovereign_regime_state_v4",
+      "Reconciliation infrastructure verified operational",
+      "4 daemon bugs fixed during activation",
+      "350 forecasts awaiting T+24h maturity for reconciliation",
+      "Phase B scheduled: 2026-01-08 00:30 UTC"
+    ],
+    "recommended_action": "Monitor Phase B reconciliation run at T+24h. First skill metrics expected after Phase C (T+48h).",
+    "strategic_milestone": "The epistemic loop is LIVE. FjordHQ now forms expectations, captures outcomes, and will reconcile truth. The system can now learn from its own predictions."
+  }
+}

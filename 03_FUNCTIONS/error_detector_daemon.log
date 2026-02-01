@@ -1,0 +1,93 @@
+2026-01-23 22:35:55,141 - INFO - ============================================================
+2026-01-23 22:35:55,141 - INFO - ERROR DETECTOR DAEMON - Phase I
+2026-01-23 22:35:55,141 - INFO - CEO-DIR-2026-HYPOTHESIS-ECONOMY-001
+2026-01-23 22:35:55,141 - INFO - ============================================================
+2026-01-23 22:35:55,141 - INFO - Detecting errors with 168h lookback...
+2026-01-23 22:35:55,284 - ERROR - Error detection failed: column ol.symbol does not exist
+LINE 3:             ol.symbol,
+                    ^
+QUERY:  SELECT
+            ol.outcome_id,
+            ol.symbol,
+            ol.prediction_timestamp,
+            ol.outcome_timestamp,
+            ol.predicted_direction,
+            ol.actual_direction,
+            ol.predicted_magnitude,
+            ol.actual_magnitude,
+            ol.confidence_at_prediction,
+            ol.regime_at_prediction,
+            ol.regime_at_outcome
+        FROM fhq_research.outcome_ledger ol
+        WHERE ol.outcome_timestamp >= NOW() - (p_lookback_hours || ' hours')::INTERVAL
+          AND ol.outcome_timestamp IS NOT NULL
+          AND (
+              ol.predicted_direction IS DISTINCT FROM ol.actual_direction
+              OR ABS(COALESCE(ol.predicted_magnitude, 0) - COALESCE(ol.actual_magnitude, 0)) > 0.02
+              OR ol.regime_at_prediction IS DISTINCT FROM ol.regime_at_outcome
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM fhq_learning.error_classification_taxonomy ect
+              WHERE ect.source_prediction_id = ol.outcome_id
+          )
+CONTEXT:  PL/pgSQL function fhq_learning.detect_prediction_errors(integer) line 12 at FOR over SELECT rows
+
+2026-01-23 22:35:55,284 - INFO - No new errors detected
+2026-01-23 22:35:55,284 - INFO - 
+System Summary:
+2026-01-23 22:35:55,422 - INFO -   Total errors in system: 0
+2026-01-23 22:35:55,422 - INFO -   High priority pending: 0
+2026-01-23 22:35:55,422 - INFO -   Hypotheses generated: 0
+2026-01-23 22:35:55,422 - INFO -   Error-to-hypothesis rate: 0.0%
+2026-01-23 22:35:55,422 - INFO - 
+Evidence file: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\ERROR_DETECTOR_RUN_20260123_223555.json
+2026-01-23 22:35:55,422 - INFO - 
+============================================================
+2026-01-23 22:35:55,422 - INFO - ERROR DETECTOR DAEMON COMPLETE
+2026-01-23 22:35:55,422 - INFO - ============================================================
+2026-01-23 22:37:33,153 - INFO - ============================================================
+2026-01-23 22:37:33,153 - INFO - ERROR DETECTOR DAEMON - Phase I
+2026-01-23 22:37:33,153 - INFO - CEO-DIR-2026-HYPOTHESIS-ECONOMY-001
+2026-01-23 22:37:33,153 - INFO - ============================================================
+2026-01-23 22:37:33,153 - INFO - Detecting errors with 168h lookback...
+2026-01-23 22:37:33,338 - INFO - No new errors detected
+2026-01-23 22:37:33,338 - INFO - 
+System Summary:
+2026-01-23 22:37:33,439 - INFO -   Total errors in system: 0
+2026-01-23 22:37:33,439 - INFO -   High priority pending: 0
+2026-01-23 22:37:33,439 - INFO -   Hypotheses generated: 0
+2026-01-23 22:37:33,439 - INFO -   Error-to-hypothesis rate: 0.0%
+2026-01-23 22:37:33,439 - INFO - 
+Evidence file: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\ERROR_DETECTOR_RUN_20260123_223733.json
+2026-01-23 22:37:33,439 - INFO - 
+============================================================
+2026-01-23 22:37:33,439 - INFO - ERROR DETECTOR DAEMON COMPLETE
+2026-01-23 22:37:33,439 - INFO - ============================================================
+2026-01-23 22:37:50,581 - INFO - ============================================================
+2026-01-23 22:37:50,581 - INFO - ERROR DETECTOR DAEMON - Phase I
+2026-01-23 22:37:50,581 - INFO - CEO-DIR-2026-HYPOTHESIS-ECONOMY-001
+2026-01-23 22:37:50,581 - INFO - ============================================================
+2026-01-23 22:37:50,581 - INFO - Detecting errors with 500h lookback...
+2026-01-23 22:37:50,851 - INFO - Detected 100 new errors
+2026-01-23 22:37:50,851 - INFO -   MAGNITUDE: 8
+2026-01-23 22:37:50,851 - INFO -   DIRECTION: 92
+2026-01-23 22:37:50,853 - INFO -   Priority HIGH: 100
+2026-01-23 22:37:50,853 - INFO - 
+System Summary:
+2026-01-23 22:37:50,938 - INFO -   Total errors in system: 100
+2026-01-23 22:37:50,938 - INFO -   High priority pending: 100
+2026-01-23 22:37:50,938 - INFO -   Hypotheses generated: 0
+2026-01-23 22:37:50,938 - INFO -   Error-to-hypothesis rate: 0.0%
+2026-01-23 22:37:50,938 - INFO - 
+Recent High-Priority Errors:
+2026-01-23 22:37:50,938 - INFO -   ERR-DIR-2026-0002: DIRECTION (pred: BULLISH, actual: NEUTRAL)
+2026-01-23 22:37:50,938 - INFO -   ERR-DIR-2026-0003: MAGNITUDE (pred: NEUTRAL, actual: NEUTRAL)
+2026-01-23 22:37:50,938 - INFO -   ERR-DIR-2026-0004: DIRECTION (pred: BULLISH, actual: NEUTRAL)
+2026-01-23 22:37:50,938 - INFO -   ERR-DIR-2026-0005: DIRECTION (pred: BULLISH, actual: NEUTRAL)
+2026-01-23 22:37:50,938 - INFO -   ERR-DIR-2026-0006: DIRECTION (pred: BULLISH, actual: NEUTRAL)
+2026-01-23 22:37:50,948 - INFO - 
+Evidence file: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\ERROR_DETECTOR_RUN_20260123_223750.json
+2026-01-23 22:37:50,948 - INFO - 
+============================================================
+2026-01-23 22:37:50,948 - INFO - ERROR DETECTOR DAEMON COMPLETE
+2026-01-23 22:37:50,948 - INFO - ============================================================

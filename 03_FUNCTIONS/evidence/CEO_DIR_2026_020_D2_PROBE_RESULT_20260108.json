@@ -1,0 +1,107 @@
+{
+  "directive_id": "CEO-DIR-2026-020",
+  "probe_type": "D2_REGIME_UPDATE_EVIDENCE_PROBE",
+  "probe_timestamp": "2026-01-08T00:20:00Z",
+  "executed_by": "STIG",
+
+  "probe_objective": "Validate D2 evidence flow for REGIME_UPDATE summary type",
+
+  "acceptance_criteria": {
+    "criterion_1": {
+      "name": "Evidence Is Written",
+      "requirement": "New REGIME_UPDATE evidence row exists in summary_evidence_ledger",
+      "result": "PASS",
+      "evidence": {
+        "evidence_id": "06faf92f-33bd-4a5f-a46c-d22517921472",
+        "summary_id": "REGIME-UPDATE-20260107231749",
+        "summary_type": "REGIME_UPDATE",
+        "generating_agent": "STIG"
+      }
+    },
+    "criterion_2": {
+      "name": "ASRP Binding Present",
+      "requirement": "execution_context contains evidence_contract, version, and sources",
+      "result": "PASS",
+      "evidence": {
+        "evidence_contract": "CEO-DIR-2026-020",
+        "contract_version": "D2_V1",
+        "evidence_sources": ["fhq_market.prices", "fhq_perception.model_belief_state"]
+      }
+    },
+    "criterion_3": {
+      "name": "Raw Query Court-Proof Minimum",
+      "requirement": "raw_query length >= 50 characters",
+      "result": "PASS",
+      "evidence": {
+        "raw_query_length": 340,
+        "threshold": 50
+      }
+    },
+    "criterion_4": {
+      "name": "Query Result Hash Present",
+      "requirement": "query_result_hash is SHA-256 (64 chars)",
+      "result": "PASS",
+      "evidence": {
+        "hash_length": 64,
+        "hash_prefix": "228e444d3b44f578"
+      }
+    },
+    "criterion_5": {
+      "name": "No Governance Violations",
+      "requirement": "Zero MISSING_EVIDENCE, EVIDENCE_VIOLATION_D2, or DEFCON events",
+      "result": "PASS",
+      "evidence": {
+        "violations_in_last_hour": 0
+      }
+    },
+    "criterion_6": {
+      "name": "Contamination Guard Silent",
+      "requirement": "Zero CONTAMINATED_OUTCOME_BLOCKED events",
+      "result": "PASS",
+      "evidence": {
+        "rejections_in_last_hour": 0
+      }
+    }
+  },
+
+  "metrics_delta": {
+    "before": {
+      "total_records": 3,
+      "distinct_agents": 1,
+      "distinct_summary_types": 1,
+      "agents": ["FINN"],
+      "summary_types": ["NIGHTLY_INSIGHT"]
+    },
+    "after": {
+      "total_records": 5,
+      "distinct_agents": 2,
+      "distinct_summary_types": 2,
+      "agents": ["FINN", "STIG"],
+      "summary_types": ["NIGHTLY_INSIGHT", "REGIME_UPDATE"]
+    },
+    "delta": {
+      "total_records": "+2",
+      "distinct_agents": "+1 (STIG)",
+      "distinct_summary_types": "+1 (REGIME_UPDATE)"
+    }
+  },
+
+  "bug_discovered_and_fixed": {
+    "issue": "Object of type date is not JSON serializable",
+    "root_cause": "self.results in ios003 contains Python date objects not serializable by Json()",
+    "fix_applied": "Added json_serialize_safe() function to mandatory_evidence_contract.py",
+    "fix_location": "03_FUNCTIONS/mandatory_evidence_contract.py:36-60",
+    "verification": "Re-run succeeded with evidence attachment"
+  },
+
+  "overall_result": "PASS",
+
+  "conclusion": "D2 evidence flow for REGIME_UPDATE is OPERATIONAL. The first real learning heartbeat after fixing truth (D1) and memory (D2) has been captured. Daily Learning Close is now meaningful.",
+
+  "stig_attestation": {
+    "attestor": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-08T00:20:00Z",
+    "declaration": "The D2 probe has passed all acceptance criteria. REGIME_UPDATE evidence is flowing correctly to vision_verification.summary_evidence_ledger with proper ASRP binding, court-proof raw queries, and SHA-256 hash chains. No governance violations or contamination guard triggers occurred."
+  }
+}

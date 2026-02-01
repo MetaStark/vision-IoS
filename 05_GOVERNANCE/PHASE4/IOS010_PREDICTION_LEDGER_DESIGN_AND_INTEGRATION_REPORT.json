@@ -1,0 +1,654 @@
+{
+  "report_id": "IOS010-DESIGN-INTEGRATION-20260107",
+  "directive": "CEO-DIR-2026-006",
+  "directive_title": "EPISTEMIC MEMORY & TRUTH RECONCILIATION MANDATE",
+  "report_type": "DESIGN & INTEGRATION SPECIFICATION",
+  "timestamp": "2026-01-07T01:00:00Z",
+  "reporting_agent": "STIG",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+
+  "executive_summary": {
+    "headline": "IoS-010 PREDICTION LEDGER: CLOSING THE EPISTEMIC LOOP",
+    "ceo_mandate": "Learning without memory is noise, not intelligence. Economic freedom does not come from prediction. It comes from calibration.",
+    "current_state": {
+      "forecasts_generated": 14229,
+      "outcomes_captured": 427,
+      "pairs_reconciled": 0,
+      "reconciliation_gap": "CRITICAL - 0% reconciliation rate"
+    },
+    "integration_objective": "Bridge model_belief_state -> forecast_ledger -> outcome_ledger -> forecast_outcome_pairs -> lesson_extraction -> learning_feedback",
+    "strategic_significance": "IoS-010 is the first component that makes FjordHQ capable of shame. Shame is what creates intelligence."
+  },
+
+  "section_1_epistemic_contract": {
+    "title": "1. EPISTEMIC CONTRACT: PREDICTION VS OUTCOME",
+    "contract_version": "1.0.0",
+
+    "definitions": {
+      "prediction": {
+        "definition": "A probabilistic assertion about a future state, made at time T with horizon H, expressing belief P(outcome|state_at_T)",
+        "characteristics": [
+          "IMMUTABLE after creation",
+          "TIMESTAMPED with belief_timestamp",
+          "BOUNDED by forecast_valid_until",
+          "TRACEABLE via state_vector_hash",
+          "AUDITABLE via lineage_hash"
+        ],
+        "canonical_source": "fhq_research.forecast_ledger + fhq_perception.model_belief_state"
+      },
+      "outcome": {
+        "definition": "An observed realization of reality at time T+H, captured independently of any prediction",
+        "characteristics": [
+          "IMMUTABLE after capture",
+          "EVIDENCE-BACKED with evidence_source and evidence_data",
+          "TIMESTAMPED with outcome_timestamp",
+          "INDEPENDENT of prediction - no circular contamination"
+        ],
+        "canonical_source": "fhq_research.outcome_ledger"
+      },
+      "reconciliation": {
+        "definition": "The deterministic matching of predictions to outcomes based on (target_id, forecast_valid_until ± tolerance)",
+        "characteristics": [
+          "DETERMINISTIC - same inputs always produce same pairs",
+          "AUDITABLE via reconciled_by and reconciled_at",
+          "SCORED with brier_score, log_score, hit_rate_contribution"
+        ],
+        "canonical_source": "fhq_research.forecast_outcome_pairs"
+      }
+    },
+
+    "epistemic_separation_contract": {
+      "assertion": "Predictions derive from beliefs, NOT from outcomes",
+      "enforcement": {
+        "belief_to_prediction_flow": "model_belief_state.belief_id -> forecast_ledger (one-way)",
+        "outcome_independence": "outcome_ledger populated from market observations, NOT from belief layer",
+        "circular_contamination_block": "PROHIBITED: outcome influencing belief generation for same time window"
+      },
+      "integrity_check": {
+        "query": "SELECT COUNT(*) FROM forecast_ledger f JOIN outcome_ledger o ON f.forecast_made_at > o.outcome_timestamp AND f.forecast_domain = o.outcome_domain",
+        "expected_result": "0 (no forecasts made after observing relevant outcomes)"
+      }
+    },
+
+    "prediction_types": {
+      "regime_belief": {
+        "source_table": "fhq_perception.model_belief_state",
+        "forecast_type": "REGIME_CLASSIFICATION",
+        "forecast_value": "dominant_regime (BULL|BEAR|NEUTRAL|STRESS)",
+        "forecast_probability": "belief_confidence",
+        "forecast_distribution": "belief_distribution JSONB",
+        "implicit_horizon": "T+1 day (regime persistence)"
+      },
+      "price_direction": {
+        "source_table": "fhq_research.forecast_ledger",
+        "forecast_type": "PRICE_DIRECTION",
+        "forecast_value": "UP|DOWN",
+        "forecast_probability": "forecast_probability",
+        "explicit_horizon": "forecast_horizon_hours"
+      },
+      "policy_decision": {
+        "source_table": "fhq_perception.sovereign_policy_state",
+        "forecast_type": "POLICY_ACTION",
+        "forecast_value": "chosen_regime",
+        "forecast_probability": "policy_confidence",
+        "implicit_assertion": "Policy expects chosen_regime to be profitable"
+      }
+    }
+  },
+
+  "section_2_time_horizon_semantics": {
+    "title": "2. TIME-HORIZON SEMANTICS (T+n)",
+    "semantic_version": "1.0.0",
+
+    "horizon_definition": {
+      "T": "Timestamp when prediction is formed (belief_timestamp | forecast_made_at)",
+      "n": "Horizon in standardized units (hours for short-term, days for regime)",
+      "T+n": "Expected outcome observation window",
+      "tolerance": "Acceptable deviation from T+n for reconciliation matching"
+    },
+
+    "horizon_buckets": {
+      "INTRADAY": {
+        "range_hours": [0, 6],
+        "description": "Same trading day predictions",
+        "tolerance_hours": 1,
+        "typical_use": "Price direction, momentum signals"
+      },
+      "SHORT_TERM": {
+        "range_hours": [6, 24],
+        "description": "Next trading day predictions",
+        "tolerance_hours": 3,
+        "typical_use": "Overnight gaps, daily regime"
+      },
+      "REGIME": {
+        "range_hours": [24, 168],
+        "description": "Multi-day regime persistence",
+        "tolerance_hours": 12,
+        "typical_use": "model_belief_state regime forecasts"
+      },
+      "STRATEGIC": {
+        "range_hours": [168, 720],
+        "description": "Weekly to monthly outlook",
+        "tolerance_hours": 24,
+        "typical_use": "Macro regime shifts, allocation changes"
+      }
+    },
+
+    "reconciliation_rules": {
+      "matching_algorithm": {
+        "step_1": "Match on target_id (forecast_domain = outcome_domain)",
+        "step_2": "Match on horizon window (outcome_timestamp BETWEEN forecast_valid_from AND forecast_valid_until + tolerance)",
+        "step_3": "Score match confidence based on temporal proximity",
+        "step_4": "Handle multiple matches via earliest-outcome-first"
+      },
+      "edge_cases": {
+        "no_outcome_in_window": {
+          "status": "UNRESOLVED",
+          "resolution_status": "EXPIRED",
+          "lesson": "Market closure, data gap, or prediction too far ahead"
+        },
+        "multiple_outcomes_in_window": {
+          "status": "RESOLVED",
+          "resolution_method": "First outcome within window takes precedence",
+          "note": "Additional outcomes logged for volatility analysis"
+        },
+        "outcome_before_prediction": {
+          "status": "INVALID",
+          "action": "REJECT - temporal causality violation"
+        }
+      }
+    },
+
+    "belief_to_forecast_mapping": {
+      "description": "model_belief_state records ARE implicit forecasts",
+      "mapping_rule": {
+        "forecast_type": "REGIME_CLASSIFICATION",
+        "forecast_domain": "asset_id",
+        "forecast_value": "dominant_regime",
+        "forecast_probability": "belief_confidence",
+        "forecast_horizon_hours": 24,
+        "forecast_made_at": "belief_timestamp",
+        "forecast_valid_from": "belief_timestamp",
+        "forecast_valid_until": "belief_timestamp + INTERVAL '24 hours'",
+        "state_vector_hash": "feature_hash",
+        "model_id": "inference_engine",
+        "model_version": "model_version"
+      },
+      "implementation": "Scheduled job to materialize beliefs as forecast records"
+    }
+  },
+
+  "section_3_error_taxonomy": {
+    "title": "3. ERROR TAXONOMY & LESSON EXTRACTION SCHEMA",
+    "taxonomy_version": "1.0.0",
+
+    "error_categories": {
+      "CALIBRATION_ERROR": {
+        "definition": "Systematic over/under-confidence in probability estimates",
+        "measurement": "Mean difference between predicted probability and observed frequency",
+        "formula": "calibration_error = AVG(forecast_probability - observed_hit_rate) per bucket",
+        "severity_thresholds": {
+          "LOW": "< 0.05",
+          "MEDIUM": "0.05 - 0.15",
+          "HIGH": "> 0.15"
+        },
+        "lesson_type": "CONFIDENCE_ADJUSTMENT",
+        "remediation": "Adjust confidence scaling factor in belief generation"
+      },
+      "DIRECTIONAL_ERROR": {
+        "definition": "Prediction of wrong outcome direction (BULL vs BEAR, UP vs DOWN)",
+        "measurement": "1 - hit_rate for directional forecasts",
+        "formula": "directional_error = COUNT(wrong_direction) / COUNT(resolved)",
+        "severity_thresholds": {
+          "LOW": "< 0.45",
+          "MEDIUM": "0.45 - 0.55",
+          "HIGH": "> 0.55"
+        },
+        "lesson_type": "SIGNAL_QUALITY",
+        "remediation": "Review feature importance, regime sensitivity"
+      },
+      "TIMING_ERROR": {
+        "definition": "Correct direction but wrong timing (outcome outside horizon window)",
+        "measurement": "Outcomes that match direction but fall outside valid_until + tolerance",
+        "formula": "timing_error = COUNT(correct_but_late) / COUNT(resolved)",
+        "severity_thresholds": {
+          "LOW": "< 0.10",
+          "MEDIUM": "0.10 - 0.25",
+          "HIGH": "> 0.25"
+        },
+        "lesson_type": "HORIZON_CALIBRATION",
+        "remediation": "Extend horizon windows, adjust tolerance"
+      },
+      "REGIME_MISCLASSIFICATION": {
+        "definition": "Predicted regime differs from realized regime",
+        "measurement": "Brier score decomposition by regime class",
+        "formula": "regime_error[class] = COUNT(predicted=class AND realized!=class) / COUNT(predicted=class)",
+        "severity_thresholds": {
+          "LOW": "< 0.20",
+          "MEDIUM": "0.20 - 0.40",
+          "HIGH": "> 0.40"
+        },
+        "lesson_type": "REGIME_SENSITIVITY",
+        "remediation": "Review regime detection thresholds, feature weights"
+      },
+      "SUPPRESSION_REGRET": {
+        "definition": "Policy suppressed a belief that would have been correct",
+        "measurement": "Suppressed beliefs where realized_regime = belief_regime != policy_regime",
+        "formula": "suppression_regret = COUNT(suppressed AND belief_correct) / COUNT(suppressed)",
+        "severity_thresholds": {
+          "LOW": "< 0.30",
+          "MEDIUM": "0.30 - 0.50",
+          "HIGH": "> 0.50"
+        },
+        "lesson_type": "HYSTERESIS_CALIBRATION",
+        "remediation": "Reduce hysteresis window, increase confidence threshold"
+      },
+      "SUPPRESSION_WISDOM": {
+        "definition": "Policy correctly suppressed a belief that would have been wrong",
+        "measurement": "Suppressed beliefs where realized_regime != belief_regime",
+        "formula": "suppression_wisdom = COUNT(suppressed AND belief_wrong) / COUNT(suppressed)",
+        "severity_thresholds": {
+          "LOW": "> 0.70 (high wisdom)",
+          "MEDIUM": "0.50 - 0.70",
+          "HIGH": "< 0.50 (low wisdom - policy adds no value)"
+        },
+        "lesson_type": "POLICY_VALUE",
+        "remediation": "If wisdom consistently low, simplify policy to trust beliefs more"
+      }
+    },
+
+    "lesson_extraction_schema": {
+      "table_name": "fhq_governance.epistemic_lessons",
+      "columns": {
+        "lesson_id": "UUID PRIMARY KEY",
+        "lesson_timestamp": "TIMESTAMPTZ NOT NULL",
+        "lesson_source": "TEXT NOT NULL (RECONCILIATION|SUPPRESSION|SKILL_METRICS)",
+        "lesson_category": "TEXT NOT NULL (CALIBRATION_ERROR|DIRECTIONAL_ERROR|...)",
+        "lesson_severity": "TEXT NOT NULL (LOW|MEDIUM|HIGH)",
+        "source_forecast_id": "UUID REFERENCES forecast_ledger",
+        "source_outcome_id": "UUID REFERENCES outcome_ledger",
+        "source_suppression_id": "UUID REFERENCES epistemic_suppression_ledger",
+        "error_magnitude": "NUMERIC",
+        "error_direction": "TEXT (OVER|UNDER|WRONG)",
+        "affected_asset_id": "TEXT",
+        "affected_regime": "TEXT",
+        "lesson_description": "TEXT",
+        "recommended_action": "TEXT",
+        "action_taken": "TEXT",
+        "action_timestamp": "TIMESTAMPTZ",
+        "action_agent": "TEXT",
+        "lesson_hash": "TEXT NOT NULL",
+        "created_at": "TIMESTAMPTZ DEFAULT NOW()"
+      },
+      "indexes": [
+        "CREATE INDEX ON epistemic_lessons(lesson_category)",
+        "CREATE INDEX ON epistemic_lessons(lesson_severity)",
+        "CREATE INDEX ON epistemic_lessons(affected_asset_id)",
+        "CREATE INDEX ON epistemic_lessons(lesson_timestamp)"
+      ]
+    },
+
+    "lesson_feedback_loop": {
+      "description": "Lessons feed back into learning components",
+      "feedback_targets": {
+        "CONFIDENCE_ADJUSTMENT": {
+          "target": "Regime classifier confidence scaling",
+          "mechanism": "Adjust multiplier based on calibration error direction"
+        },
+        "SIGNAL_QUALITY": {
+          "target": "Feature importance weights",
+          "mechanism": "Downweight features with poor directional accuracy"
+        },
+        "HORIZON_CALIBRATION": {
+          "target": "Forecast horizon parameters",
+          "mechanism": "Extend/contract horizons based on timing error analysis"
+        },
+        "REGIME_SENSITIVITY": {
+          "target": "Regime detection thresholds",
+          "mechanism": "Adjust class boundaries based on misclassification patterns"
+        },
+        "HYSTERESIS_CALIBRATION": {
+          "target": "Policy hysteresis parameters",
+          "mechanism": "Adjust confirmation window based on regret/wisdom ratio"
+        }
+      },
+      "automation_level": {
+        "current": "MANUAL - lessons logged for human review",
+        "target_g4": "SEMI-AUTOMATIC - lessons propose parameter changes, CEO approves"
+      }
+    }
+  },
+
+  "section_4_data_lineage": {
+    "title": "4. DATA LINEAGE & IMMUTABILITY GUARANTEES",
+    "lineage_version": "1.0.0",
+
+    "lineage_chain": {
+      "description": "Complete data flow from observation to lesson",
+      "stages": [
+        {
+          "stage": 1,
+          "name": "OBSERVATION",
+          "source": "fhq_perception.regime_daily",
+          "output": "Raw market observations (price, volume, volatility)",
+          "immutability": "APPEND-ONLY (historical data never modified)"
+        },
+        {
+          "stage": 2,
+          "name": "BELIEF_FORMATION",
+          "source": "fhq_perception.model_belief_state",
+          "input": "regime_daily observations",
+          "output": "Probabilistic regime beliefs",
+          "immutability": "IMMUTABLE (beliefs never modified after creation)",
+          "lineage_hash": "SHA256(asset_id || belief_timestamp || technical_regime || belief_distribution)"
+        },
+        {
+          "stage": 3,
+          "name": "POLICY_DECISION",
+          "source": "fhq_perception.sovereign_policy_state",
+          "input": "model_belief_state.belief_id (FK)",
+          "output": "Policy-adjusted regime decisions",
+          "immutability": "IMMUTABLE (policy decisions never modified)",
+          "lineage": "belief_id FK enforces one-way dependency"
+        },
+        {
+          "stage": 4,
+          "name": "FORECAST_MATERIALIZATION",
+          "source": "fhq_research.forecast_ledger",
+          "input": "model_belief_state OR external forecast source",
+          "output": "Canonical forecast records",
+          "immutability": "IMMUTABLE (forecasts never modified)",
+          "hash_chain": "content_hash = SHA256(forecast_type || forecast_value || forecast_probability || ...)"
+        },
+        {
+          "stage": 5,
+          "name": "OUTCOME_CAPTURE",
+          "source": "fhq_research.outcome_ledger",
+          "input": "Independent market observation",
+          "output": "Realized outcomes",
+          "immutability": "IMMUTABLE (outcomes never modified)",
+          "hash_chain": "content_hash = SHA256(outcome_type || outcome_value || outcome_timestamp || ...)"
+        },
+        {
+          "stage": 6,
+          "name": "RECONCILIATION",
+          "source": "fhq_research.forecast_outcome_pairs",
+          "input": "forecast_id + outcome_id",
+          "output": "Matched pairs with accuracy scores",
+          "immutability": "IMMUTABLE (reconciliation never re-run for same pair)",
+          "determinism": "Same inputs always produce same pair"
+        },
+        {
+          "stage": 7,
+          "name": "SKILL_COMPUTATION",
+          "source": "fhq_research.forecast_skill_metrics",
+          "input": "forecast_outcome_pairs aggregated",
+          "output": "Brier score, calibration, hit rate",
+          "immutability": "VERSIONED (new metrics append, old preserved)"
+        },
+        {
+          "stage": 8,
+          "name": "LESSON_EXTRACTION",
+          "source": "fhq_governance.epistemic_lessons",
+          "input": "skill_metrics + suppression_ledger",
+          "output": "Actionable learning insights",
+          "immutability": "APPEND-ONLY with action_timestamp updates"
+        }
+      ]
+    },
+
+    "immutability_enforcement": {
+      "model_belief_state": {
+        "mechanism": "TRIGGER BEFORE UPDATE - RAISE EXCEPTION",
+        "trigger_name": "trg_belief_immutability",
+        "exception_message": "Beliefs are immutable. Create new belief instead."
+      },
+      "forecast_ledger": {
+        "mechanism": "TRIGGER BEFORE UPDATE (except is_resolved, resolution_status)",
+        "allowed_updates": ["is_resolved", "resolution_status", "resolved_at", "outcome_id"],
+        "exception_message": "Forecast content is immutable. Only resolution fields may be updated."
+      },
+      "outcome_ledger": {
+        "mechanism": "TRIGGER BEFORE UPDATE - RAISE EXCEPTION",
+        "trigger_name": "trg_outcome_immutability",
+        "exception_message": "Outcomes are immutable."
+      },
+      "forecast_outcome_pairs": {
+        "mechanism": "TRIGGER BEFORE UPDATE - RAISE EXCEPTION",
+        "trigger_name": "trg_pair_immutability",
+        "exception_message": "Reconciliation pairs are immutable."
+      }
+    },
+
+    "hash_chain_integration": {
+      "description": "All tables integrate with existing hash chain infrastructure",
+      "chain_tables": {
+        "forecast_ledger": "hash_chain_id references global chain",
+        "outcome_ledger": "hash_chain_id references global chain",
+        "forecast_outcome_pairs": "hash_chain_id references global chain"
+      },
+      "verification_query": "SELECT verify_hash_chain('fhq_research.forecast_ledger', 'content_hash', 'hash_chain_id')"
+    },
+
+    "adr_013_compliance": {
+      "assertion": "IoS-010 tables are canonical sources for their respective domains",
+      "compliance_evidence": {
+        "forecast_ledger": "ONE canonical source for all forecasts (ADR-013 §3.1)",
+        "outcome_ledger": "ONE canonical source for all realized outcomes (ADR-013 §3.1)",
+        "forecast_outcome_pairs": "ONE canonical source for reconciliation (ADR-013 §3.1)",
+        "no_alternative_stores": "No other tables store forecast/outcome/reconciliation data",
+        "fk_integrity": "All references use proper FK constraints"
+      }
+    }
+  },
+
+  "section_5_integration_design": {
+    "title": "5. INTEGRATION DESIGN: BELIEF -> FORECAST -> OUTCOME -> LESSON",
+    "design_version": "1.0.0",
+
+    "integration_architecture": {
+      "mermaid_diagram": "```mermaid\nflowchart TB\n    subgraph Perception[\"Perception Layer\"]\n        RD[regime_daily] --> MBS[model_belief_state]\n        MBS --> SPS[sovereign_policy_state]\n        SPS --> ESL[epistemic_suppression_ledger]\n    end\n    \n    subgraph Prediction[\"Prediction Layer\"]\n        MBS -->|belief_to_forecast| FL[forecast_ledger]\n        SPS -->|policy_to_forecast| FL\n    end\n    \n    subgraph Observation[\"Observation Layer\"]\n        MARKET[Market Data] --> OL[outcome_ledger]\n    end\n    \n    subgraph Reconciliation[\"Reconciliation Layer\"]\n        FL --> FOP[forecast_outcome_pairs]\n        OL --> FOP\n        FOP --> FSM[forecast_skill_metrics]\n    end\n    \n    subgraph Learning[\"Learning Layer\"]\n        FSM --> EL[epistemic_lessons]\n        ESL -->|suppression_analysis| EL\n        EL -->|feedback| MBS\n    end\n```"
+    },
+
+    "new_components_required": {
+      "belief_to_forecast_materializer": {
+        "purpose": "Convert model_belief_state records to forecast_ledger records",
+        "schedule": "After each belief generation batch (nightly)",
+        "script": "03_FUNCTIONS/belief_to_forecast_materializer.py",
+        "implementation_status": "DESIGN COMPLETE - awaiting G4 approval"
+      },
+      "outcome_capture_daemon": {
+        "purpose": "Capture realized outcomes from market observations",
+        "schedule": "Every 4 hours during market hours",
+        "script": "03_FUNCTIONS/outcome_capture_daemon.py",
+        "implementation_status": "DESIGN COMPLETE - awaiting G4 approval"
+      },
+      "forecast_reconciliation_daemon": {
+        "purpose": "Match forecasts to outcomes, compute scores",
+        "schedule": "Daily at 00:30 UTC (after outcome capture)",
+        "script": "03_FUNCTIONS/forecast_reconciliation_daemon.py",
+        "implementation_status": "DESIGN COMPLETE - awaiting G4 approval"
+      },
+      "skill_metrics_aggregator": {
+        "purpose": "Aggregate pair scores into skill metrics",
+        "schedule": "Weekly on Sunday 01:00 UTC",
+        "script": "03_FUNCTIONS/skill_metrics_aggregator.py",
+        "implementation_status": "DESIGN COMPLETE - awaiting G4 approval"
+      },
+      "lesson_extraction_engine": {
+        "purpose": "Extract lessons from skill metrics and suppressions",
+        "schedule": "Weekly on Sunday 02:00 UTC",
+        "script": "03_FUNCTIONS/lesson_extraction_engine.py",
+        "implementation_status": "DESIGN COMPLETE - awaiting G4 approval"
+      }
+    },
+
+    "migration_required": {
+      "migration_number": "209",
+      "file": "04_DATABASE/MIGRATIONS/209_ios010_prediction_ledger_integration.sql",
+      "creates": [
+        "fhq_governance.epistemic_lessons (new table)",
+        "trg_belief_immutability (trigger)",
+        "trg_outcome_immutability (trigger)",
+        "trg_pair_immutability (trigger)",
+        "f_materialize_belief_to_forecast() (function)",
+        "f_reconcile_forecasts() (function)",
+        "f_extract_lessons() (function)"
+      ],
+      "implementation_status": "DESIGN COMPLETE - migration script to be created after G4 approval"
+    }
+  },
+
+  "section_6_gap_analysis": {
+    "title": "6. CURRENT STATE GAP ANALYSIS",
+
+    "critical_gaps": {
+      "gap_1_reconciliation": {
+        "description": "0 forecast-outcome pairs despite 14,229 forecasts and 427 outcomes",
+        "impact": "System cannot measure skill, calibration, or extract lessons",
+        "severity": "CRITICAL",
+        "root_cause": "forecast_reconciliation_daemon not yet implemented",
+        "resolution": "Implement and schedule reconciliation daemon"
+      },
+      "gap_2_belief_materialization": {
+        "description": "model_belief_state records not materialized to forecast_ledger",
+        "impact": "Beliefs (361 records) exist but not tracked as forecasts",
+        "severity": "HIGH",
+        "root_cause": "belief_to_forecast_materializer not implemented",
+        "resolution": "Implement materializer, backfill existing beliefs"
+      },
+      "gap_3_lesson_extraction": {
+        "description": "epistemic_suppression_ledger.lesson_extracted always NULL",
+        "impact": "System logs suppressions but cannot learn from them",
+        "severity": "HIGH",
+        "root_cause": "Lesson extraction logic not implemented",
+        "resolution": "Implement lesson_extraction_engine"
+      },
+      "gap_4_outcome_coverage": {
+        "description": "Only 427 outcomes vs 14,229 forecasts (3% coverage)",
+        "impact": "Most forecasts will never be reconciled",
+        "severity": "MEDIUM",
+        "root_cause": "Outcome capture not running at sufficient frequency",
+        "resolution": "Increase outcome capture frequency, ensure all forecast domains covered"
+      }
+    },
+
+    "infrastructure_gaps": {
+      "missing_triggers": ["trg_belief_immutability", "trg_outcome_immutability", "trg_pair_immutability"],
+      "missing_tables": ["fhq_governance.epistemic_lessons"],
+      "missing_functions": ["f_materialize_belief_to_forecast", "f_reconcile_forecasts", "f_extract_lessons"],
+      "missing_daemons": ["belief_to_forecast_materializer", "outcome_capture_daemon", "forecast_reconciliation_daemon", "skill_metrics_aggregator", "lesson_extraction_engine"]
+    }
+  },
+
+  "section_7_implementation_plan": {
+    "title": "7. IMPLEMENTATION PLAN",
+
+    "phases": {
+      "phase_1_foundation": {
+        "name": "Foundation & Schema",
+        "deliverables": [
+          "Create Migration 209 with epistemic_lessons table",
+          "Create immutability triggers",
+          "Create materialization function"
+        ],
+        "gate": "G3 STIG",
+        "status": "READY FOR IMPLEMENTATION"
+      },
+      "phase_2_materialization": {
+        "name": "Belief Materialization",
+        "deliverables": [
+          "Implement belief_to_forecast_materializer.py",
+          "Backfill existing 361 beliefs to forecast_ledger",
+          "Schedule nightly materialization"
+        ],
+        "gate": "G3 STIG",
+        "status": "DESIGN COMPLETE"
+      },
+      "phase_3_reconciliation": {
+        "name": "Forecast Reconciliation",
+        "deliverables": [
+          "Implement forecast_reconciliation_daemon.py",
+          "Run initial reconciliation on existing data",
+          "Schedule daily reconciliation"
+        ],
+        "gate": "G3 STIG",
+        "status": "DESIGN COMPLETE"
+      },
+      "phase_4_skill_metrics": {
+        "name": "Skill Metrics Computation",
+        "deliverables": [
+          "Implement skill_metrics_aggregator.py",
+          "Generate initial skill report",
+          "Schedule weekly aggregation"
+        ],
+        "gate": "G3 STIG",
+        "status": "DESIGN COMPLETE"
+      },
+      "phase_5_lesson_extraction": {
+        "name": "Lesson Extraction & Feedback",
+        "deliverables": [
+          "Implement lesson_extraction_engine.py",
+          "Connect suppression ledger to lesson extraction",
+          "Design feedback loop to belief generation"
+        ],
+        "gate": "G4 CEO",
+        "status": "DESIGN COMPLETE"
+      }
+    },
+
+    "dependencies": {
+      "phase_2_requires": ["phase_1"],
+      "phase_3_requires": ["phase_2"],
+      "phase_4_requires": ["phase_3"],
+      "phase_5_requires": ["phase_4"]
+    }
+  },
+
+  "section_8_success_metrics": {
+    "title": "8. SUCCESS METRICS (IoS-010 Operational)",
+
+    "metrics": {
+      "reconciliation_rate": {
+        "definition": "Percentage of forecasts with matched outcomes",
+        "target": "> 70% within horizon window",
+        "current": "0%"
+      },
+      "brier_skill_score": {
+        "definition": "Improvement over baseline (climatology) forecast",
+        "target": "> 0.05 (5% better than baseline)",
+        "current": "Not measurable (no pairs)"
+      },
+      "calibration_error": {
+        "definition": "Mean absolute difference between predicted and realized frequencies",
+        "target": "< 0.10",
+        "current": "Not measurable (no pairs)"
+      },
+      "lesson_extraction_rate": {
+        "definition": "Percentage of suppressions with extracted lessons",
+        "target": "> 80%",
+        "current": "0%"
+      },
+      "feedback_loop_latency": {
+        "definition": "Time from error detection to parameter adjustment",
+        "target": "< 7 days",
+        "current": "Not applicable (no loop)"
+      }
+    }
+  },
+
+  "attestation": {
+    "actor": "STIG",
+    "role": "Chief Technology Officer / System Integrity",
+    "timestamp": "2026-01-07T01:00:00Z",
+    "statement": "STIG hereby attests that the IoS-010 Prediction Ledger Design & Integration Report is complete per CEO-DIR-2026-006. The report defines: (1) Epistemic contract distinguishing prediction from outcome with immutability guarantees; (2) Time-horizon semantics (T+n) with horizon buckets and reconciliation rules; (3) Error taxonomy with 6 error categories and lesson extraction schema; (4) Data lineage chain from observation through lesson feedback with ADR-013 compliance; (5) Integration design connecting belief -> forecast -> outcome -> lesson layers. Critical gap identified: 0% reconciliation rate despite 14,229 forecasts and 427 outcomes. Implementation plan requires 5 phases, culminating in G4 CEO approval for feedback loop activation. IoS-010 is the shame component that creates intelligence.",
+    "signature_placeholder": "STIG-IOS010-DESIGN-20260107"
+  },
+
+  "ceo_decision_requested": {
+    "request": "AUTHORIZE IMPLEMENTATION OF IOS-010 INTEGRATION PER PHASE PLAN",
+    "implementation_authority": "STIG (phases 1-4), CEO (phase 5)",
+    "risk_assessment": "LOW - no live capital impact, paper mode only",
+    "strategic_value": "CRITICAL - closes epistemic loop, enables calibration, creates intelligence through shame"
+  }
+}

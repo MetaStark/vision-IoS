@@ -1,0 +1,66 @@
+{
+  "directive_id": "CEO-DIR-2026-106",
+  "priority": "P0",
+  "classification": "CRITICAL_BUG_FIX",
+  "generated_at": "2026-01-19T21:15:00Z",
+  "generated_by": "STIG",
+
+  "bug_summary": {
+    "title": "Inverted Direction Logic Error",
+    "severity": "CRITICAL",
+    "impact": "All 10 paper trades executed in WRONG direction (SHORT instead of LONG)"
+  },
+
+  "root_cause": {
+    "file": "03_FUNCTIONS/ios012b_shadow_signal_daemon.py",
+    "lines": "177-179",
+    "faulty_code": "source_direction = 'UP' if row['forecast_probability'] > 0.5 else 'DOWN'",
+    "explanation": "Code interpreted forecast_probability > 0.5 as 'UP' prediction. But forecast_probability is confidence for REGIME, not price direction. STRESS regime predicts DOWNSIDE regardless of probability value."
+  },
+
+  "incorrect_logic": {
+    "flow": "STRESS @ 99% → source_direction='UP' → inverted='DOWN' → SELL order",
+    "result": "SHORT positions when we should be LONG"
+  },
+
+  "correct_logic": {
+    "flow": "STRESS @ 99% → source_direction='DOWN' → inverted='UP' → BUY order",
+    "result": "LONG positions (betting price goes UP when STRESS prediction is wrong)"
+  },
+
+  "fix_applied": {
+    "timestamp": "2026-01-19T21:10:00Z",
+    "code_change": {
+      "file": "03_FUNCTIONS/ios012b_shadow_signal_daemon.py",
+      "description": "Added regime-specific direction logic: if regime == 'STRESS', source_direction = 'DOWN', inverted_direction = 'UP'"
+    },
+    "database_correction": {
+      "script": "03_FUNCTIONS/ios012b_emergency_direction_fix.py",
+      "overlay_records_fixed": 39,
+      "paper_positions_fixed": 10
+    }
+  },
+
+  "remaining_action": {
+    "status": "MANUAL_ACTION_REQUIRED",
+    "description": "Alpaca paper positions are still SHORT (sell orders). Must be closed/reversed manually in Alpaca dashboard.",
+    "positions_affected": [
+      {"ticker": "PGR", "shares": 24, "current_side": "SHORT", "correct_side": "LONG"},
+      {"ticker": "GIS", "shares": 168, "current_side": "SHORT", "correct_side": "LONG"},
+      {"ticker": "AIG", "shares": 99, "current_side": "SHORT", "correct_side": "LONG"},
+      {"ticker": "ADSK", "shares": 18, "current_side": "SHORT", "correct_side": "LONG"}
+    ]
+  },
+
+  "verification": {
+    "overlay_shadow_check": "source_direction='DOWN', inverted_direction='UP' for all STRESS signals",
+    "paper_positions_check": "direction='UP' for all open positions",
+    "governance_log": "P0_DIRECTION_LOGIC_FIX logged to governance_actions_log"
+  },
+
+  "lessons_learned": [
+    "forecast_probability represents REGIME confidence, not PRICE direction",
+    "STRESS regime = DOWNSIDE prediction, regardless of probability value",
+    "Always validate signal semantics before executing trades"
+  ]
+}
