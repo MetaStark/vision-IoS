@@ -22,17 +22,22 @@ const pool = new Pool({
   password: process.env.PGPASSWORD || 'postgres',
 })
 
-/** Fix UTF-8 mojibake from double-encoded Windows-1252 text */
+/** Fix UTF-8 mojibake from double/triple-encoded Windows-1252 text */
 function fixMojibake(text: string | null | undefined): string | null {
   if (!text || typeof text !== 'string') return text as any
   return text
-    .replace(/â€"/g, '—')
-    .replace(/â€"/g, '–')
-    .replace(/â€˜/g, '\u2018')
-    .replace(/â€™/g, '\u2019')
-    .replace(/â€œ/g, '\u201C')
-    .replace(/â€¢/g, '•')
-    .replace(/â€¦/g, '\u2026')
+    // Triple-encoded em/en-dash (Latin-1 control chars from pg pipeline)
+    .replace(/\u00e2\u0080\u0094/g, '\u2014')
+    .replace(/\u00e2\u0080\u0093/g, '\u2013')
+    // Double-encoded Windows-1252 patterns
+    .replace(/\u00c3\u00a2\u00e2\u0082\u00ac\u00e2\u0080[\u009c\u009d]/g, '\u2014')
+    .replace(/\u00e2\u20ac\u201c/g, '\u2013')
+    .replace(/\u00e2\u20ac\u201d/g, '\u2014')
+    .replace(/\u00e2\u20ac\u2122/g, '\u2019')
+    .replace(/\u00e2\u20ac\u0153/g, '\u201C')
+    .replace(/\u00e2\u20ac\u02dc/g, '\u2018')
+    .replace(/\u00e2\u20ac\u00a2/g, '\u2022')
+    .replace(/\u00e2\u20ac\u00a6/g, '\u2026')
 }
 
 export async function GET() {
