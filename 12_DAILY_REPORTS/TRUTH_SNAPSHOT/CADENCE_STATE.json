@@ -5,10 +5,10 @@
   "incident_runs": 0,
   "incident_id": null,
   "escalation_reason": "LVI = 0.039 (Grade F, coverage_rate bottleneck at 0.067)",
-  "last_updated": "2026-02-01T14:30:07+01:00",
+  "last_updated": "2026-02-01T17:14:48+01:00",
   "day": 32,
   "system_status": "OPERATIONAL_SHADOW_MODE",
-  "migrations_executed": ["332_fhq_ops_control_room.sql", "333_ios016_experiment_ledgers.sql", "340_fix_tag_event_proximity_field_names.sql"],
+  "migrations_executed": ["332_fhq_ops_control_room.sql", "333_ios016_experiment_ledgers.sql", "340_fix_tag_event_proximity_field_names.sql", "350_options_trading_infrastructure.sql", "351_options_defcon_killswitch.sql"],
   "critical_gaps": [
     "LVI = 0.039 (Grade F, coverage_rate = 0.067 is bottleneck)",
     "shadow_roi_calculator heartbeat stale (>22h)"
@@ -17,7 +17,8 @@
     "pg_stat statistics refreshed via ANALYZE (DAY32)",
     "hypothesis_ledger populated (8 hypotheses, 100% forward coverage)",
     "tag_event_proximity() schema error FIXED (Migration 340)",
-    "P0 financial tracking gap CLOSED (DAY31)"
+    "P0 financial tracking gap CLOSED (DAY31)",
+    "Options architecture IoS-012-C delivered (G1 Technical Validation)"
   ],
   "active_alerts": {
     "critical": 0,
@@ -37,12 +38,13 @@
     "last_computed": "2026-01-23T19:17:23Z"
   },
   "database_verification": {
-    "timestamp": "2026-02-01T14:30:07+01:00",
+    "timestamp": "2026-02-01T17:14:48+01:00",
     "schemas": 42,
-    "tables": 1300,
+    "tables": 1310,
     "rows": 35218240,
     "size_gb": 13,
-    "analyze_executed": true
+    "analyze_executed": true,
+    "options_tables_created": 10
   },
   "daemon_health_status": {
     "total": 21,
@@ -67,10 +69,23 @@
     "adr": "ADR-011"
   },
   "run_ledger_today": {
-    "runs": 15,
-    "success": 15,
+    "runs": 17,
+    "success": 17,
     "success_rate": 1.0
   },
   "board_summary_generated": true,
-  "evidence_file": "CEO_DIR_2026_DAY32_FULL_DB_VERIFICATION_20260201.json"
+  "evidence_file": "CEO_DIR_2026_OPS_AUTONOMY_001_G1_VALIDATION.json",
+  "options_infrastructure": {
+    "directive": "CEO-DIR-2026-OPS-AUTONOMY-001",
+    "gate": "G1",
+    "status": "DELIVERED",
+    "execution_mode": "SHADOW_PAPER",
+    "tables_created": 10,
+    "migrations": ["350", "351"],
+    "modules": ["options_greeks_calculator.py", "options_defcon_killswitch.py", "options_shadow_adapter.py"],
+    "gateway_version": "1.1.0",
+    "verification_pass": 7,
+    "verification_total": 7,
+    "next_gate": "G2"
+  }
 }
