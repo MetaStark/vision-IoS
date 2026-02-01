@@ -10,9 +10,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, Calendar as CalendarIcon, AlertCircle, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { RefreshCw, Calendar as CalendarIcon, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
 import {
   CalendarGrid,
+  CEOSummaryPanel,
   ActiveTestsPanel,
   CEOAlertsPanel,
   LVGStatusPanel,
@@ -113,6 +114,15 @@ interface CalendarData {
   g15Validators?: any[]
   // CEO-DIR-2026-CALENDAR-IS-LAW: Phase 2 Alpha Satellite experiments
   phase2Experiments?: any[]
+  // Regime state for CEO summary
+  regime?: {
+    currentRegime: string
+    confidence: number
+    transitionState: string
+    microRegime: string | null
+    momentum: string | null
+    avgStress: number | null
+  } | null
   currentDate: {
     today: string
     year: number
@@ -268,45 +278,17 @@ export default function CalendarPage() {
 
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-8 space-y-8">
-        {/* Executive Summary Banner */}
-        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-500/20 rounded-lg">
-              <Eye className="h-6 w-6 text-purple-400" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Calendar-as-Law Doctrine</h2>
-              <p className="text-sm text-gray-400 mt-1">
-                If something matters, it exists as a canonical calendar event.
-                CEO understanding target: &lt;30 seconds.
-              </p>
-            </div>
-            <div className="ml-auto flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">
-                  {data?.canonicalTests?.filter(t => t.status === 'ACTIVE').length || 0}
-                </p>
-                <p className="text-xs text-gray-500">Canonical Tests</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-amber-400">{data?.economicEvents?.length || 0}</p>
-                <p className="text-xs text-gray-500">Economic Events</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-400">{data?.alerts?.length || 0}</p>
-                <p className="text-xs text-gray-500">Pending Alerts</p>
-              </div>
-              {data?.canonicalTests?.some(t => t.ceoActionRequired) && (
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-red-400">
-                    {data.canonicalTests.filter(t => t.ceoActionRequired).length}
-                  </p>
-                  <p className="text-xs text-gray-500">Action Required</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* CEO 30-Second Summary */}
+        {data && (
+          <CEOSummaryPanel
+            canonicalTests={data.canonicalTests || []}
+            economicEvents={data.economicEvents || []}
+            lvgStatus={data.lvgStatus || { deathRatePct: 0, daemonStatus: 'STOPPED', totalHypotheses: 0, totalActive: 0 }}
+            alerts={data.alerts || []}
+            governanceChecks={data.governanceChecks || []}
+            regime={data.regime || null}
+          />
+        )}
 
         {/* CEO-VEDTAK-2026-ALPHA-FACTORY: G1.5 Experiment Progression Panel */}
         {data?.g15Experiment && (
@@ -540,25 +522,31 @@ export default function CalendarPage() {
                     </div>
                   )}
 
-                  {window.improvementMetrics && (
+                  {window.improvementMetrics && typeof window.improvementMetrics === 'object' && (
                     <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-1">Improvement Metrics</p>
-                      <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-2 overflow-auto max-h-24">
-                        {typeof window.improvementMetrics === 'object'
-                          ? JSON.stringify(window.improvementMetrics, null, 2)
-                          : window.improvementMetrics}
-                      </pre>
+                      <p className="text-xs text-gray-500 mb-2">Improvement Metrics</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(window.improvementMetrics).map(([key, val]) => (
+                          <div key={key} className="flex items-center justify-between bg-gray-800/50 rounded px-2 py-1.5">
+                            <span className="text-xs text-gray-500">{key.replace(/_/g, ' ')}</span>
+                            <span className="text-xs text-white font-mono">{String(val)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  {window.startingConsensusState && (
+                  {window.startingConsensusState && typeof window.startingConsensusState === 'object' && (
                     <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-1">Starting Consensus State</p>
-                      <pre className="text-xs text-gray-400 bg-gray-800/50 rounded p-2 overflow-auto max-h-24">
-                        {typeof window.startingConsensusState === 'object'
-                          ? JSON.stringify(window.startingConsensusState, null, 2)
-                          : window.startingConsensusState}
-                      </pre>
+                      <p className="text-xs text-gray-500 mb-2">Starting Consensus State</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(window.startingConsensusState).map(([key, val]) => (
+                          <div key={key} className="flex items-center justify-between bg-gray-800/50 rounded px-2 py-1.5">
+                            <span className="text-xs text-gray-500">{key.replace(/_/g, ' ')}</span>
+                            <span className="text-xs text-white font-mono">{val === null ? 'N/A' : String(val)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

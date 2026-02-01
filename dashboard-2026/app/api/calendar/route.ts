@@ -22,6 +22,19 @@ const pool = new Pool({
   password: process.env.PGPASSWORD || 'postgres',
 })
 
+/** Fix UTF-8 mojibake from double-encoded Windows-1252 text */
+function fixMojibake(text: string | null | undefined): string | null {
+  if (!text || typeof text !== 'string') return text as any
+  return text
+    .replace(/â€"/g, '—')
+    .replace(/â€"/g, '–')
+    .replace(/â€˜/g, '\u2018')
+    .replace(/â€™/g, '\u2019')
+    .replace(/â€œ/g, '\u201C')
+    .replace(/â€¢/g, '•')
+    .replace(/â€¦/g, '\u2026')
+}
+
 export async function GET() {
   let client
   try {
@@ -378,6 +391,16 @@ export async function GET() {
       ORDER BY experiment_code
     `)
 
+    // Regime state for CEO summary
+    const regimeResult = await client.query(`
+      SELECT rs.current_regime, rs.regime_confidence, rs.transition_state,
+             mc.micro_regime, mc.momentum_vector, mc.avg_stress_prob
+      FROM fhq_meta.regime_state rs
+      LEFT JOIN fhq_learning.v_micro_regime_current mc ON true
+      ORDER BY rs.last_updated_at DESC
+      LIMIT 1
+    `)
+
     // Get current date info
     const dateResult = await client.query(`
       SELECT
@@ -395,7 +418,7 @@ export async function GET() {
       // Calendar events
       events: calendarResult.rows.map((e: any) => ({
         id: e.event_id,
-        name: e.event_name,
+        name: fixMojibake(e.event_name),
         category: e.event_category,
         date: e.event_date,
         endDate: e.end_date,
@@ -416,7 +439,7 @@ export async function GET() {
         return {
           id: t.test_id,
           code: t.test_code,
-          name: t.test_name,
+          name: fixMojibake(t.test_name),
           owner: t.owning_agent,
           status: t.status,
           category: t.calendar_category,
@@ -429,7 +452,7 @@ export async function GET() {
           requiredDays: parseInt(t.required_days) || 30,
           progressPct: parseFloat(t.progress_pct) || 0,
           // Purpose & Logic
-          businessIntent: t.business_intent,
+          businessIntent: fixMojibake(t.business_intent),
           beneficiarySystem: t.beneficiary_system,
           hypothesisCode: t.hypothesis_code,
           // Measurement
@@ -476,7 +499,7 @@ export async function GET() {
       activeTests: canonicalTestsResult.rows
         .filter((t: any) => t.status === 'ACTIVE' || t.status === 'SCHEDULED')
         .map((t: any) => ({
-          name: t.test_name,
+          name: fixMojibake(t.test_name),
           code: t.test_code,
           owner: t.owning_agent,
           status: t.status,
@@ -519,8 +542,8 @@ export async function GET() {
       alerts: alertsResult.rows.map((a: any) => ({
         id: a.alert_id,
         type: a.alert_type,
-        title: a.alert_title,
-        summary: a.alert_summary,
+        title: fixMojibake(a.alert_title),
+        summary: fixMojibake(a.alert_summary),
         options: a.decision_options,
         priority: a.priority,
         status: a.status,
@@ -763,6 +786,20 @@ export async function GET() {
         experimentStatus: e.experiment_status,
         candidatePromotion: e.metadata?.candidate_promotion || false,
       })),
+
+      // Regime state for CEO summary
+      regime: (() => {
+        const r = regimeResult.rows[0]
+        if (!r) return null
+        return {
+          currentRegime: r.current_regime,
+          confidence: parseFloat(r.regime_confidence) || 0,
+          transitionState: r.transition_state,
+          microRegime: r.micro_regime || null,
+          momentum: r.momentum_vector || null,
+          avgStress: r.avg_stress_prob ? parseFloat(r.avg_stress_prob) : null,
+        }
+      })(),
 
       // Metadata
       lastUpdated: new Date().toISOString(),

@@ -4,6 +4,7 @@
  */
 
 export { CalendarGrid } from './CalendarGrid'
+export { CEOSummaryPanel } from './CEOSummaryPanel'
 export { ActiveTestsPanel } from './ActiveTestsPanel'
 export { CEOAlertsPanel } from './CEOAlertsPanel'
 export { LVGStatusPanel } from './LVGStatusPanel'
