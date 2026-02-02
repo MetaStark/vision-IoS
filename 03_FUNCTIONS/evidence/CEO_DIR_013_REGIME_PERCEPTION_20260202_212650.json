@@ -1,0 +1,210 @@
+{
+  "directive": "CEO-DIR-2026-REGIME-PERCEPTION-AND-SENSITIVITY-013",
+  "classification": "GOVERNANCE-CRITICAL / INTELLIGENCE",
+  "gate": "ADR-004 -> G2",
+  "timestamp": "2026-02-02T20:26:50.036416+00:00",
+  "executed_by": "STIG",
+  "ec": "EC-003",
+  "lead": "FINN",
+  "oversight": "VEGA",
+  "dataset": {
+    "regime_pairs": 775,
+    "sovereign_transitions_bear": 5889,
+    "sovereign_transitions_stress": 2248
+  },
+  "baseline_brier": {
+    "BEAR": {
+      "n": 178,
+      "hits": 10,
+      "accuracy": 0.0562,
+      "avg_raw_confidence": 0.8597,
+      "avg_damped_confidence": 0.15,
+      "brier_raw": 0.724225,
+      "brier_damped": 0.061826,
+      "brier_delta": -0.662399,
+      "improvement_pct": 91.46
+    },
+    "BULL": {
+      "n": 291,
+      "hits": 81,
+      "accuracy": 0.2784,
+      "avg_raw_confidence": 0.9196,
+      "avg_damped_confidence": 0.4,
+      "brier_raw": 0.615416,
+      "brier_damped": 0.21567,
+      "brier_delta": -0.399746,
+      "improvement_pct": 64.96
+    },
+    "NEUTRAL": {
+      "n": 277,
+      "hits": 226,
+      "accuracy": 0.8159,
+      "avg_raw_confidence": 0.8286,
+      "avg_damped_confidence": 0.7469,
+      "brier_raw": 0.154061,
+      "brier_damped": 0.15408,
+      "brier_delta": 1.8e-05,
+      "improvement_pct": -0.01
+    },
+    "STRESS": {
+      "n": 29,
+      "hits": 0,
+      "accuracy": 0.0,
+      "avg_raw_confidence": 0.9208,
+      "avg_damped_confidence": 0.1,
+      "brier_raw": 0.858473,
+      "brier_damped": 0.01,
+      "brier_delta": -0.848473,
+      "improvement_pct": 98.84
+    },
+    "OVERALL": {
+      "n": 775,
+      "brier_raw": 0.484605,
+      "brier_damped": 0.150626,
+      "brier_delta": -0.333979,
+      "improvement_pct": 68.92
+    }
+  },
+  "confusion_matrix": {
+    "BULL": {
+      "BEAR": 33,
+      "NEUTRAL": 177,
+      "BULL": 81
+    },
+    "NEUTRAL": {
+      "BEAR": 27,
+      "BULL": 24,
+      "NEUTRAL": 226
+    },
+    "BEAR": {
+      "NEUTRAL": 162,
+      "BULL": 6,
+      "BEAR": 10
+    },
+    "STRESS": {
+      "NEUTRAL": 25,
+      "BEAR": 1,
+      "BULL": 3
+    }
+  },
+  "time_to_detection": {
+    "BEAR": {
+      "transitions": 5889,
+      "avg_lag_days": 6.0,
+      "median_lag_days": 5.0,
+      "max_lag_days": 14,
+      "same_day_pct": 37.9,
+      "late_3plus_pct": 55.3,
+      "late_7plus_pct": 44.9
+    },
+    "STRESS": {
+      "transitions": 2248,
+      "avg_lag_days": 4.39,
+      "median_lag_days": 0.0,
+      "max_lag_days": 14,
+      "same_day_pct": 51.4,
+      "late_3plus_pct": 40.7,
+      "late_7plus_pct": 31.6
+    }
+  },
+  "type2_analysis": {
+    "BEAR": {
+      "actual_events": 71,
+      "correctly_detected": 10,
+      "recall": 0.1408,
+      "type2_rate": 0.8592,
+      "missed_as": {
+        "BULL": 33,
+        "NEUTRAL": 27,
+        "STRESS": 1
+      }
+    },
+    "STRESS": {
+      "actual_events": 0,
+      "correctly_detected": 0,
+      "recall": 0.0,
+      "type2_rate": 1.0,
+      "missed_as": {}
+    }
+  },
+  "probability_ramp_btc": {
+    "total_transitions": 22,
+    "early_signal_count": 20,
+    "avg_early_signal_days": 3.65,
+    "recent_2026": [
+      {
+        "date": "2026-01-07",
+        "target": "STRESS",
+        "early_signal_days": 1,
+        "tech_first_match_days": 1,
+        "max_pre_prob": 0.8499
+      },
+      {
+        "date": "2026-01-22",
+        "target": "BEAR",
+        "early_signal_days": 1,
+        "tech_first_match_days": 1,
+        "max_pre_prob": 0.6416
+      },
+      {
+        "date": "2026-01-24",
+        "target": "BEAR",
+        "early_signal_days": 3,
+        "tech_first_match_days": 3,
+        "max_pre_prob": 0.8482
+      }
+    ]
+  },
+  "asymmetric_loss_baseline": {
+    "total_pairs": 775,
+    "total_errors": 458,
+    "error_rate": 0.591,
+    "symmetric_loss": 0.590968,
+    "asymmetric_loss_3x": 0.745806,
+    "asymmetric_penalty_ratio": 1.262,
+    "type2_penalty_weight": 3.0,
+    "note": "Baseline with uniform 3x Type II penalty. FINN Section 2B will propose refined weights."
+  },
+  "finn_integration": {
+    "section_2a_regime_score": "AWAITING_DELIVERY",
+    "section_2b_loss_function": "AWAITING_DELIVERY",
+    "finn_loss_result": null
+  },
+  "success_criteria": {
+    "bear_stress_detection_improvement": {
+      "status": "BASELINE_ESTABLISHED",
+      "bear_recall_current": 0.1408,
+      "stress_recall_current": 0.0,
+      "bear_avg_lag_days": 6.0,
+      "stress_avg_lag_days": 4.39,
+      "note": "Improvement requires FINN Section 2A delivery. Baseline captured for comparison."
+    },
+    "neutral_no_regression": {
+      "status": "PASS",
+      "neutral_accuracy": 0.8159,
+      "neutral_brier_damped": 0.15408,
+      "threshold": 0.8
+    },
+    "full_evidence_package": {
+      "status": "PARTIAL",
+      "baseline_complete": true,
+      "finn_2a_received": false,
+      "finn_2b_received": false,
+      "before_after_ready": false
+    }
+  },
+  "governance_state": {
+    "defcon": "GREEN",
+    "execution_mode": "SHADOW_PAPER",
+    "live_capital_blocked": true,
+    "constitutional_hold": "ACTIVE",
+    "no_execution_mode_change": true,
+    "no_defcon_change_without_ceo": true
+  },
+  "constraints_verified": {
+    "no_execution_mode_change": true,
+    "no_live_shadow_capital_increase": true,
+    "no_defcon_mechanic_change": true
+  },
+  "evidence_hash": "ad543d73e853a7b289e82ba286473f082f3545146801c7ca2007c4f8587ce576"
+}
