@@ -38,6 +38,7 @@ from typing import Dict, List, Optional, Any, Tuple
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+from forecast_confidence_damper import get_damper
 
 load_dotenv()
 
@@ -268,6 +269,18 @@ def create_reconciliation_pair(
         # Hash chain
         hash_chain_id = f"{HASH_CHAIN_PREFIX}-{forecast['forecast_id']}-{outcome['outcome_id']}"
 
+        # CEO-DIR-2026-063R + CEO-DIR-012: Apply regime-specific confidence dampening
+        raw_conf = float(forecast.get('forecast_confidence') or forecast.get('forecast_probability', 0.5))
+        damper = get_damper()
+        dampening = damper.damp_confidence(
+            raw_conf,
+            forecast_type=forecast.get('forecast_type', 'REGIME'),
+            regime=forecast.get('forecast_value', 'ALL')
+        )
+        damper_version_hash = hashlib.sha256(
+            f"CEO-DIR-2026-063R:ceiling={dampening['ceiling_applied']}".encode()
+        ).hexdigest()[:16]
+
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO fhq_research.forecast_outcome_pairs (
@@ -282,9 +295,18 @@ def create_reconciliation_pair(
                     forecast_lead_time_hours,
                     outcome_within_horizon,
                     reconciled_by,
-                    hash_chain_id
+                    hash_chain_id,
+                    raw_confidence,
+                    damped_confidence,
+                    dampening_delta,
+                    ceiling_applied,
+                    damper_version_hash,
+                    damped_at,
+                    parent_forecast_id,
+                    directive_ref
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, NOW(), %s, %s
                 )
                 ON CONFLICT DO NOTHING
                 RETURNING pair_id
@@ -300,7 +322,14 @@ def create_reconciliation_pair(
                 lead_time_hours,
                 outcome_within_horizon,
                 'STIG',
-                hash_chain_id
+                hash_chain_id,
+                raw_conf,
+                dampening['damped_confidence'],
+                dampening['dampening_delta'],
+                dampening['ceiling_applied'],
+                damper_version_hash,
+                forecast['forecast_id'],
+                'CEO-DIR-2026-063R'
             ))
 
             result = cur.fetchone()

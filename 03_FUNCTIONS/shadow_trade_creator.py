@@ -49,6 +49,7 @@ from decimal import Decimal
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+from governance_preflight import run_governance_preflight, GovernancePreflightError
 
 load_dotenv()
 
@@ -239,6 +240,14 @@ def run_shadow_creator(dry_run: bool = False):
 
     conn = psycopg2.connect(**DB_CONFIG)
     try:
+        # GOVERNANCE PREFLIGHT — fail-closed (CEO-DIR-010 Workstream B)
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            try:
+                preflight = run_governance_preflight(cur, 'SHADOW_TRADE_CREATOR')
+            except GovernancePreflightError as e:
+                logger.error(f"GOVERNANCE PREFLIGHT BLOCKED: {e}")
+                return
+
         # Step 1: Find eligible hypotheses
         hypotheses = find_eligible_hypotheses(conn)
         logger.info(f"Found {len(hypotheses)} promoted hypothesis(es) with asset_universe")

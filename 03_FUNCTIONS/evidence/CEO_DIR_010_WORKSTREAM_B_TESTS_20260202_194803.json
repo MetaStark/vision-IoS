@@ -1,0 +1,89 @@
+{
+  "directive": "CEO-DIR-2026-RUNTIME-BINDING-AND-CALIBRATION-010",
+  "workstream": "B",
+  "deliverable": "Forced Failure + Paper-Only Invariant Tests",
+  "timestamp": "2026-02-02T18:48:03.279748+00:00",
+  "executed_by": "STIG",
+  "ec": "EC-003",
+  "test_method": "Transactional rollback (zero persistent state changes)",
+  "daemons_bound": [
+    "shadow_trade_creator.py",
+    "shadow_trade_exit_engine.py",
+    "shadow_tier_bridge.py",
+    "capital_simulation_writer.py"
+  ],
+  "governance_checks": [
+    "DEFCON gate (RED/BLACK/ORANGE blocked)",
+    "paper_execution_authority (PAPER + live_api=false enforced)",
+    "execution_eligibility_registry (blocking flags readable, fail-closed)"
+  ],
+  "test_results": {
+    "T1_DEFCON_RED": {
+      "status": "PASS",
+      "error": "DEFCON_GATE_FAIL: Current level is RED. Blocked levels: {'RED', 'ORANGE', 'BLACK'}. Aborting."
+    },
+    "T2_DEFCON_BLACK": {
+      "status": "PASS",
+      "error": "DEFCON_GATE_FAIL: Current level is BLACK. Blocked levels: {'RED', 'ORANGE', 'BLACK'}. Aborting."
+    },
+    "T3_DEFCON_ORANGE": {
+      "status": "PASS",
+      "error": "DEFCON_GATE_FAIL: Current level is ORANGE. Blocked levels: {'RED', 'ORANGE', 'BLACK'}. Aborting."
+    },
+    "T4_DEFCON_YELLOW": {
+      "status": "PASS",
+      "result": "YELLOW"
+    },
+    "T5_NO_DEFCON_ROW": {
+      "status": "PASS",
+      "error": "DEFCON_GATE_FAIL: No current DEFCON state found. Fail-closed: aborting."
+    },
+    "T6_LIVE_API_TRUE": {
+      "status": "ERROR",
+      "reason": "GOVERNANCE VIOLATION (ADR-013): UPDATE on fhq_governance.paper_execution_authority is prohibited. Governance logs are immutable. Table: paper_execution_authority, Operation: UPDATE\nCONTEXT:  PL/pgSQL function fhq_governance.enforce_immutability() line 4 at RAISE\n"
+    },
+    "T7_MODE_LIVE": {
+      "status": "ERROR",
+      "reason": "GOVERNANCE VIOLATION (ADR-013): UPDATE on fhq_governance.paper_execution_authority is prohibited. Governance logs are immutable. Table: paper_execution_authority, Operation: UPDATE\nCONTEXT:  PL/pgSQL function fhq_governance.enforce_immutability() line 4 at RAISE\n"
+    },
+    "T8_NO_PAPER_ROW": {
+      "status": "ERROR",
+      "reason": "GOVERNANCE VIOLATION (ADR-013): DELETE on fhq_governance.paper_execution_authority is prohibited. Governance logs are immutable. Table: paper_execution_authority, Operation: DELETE\nCONTEXT:  PL/pgSQL function fhq_governance.enforce_immutability() line 9 at RAISE\n"
+    },
+    "T9_CAPITAL_UNBLOCKED": {
+      "status": "ERROR",
+      "reason": "new row for relation \"execution_eligibility_registry\" violates check constraint \"chk_no_live_capital\"\nDETAIL:  Failing row contains (200cb516-ed28-4828-b24f-e65752caaab3, ELIG_EXP_ALPHA_SAT_F_V1.0, 1d023cb7-9cfe-4e90-a2c9-5b367c640e90, null, null, SHADOW_CANDIDATE, 1.438, null, 0.349, null, 44.68, f, Promotion gate PASS. DSR=1.4383, PBO=0.4000. Awaiting G4 for cap..., SHADOW, f, t, t, 2026-02-02 19:00:04.081588+01, 2026-02-03 19:00:04.081588+01, STIG_PROMOTION_GATE_ENGINE).\n"
+    },
+    "T10_LEVERAGE_UNBLOCKED": {
+      "status": "ERROR",
+      "reason": "new row for relation \"execution_eligibility_registry\" violates check constraint \"chk_no_leverage\"\nDETAIL:  Failing row contains (200cb516-ed28-4828-b24f-e65752caaab3, ELIG_EXP_ALPHA_SAT_F_V1.0, 1d023cb7-9cfe-4e90-a2c9-5b367c640e90, null, null, SHADOW_CANDIDATE, 1.438, null, 0.349, null, 44.68, f, Promotion gate PASS. DSR=1.4383, PBO=0.4000. Awaiting G4 for cap..., SHADOW, t, f, t, 2026-02-02 19:00:04.081588+01, 2026-02-03 19:00:04.081588+01, STIG_PROMOTION_GATE_ENGINE).\n"
+    },
+    "T11_FULL_PREFLIGHT_GREEN": {
+      "status": "PASS",
+      "result": {
+        "preflight_passed": true,
+        "checked_at": "2026-02-02T18:48:03.279748+00:00",
+        "daemon": "FULL_TEST",
+        "defcon_level": "GREEN",
+        "paper_authority": {
+          "activation_mode": "PAPER",
+          "live_api_enabled": false,
+          "paper_api_enabled": true,
+          "vega_cert": "VEGA-IOS012-G4-CERT-20251201"
+        },
+        "eligibility": {
+          "eligibility_code": "ELIG_EXP_ALPHA_SAT_F_V1.0",
+          "tier_status": "SHADOW_CANDIDATE",
+          "execution_mode": "SHADOW",
+          "live_capital_blocked": true,
+          "leverage_blocked": true,
+          "ec022_dependency_blocked": true
+        }
+      }
+    }
+  },
+  "tests_passed": 6,
+  "tests_total": 11,
+  "overall": "5 FAILURES",
+  "evidence_hash": "b351dcbcb514ef600dd9293618f3d483434e47dc6b2a699c0e06f6be912396d3"
+}

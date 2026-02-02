@@ -1,0 +1,120 @@
+{
+  "directive": "CEO-DIR-2026-INTELLIGENCE-UPLIFT-012",
+  "classification": "EPISTEMIC - CRITICAL",
+  "timestamp": "2026-02-02T19:42:47.227027+00:00",
+  "executed_by": "STIG",
+  "ec": "EC-003",
+  "lead": "FINN",
+  "section_3_1_gates_inserted": {
+    "NEUTRAL": {
+      "ceiling": 0.8,
+      "historical_accuracy": 0.8159,
+      "sample_size": 277
+    },
+    "BULL": {
+      "ceiling": 0.4,
+      "historical_accuracy": 0.2784,
+      "sample_size": 291
+    },
+    "BEAR": {
+      "ceiling": 0.15,
+      "historical_accuracy": 0.0562,
+      "sample_size": 178
+    },
+    "STRESS": {
+      "ceiling": 0.1,
+      "historical_accuracy": 0.0,
+      "sample_size": 75,
+      "note": "pre-existing"
+    }
+  },
+  "section_3_2_rescoring": {
+    "dataset": "775 regime forecast-outcome pairs",
+    "method": "Retroactive dampening using ForecastConfidenceDamper with regime-specific gate lookup",
+    "pairs_damped": "678/775 (NEUTRAL predictions largely undamped due to 0.80 ceiling)",
+    "brier_score_comparison": {
+      "BEAR": {
+        "raw": 0.7242,
+        "dir011_uniform": 0.1032,
+        "dir012_regime_specific": 0.0618,
+        "improvement_vs_raw": "-91.5%",
+        "improvement_vs_dir011": "-40.1%"
+      },
+      "BULL": {
+        "raw": 0.6154,
+        "dir011_uniform": 0.2064,
+        "dir012_regime_specific": 0.2157,
+        "improvement_vs_raw": "-65.0%",
+        "improvement_vs_dir011": "+4.5% (slight regression from tighter gate)"
+      },
+      "NEUTRAL": {
+        "raw": 0.1541,
+        "dir011_uniform": 0.4292,
+        "dir012_regime_specific": 0.1541,
+        "improvement_vs_raw": "0.0% (FULLY PRESERVED)",
+        "improvement_vs_dir011": "-100% REGRESSION ELIMINATED",
+        "key_finding": "The +178.6% Brier regression under uniform dampening is COMPLETELY ELIMINATED. NEUTRAL performance restored to undamped level."
+      },
+      "STRESS": {
+        "raw": 0.8585,
+        "dir011_uniform": 0.065,
+        "dir012_regime_specific": 0.01,
+        "improvement_vs_raw": "-98.8%",
+        "improvement_vs_dir011": "-84.6%"
+      },
+      "OVERALL": {
+        "raw": 0.4846,
+        "dir011_uniform": 0.2571,
+        "dir012_regime_specific": 0.1506,
+        "improvement_vs_raw": "-68.9%",
+        "improvement_vs_dir011": "-41.4%"
+      }
+    },
+    "calibration_comparison": {
+      "weighted_avg_gap_raw": 0.466,
+      "weighted_avg_gap_dir011": 0.1324,
+      "weighted_avg_gap_dir012": 0.0841,
+      "improvement_vs_raw": "-82.0%",
+      "improvement_vs_dir011": "-36.5%",
+      "best_calibrated_bin": "0.6-0.8 damped: gap=-0.0144 (near-perfect)"
+    },
+    "suppression_regret_comparison": {
+      "baseline_jan16": 41.5,
+      "dir011_uniform": 37.72,
+      "dir012_regime_specific": 4.83,
+      "delta_from_baseline": -36.67,
+      "delta_from_dir011": -32.89,
+      "predictions_suppressed": "207/17656 (1.17%)",
+      "suppression_wisdom": 95.17
+    }
+  },
+  "success_criteria_assessment": {
+    "neutral_brier_improved": {
+      "met": true,
+      "detail": "NEUTRAL Brier 0.4292 -> 0.1541 (-64.1% vs DIR-011). FULLY RESTORED to pre-dampening level.",
+      "exceeds_30pct_target": true
+    },
+    "bear_stress_safety": {
+      "met": true,
+      "detail": "BEAR Brier 0.1032 -> 0.0618 (IMPROVED). STRESS Brier 0.0650 -> 0.0100 (IMPROVED). No degradation."
+    },
+    "suppression_regret": {
+      "met": true,
+      "detail": "Regret 37.72% -> 4.83% (DECREASED by 32.89pp). Wisdom 62.28% -> 95.17%."
+    },
+    "evidence_hash_verified": true
+  },
+  "governance_state": {
+    "defcon": "GREEN",
+    "execution_mode": "SHADOW_PAPER",
+    "live_capital_blocked": true,
+    "constitutional_hold": "ACTIVE",
+    "runtime_governance": "4 daemons bound (DIR-010)"
+  },
+  "files_modified": [
+    "fhq_governance.confidence_calibration_gates (3 rows inserted: NEUTRAL, BULL, BEAR)",
+    "ios010_forecast_reconciliation_daemon.py (damper call now passes predicted regime)",
+    "dir011_epistemic_audit.py (apply_dampening now uses predicted regime)"
+  ],
+  "evidence_hash": "02587d54ba67b55bddf29ca5326085868df9030f3e00392e5c992830fd700aa2"
+}
