@@ -121,12 +121,12 @@ def get_regime_snapshot(conn) -> dict:
 
 
 def get_bridge_count_today(conn) -> int:
-    """Constraint D: count bridge experiments created in last 24h."""
+    """Constraint D: count bridge experiments created today (Oslo calendar day). DIR-006."""
     with conn.cursor() as cur:
         cur.execute("""
             SELECT COUNT(*) FROM fhq_learning.experiment_registry
             WHERE experiment_code LIKE 'EXP_BRIDGE_%%'
-              AND created_at > NOW() - INTERVAL '24 hours'
+              AND created_at >= (NOW() AT TIME ZONE 'Europe/Oslo')::date::timestamptz
         """)
         return cur.fetchone()[0]
 
@@ -432,7 +432,7 @@ def run_cycle(dry_run: bool = False, batch_size: int = DAILY_RATE_LIMIT) -> dict
 
         if remaining <= 0:
             log.info(f"Rate limit reached: {already_today}/{DAILY_RATE_LIMIT} "
-                     "bridge experiments in last 24h. Skipping creation.")
+                     "bridge experiments today (Oslo). Skipping creation.")
             stats['abort_reason'] = 'RATE_LIMIT_REACHED'
             # Still run zombie cleanup
             stats['zombies_terminated'] = cleanup_bridge_zombies(conn, dry_run)
@@ -445,6 +445,14 @@ def run_cycle(dry_run: bool = False, batch_size: int = DAILY_RATE_LIMIT) -> dict
         regime = get_regime_snapshot(conn)
         stats['regime_snapshot'] = regime
         log.info(f"Regime: {regime['regime']} (confidence={regime['confidence']})")
+
+        # DIR-006: Regime UNKNOWN hard precondition
+        if regime['regime'] == 'UNKNOWN' or regime['confidence'] == 0:
+            log.warning(f"REGIME_PRECONDITION_FAIL: regime={regime['regime']}, "
+                        f"confidence={regime['confidence']}. Preserving quota.")
+            stats['abort_reason'] = 'REGIME_UNKNOWN'
+            stats['zombies_terminated'] = cleanup_bridge_zombies(conn, dry_run)
+            return stats
 
         # 4. Find eligible hypotheses (Constraint A)
         eligible = find_eligible_hypotheses(conn, effective_budget)

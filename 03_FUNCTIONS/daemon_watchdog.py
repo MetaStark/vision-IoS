@@ -98,7 +98,32 @@ DAEMONS = {
         'max_stale_minutes': 10,  # 5min cycle + 5min buffer
         'process': None,
         'has_heartbeat': True  # Has heartbeat code - CEO-DIR-2026-PRE-TIER-SCORING-DAEMON-001
-    }
+    },
+    # DIR-006: Add 4 missing ACTIVE daemons
+    'mechanism_alpha_trigger': {
+        'script': '03_FUNCTIONS/mechanism_alpha_trigger.py',
+        'max_stale_minutes': 15,
+        'process': None,
+        'has_heartbeat': True
+    },
+    'mechanism_alpha_outcome': {
+        'script': '03_FUNCTIONS/mechanism_alpha_outcome.py',
+        'max_stale_minutes': 35,
+        'process': None,
+        'has_heartbeat': True
+    },
+    'orphan_state_cleanup': {
+        'script': '03_FUNCTIONS/orphan_state_cleanup.py',
+        'max_stale_minutes': 65,
+        'process': None,
+        'has_heartbeat': True
+    },
+    'shadow_roi_calculator': {
+        'script': '03_FUNCTIONS/shadow_roi_calculator.py',
+        'max_stale_minutes': 1445,
+        'process': None,
+        'has_heartbeat': True
+    },
     # SUSPENDED: wave15_autonomous_hunter - Reactivate after G1.5 (2026-02-07)
     # See control_room_alerts for reminder
 }

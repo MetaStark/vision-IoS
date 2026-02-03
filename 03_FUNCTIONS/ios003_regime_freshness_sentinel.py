@@ -41,7 +41,7 @@ DB_CONFIG = {
     'password': os.environ.get('PGPASSWORD', 'postgres')
 }
 
-STALENESS_THRESHOLD_DAYS = 1
+STALENESS_THRESHOLD_HOURS = 6  # CEO-DIR-2026-006: Aligned to regime SLA (was 1 day)
 FUNCTIONS_DIR = Path(__file__).parent
 
 # Modules to trigger for self-repair
@@ -70,32 +70,30 @@ class RegimeFreshnessSentinel:
         }
 
     def check_freshness(self) -> dict:
-        """Check regime_daily freshness across all assets."""
+        """Check regime_daily freshness across all assets (hour-based, DIR-006)."""
         self.cur.execute("""
-            SELECT
-                asset_id,
-                MAX(timestamp)::date as latest_date,
-                CURRENT_DATE - MAX(timestamp)::date as days_behind
+            SELECT asset_id, MAX(timestamp) as latest_ts,
+                   EXTRACT(EPOCH FROM (NOW() - MAX(timestamp))) / 3600.0 as hours_behind
             FROM fhq_perception.regime_daily
-            GROUP BY asset_id
-            ORDER BY days_behind DESC
+            GROUP BY asset_id ORDER BY hours_behind DESC
         """)
 
         assets = {}
         max_staleness = 0
 
         for row in self.cur.fetchall():
-            asset_id, latest_date, days_behind = row
+            asset_id, latest_ts, hours_behind = row
+            hours_behind = round(float(hours_behind), 2)
             assets[asset_id] = {
-                'latest_date': str(latest_date),
-                'days_behind': days_behind
+                'latest_date': str(latest_ts),
+                'hours_behind': hours_behind
             }
-            max_staleness = max(max_staleness, days_behind)
+            max_staleness = max(max_staleness, hours_behind)
 
         return {
             'assets': assets,
-            'max_staleness_days': max_staleness,
-            'is_stale': max_staleness > STALENESS_THRESHOLD_DAYS
+            'max_staleness_hours': max_staleness,
+            'is_stale': max_staleness > STALENESS_THRESHOLD_HOURS
         }
 
     def trigger_self_repair(self) -> dict:
@@ -195,11 +193,11 @@ class RegimeFreshnessSentinel:
         self.results['freshness'] = freshness
 
         for asset_id, info in freshness['assets'].items():
-            status = "[STALE]" if info['days_behind'] > STALENESS_THRESHOLD_DAYS else "[OK]"
-            print(f"  {asset_id}: {info['latest_date']} ({info['days_behind']}d behind) {status}")
+            status = "[STALE]" if info['hours_behind'] > STALENESS_THRESHOLD_HOURS else "[OK]"
+            print(f"  {asset_id}: {info['latest_date']} ({info['hours_behind']}h behind) {status}")
 
-        print(f"\n  Max staleness: {freshness['max_staleness_days']} days")
-        print(f"  Threshold: {STALENESS_THRESHOLD_DAYS} day(s)")
+        print(f"\n  Max staleness: {freshness['max_staleness_hours']} hours")
+        print(f"  Threshold: {STALENESS_THRESHOLD_HOURS} hour(s)")
 
         if freshness['is_stale']:
             # STALE - Trigger self-repair
@@ -209,7 +207,7 @@ class RegimeFreshnessSentinel:
             self.results['alert'] = {
                 'type': 'REGIME_STALE_ALERT',
                 'severity': 'CRITICAL',
-                'delta_days': freshness['max_staleness_days']
+                'delta_hours': freshness['max_staleness_hours']
             }
 
             # Log stale alert
@@ -217,7 +215,7 @@ class RegimeFreshnessSentinel:
                 'REGIME_STALE_ALERT',
                 'CRITICAL',
                 {
-                    'max_staleness_days': freshness['max_staleness_days'],
+                    'max_staleness_hours': freshness['max_staleness_hours'],
                     'assets': freshness['assets'],
                     'action': 'TRIGGERING_SELF_REPAIR'
                 }
@@ -242,7 +240,7 @@ class RegimeFreshnessSentinel:
                         'INFO',
                         self.results
                     )
-                    print(f"  Status: REPAIRED")
+                    print("  Status: REPAIRED")
                 else:
                     self.results['status'] = 'REPAIR_INCOMPLETE'
                     self.results['self_repair_success'] = False
@@ -251,7 +249,7 @@ class RegimeFreshnessSentinel:
                         'WARNING',
                         self.results
                     )
-                    print(f"  Status: REPAIR_INCOMPLETE")
+                    print("  Status: REPAIR_INCOMPLETE")
             else:
                 self.results['status'] = 'REPAIR_FAILED'
                 self.results['self_repair_success'] = False
@@ -260,7 +258,7 @@ class RegimeFreshnessSentinel:
                     'ERROR',
                     self.results
                 )
-                print(f"  Status: REPAIR_FAILED")
+                print("  Status: REPAIR_FAILED")
         else:
             # FRESH - All good
             print("\n[OK] REGIME_FRESH")
@@ -271,7 +269,7 @@ class RegimeFreshnessSentinel:
                 'REGIME_FRESH',
                 'INFO',
                 {
-                    'max_staleness_days': freshness['max_staleness_days'],
+                    'max_staleness_hours': freshness['max_staleness_hours'],
                     'status': 'FRESH'
                 }
             )
@@ -282,7 +280,7 @@ class RegimeFreshnessSentinel:
         print("\n" + "=" * 60)
         print("SENTINEL STATUS")
         print("=" * 60)
-        print(f"  regime_age: {freshness['max_staleness_days']} days")
+        print(f"  regime_age: {freshness['max_staleness_hours']} hours")
         print(f"  status: {self.results['status']}")
         print(f"  self_repair_enabled: TRUE")
         print(f"  evidence_hash: {evidence_hash[:32]}...")

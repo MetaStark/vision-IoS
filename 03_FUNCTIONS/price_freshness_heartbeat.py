@@ -59,7 +59,7 @@ CEO_TELEGRAM_CHAT_ID = os.getenv('CEO_TELEGRAM_CHAT_ID')
 CEO_GATEWAY_ENABLED = os.getenv('CEO_GATEWAY_ENABLED', '0') == '1'
 
 # Market-aware price staleness thresholds
-# CEO-DIR-2026-0YC: Aligned to DAILY BAR granularity (yfinance provides ~1 bar/day)
+# CEO-DIR-2026-006: Aligned to data_liveness_checker canonical thresholds
 # CEO-DIR-2026-EURUSD-PERMANENT-FIX: FX weekend awareness
 #
 # FX MARKET HOURS: Sun 5PM ET to Fri 5PM ET (continuous)
@@ -68,9 +68,9 @@ CEO_GATEWAY_ENABLED = os.getenv('CEO_GATEWAY_ENABLED', '0') == '1'
 # On Monday morning ET, Friday's bar is ~60h old - this is EXPECTED
 #
 PRICE_STALENESS_CRYPTO = {
-    'max_ok_hours': 24,      # Full confidence: within 24h of last daily bar
-    'warn_hours': 36,        # Warn: 1.5x daily cadence
-    'blackout_hours': 48     # Blackout: missed 2 daily bars
+    'max_ok_hours': 6,       # CEO-DIR-2026-006: Aligned to data_liveness_checker
+    'warn_hours': 12,        # Graded confidence penalty zone
+    'blackout_hours': 12     # Abort threshold (matches G1 gate)
 }
 
 PRICE_STALENESS_EQUITY = {

@@ -512,6 +512,24 @@ def run_orchestrator() -> Dict:
                     'resolved_by': 'canonical_test_orchestrator_daemon'
                 })
 
+                # DIR-006: Clear escalation state on resolved tests
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        UPDATE fhq_calendar.canonical_test_events
+                        SET escalation_state = 'RESOLVED', ceo_action_required = FALSE
+                        WHERE test_id = %s::uuid AND escalation_state = 'ACTION_REQUIRED'
+                    """, (test_id,))
+                    cur.execute("""
+                        UPDATE fhq_calendar.ceo_calendar_alerts
+                        SET status = 'RESOLVED', resolved_at = NOW(),
+                            ceo_decision = 'AUTO_RESOLVED_ON_VERDICT',
+                            ceo_decision_rationale = %s
+                        WHERE alert_type = 'TEST_ESCALATION'
+                          AND status = 'PENDING'
+                          AND alert_title LIKE '%%' || %s || '%%'
+                    """, (f'Verdict: {verdict}', test.get('test_name', '')))
+                conn.commit()
+
                 stats['resolved'] += 1
                 print(f"[{datetime.now()}]   Resolved with verdict: {verdict}")
                 continue
@@ -539,6 +557,36 @@ def run_orchestrator() -> Dict:
 
             stats['processed'] += 1
             print(f"[{datetime.now()}]   Processed successfully")
+
+        # =================================================================
+        # DIR-006: Phase 4 — Escalation closure sweep
+        # =================================================================
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE fhq_calendar.canonical_test_events
+                SET escalation_state = 'RESOLVED', ceo_action_required = FALSE
+                WHERE status = 'COMPLETED' AND verdict IS NOT NULL
+                  AND escalation_state = 'ACTION_REQUIRED'
+                RETURNING test_code, verdict
+            """)
+            stale = cur.fetchall()
+            # Also resolve orphaned CEO alerts for completed tests
+            cur.execute("""
+                UPDATE fhq_calendar.ceo_calendar_alerts
+                SET status = 'RESOLVED', resolved_at = NOW(),
+                    ceo_decision = 'AUTO_RESOLVED_STALE_SWEEP',
+                    ceo_decision_rationale = 'Test completed - escalation orphaned'
+                WHERE alert_type = 'TEST_ESCALATION' AND status = 'PENDING'
+                  AND alert_title IN (
+                      SELECT 'Test Escalation: ' || test_name
+                      FROM fhq_calendar.canonical_test_events
+                      WHERE status = 'COMPLETED' AND verdict IS NOT NULL
+                  )
+            """)
+        conn.commit()
+        stats['stale_escalations_closed'] = len(stale) if stale else 0
+        if stale:
+            print(f"[{datetime.now()}] DIR-006: Closed {len(stale)} stale escalation(s)")
 
         # =================================================================
         # LOG EXECUTION

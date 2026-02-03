@@ -254,6 +254,24 @@ def run_shadow_creator(dry_run: bool = False):
 
         if not hypotheses:
             logger.info("No eligible hypotheses. Nothing to do.")
+            # DIR-006: Write evidence for zero-eligible case
+            evidence_dir = os.path.join(os.path.dirname(__file__), 'evidence')
+            os.makedirs(evidence_dir, exist_ok=True)
+            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+            evidence = {
+                'directive': 'CEO-DIR-20260130-SHADOW-EXECUTION-BRIDGE-001',
+                'executed_at': datetime.now(timezone.utc).isoformat(),
+                'executed_by': 'STIG_SHADOW_CREATOR',
+                'dry_run': dry_run,
+                'gate': 'NO_PROMOTED_HYPOTHESES',
+                'hypotheses_processed': 0,
+                'trades_created': 0,
+                'hypothesis_disposition': [],
+            }
+            evidence_path = os.path.join(evidence_dir, f'SHADOW_TRADE_CREATOR_{ts}.json')
+            with open(evidence_path, 'w') as f:
+                json.dump(evidence, f, indent=2, default=str)
+            logger.info(f"Evidence: {evidence_path}")
             return
 
         # Step 2: Get current regime
@@ -262,6 +280,7 @@ def run_shadow_creator(dry_run: bool = False):
 
         total_created = 0
         all_trades = []
+        hypothesis_disposition = []  # DIR-006: Per-hypothesis disposition tracking
 
         for hyp in hypotheses:
             logger.info(f"\nProcessing: {hyp['hypothesis_code']} "
@@ -277,12 +296,22 @@ def run_shadow_creator(dry_run: bool = False):
 
             if not triggers:
                 logger.info("  All triggers already have shadow trades. Skipping.")
+                hypothesis_disposition.append({
+                    'hypothesis_code': hyp['hypothesis_code'],
+                    'gate': 'ALL_TRIGGERS_PROCESSED',
+                    'reason': f"0 unprocessed triggers for experiment {hyp['experiment_code']}",
+                })
                 continue
 
             # Step 4: Create shadow trades
             created = create_shadow_trades(conn, hyp, triggers, regime, dry_run)
             total_created += len(created)
             all_trades.extend(created)
+            hypothesis_disposition.append({
+                'hypothesis_code': hyp['hypothesis_code'],
+                'gate': 'TRADES_CREATED',
+                'trades_created': len(created),
+            })
 
         # Summary
         logger.info("\n" + "=" * 60)
@@ -303,6 +332,7 @@ def run_shadow_creator(dry_run: bool = False):
             'regime_at_creation': regime,
             'hypotheses_processed': len(hypotheses),
             'trades_created': total_created,
+            'hypothesis_disposition': hypothesis_disposition,
             'trades': [
                 {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v
                  for k, v in t.items()}
