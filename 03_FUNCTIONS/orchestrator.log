@@ -347,3 +347,32 @@ HINT:  You will need to rewrite or cast the expression.
 
 FATAL: current transaction is aborted, commands ignored until end of transaction block
 
+[2026-02-03 06:00:04.871137] Canonical Test Orchestrator starting...
+[2026-02-03 06:00:05.090800] Phase 1: Discovering active tests...
+[2026-02-03 06:00:05.104739] Found 4 ACTIVE test(s)
+[2026-02-03 06:00:05.136345] Collected 10 signal(s)
+
+[2026-02-03 06:00:05.136345] Processing: TEST-EC022-OBS-001
+[2026-02-03 06:00:05.136345]   Day 10 of 30
+[2026-02-03 06:00:05.173181]   ESCALATION TRIGGERED: LVG metric feed missing for >24h
+[2026-02-03 06:00:05.327964] ERROR: Orchestrator failed: column "recommended_actions" is of type jsonb but expression is of type text[]
+LINE 6:                 recommended_actions = ARRAY['Run LVG computa...
+                                              ^
+HINT:  You will need to rewrite or cast the expression.
+
+Traceback (most recent call last):
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\canonical_test_orchestrator_daemon.py", line 531, in run_orchestrator
+    escalate_test(conn, test_id, escalation.get('escalation_reason', ''), actions)
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\canonical_test_orchestrator_daemon.py", line 230, in escalate_test
+    cur.execute("""
+  File "C:\Users\RJANSK~1\AppData\Local\Programs\Python\Python312\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.DatatypeMismatch: column "recommended_actions" is of type jsonb but expression is of type text[]
+LINE 6:                 recommended_actions = ARRAY['Run LVG computa...
+                                              ^
+HINT:  You will need to rewrite or cast the expression.
+
+
+FATAL: current transaction is aborted, commands ignored until end of transaction block
+

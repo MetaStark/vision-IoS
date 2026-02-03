@@ -1,0 +1,49 @@
+﻿[2026-02-03 08:00:03] ============================================
+[2026-02-03 08:00:03] FHQ Daily Scan started
+[2026-02-03 08:00:03] ============================================
+[2026-02-03 08:00:03] [1/2] Volatility Observer --scan
+python.exe : 2026-02-03 08:00:03,679 [VOLATILITY_OBSERVER] INFO: VOLATILITY OBSERVER: Scanning 27 symbols (dry_run=Fals
+e)
+At C:\fhq-market-system\vision-ios\03_FUNCTIONS\scheduled_daily_scan.ps1:25 char:12
++ $output1 = & $python "03_FUNCTIONS\volatility_observer.py" --scan 2>& ...
++            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-02-03 08:0...(dry_run=False):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-02-03 08:00:04,079 [VOLATILITY_OBSERVER] INFO: SCAN COMPLETE: 24 observations, 0 compliant, 24 non-compliant, leak
+age=False
+{
+  "symbols_scanned": 27,
+  "observations_created": 24,
+  "envelope_compliant": 0,
+  "envelope_non_compliant": 24,
+  "leakage_detected": false,
+  "timestamp": "2026-02-03T07:00:03.679395+00:00"
+}
+[2026-02-03 08:00:04] Exit code: 0
+[2026-02-03 08:00:04] [2/2] Micro-Regime Classifier --classify
+python.exe : Traceback (most recent call last):
+At C:\fhq-market-system\vision-ios\03_FUNCTIONS\scheduled_daily_scan.ps1:32 char:12
++ $output2 = & $python "03_FUNCTIONS\micro_regime_classifier.py" --clas ...
++            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\micro_regime_classifier.py", line 574, in <module>
+    main()
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\micro_regime_classifier.py", line 566, in main
+    cmd_classify(args)
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\micro_regime_classifier.py", line 378, in cmd_classify
+    write_regime_delta(conn, micro_regime, previous, details, momentum)
+  File "C:\fhq-market-system\vision-ios\03_FUNCTIONS\micro_regime_classifier.py", line 314, in write_regime_delta
+    cur.execute("""
+psycopg2.errors.CheckViolation: new row for relation "regime_delta" violates check constraint "regime_delta_delta_type_
+check"
+DETAIL:  Failing row contains (512bef08-aacc-4580-aeae-f5396f9bbd1f, PORTFOLIO, 2026-02-03 08:00:05.270112+01, DAILY, M
+ICRO_REGIME_SHIFT, 0.0319, IMPROVING, null, null, null, null, null, CRISIS, t, 24, 2026-02-04 08:00:05.270112+01, t, mi
+cro_regime_classifier, null, 2026-02-03 08:00:05.270112+01).
+
+[2026-02-03 08:00:05] Exit code: 1
+[2026-02-03 08:00:05] ============================================
+[2026-02-03 08:00:05] FHQ Daily Scan completed
+[2026-02-03 08:00:05] ============================================
