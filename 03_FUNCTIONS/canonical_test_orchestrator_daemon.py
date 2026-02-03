@@ -232,10 +232,10 @@ def escalate_test(conn, test_id: str, reason: str, actions: List[str]) -> None:
             SET
                 escalation_state = 'ACTION_REQUIRED',
                 ceo_action_required = TRUE,
-                recommended_actions = %s
+                recommended_actions = %s::jsonb
             WHERE test_id = %s::uuid
             RETURNING test_code, test_name
-        """, (actions, test_id))
+        """, (json_dumps(actions), test_id))
         test = cur.fetchone()
 
         # Create CEO alert
@@ -466,9 +466,9 @@ def run_orchestrator() -> Dict:
                         UPDATE fhq_calendar.canonical_test_events
                         SET escalation_state = 'SYSTEM_ERROR',
                             ceo_action_required = TRUE,
-                            recommended_actions = ARRAY['Fix test definition', 'Contact STIG']
+                            recommended_actions = %s::jsonb
                         WHERE test_id = %s::uuid
-                    """, (test_id,))
+                    """, (json_dumps(['Fix test definition', 'Contact STIG']), test_id))
                 conn.commit()
                 continue
 

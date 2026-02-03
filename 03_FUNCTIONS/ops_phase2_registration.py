@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='[PHASE2_REG] %(asctime)s %(levelname)s: %(message)s',
     handlers=[
-        logging.FileHandler('03_FUNCTIONS/ops_phase2_registration.log'),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ops_phase2_registration.log')),
         logging.StreamHandler()
     ]
 )
@@ -293,7 +293,7 @@ def write_evidence(registered, system_state_hash):
     evidence_hash = hashlib.sha256(json.dumps(evidence, sort_keys=True).encode()).hexdigest()
     evidence['evidence_hash'] = evidence_hash
 
-    path = '03_FUNCTIONS/evidence/PHASE2_EXPERIMENT_REGISTRATION.json'
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'evidence', 'PHASE2_EXPERIMENT_REGISTRATION.json')
     with open(path, 'w') as f:
         json.dump(evidence, f, indent=2)
     logger.info(f"Evidence written: {path} (hash={evidence_hash[:16]}...)")
