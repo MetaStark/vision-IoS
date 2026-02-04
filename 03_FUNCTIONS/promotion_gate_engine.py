@@ -67,6 +67,13 @@ DEFLATED_SHARPE_MIN = 1.0       # Minimum deflated Sharpe to pass
 PBO_MAX = 0.50                  # Maximum PBO probability to pass
 FAMILY_INFLATION_MAX = 0.30     # Maximum family-wise inflation risk
 
+# CEO-DIR-2026-007-B: Forced Exploration Mode
+# When active, top EXPLORATION_PERCENTILE hypotheses by pre_tier_score_at_birth
+# qualify for SHADOW-only execution with DEFLATED_SHARPE_MIN = 0.0.
+# Original 1.0 threshold preserved for any LIVE promotion path.
+FORCED_EXPLORATION_MODE = True
+EXPLORATION_PERCENTILE = 0.20   # Top 20% by pre_tier_score_at_birth
+
 
 def _decimal_to_float(val):
     """Safely convert Decimal to float."""
@@ -549,6 +556,92 @@ def find_eligible_experiments(conn) -> list:
         return cur.fetchall()
 
 
+def run_exploration_pass(conn, dry_run: bool = False) -> int:
+    """CEO-DIR-2026-007-B: Insert EXPLORATION_PASS for top percentile hypotheses.
+
+    Selects hypotheses in top EXPLORATION_PERCENTILE by pre_tier_score_at_birth
+    that do NOT already have a promotion_gate_audit entry, and inserts them
+    with gate_result = 'EXPLORATION_PASS' for shadow-only execution.
+
+    Returns count of inserted rows.
+    """
+    if not FORCED_EXPLORATION_MODE:
+        return 0
+
+    logger.info("=" * 60)
+    logger.info("CEO-DIR-2026-007-B: FORCED EXPLORATION MODE")
+    logger.info(f"  Percentile threshold: top {EXPLORATION_PERCENTILE*100:.0f}%")
+    logger.info("=" * 60)
+
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Get the percentile cutoff
+        cur.execute("""
+            SELECT PERCENTILE_CONT(%s) WITHIN GROUP (ORDER BY pre_tier_score_at_birth)
+            AS cutoff
+            FROM fhq_learning.hypothesis_canon
+            WHERE pre_tier_score_at_birth IS NOT NULL
+        """, (1.0 - EXPLORATION_PERCENTILE,))
+        row = cur.fetchone()
+        cutoff = float(row['cutoff']) if row and row['cutoff'] else 999
+
+        logger.info(f"  Score cutoff: >= {cutoff}")
+
+        # Find eligible hypotheses (top percentile, no existing audit)
+        cur.execute("""
+            SELECT hc.canon_id, hc.hypothesis_code, hc.pre_tier_score_at_birth,
+                   hc.current_confidence, hc.deflated_sharpe_estimate,
+                   hc.pbo_probability, hc.family_inflation_risk
+            FROM fhq_learning.hypothesis_canon hc
+            LEFT JOIN fhq_learning.promotion_gate_audit pga
+                ON pga.hypothesis_id = hc.canon_id
+                AND pga.gate_name = 'FORCED_EXPLORATION_GATE'
+            WHERE hc.pre_tier_score_at_birth >= %s
+              AND hc.pre_tier_score_at_birth IS NOT NULL
+              AND pga.audit_id IS NULL
+            ORDER BY hc.pre_tier_score_at_birth DESC
+        """, (cutoff,))
+        candidates = cur.fetchall()
+
+        logger.info(f"  Candidates: {len(candidates)}")
+
+        if not candidates:
+            logger.info("  No new candidates for exploration pass")
+            return 0
+
+        if dry_run:
+            logger.info(f"  [DRY RUN] Would insert {len(candidates)} EXPLORATION_PASS entries")
+            return 0
+
+        inserted = 0
+        for c in candidates:
+            metrics = {
+                'pre_tier_score_at_birth': float(c['pre_tier_score_at_birth'] or 0),
+                'current_confidence': float(c['current_confidence'] or 0),
+                'deflated_sharpe_estimate': float(c['deflated_sharpe_estimate'] or 0),
+                'pbo_probability': float(c['pbo_probability'] or 0),
+                'family_inflation_risk': float(c['family_inflation_risk'] or 0),
+                'exploration_cutoff': cutoff,
+                'exploration_percentile': EXPLORATION_PERCENTILE,
+                'gate_reason': 'FORCED_EXPLORATION_CEO_DIR_2026_007',
+            }
+
+            cur.execute("""
+                INSERT INTO fhq_learning.promotion_gate_audit
+                    (hypothesis_id, gate_name, gate_result, failure_reason,
+                     metrics_snapshot, evaluated_by)
+                VALUES (%s, 'FORCED_EXPLORATION_GATE', 'EXPLORATION_PASS', NULL,
+                        %s::jsonb, 'STIG_FORCED_EXPLORATION_CEO_DIR_2026_007')
+            """, (
+                str(c['canon_id']),
+                json.dumps(metrics, default=str),
+            ))
+            inserted += 1
+
+        conn.commit()
+        logger.info(f"  Inserted {inserted} EXPLORATION_PASS entries")
+        return inserted
+
+
 def run_promotion_gate(dry_run: bool = False, force_experiment: str = None):
     """Main entry: evaluate all eligible experiments."""
     logger.info("=" * 60)
@@ -613,6 +706,9 @@ def run_promotion_gate(dry_run: bool = False, force_experiment: str = None):
         for r in results:
             logger.info(f"  {r['experiment_code']}: {r['gate_result']}")
 
+        # CEO-DIR-2026-007-B: Run forced exploration pass
+        exploration_count = run_exploration_pass(conn, dry_run=dry_run)
+
         # Write evidence
         evidence_dir = os.path.join(os.path.dirname(__file__), 'evidence')
         os.makedirs(evidence_dir, exist_ok=True)
@@ -627,6 +723,7 @@ def run_promotion_gate(dry_run: bool = False, force_experiment: str = None):
             'experiments_evaluated': len(results),
             'passed': len(passed),
             'failed': len(failed),
+            'exploration_pass_inserted': exploration_count,
             'results': results,
             'thresholds': {
                 'deflated_sharpe_min': DEFLATED_SHARPE_MIN,

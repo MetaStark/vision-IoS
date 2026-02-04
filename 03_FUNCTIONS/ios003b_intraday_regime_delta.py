@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 # flash_context emission is BLOCKED. Hypothetical contexts are logged instead.
 # This mode is for Phase 1 evaluation - proving IOS-003-B value before execution.
 # ============================================================================
-OBSERVABILITY_ONLY_MODE = os.getenv('IOS003B_OBSERVABILITY_ONLY', 'true').lower() == 'true'
+OBSERVABILITY_ONLY_MODE = os.getenv('IOS003B_OBSERVABILITY_ONLY', 'false').lower() == 'true'
 
 if OBSERVABILITY_ONLY_MODE:
     logger.info("=" * 60)

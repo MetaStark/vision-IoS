@@ -105,7 +105,7 @@ def find_eligible_hypotheses(conn) -> list:
             FROM fhq_learning.promotion_gate_audit pga
             JOIN fhq_learning.hypothesis_canon hc ON pga.hypothesis_id = hc.canon_id
             JOIN fhq_learning.experiment_registry er ON er.hypothesis_id = hc.canon_id
-            WHERE pga.gate_result = 'PASS'
+            WHERE pga.gate_result IN ('PASS', 'EXPLORATION_PASS')
               AND hc.asset_universe IS NOT NULL
               AND er.status IN ('RUNNING', 'COMPLETED')
             ORDER BY pga.evaluated_at

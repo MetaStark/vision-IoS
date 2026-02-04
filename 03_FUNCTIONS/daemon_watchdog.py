@@ -91,8 +91,19 @@ DAEMONS = {
         'process': None,
         'has_heartbeat': False  # Uses agent_heartbeats (CEIO) - complex table, just check process
     },
-    # SUSPENDED_BY_DESIGN: g2c_continuous_forecast_engine - Integrated into FINN schedulers
-    # SUSPENDED_BY_DESIGN: ios003b_intraday_regime_delta - On-demand, not continuous
+    # CEO-DIR-2026-007-A: Reactivated sensory organs
+    'g2c_continuous_forecast_engine': {
+        'script': '03_FUNCTIONS/g2c_continuous_forecast_engine.py',
+        'max_stale_minutes': 35,  # 30min cycle + 5min buffer
+        'process': None,
+        'has_heartbeat': True
+    },
+    'ios003b_intraday_regime_delta': {
+        'script': '03_FUNCTIONS/ios003b_intraday_regime_delta.py',
+        'max_stale_minutes': 1445,  # 24h cycle - crypto regime delta
+        'process': None,
+        'has_heartbeat': True
+    },
     'pre_tier_scoring_daemon': {
         'script': '03_FUNCTIONS/pre_tier_scoring_daemon.py',
         'max_stale_minutes': 10,  # 5min cycle + 5min buffer
