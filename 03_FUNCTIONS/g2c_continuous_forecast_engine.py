@@ -148,6 +148,27 @@ class G2CForecastEngine:
         logger.info("Shutdown signal received. Stopping forecast engine...")
         self.running = False
 
+    def _update_heartbeat(self):
+        """Write heartbeat to daemon_health for watchdog monitoring."""
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_monitoring.daemon_health
+                        (daemon_name, status, last_heartbeat, metadata)
+                    VALUES ('g2c_continuous_forecast_engine', 'HEALTHY', NOW(),
+                            %s::jsonb)
+                    ON CONFLICT (daemon_name) DO UPDATE SET
+                        status = 'HEALTHY',
+                        last_heartbeat = NOW(),
+                        metadata = EXCLUDED.metadata
+                """, (json.dumps({
+                    'forecast_counts': self.forecast_counts,
+                    'total': sum(self.forecast_counts.values())
+                }),))
+                self.conn.commit()
+        except Exception as e:
+            logger.debug(f"Heartbeat failed: {e}")
+
     def connect(self):
         """Establish database connection"""
         self.conn = psycopg2.connect(G2CConfig.get_db_connection_string())
@@ -458,6 +479,7 @@ class G2CForecastEngine:
 
         try:
             self.connect()
+            self._update_heartbeat()
 
             cycle_count = 0
             status_interval = 60  # Print status every 60 cycles (~60 seconds)
@@ -488,6 +510,10 @@ class G2CForecastEngine:
                 # Print status periodically
                 if cycle_count % status_interval == 0:
                     self.print_status()
+
+                # Heartbeat to daemon_health (every 60 cycles ~= 1 min)
+                if cycle_count % 60 == 0:
+                    self._update_heartbeat()
 
                 # Sleep before next cycle (1 second minimum)
                 time.sleep(1)

@@ -149,6 +149,24 @@ class IntradayRegimeDeltaEngine:
         self.configs: Dict[str, SqueezeConfig] = {}
         self.ttl_hours = 4
 
+    def update_heartbeat(self):
+        """Write heartbeat to daemon_health for watchdog monitoring."""
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_monitoring.daemon_health
+                        (daemon_name, status, last_heartbeat, metadata)
+                    VALUES ('ios003b_intraday_regime_delta', 'HEALTHY', NOW(),
+                            '{"source": "ios003b"}'::jsonb)
+                    ON CONFLICT (daemon_name) DO UPDATE SET
+                        status = 'HEALTHY',
+                        last_heartbeat = NOW(),
+                        metadata = EXCLUDED.metadata
+                """)
+                self.conn.commit()
+        except Exception as e:
+            logger.debug(f"Heartbeat failed: {e}")
+
     def connect(self):
         """Establish database connection."""
         self.conn = psycopg2.connect(**self.db_config)
@@ -819,6 +837,7 @@ class IntradayRegimeDeltaEngine:
 
         self.connect()
         self.load_configs()
+        self.update_heartbeat()
 
         cycle_count = 0
 
@@ -832,6 +851,8 @@ class IntradayRegimeDeltaEngine:
                 logger.info(f"Cycle complete: {summary['assets_processed']} assets, "
                            f"{summary['deltas_detected']} deltas, "
                            f"{summary['contexts_emitted']} contexts")
+
+                self.update_heartbeat()
 
                 time.sleep(interval_minutes * 60)
 
