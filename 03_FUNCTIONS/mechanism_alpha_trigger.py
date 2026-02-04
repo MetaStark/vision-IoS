@@ -36,7 +36,7 @@ import signal
 import hashlib
 import logging
 import argparse
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -60,6 +60,7 @@ DB_CONFIG = {
 }
 
 DAEMON_NAME = 'mechanism_alpha_trigger'
+CREATED_BY = 'mechanism_alpha_trigger'
 DEFAULT_INTERVAL = 900  # 15 minutes
 
 # Regime mapping: blueprint terms → DB sovereign_regime values
@@ -154,6 +155,29 @@ def get_active_experiments(cur):
         JOIN fhq_learning.hypothesis_canon hc ON er.hypothesis_id = hc.canon_id
         WHERE er.status = 'RUNNING'
           AND er.experiment_code LIKE 'EXP_ALPHA_SAT_%%'
+        ORDER BY er.experiment_code
+    """)
+    return cur.fetchall()
+
+
+def get_bridge_experiments(cur):
+    """Fetch active BRIDGE experiments with their hypothesis data."""
+    cur.execute("""
+        SELECT
+            er.experiment_id,
+            er.experiment_code,
+            er.hypothesis_id,
+            hc.hypothesis_code,
+            hc.falsification_criteria,
+            hc.expected_direction,
+            hc.expected_timeframe_hours,
+            hc.asset_universe,
+            hc.current_confidence
+        FROM fhq_learning.experiment_registry er
+        JOIN fhq_learning.hypothesis_canon hc ON er.hypothesis_id = hc.canon_id
+        WHERE er.status = 'RUNNING'
+          AND er.experiment_code LIKE 'EXP_BRIDGE_%%'
+          AND hc.asset_universe IS NOT NULL
         ORDER BY er.experiment_code
     """)
     return cur.fetchall()
@@ -465,170 +489,277 @@ def run_cycle(dry_run=False, historical=False):
                 conn.commit()
                 return 0, 0, 0
 
-            # Load active experiments
+            # ── BRIDGE experiments (direction-based, equity assets) ──
+            bridge_experiments = get_bridge_experiments(cur)
+            bridge_count = len(bridge_experiments) if bridge_experiments else 0
+            if bridge_experiments:
+                logger.info(f"BRIDGE experiments: {bridge_count}")
+                for exp in bridge_experiments:
+                    asset_universe = exp['asset_universe'] or []
+                    direction = exp['expected_direction']
+                    logger.info(f"Scanning BRIDGE {exp['experiment_code']} "
+                                f"(direction={direction}, assets={asset_universe})")
+
+                    for asset_id in asset_universe:
+                        assets_scanned += 1
+
+                        # Get latest price for this equity asset
+                        price_row = get_latest_price(cur, asset_id)
+                        if not price_row:
+                            logger.debug(f"  No price for {asset_id}. Skipping.")
+                            continue
+
+                        # Freshness: --historical skips all checks;
+                        # normal mode uses experiment timeframe (default 72h)
+                        if not historical:
+                            price_date = price_row['date']
+                            timeframe_hours = int(exp['expected_timeframe_hours'] or 72)
+                            if isinstance(price_date, date) and not isinstance(price_date, datetime):
+                                price_dt = datetime(price_date.year, price_date.month, price_date.day, tzinfo=timezone.utc)
+                            elif hasattr(price_date, 'tzinfo') and price_date.tzinfo is None:
+                                price_dt = price_date.replace(tzinfo=timezone.utc)
+                            else:
+                                price_dt = price_date
+                            age = datetime.now(timezone.utc) - price_dt
+                            if age > timedelta(hours=timeframe_hours):
+                                logger.debug(f"  {asset_id} price stale ({age} > {timeframe_hours}h). Skipping.")
+                                continue
+
+                        entry_price = price_row['close']
+                        triggers_found += 1
+
+                        trigger_indicators = {
+                            'trigger_type': 'BRIDGE_DIRECTION',
+                            'expected_direction': direction,
+                            'entry_price': float(entry_price),
+                            'price_asof': str(price_row['date']),
+                            'asset_id': asset_id,
+                            'confidence': float(exp['current_confidence'] or 0.5),
+                        }
+
+                        # Get regime if available
+                        regime_row = get_latest_regime(cur, asset_id)
+                        if regime_row:
+                            trigger_indicators['regime'] = regime_row['sovereign_regime']
+
+                        event_ts = datetime.now(timezone.utc)
+
+                        context = {
+                            'experiment_type': 'BRIDGE',
+                            'direction': direction,
+                            'regime': regime_row['sovereign_regime'] if regime_row else 'UNKNOWN',
+                            'defcon': defcon,
+                        }
+                        context_hash = compute_context_hash(context)
+
+                        if dry_run:
+                            logger.info(f"  [DRY_RUN] BRIDGE TRIGGER: {asset_id} {direction} "
+                                        f"@ {entry_price}")
+                            continue
+
+                        # INSERT trigger event
+                        cur.execute("""
+                            INSERT INTO fhq_learning.trigger_events (
+                                experiment_id, asset_id, event_timestamp,
+                                trigger_indicators, entry_price,
+                                price_source_table, price_source_row_id,
+                                context_snapshot_hash, context_details,
+                                created_by
+                            ) VALUES (
+                                %s, %s, %s, %s, %s,
+                                'fhq_data.price_series', %s,
+                                %s, %s, %s
+                            )
+                            ON CONFLICT (experiment_id, asset_id, event_timestamp) DO NOTHING
+                            RETURNING trigger_event_id
+                        """, (
+                            str(exp['experiment_id']), asset_id, event_ts,
+                            json.dumps(trigger_indicators, default=decimal_default),
+                            entry_price,
+                            str(price_row['id']) if price_row.get('id') else None,
+                            context_hash,
+                            json.dumps(context, default=decimal_default),
+                            CREATED_BY,
+                        ))
+                        result = cur.fetchone()
+                        if result:
+                            triggers_inserted += 1
+                            logger.info(f"  BRIDGE TRIGGER INSERTED: {asset_id} {direction} "
+                                        f"@ {entry_price} id={result['trigger_event_id']}")
+                        else:
+                            logger.info(f"  BRIDGE TRIGGER DEDUPED: {asset_id}")
+            else:
+                logger.info("No BRIDGE experiments found.")
+
+            # ── ALPHA_SAT experiments (indicator-based, crypto assets) ──
             experiments = get_active_experiments(cur)
-            if not experiments:
-                logger.warning("No active experiments found. Skipping cycle.")
+            alpha_sat_count = len(experiments) if experiments else 0
+
+            if not experiments and not bridge_experiments:
+                logger.warning("No active experiments found (ALPHA_SAT or BRIDGE). Skipping cycle.")
                 heartbeat(cur, status='DEGRADED', metadata={'reason': 'NO_EXPERIMENTS'})
                 conn.commit()
                 return 0, 0, 0
-            logger.info(f"Active experiments: {len(experiments)}")
 
-            # Get crypto universe
-            universe = get_crypto_universe(cur)
-            logger.info(f"Asset universe: {len(universe)} crypto assets")
+            if experiments:
+                logger.info(f"ALPHA_SAT experiments: {alpha_sat_count}")
 
-            # DATA_LAG guard: block entire cycle if MAX(signal_date) > 24h stale
-            if not historical:
-                cur.execute("""
-                    SELECT MAX(signal_date) as max_date
-                    FROM fhq_indicators.volatility
-                    WHERE listing_id LIKE '%%-USD'
-                """)
-                max_row = cur.fetchone()
-                if max_row and max_row['max_date']:
-                    max_date = max_row['max_date']
-                    # signal_date is date type; convert to datetime for comparison
-                    if not isinstance(max_date, datetime):
-                        max_signal = datetime(max_date.year, max_date.month, max_date.day, tzinfo=timezone.utc)
-                    elif hasattr(max_date, 'tzinfo') and max_date.tzinfo is None:
-                        max_signal = max_date.replace(tzinfo=timezone.utc)
-                    else:
-                        max_signal = max_date
-                    data_age = datetime.now(timezone.utc) - max_signal
-                    if data_age > timedelta(hours=24):
-                        logger.error(f"DATA_LAG BLOCK: MAX(signal_date) = {max_row['max_date']}, "
-                                     f"age = {data_age}. Data stale > 24h. Cycle BLOCKED.")
-                        heartbeat(cur, status='DEGRADED', metadata={
-                            'reason': 'DATA_LAG',
-                            'max_signal_date': str(max_row['max_date']),
-                            'data_age_hours': round(data_age.total_seconds() / 3600, 1),
-                        })
-                        conn.commit()
-                        return 0, 0, 0
+                # Get crypto universe
+                universe = get_crypto_universe(cur)
+                logger.info(f"Asset universe: {len(universe)} crypto assets")
 
-            # Pre-compute BBW percentiles (for TEST A + D)
-            bbw_p10_cache = {}
-            bbw_p50_cache = {}
-            for asset_id in universe:
-                bbw_p10_cache[asset_id] = compute_bbw_percentile_10(cur, asset_id)
-                bbw_p50_cache[asset_id] = compute_bbw_percentile_50(cur, asset_id)
-
-            # Scan each experiment x asset
-            for exp in experiments:
-                test_code = exp['falsification_criteria'].get('measurement_schema', {}).get('test_code', '')
-                logger.info(f"Scanning {exp['experiment_code']} (test={test_code})")
-
-                for asset_id in universe:
-                    assets_scanned += 1
-
-                    # Get latest data
-                    regime_row = get_latest_regime(cur, asset_id)
-                    vol_row = get_latest_volatility(cur, asset_id)
-                    mom_row = get_latest_momentum(cur, asset_id)
-
-                    # Freshness guard: skip stale data unless --historical
-                    if test_code in ('ALPHA_SAT_A', 'ALPHA_SAT_C', 'ALPHA_SAT_D'):
-                        freshness_date = vol_row['signal_date'] if vol_row else None
-                    else:
-                        freshness_date = mom_row['signal_date'] if mom_row else None
-                    if not check_freshness(freshness_date, historical=historical):
-                        continue
-
-                    # Evaluate trigger based on test type
-                    triggered = False
-                    trigger_indicators = {}
-
-                    if test_code == 'ALPHA_SAT_A':
-                        bbw_p10 = bbw_p10_cache.get(asset_id)
-                        triggered, trigger_indicators = evaluate_test_a(vol_row, bbw_p10)
-                    elif test_code == 'ALPHA_SAT_B':
-                        triggered, trigger_indicators = evaluate_test_b(mom_row, regime_row)
-                    elif test_code == 'ALPHA_SAT_C':
-                        signal_date = vol_row['signal_date'] if vol_row else None
-                        price_row = get_latest_price(cur, asset_id, signal_date)
-                        triggered, trigger_indicators = evaluate_test_c(vol_row, price_row, regime_row)
-                    elif test_code == 'ALPHA_SAT_D':
-                        signal_date = vol_row['signal_date'] if vol_row else None
-                        price_row = get_latest_price(cur, asset_id, signal_date)
-                        bbw_p50 = bbw_p50_cache.get(asset_id)
-                        triggered, trigger_indicators = evaluate_test_d(vol_row, price_row, regime_row, bbw_p50)
-                    elif test_code == 'ALPHA_SAT_E':
-                        triggered, trigger_indicators = evaluate_test_e(mom_row, regime_row, vol_row)
-                    elif test_code == 'ALPHA_SAT_F':
-                        triggered, trigger_indicators = evaluate_test_f(mom_row, regime_row, vol_row)
-
-                    if not triggered:
-                        continue
-
-                    triggers_found += 1
-
-                    # Get entry price
-                    price_row = get_latest_price(cur, asset_id)
-                    if not price_row:
-                        logger.warning(f"  No price data for {asset_id}. Skipping trigger.")
-                        continue
-                    entry_price = price_row['close']
-                    trigger_indicators['entry_price'] = float(entry_price)
-
-                    # Build context
-                    vol_state = classify_vol_state(
-                        float(vol_row['bbw']) if vol_row and vol_row['bbw'] else 0,
-                        bbw_p10_cache.get(asset_id)
-                    ) if vol_row else "UNKNOWN"
-                    context = build_context_snapshot(regime_row, defcon, vol_state)
-                    context_hash = compute_context_hash(context)
-
-                    # Event timestamp = signal_date of the indicator that triggered
-                    if test_code in ('ALPHA_SAT_B', 'ALPHA_SAT_E', 'ALPHA_SAT_F') and mom_row:
-                        event_ts = mom_row['signal_date']
-                    elif vol_row:
-                        event_ts = vol_row['signal_date']
-                    else:
-                        event_ts = datetime.now(timezone.utc)
-
-                    if dry_run:
-                        logger.info(f"  [DRY_RUN] TRIGGER: {asset_id} test={test_code} "
-                                    f"entry={entry_price} indicators={trigger_indicators}")
-                        continue
-
-                    # INSERT with dedup
+                # DATA_LAG guard: only applies to ALPHA_SAT crypto scanning
+                data_lag_blocked = False
+                if not historical:
                     cur.execute("""
-                        INSERT INTO fhq_learning.trigger_events (
-                            experiment_id, asset_id, event_timestamp,
-                            trigger_indicators, entry_price,
-                            price_source_table, price_source_row_id,
-                            context_snapshot_hash, context_details,
-                            created_by
-                        ) VALUES (
-                            %s, %s, %s,
-                            %s, %s,
-                            'fhq_data.price_series', %s,
-                            %s, %s,
-                            'STIG'
-                        )
-                        ON CONFLICT (experiment_id, asset_id, event_timestamp) DO NOTHING
-                        RETURNING trigger_event_id
-                    """, (
-                        str(exp['experiment_id']), asset_id, event_ts,
-                        json.dumps(trigger_indicators, default=decimal_default), entry_price,
-                        str(price_row['id']) if price_row.get('id') else None,
-                        context_hash, json.dumps(context, default=decimal_default),
-                    ))
-                    result = cur.fetchone()
-                    if result:
-                        triggers_inserted += 1
-                        logger.info(f"  TRIGGER INSERTED: {asset_id} test={test_code} "
-                                    f"entry={entry_price} id={result['trigger_event_id']}")
-                    else:
-                        logger.info(f"  TRIGGER DEDUPED (already exists): {asset_id} test={test_code}")
+                        SELECT MAX(signal_date) as max_date
+                        FROM fhq_indicators.volatility
+                        WHERE listing_id LIKE '%%-USD'
+                    """)
+                    max_row = cur.fetchone()
+                    if max_row and max_row['max_date']:
+                        max_date = max_row['max_date']
+                        if not isinstance(max_date, datetime):
+                            max_signal = datetime(max_date.year, max_date.month, max_date.day, tzinfo=timezone.utc)
+                        elif hasattr(max_date, 'tzinfo') and max_date.tzinfo is None:
+                            max_signal = max_date.replace(tzinfo=timezone.utc)
+                        else:
+                            max_signal = max_date
+                        data_age = datetime.now(timezone.utc) - max_signal
+                        if data_age > timedelta(hours=24):
+                            logger.warning(f"DATA_LAG: ALPHA_SAT blocked — MAX(signal_date) = {max_row['max_date']}, "
+                                           f"age = {data_age}. Crypto data stale > 24h.")
+                            data_lag_blocked = True
 
-            # Heartbeat
-            heartbeat(cur, status='HEALTHY', metadata={
+                if not data_lag_blocked:
+                    # Pre-compute BBW percentiles (for TEST A + D)
+                    bbw_p10_cache = {}
+                    bbw_p50_cache = {}
+                    for asset_id in universe:
+                        bbw_p10_cache[asset_id] = compute_bbw_percentile_10(cur, asset_id)
+                        bbw_p50_cache[asset_id] = compute_bbw_percentile_50(cur, asset_id)
+
+                    # Scan each experiment x asset
+                    for exp in experiments:
+                        test_code = exp['falsification_criteria'].get('measurement_schema', {}).get('test_code', '')
+                        logger.info(f"Scanning {exp['experiment_code']} (test={test_code})")
+
+                        for asset_id in universe:
+                            assets_scanned += 1
+
+                            # Get latest data
+                            regime_row = get_latest_regime(cur, asset_id)
+                            vol_row = get_latest_volatility(cur, asset_id)
+                            mom_row = get_latest_momentum(cur, asset_id)
+
+                            # Freshness guard: skip stale data unless --historical
+                            if test_code in ('ALPHA_SAT_A', 'ALPHA_SAT_C', 'ALPHA_SAT_D'):
+                                freshness_date = vol_row['signal_date'] if vol_row else None
+                            else:
+                                freshness_date = mom_row['signal_date'] if mom_row else None
+                            if not check_freshness(freshness_date, historical=historical):
+                                continue
+
+                            # Evaluate trigger based on test type
+                            triggered = False
+                            trigger_indicators = {}
+
+                            if test_code == 'ALPHA_SAT_A':
+                                bbw_p10 = bbw_p10_cache.get(asset_id)
+                                triggered, trigger_indicators = evaluate_test_a(vol_row, bbw_p10)
+                            elif test_code == 'ALPHA_SAT_B':
+                                triggered, trigger_indicators = evaluate_test_b(mom_row, regime_row)
+                            elif test_code == 'ALPHA_SAT_C':
+                                signal_date = vol_row['signal_date'] if vol_row else None
+                                price_row = get_latest_price(cur, asset_id, signal_date)
+                                triggered, trigger_indicators = evaluate_test_c(vol_row, price_row, regime_row)
+                            elif test_code == 'ALPHA_SAT_D':
+                                signal_date = vol_row['signal_date'] if vol_row else None
+                                price_row = get_latest_price(cur, asset_id, signal_date)
+                                bbw_p50 = bbw_p50_cache.get(asset_id)
+                                triggered, trigger_indicators = evaluate_test_d(vol_row, price_row, regime_row, bbw_p50)
+                            elif test_code == 'ALPHA_SAT_E':
+                                triggered, trigger_indicators = evaluate_test_e(mom_row, regime_row, vol_row)
+                            elif test_code == 'ALPHA_SAT_F':
+                                triggered, trigger_indicators = evaluate_test_f(mom_row, regime_row, vol_row)
+
+                            if not triggered:
+                                continue
+
+                            triggers_found += 1
+
+                            # Get entry price
+                            price_row = get_latest_price(cur, asset_id)
+                            if not price_row:
+                                logger.warning(f"  No price data for {asset_id}. Skipping trigger.")
+                                continue
+                            entry_price = price_row['close']
+                            trigger_indicators['entry_price'] = float(entry_price)
+
+                            # Build context
+                            vol_state = classify_vol_state(
+                                float(vol_row['bbw']) if vol_row and vol_row['bbw'] else 0,
+                                bbw_p10_cache.get(asset_id)
+                            ) if vol_row else "UNKNOWN"
+                            context = build_context_snapshot(regime_row, defcon, vol_state)
+                            context_hash = compute_context_hash(context)
+
+                            # Event timestamp = signal_date of the indicator that triggered
+                            if test_code in ('ALPHA_SAT_B', 'ALPHA_SAT_E', 'ALPHA_SAT_F') and mom_row:
+                                event_ts = mom_row['signal_date']
+                            elif vol_row:
+                                event_ts = vol_row['signal_date']
+                            else:
+                                event_ts = datetime.now(timezone.utc)
+
+                            if dry_run:
+                                logger.info(f"  [DRY_RUN] TRIGGER: {asset_id} test={test_code} "
+                                            f"entry={entry_price} indicators={trigger_indicators}")
+                                continue
+
+                            # INSERT with dedup
+                            cur.execute("""
+                                INSERT INTO fhq_learning.trigger_events (
+                                    experiment_id, asset_id, event_timestamp,
+                                    trigger_indicators, entry_price,
+                                    price_source_table, price_source_row_id,
+                                    context_snapshot_hash, context_details,
+                                    created_by
+                                ) VALUES (
+                                    %s, %s, %s,
+                                    %s, %s,
+                                    'fhq_data.price_series', %s,
+                                    %s, %s,
+                                    %s
+                                )
+                                ON CONFLICT (experiment_id, asset_id, event_timestamp) DO NOTHING
+                                RETURNING trigger_event_id
+                            """, (
+                                str(exp['experiment_id']), asset_id, event_ts,
+                                json.dumps(trigger_indicators, default=decimal_default), entry_price,
+                                str(price_row['id']) if price_row.get('id') else None,
+                                context_hash, json.dumps(context, default=decimal_default),
+                                CREATED_BY,
+                            ))
+                            result = cur.fetchone()
+                            if result:
+                                triggers_inserted += 1
+                                logger.info(f"  TRIGGER INSERTED: {asset_id} test={test_code} "
+                                            f"entry={entry_price} id={result['trigger_event_id']}")
+                            else:
+                                logger.info(f"  TRIGGER DEDUPED (already exists): {asset_id} test={test_code}")
+            else:
+                logger.info("No ALPHA_SAT experiments found.")
+
+            # Heartbeat: HEALTHY if either path processed experiments
+            hb_status = 'HEALTHY' if (bridge_count > 0 or alpha_sat_count > 0) else 'DEGRADED'
+            heartbeat(cur, status=hb_status, metadata={
                 'cycle_time': datetime.now(timezone.utc).isoformat(),
                 'triggers_found': triggers_found,
                 'triggers_inserted': triggers_inserted,
                 'assets_scanned': assets_scanned,
+                'bridge_experiments': bridge_count,
+                'alpha_sat_experiments': alpha_sat_count,
                 'defcon': defcon,
                 'dry_run': dry_run,
             })
