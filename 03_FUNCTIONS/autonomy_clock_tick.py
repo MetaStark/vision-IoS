@@ -91,14 +91,14 @@ def check_no_ceo_override(conn) -> tuple:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         # Check control_room_alerts for CEO overrides
         cur.execute("""
-            SELECT alert_type, title, created_at
+            SELECT alert_type, alert_message, created_at
             FROM fhq_ops.control_room_alerts
             WHERE alert_type = 'CEO_OVERRIDE'
               AND created_at > NOW() - INTERVAL '24 hours'
         """)
         rows = cur.fetchall()
         for r in rows:
-            overrides.append(f"{r['title']} at {r['created_at']}")
+            overrides.append(f"{r['alert_message']} at {r['created_at']}")
 
     passed = len(overrides) == 0
     return passed, overrides
