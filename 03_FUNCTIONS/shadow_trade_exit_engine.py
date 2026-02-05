@@ -144,7 +144,7 @@ def get_price_bars_after(conn, asset_id: str, after_time) -> list:
             SELECT date, open, high, low, close, volume
             FROM fhq_data.price_series
             WHERE listing_id = %s
-            AND date > %s
+            AND date > (%s)::date
             ORDER BY date
         """, (asset_id, after_time))
         return cur.fetchall()
@@ -157,8 +157,8 @@ def get_price_bars_range(conn, asset_id: str, start_time, end_time) -> list:
             SELECT date, open, high, low, close, volume
             FROM fhq_data.price_series
             WHERE listing_id = %s
-            AND date > %s
-            AND date <= %s
+            AND date > (%s)::date
+            AND date <= (%s)::date
             ORDER BY date
         """, (asset_id, start_time, end_time))
         return cur.fetchall()

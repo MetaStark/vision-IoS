@@ -9,15 +9,28 @@ Constraints: Shadow-tier only, no reward, no execution eligibility
 """
 
 import os
+import sys
 import json
 import hashlib
 import logging
+import argparse
+import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+DAEMON_NAME = 'gn_s_shadow_generator'
+CYCLE_INTERVAL_SECONDS = 21600  # 6h
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[GN_S_DAEMON] %(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler('03_FUNCTIONS/gn_s_shadow_generator.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
@@ -160,24 +173,25 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
     hypothesis_code = get_next_hypothesis_code(conn)
     mechanism_graph = build_mechanism_graph(category, needle)
 
-    # Build semantic hash for duplicate detection
-    semantic_content = f"GN:{needle['needle_id']}:{needle['hypothesis_title']}"
-    semantic_hash = hashlib.md5(semantic_content.encode()).hexdigest()
-
     cur = conn.cursor()
-
-    # Check for duplicate
-    cur.execute("""
-        SELECT hypothesis_code FROM fhq_learning.hypothesis_canon
-        WHERE semantic_hash = %s
-    """, (semantic_hash,))
-
-    if cur.fetchone():
-        logger.info(f"Duplicate detected for needle {needle['needle_id']}, skipping")
-        return None
 
     # Build causal mechanism text
     causal_mechanism = ' -> '.join(chain_template['causal_chain'])
+
+    # Compute semantic_hash EXACTLY as the DB trigger does:
+    # trg_compute_semantic_hash → compute_hypothesis_hash(origin_rationale, causal_mechanism, direction, event_type_codes)
+    # Formula: md5(lower(trim(origin || '|' || mechanism || '|' || direction || '|' || codes)))
+    origin_rationale = f"Shadow hypothesis from Golden Needle: {needle['hypothesis_title']}"
+    event_codes_str = category  # single-element array joined = just the category
+    trigger_content = f"{origin_rationale}|{causal_mechanism}|NEUTRAL|{event_codes_str}"
+    semantic_hash = hashlib.md5(trigger_content.lower().strip().encode()).hexdigest()
+
+    # Check for duplicate using trigger-compatible hash
+    cur.execute("SELECT hypothesis_code FROM fhq_learning.hypothesis_canon WHERE semantic_hash = %s", (semantic_hash,))
+    existing = cur.fetchone()
+    if existing:
+        logger.info(f"DEDUP BLOCK: needle={needle['needle_id']} exists as {existing[0]}")
+        return None
 
     # Parse falsification criteria from needle
     falsification = needle.get('falsification_criteria')
@@ -187,7 +201,8 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         except:
             falsification = {'criteria': falsification}
 
-    # Insert hypothesis
+    # INSERT — semantic_hash is computed by DB trigger trg_compute_semantic_hash
+    # Dedup is handled by the check above using the same hash formula
     cur.execute("""
         INSERT INTO fhq_learning.hypothesis_canon (
             canon_id,
@@ -215,7 +230,6 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             mechanism_graph,
             causal_graph_depth,
             complexity_score,
-            semantic_hash,
             created_at,
             created_by
         ) VALUES (
@@ -244,7 +258,6 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             %s, -- mechanism_graph
             %s, -- causal_graph_depth
             %s, -- complexity_score
-            %s, -- semantic_hash
             NOW(),
             'GN-S'
         )
@@ -269,14 +282,17 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         json.dumps(mechanism_graph),
         mechanism_graph['depth'],
         round(mechanism_graph['depth'] * 0.6 + (needle['confluence_factor_count'] or 0) * 0.1, 2),
-        semantic_hash
     ))
 
     result = cur.fetchone()
     conn.commit()
 
-    logger.info(f"Generated SHADOW {hypothesis_code} from needle {needle['needle_id']} (depth={mechanism_graph['depth']})")
-    return result[0] if result else None
+    if result:
+        logger.info(f"Generated SHADOW {hypothesis_code} from needle {needle['needle_id']} (depth={mechanism_graph['depth']})")
+        return result[0]
+    else:
+        logger.info(f"Duplicate detected for needle {needle['needle_id']}, skipping")
+        return None
 
 
 def insert_provenance(conn, hypothesis_code: str, needle: Dict, input_hash: str):
@@ -316,29 +332,52 @@ def insert_provenance(conn, hypothesis_code: str, needle: Dict, input_hash: str)
     conn.commit()
 
 
-def run_generator():
-    """Run the GN-S shadow generator."""
-    logger.info("=" * 60)
-    logger.info("GN-S Shadow Discovery Generator Starting")
-    logger.info(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
-    logger.info("Constraints: Shadow-tier only, no reward coupling")
-    logger.info("=" * 60)
-
-    conn = get_connection()
-
+def heartbeat(conn, status: str, details: dict = None):
+    """Update daemon heartbeat in daemon_health."""
     try:
-        # Get recent Golden Needles
-        needles = get_recent_golden_needles(conn, limit=5)
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
+                VALUES (%s, %s, NOW(), %s)
+                ON CONFLICT (daemon_name)
+                DO UPDATE SET status = EXCLUDED.status,
+                              last_heartbeat = NOW(),
+                              metadata = EXCLUDED.metadata,
+                              updated_at = NOW()
+            """, (DAEMON_NAME, status, json.dumps(details) if details else None))
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"Heartbeat failed: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+def run_cycle() -> dict:
+    """Run one GN-S generation cycle. Returns result dict."""
+    conn = get_connection()
+    try:
+        logger.info("=" * 60)
+        logger.info("GN-S Shadow Discovery Generator — Cycle Start")
+        logger.info(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
+        logger.info("Constraints: Shadow-tier only, no reward coupling")
+        logger.info("=" * 60)
+
+        # Get recent Golden Needles — fetch more to maximize category coverage
+        needles = get_recent_golden_needles(conn, limit=20)
         logger.info(f"Found {len(needles)} Golden Needles (last 30 days)")
 
         if not needles:
             logger.warning("No Golden Needles found in last 30 days")
-            return {'generated': 0, 'skipped': 0}
+            heartbeat(conn, 'DEGRADED', {'reason': 'NO_GOLDEN_NEEDLES'})
+            return {'generated': 0, 'skipped': 0, 'duplicates': 0}
 
         input_hash = compute_input_hash(needles)
 
         generated = 0
         skipped = 0
+        duplicates = 0
 
         # Generate shadow hypotheses
         categories_processed = set()
@@ -348,6 +387,7 @@ def run_generator():
 
             # Limit to one per category per run
             if category in categories_processed:
+                skipped += 1
                 continue
 
             hypothesis_code = generate_shadow_hypothesis(conn, needle, input_hash)
@@ -357,16 +397,78 @@ def run_generator():
                 generated += 1
                 categories_processed.add(category)
             else:
-                skipped += 1
+                duplicates += 1
+                categories_processed.add(category)
 
-        logger.info(f"Generation complete: {generated} SHADOW hypotheses, {skipped} skipped")
+        logger.info(f"Generation complete: {generated} new, {duplicates} duplicate, {skipped} skipped")
 
-        return {'generated': generated, 'skipped': skipped}
+        # Evidence file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        evidence = {
+            'daemon': DAEMON_NAME,
+            'directive': 'CEO-DIR-2026-POR-001',
+            'evidence_type': 'GN_S_GENERATION',
+            'generated': generated,
+            'duplicates': duplicates,
+            'skipped': skipped,
+            'categories_processed': list(categories_processed),
+            'needles_available': len(needles),
+            'computed_at': datetime.now(timezone.utc).isoformat()
+        }
+        evidence_path = os.path.join(script_dir, 'evidence', f'GN_S_GENERATION_{timestamp}.json')
+        with open(evidence_path, 'w') as f:
+            json.dump(evidence, f, indent=2)
+        logger.info(f"Evidence: {evidence_path}")
 
+        heartbeat(conn, 'HEALTHY', {
+            'generated': generated,
+            'duplicates': duplicates,
+            'categories': list(categories_processed)
+        })
+
+        return {'generated': generated, 'skipped': skipped, 'duplicates': duplicates}
+
+    except Exception as e:
+        logger.error(f"GN-S cycle failed: {e}")
+        try:
+            heartbeat(conn, 'DEGRADED', {'error': str(e)})
+        except Exception:
+            pass
+        raise
     finally:
         conn.close()
 
 
+def main():
+    """Main entry point for GN-S daemon."""
+    parser = argparse.ArgumentParser(description='GN-S Shadow Discovery Generator Daemon')
+    parser.add_argument('--once', action='store_true',
+                        help='Run a single generation cycle then exit')
+    parser.add_argument('--interval', type=int, default=CYCLE_INTERVAL_SECONDS,
+                        help=f'Cycle interval in seconds (default: {CYCLE_INTERVAL_SECONDS})')
+    args = parser.parse_args()
+
+    logger.info("=" * 60)
+    logger.info("GN-S SHADOW DISCOVERY GENERATOR DAEMON")
+    logger.info(f"  mode={'once' if args.once else 'continuous'}")
+    logger.info(f"  interval={args.interval}s")
+    logger.info("=" * 60)
+
+    if args.once:
+        result = run_cycle()
+        print(json.dumps(result, indent=2))
+        return
+
+    # Continuous daemon loop
+    while True:
+        try:
+            run_cycle()
+        except Exception as e:
+            logger.error(f"Cycle failed: {e}")
+        logger.info(f"Next cycle in {args.interval}s")
+        time.sleep(args.interval)
+
+
 if __name__ == '__main__':
-    result = run_generator()
-    print(json.dumps(result, indent=2))
+    main()
