@@ -815,6 +815,8 @@ def run_daemon(interval, dry_run=False, historical=False):
 
 
 def main():
+    from daemon_lock import acquire_lock, release_lock
+
     parser = argparse.ArgumentParser(description='Alpha Satellite Trigger Daemon')
     parser.add_argument('--dry-run', action='store_true', help='Log triggers without INSERT')
     parser.add_argument('--once', action='store_true', help='Single cycle then exit')
@@ -822,20 +824,26 @@ def main():
     parser.add_argument('--historical', action='store_true', help='Allow stale data (skip freshness guard)')
     args = parser.parse_args()
 
-    logger.info("=" * 60)
-    logger.info("MECHANISM ALPHA TRIGGER DAEMON")
-    logger.info(f"Mode: {'DRY_RUN' if args.dry_run else 'LIVE'}")
-    logger.info(f"Interval: {args.interval}s")
-    logger.info(f"Once: {args.once}")
-    logger.info("=" * 60)
-
-    if args.once:
-        found, inserted, scanned = run_cycle(dry_run=args.dry_run, historical=args.historical)
-        logger.info(f"Single cycle complete: found={found} inserted={inserted} scanned={scanned}")
+    if not acquire_lock('mechanism_alpha_trigger'):
         return 0
 
-    run_daemon(args.interval, dry_run=args.dry_run, historical=args.historical)
-    return 0
+    try:
+        logger.info("=" * 60)
+        logger.info("MECHANISM ALPHA TRIGGER DAEMON")
+        logger.info(f"Mode: {'DRY_RUN' if args.dry_run else 'LIVE'}")
+        logger.info(f"Interval: {args.interval}s")
+        logger.info(f"Once: {args.once}")
+        logger.info("=" * 60)
+
+        if args.once:
+            found, inserted, scanned = run_cycle(dry_run=args.dry_run, historical=args.historical)
+            logger.info(f"Single cycle complete: found={found} inserted={inserted} scanned={scanned}")
+            return 0
+
+        run_daemon(args.interval, dry_run=args.dry_run, historical=args.historical)
+        return 0
+    finally:
+        release_lock('mechanism_alpha_trigger')
 
 
 if __name__ == '__main__':

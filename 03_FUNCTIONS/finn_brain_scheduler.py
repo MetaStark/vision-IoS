@@ -291,14 +291,20 @@ def run_single_test():
 
 if __name__ == '__main__':
     import argparse
+    from daemon_lock import acquire_lock, release_lock
     parser = argparse.ArgumentParser(description='FINN Brain Scheduler')
     parser.add_argument('--test', action='store_true', help='Run single test cycle')
     parser.add_argument('--interval', type=int, default=30, help='Interval in minutes')
     args = parser.parse_args()
 
-    if args.test:
-        run_single_test()
-    else:
-        INTERVAL_MINUTES = args.interval
-        scheduler = FINNScheduler()
-        scheduler.run()
+    if not acquire_lock('finn_brain_scheduler'):
+        sys.exit(0)
+    try:
+        if args.test:
+            run_single_test()
+        else:
+            INTERVAL_MINUTES = args.interval
+            scheduler = FINNScheduler()
+            scheduler.run()
+    finally:
+        release_lock('finn_brain_scheduler')

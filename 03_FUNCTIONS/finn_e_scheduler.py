@@ -500,9 +500,15 @@ class FINNEScheduler:
 
 
 if __name__ == '__main__':
-    print("[FINN-E] Error Repair Scheduler starting...")
-    print("[FINN-E] CEO-DIR-2026-FINN-E-SCHEDULER-001")
-    print("[FINN-E] Input: HIGH priority forecast errors")
+    from daemon_lock import acquire_lock, release_lock
+    if not acquire_lock('finn_e_scheduler'):
+        sys.exit(0)
+    try:
+        print("[FINN-E] Error Repair Scheduler starting...")
+        print("[FINN-E] CEO-DIR-2026-FINN-E-SCHEDULER-001")
+        print("[FINN-E] Input: HIGH priority forecast errors")
 
-    scheduler = FINNEScheduler()
-    scheduler.run()
+        scheduler = FINNEScheduler()
+        scheduler.run()
+    finally:
+        release_lock('finn_e_scheduler')

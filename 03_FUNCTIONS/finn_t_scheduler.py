@@ -584,9 +584,15 @@ class FINNTScheduler:
 
 
 if __name__ == '__main__':
-    print("[FINN-T] World-Model Scheduler starting...")
-    print("[FINN-T] CEO-DIR-2026-FINN-T-SCHEDULER-001")
-    print("[FINN-T] Input: G3 Golden Features | Min Depth: 2")
+    from daemon_lock import acquire_lock, release_lock
+    if not acquire_lock('finn_t_scheduler'):
+        sys.exit(0)
+    try:
+        print("[FINN-T] World-Model Scheduler starting...")
+        print("[FINN-T] CEO-DIR-2026-FINN-T-SCHEDULER-001")
+        print("[FINN-T] Input: G3 Golden Features | Min Depth: 2")
 
-    scheduler = FINNTScheduler()
-    scheduler.run()
+        scheduler = FINNTScheduler()
+        scheduler.run()
+    finally:
+        release_lock('finn_t_scheduler')

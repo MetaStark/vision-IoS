@@ -678,9 +678,15 @@ class FINNCryptoScheduler:
 
 
 if __name__ == '__main__':
-    print("[IoS-017] FINN Crypto Learning Scheduler starting...")
-    print("[IoS-017] CEO-DIR-2026-CRYPTO-LEARNING-SCHEDULER-001")
-    print("[IoS-017] Asset Class: CRYPTO | Session: 24/7 | Learning Only: TRUE")
+    from daemon_lock import acquire_lock, release_lock
+    if not acquire_lock('finn_crypto_scheduler'):
+        sys.exit(0)
+    try:
+        print("[IoS-017] FINN Crypto Learning Scheduler starting...")
+        print("[IoS-017] CEO-DIR-2026-CRYPTO-LEARNING-SCHEDULER-001")
+        print("[IoS-017] Asset Class: CRYPTO | Session: 24/7 | Learning Only: TRUE")
 
-    scheduler = FINNCryptoScheduler()
-    scheduler.run()
+        scheduler = FINNCryptoScheduler()
+        scheduler.run()
+    finally:
+        release_lock('finn_crypto_scheduler')
