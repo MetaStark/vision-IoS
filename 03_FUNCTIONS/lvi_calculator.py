@@ -16,23 +16,41 @@ Where:
   - Median_Eval_Time: hours from event to outcome (target: T+24h)
 """
 
+import os
+import sys
 import json
 import logging
 import hashlib
+import argparse
+import time
 from datetime import datetime, timezone
 from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO)
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[LVI_DAEMON] %(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler('03_FUNCTIONS/lvi_calculator.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
-    'host': '127.0.0.1',
-    'port': 54322,
-    'database': 'postgres',
-    'user': 'postgres'
+    'host': os.getenv('PGHOST', '127.0.0.1'),
+    'port': int(os.getenv('PGPORT', 54322)),
+    'database': os.getenv('PGDATABASE', 'postgres'),
+    'user': os.getenv('PGUSER', 'postgres'),
+    'password': os.getenv('PGPASSWORD', 'postgres')
 }
+
+DAEMON_NAME = 'lvi_calculator'
+CYCLE_INTERVAL_SECONDS = 86400  # 24h
 
 
 def get_connection():
@@ -275,54 +293,109 @@ def identify_bottleneck(lvi_data: dict) -> str:
     return 'No critical bottleneck'
 
 
-def main():
-    """Main entry point for LVI computation."""
-    logger.info("Starting LVI computation...")
-
+def heartbeat(conn, status: str, details: dict = None):
+    """Update daemon heartbeat in daemon_health."""
     try:
-        conn = get_connection()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
+                VALUES (%s, %s, NOW(), %s)
+                ON CONFLICT (daemon_name)
+                DO UPDATE SET status = EXCLUDED.status,
+                              last_heartbeat = NOW(),
+                              metadata = EXCLUDED.metadata,
+                              updated_at = NOW()
+            """, (DAEMON_NAME, status, json.dumps(details) if details else None))
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"Heartbeat failed: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
+
+def run_cycle() -> dict:
+    """Run one LVI computation cycle. Returns evidence dict."""
+    conn = get_connection()
+    try:
         # Compute LVI
         lvi_data = compute_lvi(conn)
-        logger.info(f"LVI computed: {lvi_data['lvi_score']} ({get_lvi_grade(lvi_data['lvi_score'])})")
+        grade = get_lvi_grade(lvi_data['lvi_score'])
+        bottleneck = identify_bottleneck(lvi_data)
+        logger.info(f"LVI computed: {lvi_data['lvi_score']:.4f} ({grade})")
+        logger.info(f"  Experiments: {lvi_data['completed_experiments']} | "
+                     f"Integrity: {lvi_data['integrity_rate']:.2%} | "
+                     f"Coverage: {lvi_data['coverage_rate']:.2%}")
+        logger.info(f"  Median Eval: {lvi_data['median_evaluation_hours']:.1f}h | "
+                     f"Brier: {lvi_data['brier_component']:.4f}")
+        logger.info(f"  Bottleneck: {bottleneck}")
 
-        # Store in database (if table exists)
+        # Store in database
         lvi_id = store_lvi(conn, lvi_data)
 
         # Generate evidence
         evidence = generate_evidence(lvi_data)
 
         # Save evidence file
-        import os
         script_dir = os.path.dirname(os.path.abspath(__file__))
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         evidence_path = os.path.join(script_dir, 'evidence', f'LVI_COMPUTATION_{timestamp}.json')
-
         with open(evidence_path, 'w') as f:
             json.dump(evidence, f, indent=2)
+        logger.info(f"Evidence: {evidence_path}")
 
-        logger.info(f"Evidence saved to: {evidence_path}")
+        # Heartbeat
+        heartbeat(conn, 'HEALTHY', {
+            'lvi_score': lvi_data['lvi_score'],
+            'grade': grade,
+            'bottleneck': bottleneck,
+            'lvi_id': lvi_id,
+        })
 
-        # Print summary
-        print("\n" + "=" * 60)
-        print("LVI COMPUTATION SUMMARY")
-        print("=" * 60)
-        print(f"LVI Score:          {lvi_data['lvi_score']:.4f} ({get_lvi_grade(lvi_data['lvi_score'])})")
-        print(f"Experiments:        {lvi_data['completed_experiments']}")
-        print(f"Integrity Rate:     {lvi_data['integrity_rate']:.2%}")
-        print(f"Coverage Rate:      {lvi_data['coverage_rate']:.2%}")
-        print(f"Median Eval Time:   {lvi_data['median_evaluation_hours']:.1f}h")
-        print(f"Time Factor:        {lvi_data['time_factor']:.4f}")
-        print(f"Brier Component:    {lvi_data['brier_component']:.4f}")
-        print(f"Bottleneck:         {identify_bottleneck(lvi_data)}")
-        print("=" * 60)
-
-        conn.close()
         return evidence
 
     except Exception as e:
         logger.error(f"LVI computation failed: {e}")
+        try:
+            heartbeat(conn, 'DEGRADED', {'error': str(e)})
+        except Exception:
+            pass
         raise
+    finally:
+        conn.close()
+
+
+def main():
+    """Main entry point for LVI daemon."""
+    parser = argparse.ArgumentParser(description='LVI Calculator Daemon')
+    parser.add_argument('--once', action='store_true',
+                        help='Run a single computation then exit')
+    parser.add_argument('--interval', type=int, default=CYCLE_INTERVAL_SECONDS,
+                        help=f'Cycle interval in seconds (default: {CYCLE_INTERVAL_SECONDS})')
+    args = parser.parse_args()
+
+    logger.info("=" * 60)
+    logger.info("LVI CALCULATOR DAEMON")
+    logger.info(f"  mode={'once' if args.once else 'continuous'}")
+    logger.info(f"  interval={args.interval}s")
+    logger.info("=" * 60)
+
+    if args.once:
+        evidence = run_cycle()
+        lvi = evidence['lvi_data']
+        print(f"\nLVI: {lvi['lvi_score']:.4f} ({get_lvi_grade(lvi['lvi_score'])}) | "
+              f"Bottleneck: {identify_bottleneck(lvi)}")
+        return
+
+    # Continuous daemon loop
+    while True:
+        try:
+            run_cycle()
+        except Exception as e:
+            logger.error(f"Cycle failed: {e}")
+        logger.info(f"Next cycle in {args.interval}s")
+        time.sleep(args.interval)
 
 
 if __name__ == '__main__':
