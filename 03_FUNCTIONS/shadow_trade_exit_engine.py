@@ -44,6 +44,12 @@ Author: STIG (CTO)
 Date: 2026-01-30
 Contract: EC-003_2026_PRODUCTION
 Directive: CEO-DIR-20260130-PIPELINE-COMPLETION-002 D1
+
+CEO-DIR-2026-119 Amendment (2026-02-06):
+  - HYPOTHESIS_FALSIFIED trades MUST have PnL calculated (COUNTERFACTUAL)
+  - Added process_expired_trades_without_pnl() to handle EXPIRED trades missing PnL
+  - pnl_type column: REALIZED (normal exit) | COUNTERFACTUAL (hypothesis falsified)
+  - learning_weight: 1.0 (REALIZED) | 0.8 (COUNTERFACTUAL)
 """
 
 import os
@@ -132,6 +138,30 @@ def find_open_shadow_trades(conn) -> list:
             LEFT JOIN fhq_learning.hypothesis_canon hc
                 ON st.source_hypothesis_id = hc.canon_id::text
             WHERE st.status = 'OPEN'
+            ORDER BY st.entry_time
+        """)
+        return cur.fetchall()
+
+
+def find_expired_trades_without_pnl(conn) -> list:
+    """
+    CEO-DIR-2026-119: Find EXPIRED trades missing PnL calculation.
+    These are HYPOTHESIS_FALSIFIED or other expired trades that never got exit pricing.
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                st.trade_id,
+                st.shadow_trade_ref,
+                st.asset_id,
+                st.direction,
+                st.entry_price,
+                st.entry_time,
+                st.shadow_size,
+                st.exit_reason
+            FROM fhq_execution.shadow_trades st
+            WHERE st.status = 'EXPIRED'
+              AND st.shadow_pnl IS NULL
             ORDER BY st.entry_time
         """)
         return cur.fetchall()
@@ -341,6 +371,8 @@ def close_shadow_trade(conn, trade: dict, exit_info: dict, dry_run: bool = False
                     shadow_return_pct = %s,
                     max_favorable_excursion = %s,
                     max_adverse_excursion = %s,
+                    pnl_type = 'REALIZED',
+                    learning_weight = 1.0,
                     status = 'CLOSED',
                     updated_at = NOW()
                 WHERE trade_id = %s
@@ -361,6 +393,81 @@ def close_shadow_trade(conn, trade: dict, exit_info: dict, dry_run: bool = False
                     f"entry={entry_price} exit={exit_price} | "
                     f"pnl={pnl:+.8f} ({return_pct:+.4f}%) | "
                     f"reason={exit_info['exit_reason']}")
+
+    return result
+
+
+def process_expired_trade_pnl(conn, trade: dict, dry_run: bool = False) -> dict:
+    """
+    CEO-DIR-2026-119: Calculate COUNTERFACTUAL PnL for EXPIRED trade.
+    Uses latest available price as theoretical exit.
+    """
+    entry_price = float(trade['entry_price'])
+    direction = trade['direction']
+    shadow_size = float(trade['shadow_size'] or 1.0)
+    asset_id = trade['asset_id']
+
+    # Get latest price from fhq_market.prices using canonical_id
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT close, timestamp
+            FROM fhq_market.prices
+            WHERE canonical_id = %s
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """, (asset_id,))
+        price_row = cur.fetchone()
+
+    if not price_row:
+        logger.warning(f"  {trade['shadow_trade_ref']} | {asset_id} | No price data for COUNTERFACTUAL PnL")
+        return None
+
+    exit_price = float(price_row['close'])
+    exit_time = price_row['timestamp']
+
+    pnl, return_pct = compute_pnl(entry_price, exit_price, direction, shadow_size)
+
+    result = {
+        'trade_id': str(trade['trade_id']),
+        'shadow_trade_ref': trade['shadow_trade_ref'],
+        'asset_id': asset_id,
+        'direction': direction,
+        'entry_price': entry_price,
+        'exit_price': exit_price,
+        'exit_time': str(exit_time),
+        'shadow_pnl': pnl,
+        'shadow_return_pct': return_pct,
+        'pnl_type': 'COUNTERFACTUAL',
+    }
+
+    if dry_run:
+        logger.info(f"  [DRY RUN] COUNTERFACTUAL: {trade['shadow_trade_ref']} | "
+                    f"{asset_id} {direction} | "
+                    f"entry={entry_price} exit={exit_price} | "
+                    f"pnl={pnl:+.8f} ({return_pct:+.4f}%)")
+    else:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE fhq_execution.shadow_trades
+                SET exit_price = %s,
+                    exit_time = %s,
+                    shadow_pnl = %s,
+                    shadow_return_pct = %s,
+                    pnl_type = 'COUNTERFACTUAL',
+                    learning_weight = 0.8,
+                    updated_at = NOW()
+                WHERE trade_id = %s
+            """, (
+                exit_price,
+                exit_time,
+                pnl,
+                return_pct,
+                trade['trade_id'],
+            ))
+        logger.info(f"  COUNTERFACTUAL: {trade['shadow_trade_ref']} | "
+                    f"{asset_id} {direction} | "
+                    f"entry={entry_price} exit={exit_price} | "
+                    f"pnl={pnl:+.8f} ({return_pct:+.4f}%)")
 
     return result
 
@@ -428,6 +535,20 @@ def run_exit_engine(dry_run: bool = False):
         if not dry_run and closed:
             conn.commit()
 
+        # CEO-DIR-2026-119: Process EXPIRED trades without PnL (COUNTERFACTUAL)
+        expired_no_pnl = find_expired_trades_without_pnl(conn)
+        counterfactual_processed = []
+        if expired_no_pnl:
+            logger.info(f"\nCEO-DIR-2026-119: Processing {len(expired_no_pnl)} EXPIRED trades without PnL...")
+            for trade in expired_no_pnl:
+                result = process_expired_trade_pnl(conn, trade, dry_run)
+                if result:
+                    counterfactual_processed.append(result)
+
+            if not dry_run and counterfactual_processed:
+                conn.commit()
+                logger.info(f"  COUNTERFACTUAL PnL calculated: {len(counterfactual_processed)}")
+
         # Summary
         logger.info("\n" + "=" * 60)
         logger.info("EXIT ENGINE SUMMARY")
@@ -435,6 +556,7 @@ def run_exit_engine(dry_run: bool = False):
         logger.info(f"  Closed: {len(closed)}")
         logger.info(f"  Still open (no exit condition): {len(still_open)}")
         logger.info(f"  No price data: {len(no_data)}")
+        logger.info(f"  COUNTERFACTUAL PnL (CEO-DIR-2026-119): {len(counterfactual_processed)}")
         if closed:
             total_pnl = sum(r['shadow_pnl'] for r in closed)
             winners = sum(1 for r in closed if r['shadow_pnl'] > 0)
@@ -456,6 +578,7 @@ def run_exit_engine(dry_run: bool = False):
         evidence = {
             'directive': 'CEO-DIR-20260130-PIPELINE-COMPLETION-002',
             'deliverable': 'D1',
+            'ceo_dir_2026_119_amendment': True,
             'executed_at': datetime.now(timezone.utc).isoformat(),
             'executed_by': 'STIG_EXIT_ENGINE',
             'dry_run': dry_run,
@@ -464,12 +587,14 @@ def run_exit_engine(dry_run: bool = False):
             'trades_closed': len(closed),
             'trades_still_open': len(still_open),
             'trades_no_data': len(no_data),
+            'counterfactual_pnl_processed': len(counterfactual_processed),
             'risk_parameters': {
                 'stop_loss_pct': DEFAULT_STOP_LOSS_PCT,
                 'take_profit_pct': DEFAULT_TAKE_PROFIT_PCT,
                 'default_timeframe_hours': DEFAULT_TIMEFRAME_HOURS,
             },
             'closed_trades': closed,
+            'counterfactual_trades': counterfactual_processed,
         }
         evidence_path = os.path.join(evidence_dir, f'SHADOW_EXIT_ENGINE_{ts}.json')
         with open(evidence_path, 'w') as f:
