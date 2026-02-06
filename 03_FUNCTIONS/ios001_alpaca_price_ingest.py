@@ -54,6 +54,7 @@ try:
     from alpaca.data.historical import StockHistoricalDataClient, CryptoHistoricalDataClient
     from alpaca.data.requests import StockBarsRequest, CryptoBarsRequest
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+    from alpaca.data.enums import DataFeed  # CEO-DIR-2026-119: Use IEX feed for free tier
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -178,25 +179,42 @@ def create_vega_attestation(
         governance_status='G4_CONSTITUTIONAL'
     )
 
-    # Store attestation
+    # Store attestation - CEO-DIR-2026-119: Updated to match existing schema
+    attestation_data = {
+        'ios_id': attestation.ios_id,
+        'data_source': attestation.data_source,
+        'asset_count': attestation.asset_count,
+        'record_count': attestation.record_count,
+        'timeframe': attestation.timeframe,
+        'data_hash': attestation.data_hash,
+        'executor': attestation.executor
+    }
+
+    # Generate signature hash for VEGA (placeholder until proper signing implemented)
+    signature_data = f"{attestation.attestation_id}|{attestation.ios_id}|{attestation.data_hash}"
+    vega_signature = hashlib.sha256(signature_data.encode()).hexdigest()
+    vega_public_key = 'VEGA_LINE_INGEST_KEY_001'  # Placeholder key identifier
+
     with conn.cursor() as cur:
         cur.execute("""
             INSERT INTO fhq_governance.vega_attestations (
-                attestation_id, ios_id, data_source, asset_count, record_count,
-                timeframe, data_hash, attestation_timestamp, executor, governance_status
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                attestation_id, target_type, target_id, attestation_type,
+                attestation_status, attestation_timestamp, attestation_data,
+                adr_reference, constitutional_basis, vega_signature, vega_public_key, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             ON CONFLICT (attestation_id) DO NOTHING
         """, (
             attestation.attestation_id,
-            attestation.ios_id,
-            attestation.data_source,
-            attestation.asset_count,
-            attestation.record_count,
-            attestation.timeframe,
-            attestation.data_hash,
+            'DATA_INGEST',  # target_type
+            attestation.ios_id,  # target_id
+            'IOS001_PRICE_INGEST',  # attestation_type
+            attestation.governance_status,  # attestation_status
             attestation.attestation_timestamp,
-            attestation.executor,
-            attestation.governance_status
+            json.dumps(attestation_data),  # attestation_data
+            'ADR-006',  # adr_reference
+            'G4_CONSTITUTIONAL',  # constitutional_basis
+            vega_signature,  # vega_signature
+            vega_public_key  # vega_public_key
         ))
     conn.commit()
 
@@ -263,7 +281,7 @@ def get_alpaca_eligible_assets(conn, asset_class: Optional[str] = None) -> List[
         if asset_class == 'EQUITY':
             # US equities only (Alpaca supports US markets)
             query += """
-                AND a.asset_class = 'EQUITIES'
+                AND a.asset_class = 'EQUITY'
                 AND (a.exchange_mic IN ('XNYS', 'XNAS', 'ARCX', 'BATS')
                      OR a.ticker NOT LIKE '%.%')
             """
@@ -273,7 +291,7 @@ def get_alpaca_eligible_assets(conn, asset_class: Optional[str] = None) -> List[
             # Default: both
             query += """
                 AND (
-                    (a.asset_class = 'EQUITIES' AND (a.exchange_mic IN ('XNYS', 'XNAS', 'ARCX', 'BATS') OR a.ticker NOT LIKE '%.%'))
+                    (a.asset_class = 'EQUITY' AND (a.exchange_mic IN ('XNYS', 'XNAS', 'ARCX', 'BATS') OR a.ticker NOT LIKE '%.%'))
                     OR a.asset_class = 'CRYPTO'
                 )
             """
@@ -302,6 +320,10 @@ def get_alpaca_symbol(asset: Dict) -> str:
             parts = ticker.split('.')
             if parts[1] in ['OL', 'DE', 'PA', 'L']:
                 return None  # Not US, skip
+        # CEO-DIR-2026-119: Fix share class symbols (BRK-B -> BRK.B)
+        # Alpaca uses period notation for share classes
+        if '-' in ticker and ticker.split('-')[1] in ['A', 'B', 'C']:
+            ticker = ticker.replace('-', '.')
         return ticker
 
 
@@ -363,11 +385,14 @@ class AlpacaPriceIngester:
         if not tf:
             raise ValueError(f"Invalid timeframe: {timeframe}")
 
+        # CEO-DIR-2026-119: Use IEX feed (free tier compatible)
+        # SIP feed requires paid subscription
         request = StockBarsRequest(
             symbol_or_symbols=symbols,
             timeframe=tf,
             start=start,
-            end=end
+            end=end,
+            feed=DataFeed.IEX  # Free tier: use IEX instead of SIP
         )
 
         bars = self.stock_client.get_stock_bars(request)
@@ -436,58 +461,74 @@ class AlpacaPriceIngester:
         timeframe: str,
         asset_class: str
     ) -> int:
-        """Store prices in fhq_data.price_series with IoS-001 compliance."""
+        """
+        Store prices in fhq_market.prices with IoS-001 compliance.
+        CEO-DIR-2026-119: Changed from fhq_data.price_series to fhq_market.prices
+        to align with ios001_daily_ingest.py approach using canonical_id.
+        """
         if df.empty:
             return 0
 
-        resolution = RESOLUTION_MAP.get(timeframe, timeframe)
-
-        # Map symbols back to listing_ids (canonical_id in assets -> listing_id in price_series)
-        symbol_to_listing = {}
+        # Map Alpaca symbols to canonical_ids
+        symbol_to_canonical = {}
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             for symbol in df['symbol'].unique():
-                # Convert Alpaca symbol format
-                lookup_symbol = symbol.replace('/', '-')  # BTC/USD -> BTC-USD
+                # Convert Alpaca symbol format back to canonical
+                # BTC/USD -> BTC-USD, BRK.B -> BRK-B
+                lookup_symbol = symbol.replace('/', '-').replace('.', '-')
 
-                # Try to find listing_id
                 cur.execute("""
-                    SELECT l.listing_id
-                    FROM fhq_data.listings l
-                    WHERE l.ticker = %s OR l.ticker = %s
+                    SELECT canonical_id
+                    FROM fhq_meta.assets
+                    WHERE canonical_id = %s
+                       OR ticker = %s
+                       OR ticker = %s
                     LIMIT 1
-                """, (lookup_symbol, symbol))
+                """, (lookup_symbol, symbol, lookup_symbol))
                 row = cur.fetchone()
                 if row:
-                    symbol_to_listing[symbol] = row['listing_id']
+                    symbol_to_canonical[symbol] = row['canonical_id']
 
         # Prepare records for insertion
         records = []
+        batch_id = str(uuid.uuid4())
+
         for _, row in df.iterrows():
-            listing_id = symbol_to_listing.get(row['symbol'])
-            if not listing_id:
+            canonical_id = symbol_to_canonical.get(row['symbol'])
+            if not canonical_id:
                 continue
 
-            # Convert timestamp to date for daily data
+            # Convert timestamp
             ts = row['timestamp']
-            if hasattr(ts, 'date'):
-                price_date = ts.date() if timeframe == '1d' else ts
-            else:
-                price_date = ts
+            if hasattr(ts, 'tz_localize'):
+                try:
+                    ts = ts.tz_localize(None)
+                except:
+                    pass
+
+            # Data hash
+            data_str = f"{canonical_id}|{ts}|{row['open']}|{row['high']}|{row['low']}|{row['close']}|{row['volume']}"
+            data_hash = hashlib.sha256(data_str.encode()).hexdigest()[:16]
 
             records.append((
-                listing_id,
-                price_date,
+                str(uuid.uuid4()),  # id
+                str(uuid.uuid4()),  # asset_id
+                canonical_id,
+                ts,
                 float(row['open']),
                 float(row['high']),
                 float(row['low']),
                 float(row['close']),
-                float(row['close']),  # adj_close = close for Alpaca
                 float(row['volume']),
-                'spot',  # price_type
-                resolution,
-                datetime.now(timezone.utc),  # created_at
-                'ALPACA',  # data_source
-                'ADR-001'  # adr_epoch
+                'alpaca',           # source
+                None,               # staging_id
+                data_hash,
+                False,              # gap_filled
+                False,              # interpolated
+                1.0,                # quality_score
+                batch_id,
+                'LINE',             # canonicalized_by
+                float(row['close']) # adj_close
             ))
 
         if not records:
@@ -497,27 +538,26 @@ class AlpacaPriceIngester:
             logger.info(f"  [DRY RUN] Would insert {len(records)} records")
             return len(records)
 
-        # Insert with upsert into fhq_data.price_series
-        with self.conn.cursor() as cur:
-            execute_values(cur, """
-                INSERT INTO fhq_data.price_series (
-                    listing_id, date, open, high, low, close, adj_close,
-                    volume, price_type, resolution, created_at, data_source, adr_epoch
-                ) VALUES %s
-                ON CONFLICT (listing_id, date, resolution)
-                DO UPDATE SET
-                    open = EXCLUDED.open,
-                    high = EXCLUDED.high,
-                    low = EXCLUDED.low,
-                    close = EXCLUDED.close,
-                    adj_close = EXCLUDED.adj_close,
-                    volume = EXCLUDED.volume,
-                    data_source = EXCLUDED.data_source,
-                    created_at = EXCLUDED.created_at
-            """, records)
-        self.conn.commit()
-
-        return len(records)
+        # Insert with upsert into fhq_market.prices (CEO-DIR-2026-119)
+        try:
+            with self.conn.cursor() as cur:
+                execute_values(cur, """
+                    INSERT INTO fhq_market.prices (
+                        id, asset_id, canonical_id, timestamp, open, high, low, close, volume,
+                        source, staging_id, data_hash, gap_filled, interpolated, quality_score,
+                        batch_id, canonicalized_by, adj_close
+                    ) VALUES %s
+                    ON CONFLICT (canonical_id, timestamp) DO UPDATE SET
+                        adj_close = EXCLUDED.adj_close,
+                        data_hash = EXCLUDED.data_hash
+                    WHERE fhq_market.prices.adj_close IS NULL
+                """, records)
+            self.conn.commit()
+            return len(records)
+        except Exception as e:
+            self.conn.rollback()
+            logger.error(f"  Insert error: {e}")
+            return 0
 
     def run(
         self,
