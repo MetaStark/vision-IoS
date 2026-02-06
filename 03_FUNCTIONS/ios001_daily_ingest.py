@@ -63,10 +63,13 @@ DB_CONFIG = {
     'password': os.environ.get('PGPASSWORD', 'postgres')
 }
 
-# Rate limiting - conservative to avoid yfinance blocks
-BATCH_SIZE = 25
-BATCH_DELAY_SECONDS = 60
-CALL_DELAY_SECONDS = 3
+# Rate limiting - CEO-DIR-2026-119 AMENDMENT: Fix yfinance rate limiting
+# yfinance uses aggressive rate limiting; need exponential backoff
+BATCH_SIZE = 10                  # Reduced from 25
+BATCH_DELAY_SECONDS = 120        # Increased from 60
+CALL_DELAY_SECONDS = 5           # Increased from 3
+MAX_RETRIES = 3                  # Exponential backoff retries
+BACKOFF_BASE_SECONDS = 30        # Base for exponential backoff
 
 # Paths
 EVIDENCE_DIR = Path(__file__).parent / "evidence"
@@ -154,6 +157,83 @@ def is_market_open_today(asset_class: str) -> bool:
     return True
 
 
+def fetch_batch_prices(
+    assets: List[Dict],
+    start_date: date,
+    end_date: date
+) -> Dict[str, pd.DataFrame]:
+    """
+    CEO-DIR-2026-119: Batch download using yfinance's efficient multi-ticker API.
+    This makes ONE request for multiple tickers instead of N requests.
+    """
+    import random
+
+    if not assets:
+        return {}
+
+    # Build ticker list
+    tickers = []
+    ticker_to_canonical = {}
+    for asset in assets:
+        canonical_id = asset['canonical_id']
+        yf_ticker = get_yfinance_ticker(canonical_id, asset['asset_class'])
+        tickers.append(yf_ticker)
+        ticker_to_canonical[yf_ticker] = canonical_id
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            logger.info(f"    Batch download: {len(tickers)} tickers")
+            df = yf.download(
+                tickers,
+                start=start_date.strftime('%Y-%m-%d'),
+                end=(end_date + timedelta(days=1)).strftime('%Y-%m-%d'),
+                interval='1d',
+                auto_adjust=False,
+                group_by='ticker',
+                threads=False,  # Single-threaded to avoid rate limits
+                progress=False
+            )
+
+            if df.empty:
+                return {}
+
+            # Parse multi-ticker response
+            result = {}
+            if len(tickers) == 1:
+                # Single ticker - df is not multi-indexed
+                canonical_id = ticker_to_canonical[tickers[0]]
+                result[canonical_id] = df
+            else:
+                # Multi-ticker - df has multi-level columns
+                for yf_ticker in tickers:
+                    try:
+                        if yf_ticker in df.columns.get_level_values(0):
+                            ticker_df = df[yf_ticker].dropna(how='all')
+                            if not ticker_df.empty:
+                                canonical_id = ticker_to_canonical[yf_ticker]
+                                result[canonical_id] = ticker_df
+                    except Exception:
+                        continue
+
+            return result
+
+        except Exception as e:
+            error_str = str(e).lower()
+            if 'too many requests' in error_str or '429' in error_str or 'rate' in error_str:
+                if attempt < MAX_RETRIES - 1:
+                    backoff = BACKOFF_BASE_SECONDS * (2 ** attempt)
+                    jitter = random.uniform(0, backoff * 0.3)
+                    wait_time = backoff + jitter
+                    logger.warning(f"    Batch rate limited, retry {attempt+1}/{MAX_RETRIES} "
+                                   f"after {wait_time:.1f}s")
+                    time.sleep(wait_time)
+                    continue
+            logger.warning(f"    Batch fetch error: {str(e)[:100]}")
+            return {}
+
+    return {}
+
+
 # =============================================================================
 # DATA FETCHING
 # =============================================================================
@@ -164,24 +244,49 @@ def fetch_daily_prices(
     start_date: date,
     end_date: date
 ) -> Optional[pd.DataFrame]:
-    """Fetch OHLCV from yfinance"""
-    try:
-        ticker = yf.Ticker(yf_ticker)
-        df = ticker.history(
-            start=start_date.strftime('%Y-%m-%d'),
-            end=(end_date + timedelta(days=1)).strftime('%Y-%m-%d'),
-            interval='1d',
-            auto_adjust=False  # Get both Close and Adj Close
-        )
+    """
+    Fetch OHLCV from yfinance with exponential backoff.
+    CEO-DIR-2026-119 AMENDMENT: Robust rate limiting handling.
+    """
+    import random
 
-        if df.empty:
-            return None
+    for attempt in range(MAX_RETRIES):
+        try:
+            ticker = yf.Ticker(yf_ticker)
+            df = ticker.history(
+                start=start_date.strftime('%Y-%m-%d'),
+                end=(end_date + timedelta(days=1)).strftime('%Y-%m-%d'),
+                interval='1d',
+                auto_adjust=False  # Get both Close and Adj Close
+            )
 
-        return df
+            if df.empty:
+                return None
 
-    except Exception as e:
-        logger.warning(f"  [{canonical_id}] Fetch error: {str(e)[:100]}")
-        return None
+            return df
+
+        except Exception as e:
+            error_str = str(e).lower()
+
+            # Check for rate limiting errors
+            if 'too many requests' in error_str or '429' in error_str or 'rate' in error_str:
+                if attempt < MAX_RETRIES - 1:
+                    # Exponential backoff with jitter
+                    backoff = BACKOFF_BASE_SECONDS * (2 ** attempt)
+                    jitter = random.uniform(0, backoff * 0.3)
+                    wait_time = backoff + jitter
+                    logger.warning(f"  [{canonical_id}] Rate limited, retry {attempt+1}/{MAX_RETRIES} "
+                                   f"after {wait_time:.1f}s")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"  [{canonical_id}] Rate limited, max retries exceeded")
+                    return None
+            else:
+                logger.warning(f"  [{canonical_id}] Fetch error: {str(e)[:100]}")
+                return None
+
+    return None
 
 
 def get_last_price_date(conn, canonical_id: str) -> Optional[date]:
@@ -327,17 +432,25 @@ def record_heartbeat(conn, component: str, status: str, details: dict):
 def run_daily_ingest(
     asset_class: Optional[str] = None,
     dry_run: bool = False,
-    trigger_regime: bool = False
+    trigger_regime: bool = False,
+    batch_mode: bool = True  # CEO-DIR-2026-119: Use batch mode by default
 ) -> Dict:
     """
     Execute daily price ingest for VEGA-attested assets.
+
+    CEO-DIR-2026-119 Amendment:
+    - batch_mode=True uses yf.download() for efficient multi-ticker requests
+    - Exponential backoff with jitter for rate limit handling
+    - Adaptive throttling based on success rate
     """
     logger.info("=" * 70)
     logger.info("IoS-001 DAILY PRICE INGEST")
     logger.info(f"Executor: LINE (EC-004)")
     logger.info(f"Authority: CEO_DIRECTIVE_LINE_DAILY_INGEST_ACTIVATION_20251212")
+    logger.info(f"Amendment: CEO-DIR-2026-119 (Rate Limit Mitigation)")
     logger.info(f"Time: {datetime.now(timezone.utc).isoformat()}")
     logger.info(f"Asset Class Filter: {asset_class or 'ALL'}")
+    logger.info(f"Batch Mode: {batch_mode}")
     logger.info(f"Dry Run: {dry_run}")
     logger.info("=" * 70)
 
@@ -386,13 +499,81 @@ def run_daily_ingest(
             'errors': 0
         }
 
-        # Process in batches
+        # CEO-DIR-2026-119: Use batch mode for efficient rate limit handling
+        if batch_mode and not dry_run:
+            logger.info(f"  Using BATCH MODE (CEO-DIR-2026-119)")
+
+            # Split into sub-batches for batch download
+            for i in range(0, len(class_assets), BATCH_SIZE):
+                batch = class_assets[i:i+BATCH_SIZE]
+                batch_num = (i // BATCH_SIZE) + 1
+                total_batches = (len(class_assets) + BATCH_SIZE - 1) // BATCH_SIZE
+
+                logger.info(f"\n  Batch {batch_num}/{total_batches} ({len(batch)} tickers)")
+
+                # Find assets that need updates
+                assets_to_fetch = []
+                for asset in batch:
+                    canonical_id = asset['canonical_id']
+                    last_date = get_last_price_date(conn, canonical_id)
+
+                    if last_date:
+                        start_date = last_date + timedelta(days=1)
+                    else:
+                        start_date = date.today() - timedelta(days=30)
+
+                    if start_date <= date.today():
+                        asset['start_date'] = start_date
+                        assets_to_fetch.append(asset)
+
+                    results['assets_processed'] += 1
+
+                if not assets_to_fetch:
+                    logger.info(f"    All assets up to date")
+                    continue
+
+                # Batch download
+                start_date = min(a['start_date'] for a in assets_to_fetch)
+                end_date = date.today()
+
+                batch_data = fetch_batch_prices(assets_to_fetch, start_date, end_date)
+
+                # Insert results
+                for asset in assets_to_fetch:
+                    canonical_id = asset['canonical_id']
+                    if canonical_id in batch_data:
+                        df = batch_data[canonical_id]
+                        rows = insert_prices(conn, canonical_id, df, batch_id)
+                        if rows > 0:
+                            update_asset_row_count(conn, canonical_id)
+                            results['assets_updated'] += 1
+                            results['rows_inserted'] += rows
+                            class_results['updated'] += 1
+                            class_results['rows'] += rows
+                            logger.info(f"    [{canonical_id}] +{rows} rows")
+                    else:
+                        class_results['errors'] += 1
+
+                # Batch delay
+                if i + BATCH_SIZE < len(class_assets):
+                    logger.info(f"  Batch complete, waiting {BATCH_DELAY_SECONDS}s...")
+                    time.sleep(BATCH_DELAY_SECONDS)
+
+            results['by_class'][cls] = class_results
+            continue  # Skip individual processing
+
+        # Process in batches with adaptive throttling (CEO-DIR-2026-119)
+        consecutive_rate_limits = 0
+        adaptive_delay = CALL_DELAY_SECONDS
+
         for i in range(0, len(class_assets), BATCH_SIZE):
             batch = class_assets[i:i+BATCH_SIZE]
             batch_num = (i // BATCH_SIZE) + 1
             total_batches = (len(class_assets) + BATCH_SIZE - 1) // BATCH_SIZE
 
-            logger.info(f"\n  Batch {batch_num}/{total_batches} ({len(batch)} assets)")
+            logger.info(f"\n  Batch {batch_num}/{total_batches} ({len(batch)} assets) [delay={adaptive_delay}s]")
+
+            batch_rate_limits = 0
 
             for asset in batch:
                 canonical_id = asset['canonical_id']
@@ -433,14 +614,30 @@ def run_daily_ingest(
                         class_results['updated'] += 1
                         class_results['rows'] += rows
                         logger.info(f"    [{canonical_id}] +{rows} rows")
+                        # Success - gradually reduce delay
+                        consecutive_rate_limits = 0
+                        if adaptive_delay > CALL_DELAY_SECONDS:
+                            adaptive_delay = max(CALL_DELAY_SECONDS, adaptive_delay * 0.9)
                 else:
                     class_results['errors'] += 1
+                    batch_rate_limits += 1
+                    consecutive_rate_limits += 1
 
-                # Rate limit
-                time.sleep(CALL_DELAY_SECONDS)
+                    # Adaptive throttling: if we hit rate limits, slow down
+                    if consecutive_rate_limits >= 3:
+                        adaptive_delay = min(30, adaptive_delay * 1.5)
+                        logger.warning(f"  Rate limit pressure detected, increasing delay to {adaptive_delay:.1f}s")
 
-            # Batch delay
-            if i + BATCH_SIZE < len(class_assets):
+                # Rate limit with adaptive delay
+                time.sleep(adaptive_delay)
+
+            # If batch had many rate limits, take extended break
+            if batch_rate_limits >= len(batch) * 0.5:
+                extended_delay = BATCH_DELAY_SECONDS * 2
+                logger.warning(f"  High rate limit ratio ({batch_rate_limits}/{len(batch)}), "
+                               f"extended wait {extended_delay}s")
+                time.sleep(extended_delay)
+            elif i + BATCH_SIZE < len(class_assets):
                 logger.info(f"  Batch complete, waiting {BATCH_DELAY_SECONDS}s...")
                 time.sleep(BATCH_DELAY_SECONDS)
 
@@ -507,13 +704,16 @@ if __name__ == "__main__":
                         help="Show what would be fetched without executing")
     parser.add_argument("--trigger-regime", action="store_true",
                         help="Trigger IoS-003 regime update after ingest")
+    parser.add_argument("--no-batch", action="store_true",
+                        help="Disable batch mode (use individual requests)")
 
     args = parser.parse_args()
 
     results = run_daily_ingest(
         asset_class=args.asset_class,
         dry_run=args.dry_run,
-        trigger_regime=args.trigger_regime
+        trigger_regime=args.trigger_regime,
+        batch_mode=not args.no_batch  # Batch mode ON by default (CEO-DIR-2026-119)
     )
 
     sys.exit(0 if results['assets_updated'] >= 0 else 1)
