@@ -296,7 +296,9 @@ def get_alpaca_eligible_assets(conn, asset_class: Optional[str] = None) -> List[
                 )
             """
 
-        query += " ORDER BY a.asset_class, a.canonical_id LIMIT 200"  # Limit for rate limits
+        # CEO-DIR-2026-120: Full EQUITY universe authorized (421 assets)
+        # LIMIT removed per directive - controlled batch execution
+        query += " ORDER BY a.asset_class, a.canonical_id"
 
         cur.execute(query)
         return cur.fetchall()
