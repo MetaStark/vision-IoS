@@ -867,6 +867,7 @@ class IntradayRegimeDeltaEngine:
 
         self.connect()
         self.load_configs()
+        self.update_heartbeat()  # CEO-DIR-2026-123: Always write heartbeat
 
         try:
             summary = self.run_detection_cycle()
