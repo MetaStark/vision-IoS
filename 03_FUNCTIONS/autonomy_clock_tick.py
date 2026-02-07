@@ -55,6 +55,28 @@ DB_CONFIG = {
 
 CLOCK_ID = '7c09bbec-bc9a-4499-bb1f-19af8a4f590d'
 DISCREPANCY_THRESHOLD = 0.10
+DAEMON_NAME = 'autonomy_clock_tick'
+HEARTBEAT_INTERVAL_MINUTES = 30
+
+
+def register_heartbeat(conn):
+    """Register heartbeat in fhq_monitoring.daemon_health."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO fhq_monitoring.daemon_health
+                (daemon_name, status, last_heartbeat, expected_interval_minutes,
+                 lifecycle_status, metadata)
+            VALUES
+                (%s, 'HEALTHY', NOW(), %s, 'ACTIVE', '{}'::jsonb)
+            ON CONFLICT (daemon_name) DO UPDATE SET
+                status = 'HEALTHY',
+                last_heartbeat = NOW(),
+                expected_interval_minutes = EXCLUDED.expected_interval_minutes,
+                lifecycle_status = 'ACTIVE',
+                updated_at = NOW()
+        """, (DAEMON_NAME, HEARTBEAT_INTERVAL_MINUTES))
+    conn.commit()
+    logger.info(f"Heartbeat registered: {DAEMON_NAME}")
 
 
 def check_daemon_execution(conn) -> tuple:
@@ -255,6 +277,9 @@ def perform_tick(conn):
     with open(evidence_path, 'w') as f:
         json.dump(evidence, f, indent=2, default=str)
     logger.info(f"Evidence: {evidence_path}")
+
+    # Register heartbeat
+    register_heartbeat(conn)
 
     return evidence
 

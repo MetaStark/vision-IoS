@@ -71,6 +71,32 @@ DB_CONFIG = {
     'password': os.getenv('PGPASSWORD', 'postgres')
 }
 
+DAEMON_NAME = 'shadow_trade_creator'
+HEARTBEAT_INTERVAL_MINUTES = 15
+
+
+def register_heartbeat(conn, dry_run=False):
+    """Register heartbeat in fhq_monitoring.daemon_health."""
+    if dry_run:
+        logger.info(f"[DRY RUN] Would register heartbeat for {DAEMON_NAME}")
+        return
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO fhq_monitoring.daemon_health
+                (daemon_name, status, last_heartbeat, expected_interval_minutes,
+                 lifecycle_status, metadata)
+            VALUES
+                (%s, 'HEALTHY', NOW(), %s, 'ACTIVE', '{}'::jsonb)
+            ON CONFLICT (daemon_name) DO UPDATE SET
+                status = 'HEALTHY',
+                last_heartbeat = NOW(),
+                expected_interval_minutes = EXCLUDED.expected_interval_minutes,
+                lifecycle_status = 'ACTIVE',
+                updated_at = NOW()
+        """, (DAEMON_NAME, HEARTBEAT_INTERVAL_MINUTES))
+    conn.commit()
+    logger.info(f"Heartbeat registered: {DAEMON_NAME}")
+
 DIRECTION_MAP = {
     'BULLISH': 'LONG',
     'BEARISH': 'SHORT',
@@ -346,6 +372,9 @@ def run_shadow_creator(dry_run: bool = False):
         with open(evidence_path, 'w') as f:
             json.dump(evidence, f, indent=2, default=str)
         logger.info(f"Evidence: {evidence_path}")
+
+        # Register heartbeat
+        register_heartbeat(conn, dry_run)
 
     finally:
         conn.close()

@@ -96,6 +96,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger("IOS001_DAILY_INGEST")
 
+DAEMON_NAME = 'ios001_daily_ingest'
+HEARTBEAT_INTERVAL_MINUTES = 1440  # Daily
+
+
+def register_heartbeat(conn, dry_run=False):
+    """Register heartbeat in fhq_monitoring.daemon_health."""
+    if dry_run:
+        logger.info(f"[DRY RUN] Would register heartbeat for {DAEMON_NAME}")
+        return
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO fhq_monitoring.daemon_health
+                (daemon_name, status, last_heartbeat, expected_interval_minutes,
+                 lifecycle_status, metadata)
+            VALUES
+                (%s, 'HEALTHY', NOW(), %s, 'ACTIVE', '{}'::jsonb)
+            ON CONFLICT (daemon_name) DO UPDATE SET
+                status = 'HEALTHY',
+                last_heartbeat = NOW(),
+                expected_interval_minutes = EXCLUDED.expected_interval_minutes,
+                lifecycle_status = 'ACTIVE',
+                updated_at = NOW()
+        """, (DAEMON_NAME, HEARTBEAT_INTERVAL_MINUTES))
+    conn.commit()
+    logger.info(f"Heartbeat registered: {DAEMON_NAME}")
+
 
 def get_connection():
     return psycopg2.connect(**DB_CONFIG, options='-c client_encoding=UTF8')
@@ -687,6 +713,9 @@ def run_daily_ingest(
             logger.info(f"  {cls}: {cls_results.get('updated', 0)} assets, {cls_results.get('rows', 0)} rows")
     logger.info(f"Evidence: {evidence_file}")
     logger.info("=" * 70)
+
+    # Register heartbeat
+    register_heartbeat(conn, dry_run)
 
     conn.close()
     return results
