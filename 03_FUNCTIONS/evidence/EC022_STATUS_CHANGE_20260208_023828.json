@@ -1,0 +1,61 @@
+{
+  "evidence_type": "TEST_STATUS_CHANGE",
+  "evidence_id": "EC022_PRECONDITION_UNMET_20260208",
+  "timestamp_utc": "2026-02-08T01:38:28.028Z",
+  "timestamp_cet": "2026-02-08T02:38:28.028+01:00",
+  "executor": "STIG",
+  "executor_contract": "EC-003",
+  "authority": "CEO State of the System Memo 2026-02-07 21:35 CET",
+  "test_reference": {
+    "test_code": "TEST-EC022-OBS-001",
+    "test_name": "EC-022 Reward Logic Observation Window",
+    "owning_agent": "EC-022",
+    "monitoring_agent": "EC-003"
+  },
+  "status_change": {
+    "escalation_state_from": "ACTION_REQUIRED",
+    "escalation_state_to": "PRECONDITION_UNMET",
+    "ceo_action_required_from": true,
+    "ceo_action_required_to": false
+  },
+  "blockers": [
+    {
+      "blocker_id": "BLOCKER_001",
+      "description": "learning_updates_count = 0",
+      "category": "LEARNING_LOOP"
+    },
+    {
+      "blocker_id": "BLOCKER_002",
+      "description": "context_lift_computable = false",
+      "category": "MEASUREMENT"
+    },
+    {
+      "blocker_id": "BLOCKER_003",
+      "description": "ios010_bridge_operational = false",
+      "category": "INFRASTRUCTURE"
+    }
+  ],
+  "recommended_actions": [
+    "Restore learning loop (activate hypothesis_death_daemon)",
+    "Activate lvi_calculator daemon",
+    "Make IoS-010 Bridge operational",
+    "Verify context_lift_computable = true before resuming test"
+  ],
+  "outcome_summary": "EC-022 test FROZEN due to precondition failures. Cannot measure Context Lift without: (1) operational learning loop, (2) LVI computation, (3) IoS-010 Bridge. Test will resume when preconditions are satisfied. Per CEO State of System Memo 2026-02-07.",
+  "rationale": "The test asks: 'Does context integration improve predictions?' The system answers: 'We cannot evaluate — learning loop broken, no data.' This is not a test failure. It is a precondition failure. The test should be frozen, not failed.",
+  "constraint_modification": {
+    "table": "fhq_calendar.canonical_test_events",
+    "constraint": "canonical_test_events_escalation_state_check",
+    "values_added": ["PRECONDITION_UNMET"]
+  },
+  "migration_file": "356_state_of_system_enforcement.sql",
+  "database_verification": {
+    "query": "SELECT test_code, escalation_state FROM fhq_calendar.canonical_test_events WHERE test_code = 'TEST-EC022-OBS-001'",
+    "result": {
+      "test_code": "TEST-EC022-OBS-001",
+      "escalation_state": "PRECONDITION_UNMET"
+    }
+  },
+  "hash": null,
+  "signature": null
+}
