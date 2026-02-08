@@ -392,6 +392,41 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
             hash_input = f"{selected_theory_type}:{mechanism_str}:{timestamp}"
             semantic_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
+            # STEP 4.5: CEO-DIR-2026-128 MEMORY BIRTH GATE
+            # Query prior failures before hypothesis birth
+            asset_universe = ['BTC-USD', 'ETH-USD']
+            cur.execute("""
+                SELECT prior_count, exact_duplicate_exists, similar_failures,
+                       memory_citation, should_block, block_reason
+                FROM fhq_learning.check_prior_failures(%s, %s, %s, %s)
+            """, (mechanism_str, semantic_hash, asset_universe, DAEMON_NAME))
+            memory_result = cur.fetchone()
+
+            if memory_result and memory_result[4]:  # should_block = True
+                # Log the block
+                cur.execute("""
+                    INSERT INTO fhq_learning.hypothesis_birth_blocks (
+                        block_reason, generator_id, proposed_semantic_hash,
+                        proposed_causal_mechanism, proposed_asset_universe,
+                        prior_failures_count, similar_failures
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    memory_result[5],  # block_reason
+                    DAEMON_NAME,
+                    semantic_hash,
+                    mechanism_str[:500],
+                    asset_universe,
+                    memory_result[0],  # prior_count
+                    memory_result[2]   # similar_failures (JSONB)
+                ))
+                conn.commit()
+                logger.warning(f"MEMORY_BLOCK: {memory_result[5]} - prior_count={memory_result[0]}")
+                return None
+
+            # Extract memory citation for hypothesis birth
+            prior_hypotheses_count = memory_result[0] if memory_result else 0
+            memory_citation = memory_result[3] if memory_result else None
+
             # STEP 5: Build mechanism_graph with selection metadata (for VEGA audit)
             mechanism_graph = {
                 'theory_type': selected_theory_type,
@@ -401,6 +436,7 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
             }
 
             # STEP 6: Insert hypothesis with pre-generated canon_id
+            # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
             cur.execute("""
                 INSERT INTO fhq_learning.hypothesis_canon (
                     canon_id,
@@ -425,9 +461,10 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
                     semantic_hash,
                     asset_class,
                     learning_only,
-                    generation_regime
+                    generation_regime,
+                    prior_hypotheses_count
                 ) VALUES (
-                    %s::uuid, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE, 'CRYPTO_DIVERSIFIED_POST_FIX'
+                    %s::uuid, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE, 'CRYPTO_DIVERSIFIED_POST_FIX', %s
                 )
                 RETURNING canon_id
             """, (
@@ -449,7 +486,8 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
                 json.dumps(mechanism_graph, default=str),
                 DAEMON_NAME,
                 DAEMON_NAME,
-                semantic_hash
+                semantic_hash,
+                prior_hypotheses_count
             ))
 
             result = cur.fetchone()

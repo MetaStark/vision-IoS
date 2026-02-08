@@ -193,6 +193,40 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         logger.info(f"DEDUP BLOCK: needle={needle['needle_id']} exists as {existing[0]}")
         return None
 
+    # CEO-DIR-2026-128: MEMORY BIRTH GATE
+    # Query prior failures before hypothesis birth
+    asset_universe = chain_template['assets']
+    cur.execute("""
+        SELECT prior_count, exact_duplicate_exists, similar_failures,
+               memory_citation, should_block, block_reason
+        FROM fhq_learning.check_prior_failures(%s, %s, %s, %s)
+    """, (causal_mechanism, semantic_hash, asset_universe, GENERATOR_ID))
+    memory_result = cur.fetchone()
+
+    if memory_result and memory_result[4]:  # should_block = True
+        # Log the block
+        cur.execute("""
+            INSERT INTO fhq_learning.hypothesis_birth_blocks (
+                block_reason, generator_id, proposed_semantic_hash,
+                proposed_causal_mechanism, proposed_asset_universe,
+                prior_failures_count, similar_failures
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            memory_result[5],  # block_reason
+            GENERATOR_ID,
+            semantic_hash,
+            causal_mechanism[:500],
+            asset_universe,
+            memory_result[0],  # prior_count
+            json.dumps(memory_result[2]) if memory_result[2] else None
+        ))
+        conn.commit()
+        logger.warning(f"MEMORY_BLOCK: {memory_result[5]} - prior_count={memory_result[0]} (needle={needle['needle_id']})")
+        return None
+
+    # Extract memory citation for hypothesis birth
+    prior_hypotheses_count = memory_result[0] if memory_result else 0
+
     # Parse falsification criteria from needle
     falsification = needle.get('falsification_criteria')
     if isinstance(falsification, str):
@@ -203,6 +237,7 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
 
     # INSERT — semantic_hash is computed by DB trigger trg_compute_semantic_hash
     # Dedup is handled by the check above using the same hash formula
+    # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
     cur.execute("""
         INSERT INTO fhq_learning.hypothesis_canon (
             canon_id,
@@ -231,7 +266,8 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             causal_graph_depth,
             complexity_score,
             created_at,
-            created_by
+            created_by,
+            prior_hypotheses_count
         ) VALUES (
             gen_random_uuid(),
             %s, -- hypothesis_code
@@ -259,7 +295,8 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             %s, -- causal_graph_depth
             %s, -- complexity_score
             NOW(),
-            'GN-S'
+            'GN-S',
+            %s  -- prior_hypotheses_count (CEO-DIR-2026-128)
         )
         RETURNING hypothesis_code
     """, (
@@ -282,6 +319,7 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         json.dumps(mechanism_graph),
         mechanism_graph['depth'],
         round(mechanism_graph['depth'] * 0.6 + (needle['confluence_factor_count'] or 0) * 0.1, 2),
+        prior_hypotheses_count,
     ))
 
     result = cur.fetchone()

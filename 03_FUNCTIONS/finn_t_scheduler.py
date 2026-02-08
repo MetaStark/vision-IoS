@@ -347,7 +347,44 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
         causal_mechanism = ' -> '.join(chain_template['causal_chain'])
         mapped_direction = map_direction(feature.get('expected_direction', 'NEUTRAL'))
 
+        # CEO-DIR-2026-128: MEMORY BIRTH GATE
+        # Query prior failures before hypothesis birth
+        asset_universe = chain_template['assets']
         with conn.cursor() as cur:
+            cur.execute("""
+                SELECT prior_count, exact_duplicate_exists, similar_failures,
+                       memory_citation, should_block, block_reason
+                FROM fhq_learning.check_prior_failures(%s, %s, %s, %s)
+            """, (causal_mechanism, semantic_hash, asset_universe, GENERATOR_ID))
+            memory_result = cur.fetchone()
+
+            if memory_result and memory_result[4]:  # should_block = True
+                # Log the block
+                cur.execute("""
+                    INSERT INTO fhq_learning.hypothesis_birth_blocks (
+                        block_reason, generator_id, proposed_semantic_hash,
+                        proposed_causal_mechanism, proposed_asset_universe,
+                        prior_failures_count, similar_failures
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    memory_result[5],  # block_reason
+                    GENERATOR_ID,
+                    semantic_hash,
+                    causal_mechanism[:500],
+                    asset_universe,
+                    memory_result[0],  # prior_count
+                    json.dumps(memory_result[2]) if memory_result[2] else None
+                ))
+                conn.commit()
+                logger.warning(f"MEMORY_BLOCK: {memory_result[5]} - prior_count={memory_result[0]} (feature={feature['feature_id']})")
+                conn.close()
+                return None
+
+            # Extract memory citation for hypothesis birth
+            prior_hypotheses_count = memory_result[0] if memory_result else 0
+
+        with conn.cursor() as cur:
+            # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
             cur.execute("""
                 INSERT INTO fhq_learning.hypothesis_canon (
                     hypothesis_code,
@@ -376,11 +413,12 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                     created_by,
                     asset_class,
                     generation_regime,
-                    causal_depth_target
+                    causal_depth_target,
+                    prior_hypotheses_count
                 ) VALUES (
                     %s, 'ECONOMIC_THEORY', %s, %s, %s, %s, %s, %s, %s, 'MEDIUM',
                     72, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'EQUITY',
-                    %s, %s
+                    %s, %s, %s
                 )
                 RETURNING hypothesis_code
             """, (
@@ -405,7 +443,8 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                 semantic_hash,
                 DAEMON_NAME,
                 generation_regime,
-                causal_depth_target
+                causal_depth_target,
+                prior_hypotheses_count
             ))
 
             result = cur.fetchone()

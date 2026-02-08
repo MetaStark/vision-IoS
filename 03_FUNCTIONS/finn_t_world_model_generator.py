@@ -156,7 +156,42 @@ def generate_hypothesis_from_feature(conn, feature: Dict, input_hash: str) -> Op
     # Build causal mechanism text
     causal_mechanism = ' -> '.join(chain_template['causal_chain'])
 
+    # CEO-DIR-2026-128: MEMORY BIRTH GATE
+    # Query prior failures before hypothesis birth
+    asset_universe = chain_template['assets']
+    cur.execute("""
+        SELECT prior_count, exact_duplicate_exists, similar_failures,
+               memory_citation, should_block, block_reason
+        FROM fhq_learning.check_prior_failures(%s, %s, %s, %s)
+    """, (causal_mechanism, semantic_hash, asset_universe, GENERATOR_ID))
+    memory_result = cur.fetchone()
+
+    if memory_result and memory_result[4]:  # should_block = True
+        # Log the block
+        cur.execute("""
+            INSERT INTO fhq_learning.hypothesis_birth_blocks (
+                block_reason, generator_id, proposed_semantic_hash,
+                proposed_causal_mechanism, proposed_asset_universe,
+                prior_failures_count, similar_failures
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            memory_result[5],  # block_reason
+            GENERATOR_ID,
+            semantic_hash,
+            causal_mechanism[:500],
+            asset_universe,
+            memory_result[0],  # prior_count
+            json.dumps(memory_result[2]) if memory_result[2] else None
+        ))
+        conn.commit()
+        logger.warning(f"MEMORY_BLOCK: {memory_result[5]} - prior_count={memory_result[0]} (feature={feature['feature_id']})")
+        return None
+
+    # Extract memory citation for hypothesis birth
+    prior_hypotheses_count = memory_result[0] if memory_result else 0
+
     # Insert hypothesis
+    # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
     cur.execute("""
         INSERT INTO fhq_learning.hypothesis_canon (
             canon_id,
@@ -186,7 +221,8 @@ def generate_hypothesis_from_feature(conn, feature: Dict, input_hash: str) -> Op
             complexity_score,
             semantic_hash,
             created_at,
-            created_by
+            created_by,
+            prior_hypotheses_count
         ) VALUES (
             gen_random_uuid(),
             %s, -- hypothesis_code
@@ -215,7 +251,8 @@ def generate_hypothesis_from_feature(conn, feature: Dict, input_hash: str) -> Op
             %s, -- complexity_score
             %s, -- semantic_hash
             NOW(),
-            'FINN-T'
+            'FINN-T',
+            %s  -- prior_hypotheses_count (CEO-DIR-2026-128)
         )
         RETURNING hypothesis_code
     """, (
@@ -240,7 +277,8 @@ def generate_hypothesis_from_feature(conn, feature: Dict, input_hash: str) -> Op
         json.dumps(mechanism_graph),
         mechanism_graph['depth'],
         round(mechanism_graph['depth'] * 0.5, 2),  # complexity score based on depth
-        semantic_hash
+        semantic_hash,
+        prior_hypotheses_count
     ))
 
     result = cur.fetchone()

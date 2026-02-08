@@ -23,7 +23,7 @@ import logging
 import hashlib
 import argparse
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -69,11 +69,12 @@ def compute_lvi(conn) -> dict:
     """
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # 1. Completed experiments (decision_packs with linked outcomes)
+    # 1. Completed experiments (decision_packs with EXECUTED status only)
+    # CEO-DIR-2026-128: Only count EXECUTED, not PENDING/FAILED/EXPIRED
     cur.execute("""
         SELECT COUNT(*) as completed
         FROM fhq_learning.decision_packs dp
-        WHERE dp.execution_status IS NOT NULL
+        WHERE dp.execution_status = 'EXECUTED'
           AND dp.created_at > NOW() - INTERVAL '7 days'
     """)
     result = cur.fetchone()
@@ -183,9 +184,26 @@ def compute_lvi(conn) -> dict:
     }
 
 
+def get_current_regime(conn) -> tuple:
+    """Get current market regime and confidence from fhq_meta.regime_state."""
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT current_regime, regime_confidence
+            FROM fhq_meta.regime_state
+            ORDER BY last_updated_at DESC LIMIT 1
+        """)
+        row = cur.fetchone()
+        if row:
+            return row['current_regime'], float(row['regime_confidence'])
+    except Exception as e:
+        logger.warning(f"Could not fetch regime: {e}")
+    return 'NEUTRAL', 0.5
+
+
 def store_lvi(conn, lvi_data: dict) -> Optional[str]:
     """
-    Store LVI snapshot in control_room_lvi table.
+    Store LVI snapshot in both lvi_canonical (constitutional) and control_room_lvi (ops).
 
     Returns:
         lvi_id if stored successfully, None otherwise
@@ -193,7 +211,42 @@ def store_lvi(conn, lvi_data: dict) -> Optional[str]:
     try:
         cur = conn.cursor()
 
-        # Check if table exists
+        # Get current regime for lvi_canonical
+        regime, regime_weight = get_current_regime(conn)
+
+        # Compute evidence hash
+        evidence_str = json.dumps(lvi_data, sort_keys=True)
+        evidence_hash = 'sha256:' + hashlib.sha256(evidence_str.encode()).hexdigest()
+
+        window_end = datetime.now(timezone.utc).date()
+        window_start = window_end - timedelta(days=7)
+
+        # 1. Write to fhq_governance.lvi_canonical (constitutional source of truth)
+        cur.execute("""
+            INSERT INTO fhq_governance.lvi_canonical (
+                asset_id, lvi_value, regime_at_computation, regime_weight,
+                learning_events_counted, total_events_in_window,
+                computation_method, window_start, window_end,
+                evidence_hash, computed_by, model_version
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING lvi_id
+        """, (
+            'ALL',
+            lvi_data['lvi_score'],
+            regime,
+            regime_weight,
+            lvi_data['completed_experiments'],
+            lvi_data['completed_experiments'] + int(lvi_data['coverage_rate'] * 30),
+            'lvi_calculator_v1',
+            window_start,
+            window_end,
+            evidence_hash,
+            'STIG',
+            'lvi_calculator_v1'
+        ))
+        lvi_id = cur.fetchone()[0]
+
+        # 2. Write to fhq_ops.control_room_lvi (operational dashboard)
         cur.execute("""
             SELECT EXISTS (
                 SELECT 1 FROM information_schema.tables
@@ -201,38 +254,28 @@ def store_lvi(conn, lvi_data: dict) -> Optional[str]:
                 AND table_name = 'control_room_lvi'
             )
         """)
-        if not cur.fetchone()[0]:
-            logger.warning("fhq_ops.control_room_lvi does not exist - run migration 332 first")
-            return None
+        if cur.fetchone()[0]:
+            cur.execute("""
+                INSERT INTO fhq_ops.control_room_lvi (
+                    lvi_score, completed_experiments,
+                    median_evaluation_time_hours, coverage_rate,
+                    integrity_rate, time_factor, brier_component,
+                    drivers, computation_method
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                lvi_data['lvi_score'],
+                lvi_data['completed_experiments'],
+                lvi_data['median_evaluation_hours'],
+                lvi_data['coverage_rate'],
+                lvi_data['integrity_rate'],
+                lvi_data['time_factor'],
+                lvi_data['brier_component'],
+                json.dumps(lvi_data),
+                'lvi_calculator_v1'
+            ))
 
-        cur.execute("""
-            INSERT INTO fhq_ops.control_room_lvi (
-                lvi_score,
-                completed_experiments,
-                median_evaluation_time_hours,
-                coverage_rate,
-                integrity_rate,
-                time_factor,
-                brier_component,
-                drivers,
-                computation_method
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING lvi_id
-        """, (
-            lvi_data['lvi_score'],
-            lvi_data['completed_experiments'],
-            lvi_data['median_evaluation_hours'],
-            lvi_data['coverage_rate'],
-            lvi_data['integrity_rate'],
-            lvi_data['time_factor'],
-            lvi_data['brier_component'],
-            json.dumps(lvi_data),
-            'lvi_calculator_v1'
-        ))
-
-        lvi_id = cur.fetchone()[0]
         conn.commit()
-        logger.info(f"Stored LVI snapshot: {lvi_id}")
+        logger.info(f"Stored LVI snapshot: {lvi_id} (lvi_canonical + control_room_lvi)")
         return str(lvi_id)
 
     except Exception as e:
