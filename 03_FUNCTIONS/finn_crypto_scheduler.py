@@ -213,8 +213,10 @@ def defcon_gate_check() -> Tuple[bool, str, str]:
 
     if level in ('RED', 'BLACK'):
         return (False, f"DEFCON {level}: ALL PROCESSES MUST TERMINATE", level)
+    # CEO-DIR-2026-127: ORANGE allows LEARNING (hypothesis generation)
+    # Only EXECUTION and ALLOCATION remain blocked at ORANGE
     if level == 'ORANGE':
-        return (False, f"DEFCON ORANGE: NEW CYCLES BLOCKED", level)
+        return (True, f"DEFCON ORANGE: Learning permitted (CEO-DIR-2026-127)", level)
     if level == 'YELLOW':
         return (True, f"DEFCON YELLOW: Proceed with caution", level)
     return (True, f"DEFCON {level}: Full operation permitted", level)
@@ -398,18 +400,20 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
             cur.execute("""
                 SELECT prior_count, exact_duplicate_exists, similar_failures,
                        memory_citation, should_block, block_reason
-                FROM fhq_learning.check_prior_failures(%s, %s, %s, %s)
+                FROM fhq_learning.check_prior_failures(%s, %s, %s::text[], %s)
             """, (mechanism_str, semantic_hash, asset_universe, DAEMON_NAME))
             memory_result = cur.fetchone()
 
             if memory_result and memory_result[4]:  # should_block = True
                 # Log the block
+                # Convert similar_failures to JSON string if it's a dict
+                similar_failures_json = json.dumps(memory_result[2]) if isinstance(memory_result[2], (dict, list)) else memory_result[2]
                 cur.execute("""
                     INSERT INTO fhq_learning.hypothesis_birth_blocks (
                         block_reason, generator_id, proposed_semantic_hash,
                         proposed_causal_mechanism, proposed_asset_universe,
                         prior_failures_count, similar_failures
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s::text[], %s, %s::jsonb)
                 """, (
                     memory_result[5],  # block_reason
                     DAEMON_NAME,
@@ -417,7 +421,7 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
                     mechanism_str[:500],
                     asset_universe,
                     memory_result[0],  # prior_count
-                    memory_result[2]   # similar_failures (JSONB)
+                    similar_failures_json
                 ))
                 conn.commit()
                 logger.warning(f"MEMORY_BLOCK: {memory_result[5]} - prior_count={memory_result[0]}")
@@ -654,13 +658,13 @@ class FINNCryptoScheduler:
 
                 if defcon_level in ('RED', 'BLACK'):
                     logger.critical(f"DEFCON {defcon_level} - IMMEDIATE TERMINATION")
-                    update_daemon_heartbeat('TERMINATED')
+                    update_daemon_heartbeat('STOPPED')
                     self.shutdown_requested = True
                     break
 
                 if not can_proceed:
                     logger.warning(reason)
-                    update_daemon_heartbeat('BLOCKED')
+                    update_daemon_heartbeat('DEGRADED')  # Valid status: waiting for DEFCON
                     time.sleep(60)
                     continue
 
@@ -668,7 +672,7 @@ class FINNCryptoScheduler:
                 is_learnable, learn_reason = is_crypto_learnable()
                 if not is_learnable:
                     logger.warning(f"Crypto learning blocked: {learn_reason}")
-                    update_daemon_heartbeat('BLOCKED')
+                    update_daemon_heartbeat('DEGRADED')  # Valid status: waiting for permission
                     time.sleep(60)
                     continue
 
@@ -707,7 +711,7 @@ class FINNCryptoScheduler:
                 logger.error(f"Cycle error: {e}")
                 import traceback
                 traceback.print_exc()
-                update_daemon_heartbeat('ERROR')
+                update_daemon_heartbeat('UNHEALTHY')  # Valid status: error occurred
                 time.sleep(60)
 
         # Final status
