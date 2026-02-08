@@ -98,10 +98,15 @@ def defcon_gate_check() -> Tuple[bool, str, str]:
         logger.critical(f"DEFCON check failed - BLOCKING: {e}")
         return (False, f"DEFCON CHECK FAILURE: {e}", "UNKNOWN")
 
+    # CEO-DIR-2026-127: Learning loop daemons allowed at ORANGE
+    # ORANGE restricts capital movement, not learning/falsification
+    # Block only on RED/BLACK (system halt conditions)
     if level in ('RED', 'BLACK'):
         return (False, f"DEFCON {level}: ALL PROCESSES MUST TERMINATE", level)
     if level == 'ORANGE':
-        return (False, f"DEFCON ORANGE: NEW CYCLES BLOCKED", level)
+        # CEO-DIR-2026-127: Learning loop restoration exemption
+        # No capital movement enabled - hypothesis lifecycle only
+        return (True, f"DEFCON ORANGE: Learning loop permitted (CEO-DIR-2026-127)", level)
     if level == 'YELLOW':
         return (True, f"DEFCON YELLOW: Proceed with caution", level)
     return (True, f"DEFCON {level}: Full operation permitted", level)
