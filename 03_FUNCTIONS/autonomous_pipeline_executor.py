@@ -32,6 +32,8 @@ try:
     from alpaca.trading.client import TradingClient
     from alpaca.trading.requests import (
         MarketOrderRequest,
+        LimitOrderRequest,
+        StopOrderRequest,
         TakeProfitRequest,
         StopLossRequest
     )
@@ -164,20 +166,79 @@ class AutonomousPipelineExecutor:
             qty = size_usd / entry_price
             is_crypto = '/' in symbol or '-USD' in asset
 
-            # Build bracket order with TP/SL
             if is_crypto:
-                # Crypto - use notional with bracket
-                request = MarketOrderRequest(
+                # CRYPTO: Alpaca doesn't support bracket orders for crypto
+                # Step 1: Submit market order
+                market_request = MarketOrderRequest(
                     symbol=symbol,
                     notional=round(size_usd, 2),
                     side=side,
-                    time_in_force=TimeInForce.GTC,
-                    order_class=OrderClass.BRACKET,
-                    take_profit=TakeProfitRequest(limit_price=round(take_profit_price, 2)),
-                    stop_loss=StopLossRequest(stop_price=round(stop_loss_price, 2))
+                    time_in_force=TimeInForce.GTC
                 )
+                order = self.trading_client.submit_order(market_request)
+                logger.info(f"SUBMITTED MARKET: {direction} {symbol} ${size_usd:.2f} -> {order.id}")
+
+                # Wait for fill
+                import time as time_module
+                filled_qty = None
+                for _ in range(10):
+                    time_module.sleep(1)
+                    order = self.trading_client.get_order_by_id(order.id)
+                    if str(order.status) in ('OrderStatus.FILLED', 'filled'):
+                        filled_qty = float(order.filled_qty)
+                        break
+
+                if filled_qty:
+                    # Step 2: Submit TP order (limit sell at take_profit_price)
+                    exit_side = OrderSide.SELL if direction == 'LONG' else OrderSide.BUY
+                    tp_request = LimitOrderRequest(
+                        symbol=symbol,
+                        qty=filled_qty,
+                        side=exit_side,
+                        time_in_force=TimeInForce.GTC,
+                        limit_price=round(take_profit_price, 2)
+                    )
+                    tp_order = self.trading_client.submit_order(tp_request)
+                    logger.info(f"SUBMITTED TP: {symbol} @ ${take_profit_price} -> {tp_order.id}")
+
+                    # Step 3: Try SL order - Alpaca crypto may not support stop orders
+                    sl_order_id = None
+                    try:
+                        sl_request = StopOrderRequest(
+                            symbol=symbol,
+                            qty=filled_qty,
+                            side=exit_side,
+                            time_in_force=TimeInForce.GTC,
+                            stop_price=round(stop_loss_price, 2)
+                        )
+                        sl_order = self.trading_client.submit_order(sl_request)
+                        sl_order_id = str(sl_order.id)
+                        logger.info(f"SUBMITTED SL: {symbol} @ ${stop_loss_price} -> {sl_order.id}")
+                    except Exception as sl_err:
+                        # Alpaca crypto doesn't support stop orders
+                        logger.warning(f"SL NOT SUPPORTED: {symbol} - {sl_err}")
+                        logger.warning(f"MANUAL SL REQUIRED: Monitor position and exit at ${stop_loss_price}")
+
+                    result['alpaca_order_id'] = str(order.id)
+                    result['tp_order_id'] = str(tp_order.id)
+                    result['sl_order_id'] = sl_order_id
+                    result['status'] = str(order.status)
+                    result['order_class'] = 'CRYPTO_TP_ONLY' if sl_order_id is None else 'CRYPTO_MANUAL_BRACKET'
+                    result['filled_qty'] = filled_qty
+                    result['sl_price_manual'] = stop_loss_price if sl_order_id is None else None
+
+                    if sl_order_id:
+                        logger.info(f"CRYPTO BRACKET COMPLETE: {direction} {symbol} Entry={order.id} TP={tp_order.id} SL={sl_order.id}")
+                    else:
+                        logger.warning(f"CRYPTO TP ONLY: {direction} {symbol} Entry={order.id} TP={tp_order.id} | SL=${stop_loss_price} REQUIRES MANUAL MONITORING")
+                else:
+                    result['alpaca_order_id'] = str(order.id)
+                    result['status'] = str(order.status)
+                    result['order_class'] = 'MARKET_PENDING'
+                    result['warning'] = 'Market order not yet filled, TP/SL pending'
+                    logger.warning(f"MARKET PENDING: {symbol} - TP/SL will be set when filled")
             else:
-                # Equity - use qty with bracket
+                # EQUITY: Use native bracket order
                 request = MarketOrderRequest(
                     symbol=symbol,
                     qty=int(qty),
@@ -187,13 +248,12 @@ class AutonomousPipelineExecutor:
                     take_profit=TakeProfitRequest(limit_price=round(take_profit_price, 2)),
                     stop_loss=StopLossRequest(stop_price=round(stop_loss_price, 2))
                 )
+                order = self.trading_client.submit_order(request)
 
-            order = self.trading_client.submit_order(request)
-
-            result['alpaca_order_id'] = str(order.id)
-            result['status'] = str(order.status)
-            result['order_class'] = 'BRACKET'
-            logger.info(f"SUBMITTED BRACKET: {direction} {symbol} ${size_usd:.2f} TP=${take_profit_price} SL=${stop_loss_price} -> {order.id}")
+                result['alpaca_order_id'] = str(order.id)
+                result['status'] = str(order.status)
+                result['order_class'] = 'BRACKET'
+                logger.info(f"SUBMITTED BRACKET: {direction} {symbol} ${size_usd:.2f} TP=${take_profit_price} SL=${stop_loss_price} -> {order.id}")
 
         except Exception as e:
             result['status'] = 'FAILED'
