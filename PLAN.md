@@ -1,185 +1,219 @@
-# CEIO Calibration & Alpha Graph Integration Plan
+# CEO-DIR-2026-AUTONOMY-VERIFICATION-002: Database Verification Report
 
-**Directive:** VISION-IOS CSO Memorandum 2025-12-08
-**Executor:** STIG (CTO)
-**Classification:** STRATEGIC IMPLEMENTATION
-**Reference:** ADR-001–ADR-020 | IoS-007 Alpha Graph | NeurIPS 2025 / ICLR 2026 Protocols
-
----
-
-## Executive Summary
-
-Implement the CEIO (Causal-Entropy Information Optimization) architecture as the reward function for the FHQ autonomous research agent. This synthesizes:
-- **IKEA Protocol** (Knowledge Boundary Awareness) - Huang et al., ICLR 2026
-- **InForage Logic** (Information Scent Optimization) - Qian & Liu, NeurIPS 2025
-- **Structural Causal Entropy ($H_{sc}$)** (Graph Stability Regulator) - FHQ Definition
-
-**Master Equation:**
-```
-R_CEIO = β^max(0,T-2) · (r_signal + α·C_FHQ + γ·r_kb)
-```
-
-**Mission:** Maksimere brukerens FRIHET = Alpha Signal Presisjon / Tidsbruk → Maksimalt
+**Utført av:** STIG (CTO)
+**Dato:** 2026-02-08 22:32 Oslo
+**Metode:** Arkeologisk database-undersøkelse via PostgreSQL 17.6 (127.0.0.1:54322)
 
 ---
 
-## Implementation Steps
+## EXECUTIVE SUMMARY
 
-### Step 1: Database Schema Creation
-Create `fhq_optimization` schema with CEIO tracking infrastructure.
+**Hovedkonklusjon:** FjordHQ kan **IKKE** operere autonomt i dag. Den kausale kjeden fra hypotese til trade bryter på **fire distinkte punkter** før LINE kan trigges.
 
-**Migration:** `094_ceio_optimization_schema.sql`
-
-**Tables:**
-- `reward_traces` - Track all CEIO reward calculations with full audit trail
-- `entropy_snapshots` - Store $H_{sc}$ calculations per reasoning session
-- `ceio_hyperparameters` - Version-controlled hyperparameter registry for A/B testing
-
-### Step 2: Structural Causal Entropy Engine
-Create Python module for $H_{sc}$ calculation per Stig's redefinition.
-
-**File:** `03_FUNCTIONS/ceio_entropy_engine.py`
-
-**Functions:**
-- `calculate_structural_causal_entropy(active_edges)` - Core entropy: $H_{sc}(G) = -\sum_{e \in E} P(e) \log P(e) \cdot w_{causal}(e)$
-- `calculate_graph_coverage(focus_nodes, freshness_threshold)` - $C_{FHQ}$ metric with 2-hop expansion
-- `calculate_knowledge_boundary_reward(api_calls, signal_score)` - IKEA $r_{kb}$ implementation
-- `calculate_ceio_reward(...)` - Master equation aggregation
-
-### Step 3: Alpha Graph Integration (IoS-007)
-Connect CEIO engine to existing Alpha Graph infrastructure.
-
-**Integration Points:**
-- Read edge weights from `vision_signals.alpha_graph_edges`
-- Calculate $H_{sc}$ for query-relevant subgraphs
-- Dynamic `N_focus` expansion using 2-hop neighbor rule (fixes coverage denominator issue)
-- Regime detection via entropy thresholds
-
-### Step 4: Governance Registration
-Register CEIO under ADR-020 (ACI Protocol) as implementation specification.
-
-**Records:**
-- IoS registry entry for CEIO engine
-- G4 artifact hashes
-- Hash chain integration
-
-### Step 5: Validation & Calibration Harness
-Deploy to sandbox with calibration test suite.
+**Kan LINE trigges uten menneske?**
+> **NEI** — Bevist med tom `cpto_line_handoff` tabell og fravær av enhver funksjon/daemon som kan kalle LINE automatisk.
 
 ---
 
-## Hyperparameter Calibration Table
+## A. FAKTISK FUNNET KJEDE
 
-| Parameter | Value | Paper Value | Source | Rationale |
-|-----------|-------|-------------|--------|-----------|
-| α (alpha) | 0.30 | 0.20 | FHQ | Higher penalty for missing macro-correlations |
-| β (beta) | 0.90 | 0.95 | FHQ | Aggressive decay - markets move fast |
-| γ (gamma) | 1.00 | N/A | FHQ | Full weight to internal knowledge reward |
-| r_kb+ | 0.50 | 0.60 | IKEA | Baseline reward for parametric knowledge |
-| API_max | 5 | 3 | FHQ | Hard limit per reasoning chain |
-| T_max | 4 | N/A | FHQ | Maximum reasoning steps before timeout |
-| T_min | 2 | 2 | InForage | Minimum steps (search + answer) |
-| H_sc_threshold | 0.80 | N/A | FHQ | Entropy ceiling for regime cutoff |
+| Steg | Objekt(er) | Bevis | Automatisk? |
+|------|------------|-------|-------------|
+| 1. Hypotese-generering | `fhq_learning.hypothesis_canon` | 1286 rader (1258 FALSIFIED, 28 ACTIVE) | ✅ JA (finn_crypto_scheduler, GN-S) |
+| 2. Shadow trade opprettelse | `fhq_execution.shadow_trades` | 400+ trades, nyeste fra 2026-02-08 01:17 | ✅ JA (shadow_trade_creator daemon) |
+| 3. Tier-1 evaluering | `fhq_learning.promotion_gate_audit` | 319 evalueringer (285 EXPLORATION_PASS, 33 FAIL, 1 PASS) | ✅ JA (promotion_gate_engine) |
+| 4. Deflated Sharpe gate | `fhq_learning.promotion_gate_audit` | Kun 1 hypotese passert: `ALPHA_SAT_F_PANIC_BOTTOM_V1.0` (deflated_sharpe=1.44) | ✅ JA |
+| 5. Decision Pack generering | `fhq_learning.decision_packs` | 5 packs for promotert hypotese, alle PENDING | ⚠️ MANUELT TRIGGET |
+| 6. G5 Gate A (Signal) | `fhq_canonical.g5_promotion_ledger` | 5 entries, gate_a_passed=TRUE, gate_c_signal_instantiated=TRUE | ⚠️ DELVIS AUTO |
 
----
-
-## Mathematical Definitions
-
-### 1. Structural Causal Entropy ($H_{sc}$)
-```
-H_sc(G) = -Σ P(e) · log₂(P(e)) · w_causal(e)
-```
-Where:
-- P(e) = normalized edge probability in subgraph
-- w_causal(e) = ontology weight (LEADS=1.0, CORRELATES=0.5)
-
-**Interpretation:**
-- High $H_{sc}$ → Chaos/Noise (uniform causality)
-- Low $H_{sc}$ → Clear Signal (peaked distribution)
-
-### 2. Graph Coverage ($C_{FHQ}$)
-```
-C_FHQ = |{n ∈ N_focus : freshness(n) < 24h}| / |N_focus|
-```
-**Critical Fix:** Denominator is `N_focus` (2-hop subgraph), NOT entire graph.
-
-### 3. Knowledge Boundary Reward ($r_{kb}$)
-```
-r_kb = 0.5 · (1 - API_calls/5) · 𝟙[r_signal > 0]
-```
-**Safety:** Only rewards efficiency if outcome is POSITIVE.
-
-### 4. Master Equation ($R_{CEIO}$)
-```
-R_CEIO = β^max(0,T-2) · (r_signal + α·C_FHQ + γ·r_kb)
-```
+**Kjeden STOPPER etter Gate A / Signal instantiering.**
 
 ---
 
-## Risk Mitigations
+## B. DER KJEDEN STOPPER
 
-### 1. Frozen Agent Risk (High Entropy Regime)
-**Problem:** Agent loops endlessly searching for causality in chaos.
-**Solution:** If $H_{sc} > 0.80$, hard-switch to CASH/NEUTRAL. No Alpha in Chaos.
+### Brudd 1: VEGA Attestering (Kritisk)
 
-### 2. Lazy Analyst Risk (Reward Hacking)
-**Problem:** Agent guesses "Neutral" to minimize API calls and claim r_kb.
-**Solution:** `r_kb` only awarded if `r_signal > 0`. Never reward efficiency at losing.
+| Felt | Forventet | Faktisk | Bevis |
+|------|-----------|---------|-------|
+| `decision_packs.vega_attested` | TRUE | **FALSE** (alle 5) | Query på decision_packs for hypotese 1d023cb7... |
+| `decision_packs.vega_attestation_required` | - | TRUE | Alle krever VEGA |
+| `decision_packs.ikea_passed` | TRUE | FALSE | Ingen IKEA validering |
+| `decision_packs.sitc_reasoning_complete` | TRUE | FALSE | Ingen SitC resonnering |
 
-### 3. Coverage Gaming
-**Problem:** Agent might refresh irrelevant nodes to inflate C_FHQ.
-**Solution:** C_FHQ denominator is N_focus (query-relevant subgraph), not full graph.
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `04_DATABASE/MIGRATIONS/094_ceio_optimization_schema.sql` | Database infrastructure |
-| `03_FUNCTIONS/ceio_entropy_engine.py` | Core calculation engine |
-| `03_FUNCTIONS/ceio_alpha_graph_integration.py` | IoS-007 integration layer |
-| `05_GOVERNANCE/PHASE3/CEIO_G0_SUBMISSION_20251208.json` | Governance evidence |
+**Årsak:** Ingen daemon eller automatisk prosess som trigrer VEGA attestering av decision packs.
 
 ---
 
-## Execution Order
+### Brudd 2: Gate B Evaluering (Kritisk)
 
-1. Create database migration (094_ceio_optimization_schema.sql)
-2. Execute migration via psql
-3. Create Python CEIO engine (ceio_entropy_engine.py)
-4. Create Alpha Graph integration layer
-5. Register in governance tables
-6. Generate G0 evidence bundle
-7. Run unit tests on calculation functions
-8. Deploy to sandbox for calibration
+| Felt | Forventet | Faktisk | Bevis |
+|------|-----------|---------|-------|
+| `g5_promotion_ledger.gate_b_passed` | TRUE/FALSE | **NULL** (alle) | Aldri evaluert |
+| `g5_promotion_ledger.gate_b_economic_merit` | TRUE/FALSE | NULL | |
+| `g5_promotion_ledger.gate_b_classification` | Tekst | NULL | |
+| `g5_promotion_ledger.gate_b_evaluated_at` | Timestamp | NULL | |
+| `g5_promotion_ledger.current_status` | EXECUTABLE | **DORMANT_SIGNAL** | Signaler sover |
 
----
-
-## Success Criteria
-
-| # | Criterion | Verification |
-|---|-----------|--------------|
-| 1 | `fhq_optimization.reward_traces` exists | Schema query |
-| 2 | `fhq_optimization.entropy_snapshots` exists | Schema query |
-| 3 | `fhq_optimization.ceio_hyperparameters` exists | Schema query |
-| 4 | Python engine calculates H_sc correctly | Unit test |
-| 5 | C_FHQ uses N_focus denominator | Unit test |
-| 6 | r_kb respects signal positivity | Unit test |
-| 7 | Master equation aggregates correctly | Integration test |
-| 8 | Governance records created | DB query |
+**Årsak:** Gate B (economic_merit) har ingen funksjon eller daemon som evaluerer den. Gate A passeres, men kjeden stopper.
 
 ---
 
-## Action Items (Per Directive)
+### Brudd 3: LINE Handoff (Fatal)
 
-| Agent | Action | Status |
-|-------|--------|--------|
-| LARS | Approve $H_{sc}$ redefinition | PENDING |
-| STIG | Deploy Python calculation engine | IN_PROGRESS |
-| VEGA | Run USD/NOK backtest for α calibration | PENDING |
+| Felt | Forventet | Faktisk | Bevis |
+|------|-----------|---------|-------|
+| `cpto_line_handoff` row count | ≥1 | **0** | SELECT COUNT(*) = 0 |
+| LINE-kall funksjon | Eksisterer | **FINNES IKKE** | Ingen funksjon med "line" i navnet som utfører trades |
+
+**Årsak:** Det eksisterer ingen mekanisme for å overføre signaler til LINE. Tabellen eksisterer men fylles aldri.
 
 ---
 
-**Plan Status:** READY FOR EXECUTION
-**Approver:** CEO (LARS)
+### Brudd 4: Execution Queue Stagnasjon
+
+| Felt | Forventet | Faktisk | Bevis |
+|------|-----------|---------|-------|
+| `s_tier_promotion_queue` entries | Prosessert | **10+ QUEUED siden 2025-12-27** | 43 dager gammel kø |
+| `execution_started_at` | Fylt ut | NULL (7 av 10) | Aldri startet |
+| `execution_completed_at` | Fylt ut | NULL (alle) | Aldri fullført |
+| Daemon som prosesserer | Aktiv | **FINNES IKKE** | Ingen daemon kaller køen |
+
+---
+
+## C. KAN LINE TRIGGES UTEN MENNESKE I DAG?
+
+### **NEI** — Bevisene:
+
+**1. `cpto_line_handoff` er TOM**
+```sql
+SELECT COUNT(*) FROM fhq_alpha.cpto_line_handoff;
+-- Resultat: 0
+```
+
+**2. Ingen LINE-funksjon eksisterer**
+```sql
+SELECT routine_name FROM information_schema.routines
+WHERE routine_name ILIKE '%line%' AND routine_schema LIKE 'fhq%';
+-- Resultat: 0 relevante funksjoner for trade-eksekuering
+```
+
+**3. execute_paper_trade er manuell**
+- Funksjonen eksisterer og fungerer
+- Men den må kalles eksplisitt av et menneske eller en daemon
+- Ingen trigger eller scheduler kaller den automatisk
+- Siste kall: 2026-01-20 (19 dager siden)
+- Totalt 11 paper trades noensinne
+
+**4. Kritiske daemons er STALE**
+
+| Daemon | Sist heartbeat | Minutes siden | Status |
+|--------|----------------|---------------|--------|
+| shadow_trade_creator | 2026-02-08 01:26 | 1205 | 🔴 STALE |
+| shadow_trade_exit_engine | 2026-02-08 01:26 | 1205 | 🔴 STALE |
+| tier1_execution_daemon | 2026-02-07 07:58 | 2253 | 🔴 STALE |
+| decision_pack_generator | 2026-02-04 19:40 | 5872 | 🔴 KRITISK |
+| g2c_continuous_forecast_engine | 2026-02-07 16:50 | 1721 | 🔴 STALE |
+
+**5. execution_state.paper_trading_eligible = FALSE**
+```sql
+SELECT paper_trading_eligible, learning_eligible, defcon_level
+FROM fhq_governance.execution_state;
+-- Resultat: paper_trading_eligible = FALSE, learning_eligible = TRUE, defcon_level = 'NORMAL'
+```
+
+---
+
+## D. DISTANSE TIL AUTONOMI — MÅLBAR GAP-ANALYSE
+
+### Komponent-status:
+
+| Komponent | Eksisterer | Automatisk | Gap |
+|-----------|------------|------------|-----|
+| Hypotese-generatorer | ✅ | ✅ | 0 |
+| Shadow trade system | ✅ | ⚠️ Stale | **Daemon restart** |
+| Promotion gate engine | ✅ | ✅ | 0 |
+| Decision pack generator | ✅ | 🔴 Stale 4d | **Daemon restart** |
+| VEGA attesterings-daemon | ❌ | ❌ | **Må bygges** |
+| Gate B evaluator | ❌ | ❌ | **Må bygges** |
+| Signal-to-LINE bridge | ❌ | ❌ | **Må bygges** |
+| Execution queue processor | ❌ | ❌ | **Må bygges** |
+| Behavioral Enforcer | ❌ | ❌ | **Må bygges** |
+
+### Manglende komponenter for autonom drift:
+
+1. **`vega_attestation_daemon`** — Automatisk VEGA-attestering av decision packs
+2. **`gate_b_evaluator_daemon`** — Evaluerer economic_merit etter Gate A pass
+3. **`signal_to_line_bridge`** — Funksjon som tar EXECUTABLE signaler til LINE
+4. **`execution_queue_processor_daemon`** — Prosesserer s_tier_promotion_queue
+5. **`behavioral_enforcer`** — Orchestrator som binder hele kjeden sammen
+
+---
+
+## E. AUTONOMY CLOCK STATUS
+
+```sql
+SELECT state, consecutive_days, total_autonomous_days, total_resets, longest_streak
+FROM fhq_governance.autonomy_clock_state;
+```
+
+| Felt | Verdi |
+|------|-------|
+| state | RUNNING |
+| consecutive_days | 0 |
+| total_autonomous_days | 18 |
+| total_resets | 44 |
+| longest_streak | 16 |
+| reset_reason | "daemon_failures=5" |
+
+**Tolkning:** Klokken tikker, men teller ikke autonome dager fordi systemet feiler daemon-sjekker. Konseptet "autonome dager" er definert, men den faktiske eksekveringskjeden eksisterer ikke.
+
+---
+
+## F. DATABASE-KLOKKE VERIFISERING
+
+```sql
+SELECT NOW() AT TIME ZONE 'Europe/Oslo' as oslo_time;
+-- Resultat: 2026-02-08 22:32:58
+```
+
+---
+
+## KONKLUSJON
+
+FjordHQ har en **fungerende læringspipeline** (hypoteser → shadow trades → gate-evaluering), men **ingen eksekveringspipeline** fra godkjent signal til faktisk trade.
+
+### Kjede-visualisering:
+
+```
+[HYPOTESER] ──✅──> [SHADOW TRADES] ──✅──> [PROMOTION GATE] ──✅──> [DECISION PACK]
+                                                                        │
+                                                                        ▼
+                                                              [VEGA ATTESTERING]
+                                                                        │
+                                                                        ✖ BRYTER
+                                                                        │
+                                                              [GATE B EVALUERING]
+                                                                        │
+                                                                        ✖ ALDRI KJØRER
+                                                                        │
+                                                              [SIGNAL → LINE BRIDGE]
+                                                                        │
+                                                                        ✖ EKSISTERER IKKE
+                                                                        │
+                                                              [LINE EKSEKUTERING]
+                                                                        │
+                                                                        ✖ ALDRI NÅDD
+```
+
+### Avstanden til autonomi er målt:
+
+> **5 manglende komponenter** + **5 stale daemons** = **Ingen autonom eksekveringsevne**
+
+For at systemet skal kunne handle autonomt, må den kausale kjeden lukkes fra `decision_pack` helt til `cpto_line_handoff` uten menneskelig intervensjon.
+
+---
+
+**Rapport generert av STIG, CTO FjordHQ**
+**Verifisert mot PostgreSQL 17.6, 127.0.0.1:54322**
+**Evidence hash:** sha256:pending_ved_godkjenning
