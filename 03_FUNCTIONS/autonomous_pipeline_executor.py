@@ -30,8 +30,12 @@ load_dotenv()
 # Alpaca SDK
 try:
     from alpaca.trading.client import TradingClient
-    from alpaca.trading.requests import MarketOrderRequest
-    from alpaca.trading.enums import OrderSide, TimeInForce
+    from alpaca.trading.requests import (
+        MarketOrderRequest,
+        TakeProfitRequest,
+        StopLossRequest
+    )
+    from alpaca.trading.enums import OrderSide, TimeInForce, OrderClass
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -114,11 +118,15 @@ class AutonomousPipelineExecutor:
             return cur.fetchall()
 
     def execute_order(self, entry: Dict) -> Dict:
-        """Execute a single order via Alpaca."""
+        """Execute a single order via Alpaca with MANDATORY TP/SL bracket."""
         asset = entry['asset']
         direction = entry['direction']
         size_usd = float(entry['position_size_usd'])
         entry_price = float(entry['entry_price'])
+
+        # CRITICAL: Extract TP/SL from queue entry (CEO-DIR-2026-AUTONOMY fix)
+        stop_loss_price = float(entry['stop_loss_price']) if entry.get('stop_loss_price') else None
+        take_profit_price = float(entry['take_profit_price']) if entry.get('take_profit_price') else None
 
         # Map symbol
         symbol = SYMBOL_MAP.get(asset, asset)
@@ -130,6 +138,8 @@ class AutonomousPipelineExecutor:
             'symbol': symbol,
             'direction': direction,
             'size_usd': size_usd,
+            'stop_loss_price': stop_loss_price,
+            'take_profit_price': take_profit_price,
             'alpaca_order_id': None,
             'status': 'PENDING',
             'error': None
@@ -139,36 +149,51 @@ class AutonomousPipelineExecutor:
             # Simulation mode
             result['status'] = 'SIMULATED'
             result['alpaca_order_id'] = f'SIM-{entry["queue_id"]}'
-            logger.info(f"SIMULATED: {direction} {symbol} ${size_usd:.2f}")
+            logger.info(f"SIMULATED: {direction} {symbol} ${size_usd:.2f} TP={take_profit_price} SL={stop_loss_price}")
+            return result
+
+        # MANDATORY: Reject orders without TP/SL
+        if stop_loss_price is None or take_profit_price is None:
+            result['status'] = 'REJECTED'
+            result['error'] = 'MANDATORY TP/SL missing - order rejected per CEO directive'
+            logger.error(f"REJECTED: {direction} {symbol} - Missing TP/SL (TP={take_profit_price}, SL={stop_loss_price})")
             return result
 
         try:
             # Calculate quantity
             qty = size_usd / entry_price
+            is_crypto = '/' in symbol or '-USD' in asset
 
-            # Submit to Alpaca (crypto uses notional)
-            if '/' in symbol or '-USD' in asset:
-                # Crypto - use notional
+            # Build bracket order with TP/SL
+            if is_crypto:
+                # Crypto - use notional with bracket
                 request = MarketOrderRequest(
                     symbol=symbol,
                     notional=round(size_usd, 2),
                     side=side,
-                    time_in_force=TimeInForce.GTC
+                    time_in_force=TimeInForce.GTC,
+                    order_class=OrderClass.BRACKET,
+                    take_profit=TakeProfitRequest(limit_price=round(take_profit_price, 2)),
+                    stop_loss=StopLossRequest(stop_price=round(stop_loss_price, 2))
                 )
             else:
-                # Equity - use qty
+                # Equity - use qty with bracket
                 request = MarketOrderRequest(
                     symbol=symbol,
                     qty=int(qty),
                     side=side,
-                    time_in_force=TimeInForce.DAY
+                    time_in_force=TimeInForce.DAY,
+                    order_class=OrderClass.BRACKET,
+                    take_profit=TakeProfitRequest(limit_price=round(take_profit_price, 2)),
+                    stop_loss=StopLossRequest(stop_price=round(stop_loss_price, 2))
                 )
 
             order = self.trading_client.submit_order(request)
 
             result['alpaca_order_id'] = str(order.id)
             result['status'] = str(order.status)
-            logger.info(f"SUBMITTED: {direction} {symbol} ${size_usd:.2f} -> {order.id}")
+            result['order_class'] = 'BRACKET'
+            logger.info(f"SUBMITTED BRACKET: {direction} {symbol} ${size_usd:.2f} TP=${take_profit_price} SL=${stop_loss_price} -> {order.id}")
 
         except Exception as e:
             result['status'] = 'FAILED'
@@ -179,7 +204,10 @@ class AutonomousPipelineExecutor:
 
     def update_queue_entry(self, queue_id: str, result: Dict):
         """Update queue entry with execution result."""
-        status = 'COMPLETED' if result['status'] in ('filled', 'SIMULATED', 'new', 'accepted') else 'FAILED'
+        # Handle various Alpaca status formats (OrderStatus.FILLED, 'filled', etc.)
+        status_str = str(result['status']).lower()
+        success_statuses = ('filled', 'simulated', 'new', 'accepted', 'pending_new', 'orderstatus.filled', 'orderstatus.new', 'orderstatus.pending_new', 'orderstatus.accepted')
+        status = 'COMPLETED' if any(s in status_str for s in success_statuses) else 'FAILED'
 
         with self.conn.cursor() as cur:
             cur.execute("""
@@ -194,6 +222,11 @@ class AutonomousPipelineExecutor:
 
     def update_execution_log(self, entry: Dict, result: Dict):
         """Update execution_logs with Alpaca result."""
+        # Handle various Alpaca status formats
+        status_str = str(result['status']).lower()
+        success_statuses = ('filled', 'simulated', 'new', 'accepted', 'pending_new', 'orderstatus.filled', 'orderstatus.new', 'orderstatus.pending_new', 'orderstatus.accepted')
+        action_type = 'ORDER_FILLED' if any(s in status_str for s in success_statuses) else 'ORDER_FAILED'
+
         with self.conn.cursor() as cur:
             cur.execute("""
                 UPDATE fhq_execution.execution_logs
@@ -205,7 +238,7 @@ class AutonomousPipelineExecutor:
             """, (
                 result.get('alpaca_order_id'),
                 json.dumps(result),
-                'ORDER_FILLED' if result['status'] in ('filled', 'SIMULATED', 'new', 'accepted') else 'ORDER_FAILED',
+                action_type,
                 str(entry['decision_pack_id'])
             ))
 
