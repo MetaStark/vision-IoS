@@ -930,8 +930,207 @@ DEFCON_LABELS = {
 }
 
 
+def get_learning_metrics(conn) -> dict:
+    """Fetch learning metrics: Brier, LVI, Alpha Graph stats."""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Global Brier
+        cur.execute("""
+            SELECT AVG(brier_contribution) as global_brier,
+                   COUNT(*) as node_count
+            FROM fhq_learning.alpha_graph_nodes
+            WHERE brier_contribution IS NOT NULL
+        """)
+        brier_row = cur.fetchone()
+
+        # LVI from timeseries (latest)
+        cur.execute("""
+            SELECT global_brier, lvi_value, calculated_at
+            FROM fhq_learning.lvi_timeseries
+            ORDER BY calculated_at DESC
+            LIMIT 2
+        """)
+        lvi_rows = cur.fetchall()
+
+        # Promoted experiments count
+        cur.execute("""
+            SELECT COUNT(*) as promoted
+            FROM fhq_learning.experiment_registry
+            WHERE metadata->>'candidate_promotion' = 'true'
+            OR status = 'PROMOTED'
+        """)
+        promoted = cur.fetchone()['promoted']
+
+    lvi_value = None
+    brier_prev = None
+    if len(lvi_rows) >= 2:
+        brier_prev = float(lvi_rows[1]['global_brier']) if lvi_rows[1]['global_brier'] else None
+        lvi_value = float(lvi_rows[0]['lvi_value']) if lvi_rows[0]['lvi_value'] else None
+
+    return {
+        'global_brier': round(float(brier_row['global_brier']), 6) if brier_row['global_brier'] else None,
+        'brier_prev': round(brier_prev, 6) if brier_prev else None,
+        'lvi': round(lvi_value, 4) if lvi_value else None,
+        'alpha_nodes': brier_row['node_count'] or 0,
+        'promoted_count': promoted
+    }
+
+
+def find_todays_highlight(results: dict) -> dict:
+    """Find the most celebration-worthy item for today."""
+    pipe = results.get('pipeline', {})
+    experiments = pipe.get('experiments', [])
+
+    # Priority 1: Newly promoted experiment
+    for exp in experiments:
+        if exp.get('promoted'):
+            return {
+                'type': 'PROMOTION',
+                'icon': '🏆',
+                'title': f"Test {_test_letter(exp['code'])} passerte promotion gate",
+                'detail': f"{exp['win_rate']:.0f}% accuracy · {exp['outcomes']} utfall · Klar for shadow capital"
+            }
+
+    # Priority 2: Test reaching sample size
+    for exp in experiments:
+        if exp['outcomes'] >= exp['min_sample'] and exp['outcomes'] > 0:
+            return {
+                'type': 'SAMPLE_COMPLETE',
+                'icon': '✅',
+                'title': f"Test {_test_letter(exp['code'])} nådde sample size",
+                'detail': f"{exp['outcomes']}/{exp['min_sample']} utfall · {exp['win_rate']:.0f}% accuracy"
+            }
+
+    # Priority 3: Best performing test
+    best = max(experiments, key=lambda e: e['outcomes'], default=None)
+    if best and best['outcomes'] > 0:
+        return {
+            'type': 'PROGRESS',
+            'icon': '📈',
+            'title': f"Test {_test_letter(best['code'])} leder",
+            'detail': f"{best['outcomes']}/{best['min_sample']} utfall samlet"
+        }
+
+    # Fallback
+    return {
+        'type': 'WAITING',
+        'icon': '⏳',
+        'title': 'Samler data',
+        'detail': 'Venter på markedsforhold'
+    }
+
+
+def build_telegram_message_v2(results: dict, learning: dict) -> str:
+    """Build inspiring, MBB-style morning report.
+
+    Principles:
+    - Lead with wins, not failures
+    - Learning metrics front and center
+    - Visual progress bars
+    - Mobile-friendly (40 char width)
+    - Celebrate milestones
+    """
+    now_oslo = datetime.now(timezone(timedelta(hours=1)))
+    date_str = now_oslo.strftime('%d. %b').lstrip('0')
+
+    # Find highlight
+    highlight = find_todays_highlight(results)
+
+    lines = [
+        f"🌅 <b>FJORDHQ MORGEN</b> · {date_str}",
+        f"",
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"",
+        f"{highlight['icon']} <b>DAGENS HØYDEPUNKT</b>",
+        f"",
+        f"{highlight['title']}",
+        f"<i>{highlight['detail']}</i>",
+        f"",
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        f"",
+        f"📊 <b>LÆRINGSPULS</b>",
+        f"",
+    ]
+
+    # Learning metrics
+    brier_str = f"{learning['global_brier']:.3f}" if learning['global_brier'] else "—"
+    lvi_str = f"{learning['lvi']:.4f}" if learning['lvi'] else "⏳ dag 2"
+    nodes_str = f"{learning['alpha_nodes']:,}".replace(',', ' ')
+
+    lines.append(f"Brier:     <code>{brier_str}</code>")
+    lines.append(f"LVI:       <code>{lvi_str}</code>")
+    lines.append(f"Nodes:     <code>{nodes_str}</code> i Alpha Graph")
+
+    # Pipeline progress
+    lines.append(f"")
+    lines.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append(f"")
+    lines.append(f"🎯 <b>PIPELINE STATUS</b>")
+    lines.append(f"")
+
+    pipe = results.get('pipeline', {})
+    experiments = pipe.get('experiments', [])
+
+    # Sort: promoted first, then by outcomes
+    sorted_exp = sorted(experiments, key=lambda e: (not e.get('promoted', False), -e['outcomes']))
+
+    for exp in sorted_exp:
+        letter = _test_letter(exp['code'])
+        bar = _progress_bar(exp['progress_pct'])
+        outcomes = exp['outcomes']
+        min_s = exp['min_sample']
+
+        if exp.get('promoted'):
+            status = "→ Shadow ✓"
+        elif outcomes >= min_s:
+            status = "→ Gate"
+        elif outcomes > 0:
+            status = f"→ {outcomes}/{min_s}"
+        else:
+            status = "→ venter"
+
+        lines.append(f"[{bar}] Test {letter} {status}")
+
+    # Action needed section (compact)
+    lines.append(f"")
+    lines.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append(f"")
+
+    # Check for issues
+    issues = []
+    zombies = results.get('zombies', {})
+    if zombies.get('zombies'):
+        issues.append(f"{len(zombies['zombies'])} daemons trenger restart")
+
+    pending = results.get('outcomes', {}).get('pending_evaluable', 0)
+    if pending > 0:
+        issues.append(f"{pending:,} triggers venter".replace(',', ' '))
+
+    if issues:
+        lines.append(f"⚡ <b>HANDLING I DAG</b>")
+        lines.append(f"")
+        for issue in issues:
+            lines.append(f"→ {issue}")
+    else:
+        lines.append(f"✅ <b>INGEN HANDLING PÅKREVD</b>")
+
+    # Inspirational footer
+    lines.append(f"")
+    lines.append(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append(f"")
+    lines.append(f"<i>\"Systemet lærer ikke ved å føle.</i>")
+    lines.append(f"<i> Det lærer ved å bevise.\"</i>")
+    lines.append(f"")
+    lines.append(f"— <i>STIG, CTO</i>")
+
+    return "\n".join(lines)
+
+
 def build_telegram_message(results: dict, conn=None) -> str:
-    """Build Norwegian HTML-formatted morning verification report."""
+    """Build Norwegian HTML-formatted morning verification report.
+
+    NOTE: This is the legacy format. Use build_telegram_message_v2 for
+    the new MBB-inspired format (CEO-DIR-2026-REPORT-UX-001).
+    """
     now_oslo = datetime.now(timezone(timedelta(hours=1)))
 
     check_keys = ('indicators', 'outcomes', 'zombies', 'pipeline', 'pipeline_health')
@@ -1034,8 +1233,13 @@ def build_telegram_message(results: dict, conn=None) -> str:
     return "\n".join(lines)
 
 
-def run_verification(send_tg: bool = True) -> dict:
-    """Execute all 4 verification checks."""
+def run_verification(send_tg: bool = True, use_new_format: bool = True) -> dict:
+    """Execute all verification checks.
+
+    Args:
+        send_tg: If True, send report to Telegram
+        use_new_format: If True, use MBB-inspired format (v2). Default: True.
+    """
     logger.info("=" * 50)
     logger.info("PHASE 2 MORNING VERIFICATION")
     logger.info("=" * 50)
@@ -1054,6 +1258,10 @@ def run_verification(send_tg: bool = True) -> dict:
             'run_ledger': check_run_ledger_freshness(conn),
         }
 
+        # Fetch learning metrics for new format
+        learning = get_learning_metrics(conn)
+        results['learning'] = learning
+
         # D5 fail-closed: if PULSE is stale, override indicator freshness to FAIL
         if not results['indicator_pulse']['pass']:
             if results['indicators']['pass']:
@@ -1065,7 +1273,7 @@ def run_verification(send_tg: bool = True) -> dict:
                 )
                 logger.warning("FAIL-CLOSED: Indicator freshness overridden by PULSE sentinel")
 
-        all_pass = all(r['pass'] for r in results.values())
+        all_pass = all(r['pass'] for r in results.values() if isinstance(r, dict) and 'pass' in r)
         results['overall'] = 'PASS' if all_pass else 'FAIL'
         results['timestamp'] = datetime.now(timezone.utc).isoformat()
 
@@ -1079,7 +1287,12 @@ def run_verification(send_tg: bool = True) -> dict:
 
         # Send Telegram
         if send_tg:
-            msg = build_telegram_message(results)
+            if use_new_format:
+                msg = build_telegram_message_v2(results, learning)
+                logger.info("Using new MBB-inspired report format (v2)")
+            else:
+                msg = build_telegram_message(results)
+                logger.info("Using legacy report format")
             sent = send_telegram(msg)
             results['telegram_sent'] = sent
             if sent:
@@ -1099,19 +1312,50 @@ def main():
     parser = argparse.ArgumentParser(description='Phase 2 Morning Verification')
     parser.add_argument('--check', action='store_true', help='Check only, no Telegram')
     parser.add_argument('--test', action='store_true', help='Send test message')
+    parser.add_argument('--legacy', action='store_true', help='Use legacy report format')
+    parser.add_argument('--preview', action='store_true', help='Preview new format without sending')
     args = parser.parse_args()
 
     if args.test:
         result = send_telegram(
-            "<b>PHASE 2 MORNING VERIFICATION</b>\n"
-            "<i>Test message</i>\n\n"
-            "\u2705 Telegram integration working\n\n"
-            "<i>STIG - Phase 2 Verification</i>"
+            "🌅 <b>FJORDHQ MORGEN</b> · Test\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🏆 <b>DAGENS HØYDEPUNKT</b>\n\n"
+            "Telegram integration working\n"
+            "<i>New MBB-inspired format active</i>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "<i>\"Systemet lærer ikke ved å føle.</i>\n"
+            "<i> Det lærer ved å bevise.\"</i>\n\n"
+            "— <i>STIG, CTO</i>"
         )
         print(f"Test message sent: {result}")
         sys.exit(0 if result else 1)
 
-    results = run_verification(send_tg=not args.check)
+    if args.preview:
+        # Run checks but don't send, just print
+        conn = psycopg2.connect(**DB_CONFIG)
+        try:
+            results = {
+                'indicators': check_indicator_freshness(conn),
+                'outcomes': check_outcome_daemon(conn),
+                'zombies': check_zombie_daemons(conn),
+                'pipeline': check_experiment_pipeline(conn),
+            }
+            learning = get_learning_metrics(conn)
+            msg = build_telegram_message_v2(results, learning)
+            print("\n" + "=" * 50)
+            print("PREVIEW - New MBB-inspired format")
+            print("=" * 50 + "\n")
+            # Convert HTML tags to readable format for console
+            preview = msg.replace('<b>', '').replace('</b>', '')
+            preview = preview.replace('<i>', '').replace('</i>', '')
+            preview = preview.replace('<code>', '').replace('</code>', '')
+            print(preview)
+        finally:
+            conn.close()
+        sys.exit(0)
+
+    results = run_verification(send_tg=not args.check, use_new_format=not args.legacy)
 
     # Write evidence
     evidence_dir = os.path.join(os.path.dirname(__file__), 'evidence')
