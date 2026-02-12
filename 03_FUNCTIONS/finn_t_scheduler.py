@@ -333,6 +333,99 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                 conn.close()
                 return None
 
+        # CEO-DIR-2026-011: STRUCTURAL DIVERSITY GATE
+        # MAX 5% of active hypotheses may share identical semantic_hash
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT allowed, current_count, current_pct, max_allowed, block_reason
+                FROM fhq_learning.check_semantic_diversity_gate(%s, 720)
+            """, (semantic_hash,))
+            diversity_result = cur.fetchone()
+
+            if diversity_result and not diversity_result[0]:  # allowed = False
+                # Log diversity block
+                cur.execute("""
+                    INSERT INTO fhq_learning.semantic_diversity_blocks (
+                        blocked_semantic_hash, generator_id, block_reason,
+                        current_count, current_pct, total_active
+                    ) VALUES (%s, %s, %s, %s, %s, (
+                        SELECT COUNT(*) FROM fhq_learning.hypothesis_canon
+                        WHERE created_at >= NOW() - INTERVAL '720 hours'
+                    ))
+                """, (
+                    semantic_hash,
+                    GENERATOR_ID,
+                    diversity_result[4],  # block_reason
+                    diversity_result[1],  # current_count
+                    diversity_result[2],  # current_pct
+                ))
+                conn.commit()
+                logger.warning(f"DIVERSITY_BLOCK: {diversity_result[4]} - semantic_hash={semantic_hash[:8]}... (feature={feature['feature_id']})")
+                conn.close()
+                return None
+
+        # CEO-DIR-2026-011: STRUCTURE QUOTA ALLOCATION (Directive 2)
+        # Check if scaling is allowed based on distinct structure families
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT total_families, active_families, scaling_allowed, block_reason
+                FROM fhq_learning.get_structure_family_count(720)
+            """)
+            quota_result = cur.fetchone()
+
+            if quota_result and not quota_result[2]:  # scaling_allowed = False
+                # Log scaling block
+                cur.execute("""
+                    INSERT INTO fhq_learning.semantic_diversity_blocks (
+                        blocked_semantic_hash, generator_id, block_reason,
+                        current_count, current_pct, total_active
+                    ) VALUES (%s, %s, %s, %s, %s, (
+                        SELECT COUNT(*) FROM fhq_learning.hypothesis_canon
+                        WHERE created_at >= NOW() - INTERVAL '720 hours'
+                    ))
+                """, (
+                    semantic_hash,
+                    GENERATOR_ID,
+                    quota_result[3],  # block_reason
+                    0,  # current_count
+                    0.0,  # current_pct
+                ))
+                conn.commit()
+                logger.warning(f"SCALING_BLOCK: {quota_result[3]} - semantic_hash={semantic_hash[:8]}... (feature={feature['feature_id']})")
+                conn.close()
+                return None
+
+        # CEO-DIR-2026-011: STRUCTURE QUOTA CHECK
+        # Check if this structure is within fair allocation quota
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT allowed, current_count, allocation_weight, block_reason
+                FROM fhq_learning.check_structure_quota_available(%s, 720)
+            """, (semantic_hash,))
+            structure_quota_result = cur.fetchone()
+
+            if structure_quota_result and not structure_quota_result[0]:  # allowed = False
+                # Log structure quota block
+                cur.execute("""
+                    INSERT INTO fhq_learning.semantic_diversity_blocks (
+                        blocked_semantic_hash, generator_id, block_reason,
+                        current_count, current_pct, total_active
+                    ) VALUES (%s, %s, %s, %s, %s, (
+                        SELECT COUNT(*) FROM fhq_learning.hypothesis_canon
+                        WHERE created_at >= NOW() - INTERVAL '720 hours'
+                    ))
+                """, (
+                    semantic_hash,
+                    GENERATOR_ID,
+                    structure_quota_result[3],  # block_reason
+                    structure_quota_result[1],  # current_count
+                    0.0,  # current_pct
+                ))
+                conn.commit()
+                logger.warning(f"QUOTA_BLOCK: {structure_quota_result[3]} - semantic_hash={semantic_hash[:8]}... (feature={feature['feature_id']})")
+                conn.close()
+                return None
+
         # Build mechanism graph
         mechanism_graph = {
             'nodes': [
