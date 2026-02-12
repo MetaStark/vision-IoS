@@ -49,8 +49,9 @@ DB_CONFIG = {
 }
 
 # Scheduler configuration
-INTERVAL_MINUTES = 30  # Check for new errors every 30 min
-MAX_CYCLES_PER_DAY = 48
+# DIR-017 Directive 3: Double concurrency
+INTERVAL_MINUTES = 15  # Doubled from 30 for increased throughput
+MAX_CYCLES_PER_DAY = 96  # Doubled from 48
 MAX_HYPOTHESES_PER_CYCLE = 3  # Limit to avoid flooding
 DAEMON_NAME = 'finn_e_scheduler'
 GENERATOR_ID = 'FINN-E'

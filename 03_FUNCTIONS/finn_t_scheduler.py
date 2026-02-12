@@ -51,8 +51,9 @@ DB_CONFIG = {
 }
 
 # Scheduler configuration
-INTERVAL_MINUTES = 60  # Generate every hour (less frequent than crypto)
-MAX_CYCLES_PER_DAY = 24
+# DIR-017 Directive 3: Double concurrency
+INTERVAL_MINUTES = 30  # Doubled from 60 for increased throughput
+MAX_CYCLES_PER_DAY = 48  # Doubled from 24
 DAEMON_NAME = 'finn_t_scheduler'
 GENERATOR_ID = 'FINN-T'
 MIN_CAUSAL_DEPTH = 2
@@ -527,7 +528,7 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                     controlled_exception
                 ) VALUES (
                     %s, 'ECONOMIC_THEORY', %s, %s, %s, %s, %s, %s, %s, 'MEDIUM',
-                    72, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'EQUITY',
+                    24, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'US_EQUITY',
                     %s, %s, %s, %s
                 )
                 RETURNING hypothesis_code

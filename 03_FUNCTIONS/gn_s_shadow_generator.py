@@ -25,7 +25,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from guard_generation_freeze import guard_generation_freeze
 
 DAEMON_NAME = 'gn_s_shadow_generator'
-CYCLE_INTERVAL_SECONDS = 21600  # 6h
+# DIR-017 Directive 3: Double concurrency (halve interval from 6h to 3h)
+CYCLE_INTERVAL_SECONDS = 10800  # 3h (doubled from 6h)
 
 logging.basicConfig(
     level=logging.INFO,
