@@ -37,6 +37,10 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime, timezone
 from typing import Tuple, Optional, List, Dict, Any
 
+# CEO-DIR-2026-015: Import generation freeze guard
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from guard_generation_freeze import guard_generation_freeze
+
 # Database configuration
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
@@ -476,6 +480,18 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
             # Extract memory citation for hypothesis birth
             prior_hypotheses_count = memory_result[0] if memory_result else 0
 
+            # CEO-DIR-2026-015: Check generation freeze guard BEFORE INSERT
+            # FINN-T generates non-controlled hypotheses by default
+            controlled_exception = False
+            guard_allowed, guard_reason, guard_metrics = guard_generation_freeze(
+                conn, hypothesis_code, controlled_exception
+            )
+            if not guard_allowed:
+                logger.warning(f"GENERATION_FREEZE_BLOCK: {hypothesis_code} - {guard_reason}")
+                conn.commit()  # Commit any prior changes
+                conn.close()
+                return None
+
         with conn.cursor() as cur:
             # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
             cur.execute("""
@@ -507,11 +523,12 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                     asset_class,
                     generation_regime,
                     causal_depth_target,
-                    prior_hypotheses_count
+                    prior_hypotheses_count,
+                    controlled_exception
                 ) VALUES (
                     %s, 'ECONOMIC_THEORY', %s, %s, %s, %s, %s, %s, %s, 'MEDIUM',
                     72, %s, %s, %s, 3, 0.60, 0.60, 'DRAFT', %s, %s, %s, %s, NOW(), %s, 'EQUITY',
-                    %s, %s, %s
+                    %s, %s, %s, %s
                 )
                 RETURNING hypothesis_code
             """, (
@@ -537,7 +554,8 @@ def generate_hypothesis(feature: Dict, cluster: str) -> Optional[str]:
                 DAEMON_NAME,
                 generation_regime,
                 causal_depth_target,
-                prior_hypotheses_count
+                prior_hypotheses_count,
+                controlled_exception
             ))
 
             result = cur.fetchone()

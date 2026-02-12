@@ -20,6 +20,10 @@ from typing import Dict, List, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+# CEO-DIR-2026-015: Import generation freeze guard
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from guard_generation_freeze import guard_generation_freeze
+
 DAEMON_NAME = 'gn_s_shadow_generator'
 CYCLE_INTERVAL_SECONDS = 21600  # 6h
 
@@ -235,6 +239,18 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         except:
             falsification = {'criteria': falsification}
 
+    # CEO-DIR-2026-015: Check generation freeze guard BEFORE INSERT
+    # GN-S generates non-controlled hypotheses by default
+    controlled_exception = False
+    guard_allowed, guard_reason, guard_metrics = guard_generation_freeze(
+        conn, hypothesis_code, controlled_exception
+    )
+    if not guard_allowed:
+        logger.warning(f"GENERATION_FREEZE_BLOCK: {hypothesis_code} - {guard_reason}")
+        conn.commit()  # Commit any prior changes
+        conn.close()
+        return None
+
     # INSERT — semantic_hash is computed by DB trigger trg_compute_semantic_hash
     # Dedup is handled by the check above using the same hash formula
     # CEO-DIR-2026-128: Now includes prior_hypotheses_count from memory gate
@@ -267,7 +283,8 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             complexity_score,
             created_at,
             created_by,
-            prior_hypotheses_count
+            prior_hypotheses_count,
+            controlled_exception
         ) VALUES (
             gen_random_uuid(),
             %s, -- hypothesis_code
@@ -296,7 +313,8 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
             %s, -- complexity_score
             NOW(),
             'GN-S',
-            %s  -- prior_hypotheses_count (CEO-DIR-2026-128)
+            %s,  -- prior_hypotheses_count (CEO-DIR-2026-128)
+            %s   -- controlled_exception (CEO-DIR-2026-015)
         )
         RETURNING hypothesis_code
     """, (
@@ -320,6 +338,7 @@ def generate_shadow_hypothesis(conn, needle: Dict, input_hash: str) -> Optional[
         mechanism_graph['depth'],
         round(mechanism_graph['depth'] * 0.6 + (needle['confluence_factor_count'] or 0) * 0.1, 2),
         prior_hypotheses_count,
+        controlled_exception,
     ))
 
     result = cur.fetchone()

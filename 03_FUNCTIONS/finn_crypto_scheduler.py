@@ -48,6 +48,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Tuple, Optional, List, Dict, Any
 
+# CEO-DIR-2026-015: Import generation freeze guard
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from guard_generation_freeze import guard_generation_freeze
+
 # Database configuration
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
@@ -518,6 +522,18 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
             prior_hypotheses_count = memory_result[0] if memory_result else 0
             memory_citation = memory_result[3] if memory_result else None
 
+            # CEO-DIR-2026-015: Check generation freeze guard BEFORE INSERT
+            # FINN-CRYPTO generates non-controlled hypotheses by default
+            controlled_exception = False
+            guard_allowed, guard_reason, guard_metrics = guard_generation_freeze(
+                conn, hypothesis_code, controlled_exception
+            )
+            if not guard_allowed:
+                logger.warning(f"GENERATION_FREEZE_BLOCK: {hypothesis_code} - {guard_reason}")
+                conn.commit()  # Commit any prior changes
+                conn.close()
+                return None
+
             # STEP 5: Build mechanism_graph with selection metadata (for VEGA audit)
             mechanism_graph = {
                 'theory_type': selected_theory_type,
@@ -553,9 +569,10 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
                     asset_class,
                     learning_only,
                     generation_regime,
-                    prior_hypotheses_count
+                    prior_hypotheses_count,
+                    controlled_exception
                 ) VALUES (
-                    %s::uuid, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE, 'CRYPTO_DIVERSIFIED_POST_FIX', %s
+                    %s::uuid, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s, %s, %s::text[], %s, %s, 'DRAFT', %s, %s, %s, 'CRYPTO', TRUE, 'CRYPTO_DIVERSIFIED_POST_FIX', %s, %s
                 )
                 RETURNING canon_id
             """, (
@@ -578,7 +595,8 @@ def generate_crypto_hypothesis_v3(context: Dict[str, Any]) -> Optional[str]:
                 DAEMON_NAME,
                 DAEMON_NAME,
                 semantic_hash,
-                prior_hypotheses_count
+                prior_hypotheses_count,
+                controlled_exception
             ))
 
             result = cur.fetchone()

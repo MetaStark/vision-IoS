@@ -51,46 +51,49 @@ def guard_generation_freeze(conn, hypothesis_code, controlled_exception):
             if v_freeze_end_at and datetime.now(timezone.utc) > v_freeze_end_at:
                 return True, "Freeze expired", {}
 
-            # Freeze is active
-            current_time = datetime.now(timezone.utc)
-            if controlled_exception:
-                # Controlled exception - check quota
-                cur.execute("""
-                    SELECT COUNT(*)
-                    FROM fhq_learning.hypothesis_canon
-                    WHERE created_at >= NOW() - INTERVAL '720 hours'
-                        AND controlled_exception = true
-                """)
-                count_result = cur.fetchone()
-                controlled_count = int(count_result[0])
+            # Freeze is active - BLOCK by default
+            # CEO-DIR-2026-015: Only controlled_exception=true allowed within quota
+            if not controlled_exception:
+                # Non-controlled - BLOCK during freeze
+                reason = "GENERATION_FREEZE: Non-controlled insertion blocked during active freeze"
+                metrics = {"freeze_enabled": True, "controlled_exception": False}
+                log_block(conn, hypothesis_code, reason, metrics)
+                return False, reason, metrics
 
-                # Get budget (5% of active total)
-                cur.execute("""
-                    SELECT COUNT(*)
-                    FROM fhq_learning.hypothesis_canon
-                    WHERE created_at >= NOW() - INTERVAL '720 hours'
-                """)
-                total_result = cur.fetchone()
-                active_total = int(total_result[0])
-                budget = int(active_total * 0.05) + 1  # CEIL with minimum 1
+            # Controlled exception - check quota
+            cur.execute("""
+                SELECT COUNT(*)
+                FROM fhq_learning.hypothesis_canon
+                WHERE created_at >= NOW() - INTERVAL '720 hours'
+                    AND controlled_exception = true
+            """)
+            count_result = cur.fetchone()
+            controlled_count = int(count_result[0])
 
-                # Check if within quota
-                if controlled_count >= budget:
-                    # Block - quota exceeded
-                    reason = f"Controlled exception quota exceeded. {controlled_count}/{budget} (5%)"
-                    metrics = {
-                        "controlled_count": controlled_count,
-                        "budget": budget,
-                        "active_total": active_total
-                    }
-                    log_block(conn, hypothesis_code, reason, metrics)
-                    return False, reason, metrics
-                else:
-                    # Allow - within quota
-                    return True, "Controlled exception allowed", {}
+            # Get budget (5% of active total)
+            cur.execute("""
+                SELECT COUNT(*)
+                FROM fhq_learning.hypothesis_canon
+                WHERE created_at >= NOW() - INTERVAL '720 hours'
+            """)
+            total_result = cur.fetchone()
+            active_total = int(total_result[0])
+            budget = int(active_total * 0.05) + 1  # CEIL with minimum 1
+
+            # Check if within quota
+            if controlled_count >= budget:
+                # Block - quota exceeded
+                reason = f"GENERATION_FREEZE: Controlled exception quota exceeded. {controlled_count}/{budget} (5%)"
+                metrics = {
+                    "controlled_count": controlled_count,
+                    "budget": budget,
+                    "active_total": active_total
+                }
+                log_block(conn, hypothesis_code, reason, metrics)
+                return False, reason, metrics
             else:
-                # Non-controlled exception - always allow
-                return True, "Not a controlled exception", {}
+                # Allow - within quota
+                return True, "GENERATION_FREEZE: Controlled exception allowed within quota", {}
 
     except Exception as e:
         conn.rollback()
