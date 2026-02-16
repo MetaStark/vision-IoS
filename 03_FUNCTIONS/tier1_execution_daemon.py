@@ -476,13 +476,21 @@ def update_hypothesis_with_result(hypothesis: Dict, test_result: Dict) -> bool:
         with conn.cursor() as cur:
             metrics = test_result['aggregate_metrics']
 
-            # Determine new status based on tier1_result
+            # CEO-DIR-2026-LEARNING-ARCHITECTURE-CORRECTION-003 (2026-02-10)
+            # DEACTIVATED: OHLCV-based falsification
+            # REASON: Direction accuracy from price_series does NOT reflect actual trade performance
+            # NEW: Falsification now handled by trade_falsification_daemon based on shadow_trades
+            #
+            # ORIGINAL LOGIC (PRESERVED FOR AUDIT):
+            # if test_result['tier1_result'] == 'ANNIHILATED':
+            #     new_status = 'FALSIFIED'
+            # elif test_result['tier1_result'] in ('SURVIVED', 'WEAKENED'):
+            #     new_status = 'ACTIVE'
+            #
+            # NEW LOGIC: Only record OHLCV metrics, do NOT change status based on direction_accuracy
             new_status = hypothesis.get('status', 'DRAFT')
-            if test_result['tier1_result'] == 'ANNIHILATED':
-                new_status = 'FALSIFIED'
-            elif test_result['tier1_result'] in ('SURVIVED', 'WEAKENED'):
-                new_status = 'ACTIVE'  # Survived Tier-1
-            # PENDING keeps current status (insufficient data)
+            # Status changes are now ONLY permitted by trade_falsification_daemon
+            # tier1_result is recorded for historical reference but does not trigger falsification
 
             cur.execute("""
                 UPDATE fhq_learning.hypothesis_canon

@@ -1,0 +1,39 @@
+{
+  "directive_ref": "CEO-DIR-2026-LEARNING-REANIMATION-022",
+  "document_type": "LEARNING_REANIMATION",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-15T21:20:00Z",
+  "status": "BLOCKED",
+  "error": "Function Ambiguity Block",
+  "details": {
+    "issue": "Two compute_fss functions with different signatures cause ambiguity",
+    "blockers": [
+      "fss_computation_daemon fails with function ambiguity",
+      "manual learning reanimation fails with function ambiguity",
+      "LVI bottleneck: 0 completed experiments in last 7 days"
+    ],
+    "root_cause": "fhq_research schema contains 2 compute_fss functions with different parameter signatures",
+    "function_1": "5 parameters: p_start_date, p_end_date, p_asset_id, p_regime, p_baseline_method",
+    "function_2": "6 parameters: + p_base_rate parameter",
+    "resolution_required": "Drop or rename one of the functions to resolve ambiguity",
+    "actions_taken": [
+      "Cleared FSS_BSS_FREEZE.lock",
+      "Attempted to run fss_computation_daemon.py - function ambiguity error",
+      "Attempted to run lvi_calculator.py - LVI=0 (0 completed experiments bottleneck)",
+      "Created simple_fss_recomputation.py - CTE syntax error"
+      "Attempted direct SQL - syntax error"
+    ]
+  },
+  "pre_animation_state": {
+    "lvi_value": 0.0,
+    "lvi_stale_hours": 174.9,
+    "fss_non_null_count": 438,
+    "fss_total_rows": 21948,
+    "fss_stale_hours": 55.6,
+    "fss_daemon_status": "DORMANT_EXPECTED",
+    "lvi_daemon_status": "ACTIVE",
+    "outcome_ledger_total": 74293,
+    "outcome_ledger_hours_since_last": 0.1
+  },
+  "recommendation": "Database administrator action required: resolve compute_fss function ambiguity in fhq_research schema"
+}

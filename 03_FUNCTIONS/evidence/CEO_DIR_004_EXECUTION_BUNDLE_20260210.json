@@ -1,0 +1,150 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION_BUNDLE",
+  "directive_code": "CEO-DIR-2026-TRADE-LEARNING-ACTIVATION-004",
+  "timestamp": "2026-02-10T17:35:00+01:00",
+  "executed_by": "STIG",
+
+  "step_1_migrations": {
+    "status": "COMPLETE",
+    "migrations_executed": [
+      {
+        "file": "20260210_001_hypothesis_trade_performance.sql",
+        "result": "CREATE TABLE, CREATE INDEX x3, CREATE FUNCTION x2, ALTER TABLE",
+        "verified": true
+      },
+      {
+        "file": "20260210_002_trade_learning_guardrails.sql",
+        "result": "ALTER TABLE x3, CREATE FUNCTION x4, CREATE TRIGGER x2, CREATE TABLE x2, CREATE INDEX x3",
+        "verified": true
+      },
+      {
+        "file": "20260210_003_backfill_trade_performance.sql",
+        "result": "INSERT 1062 records, 0 reconciliation candidates",
+        "verified": true
+      }
+    ],
+    "db_proof": {
+      "tables_created": [
+        {"schema": "fhq_learning", "table": "hypothesis_trade_performance", "columns": 25},
+        {"schema": "fhq_monitoring", "table": "exit_coverage_sla", "columns": 15},
+        {"schema": "fhq_governance", "table": "learning_audit_log", "columns": 12}
+      ],
+      "backfill_summary": {
+        "total_records": 1062,
+        "with_trades": 1,
+        "guardrail_passed": 0
+      }
+    }
+  },
+
+  "step_2_scheduler": {
+    "status": "COMPLETE",
+    "task_name": "FHQ\\trade_falsification_daemon",
+    "task_path": "\\FHQ\\",
+    "state": "Ready",
+    "next_run": "2026-02-10T17:33:33",
+    "settings": {
+      "hidden": true,
+      "single_instance": true,
+      "interval": "1 hour",
+      "execution_limit": "30 minutes"
+    }
+  },
+
+  "step_3_guardrails": {
+    "n_min_guardrail": {
+      "status": "ENFORCED",
+      "n_min": 30,
+      "proof": {
+        "hypothesis": "ALPHA_SAT_F_PANIC_BOTTOM_V1.0",
+        "closed_trades": 8,
+        "trade_sharpe": -1.1016,
+        "eval_status": "INSUFFICIENT_DATA",
+        "guardrail_reason": "Awaiting N_min: closed_trades=8 < n_min=30"
+      }
+    },
+    "exit_coverage_sla": {
+      "status": "FAILED",
+      "exits_48h": 0,
+      "threshold": 1,
+      "sla_met": false,
+      "learning_blocked": true
+    }
+  },
+
+  "step_4_exit_engine_analysis": {
+    "daemon_status": "HEALTHY",
+    "last_heartbeat": "2026-02-10T16:26:29.966Z",
+    "open_trades": 32,
+    "closed_last_run": 0,
+    "root_cause": {
+      "issue": "All OPEN trades are US equities with 72h timeframe",
+      "assets": ["SPY", "XLF"],
+      "entry_date": "2026-02-08",
+      "expiry_date": "2026-02-11",
+      "price_data_gap": "No 2026-02-09 (Sunday) or 2026-02-10 (market open) data for US equities",
+      "crypto_trades": 0
+    },
+    "previous_closed_trades": {
+      "count": 8,
+      "all_crypto": true,
+      "assets": ["NEAR-USD", "CRO-USD", "EOS-USD", "ICP-USD", "FIL-USD"],
+      "last_exit": "2026-01-29"
+    }
+  },
+
+  "trade_status_before_after": {
+    "before": {
+      "snapshot_time": "2026-02-10T09:00:00+01:00",
+      "open": 32,
+      "closed": 8,
+      "expired": 7436,
+      "routed": 8
+    },
+    "after": {
+      "snapshot_time": "2026-02-10T17:35:00+01:00",
+      "open": 32,
+      "closed": 8,
+      "expired": 7436,
+      "routed": 8,
+      "change": "No change - awaiting price data"
+    }
+  },
+
+  "path_to_resolution": {
+    "immediate": [
+      "US market closes 22:00 Oslo -> price data available",
+      "Run ios001_daily_ingest --asset-class EQUITY after market close",
+      "Run exit engine to process any STOP_LOSS/TAKE_PROFIT exits"
+    ],
+    "by_expiry": [
+      "2026-02-11: All 32 trades hit TIME_EXPIRY",
+      "Exit engine closes with realized PnL",
+      "exits_48h > 0, SLA_MET = TRUE"
+    ],
+    "structural_fix": [
+      "Hypothesis generators should include crypto assets",
+      "Crypto trades 24/7 = no weekend gaps",
+      "Faster feedback loop for learning"
+    ]
+  },
+
+  "vega_attestation_ready": {
+    "requirement_1": "status-write permissions restricted to trade_falsification_daemon",
+    "status_1": "TRIGGER CREATED on hypothesis_canon",
+    "requirement_2": "falsification derives solely from realized trades",
+    "status_2": "OHLCV falsification DEACTIVATED in tier1_execution_daemon",
+    "requirement_3": "evidence bundle exists",
+    "status_3": "THIS DOCUMENT",
+    "attestation_pending": true
+  },
+
+  "artifact_references": [
+    "01_SCHEMA/migrations/20260210_001_hypothesis_trade_performance.sql",
+    "01_SCHEMA/migrations/20260210_002_trade_learning_guardrails.sql",
+    "01_SCHEMA/migrations/20260210_003_backfill_trade_performance.sql",
+    "03_FUNCTIONS/trade_falsification_daemon.py",
+    "03_FUNCTIONS/tier1_execution_daemon.py (modified)",
+    "12_DAILY_REPORTS/DAY41_RUNBOOK_20260210.md"
+  ]
+}

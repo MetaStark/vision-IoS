@@ -1,0 +1,78 @@
+{
+  "directive_id": "CEO-DIR-2026-LEARNING-VALIDATION-WINDOW-005",
+  "title": "48h Learning Validation Window After Trade-Based Architecture Activation",
+  "issued_at": "2026-02-10T18:00:00+01:00",
+  "issued_by": "LARS",
+  "classification": "EXPERIMENTAL",
+  "authority_chain": "ADR-001 -> ADR-003 -> ADR-005 -> ADR-007",
+
+  "purpose": "Verify that FjordHQ learns from consequences of its own trades - not from price direction, OHLCV, or assumptions",
+
+  "trigger_conditions": {
+    "event": "First new realized exit after trade-based architecture activation",
+    "prerequisites": [
+      "US market close 22:00 Oslo",
+      "Exit engine receives price data",
+      "OPEN trades begin closing"
+    ]
+  },
+
+  "validation_window": {
+    "duration_hours": 48,
+    "start": "TBD - first new CLOSED trade with pnl_type=REALIZED",
+    "end": "TBD - start + 48 hours",
+    "status": "AWAITING_TRIGGER"
+  },
+
+  "constraints": {
+    "no_code_changes": true,
+    "no_parameter_changes": true,
+    "no_new_directives": true,
+    "logging_only": true,
+    "measurement_interval_hours": 6
+  },
+
+  "agent_mandates": {
+    "STIG": {
+      "role": "Measure and log every 6 hours",
+      "deliverables": [
+        "CLOSED trades count",
+        "hypothesis_trade_performance updates",
+        "guardrail_passed transitions",
+        "learning_allowed status",
+        "LVI value",
+        "Hypothesis status changes from trades"
+      ]
+    },
+    "VEGA": {
+      "role": "Observe only - no attestation during window",
+      "mandate": "Verify ADR-005 learning loop in practice",
+      "attestation": "After 48h if evidence exists"
+    },
+    "FINN": {
+      "role": "No new hypothesis generation",
+      "reason": "Observe if existing hypotheses learn"
+    },
+    "LINE": {
+      "role": "Normal execution - no changes"
+    }
+  },
+
+  "success_criterion": {
+    "objective": "At least one hypothesis changes status based solely on trade-performance within 48 hours",
+    "outcome_if_met": "FjordHQ is epistemically corrected",
+    "next_step": "VEGA attestation that FjordHQ has a real learning system"
+  },
+
+  "measurement_template": {
+    "timestamp": null,
+    "window_hour": null,
+    "closed_trades_total": null,
+    "closed_trades_new": null,
+    "htp_records_updated": null,
+    "guardrail_passed_count": null,
+    "learning_allowed": null,
+    "lvi_value": null,
+    "hypothesis_status_changes": []
+  }
+}

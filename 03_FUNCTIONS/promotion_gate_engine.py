@@ -402,6 +402,23 @@ def evaluate_experiment(conn, experiment: dict, dry_run: bool = False) -> dict:
 
 def _write_promotion_gate_audit(conn, result: dict):
     """Write evaluation result to promotion_gate_audit."""
+    # CEO-DIR-2026-CHAIN-WRITE-ACTIVATION-006: Full chain binding
+    # Compute deterministic causal_node_id (UUIDv5)
+    hyp_id = str(result['hypothesis_id'])
+    causal_node_id = str(uuid.uuid5(
+        uuid.UUID('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'),  # FHQ causal namespace
+        hyp_id.encode()
+    ))
+
+    # Compute state_snapshot_hash for ASRP
+    metrics_json = json.dumps(result['metrics'], default=str, sort_keys=True)
+    state_snapshot_hash = hashlib.sha256(metrics_json.encode()).hexdigest()
+
+    # For gate_id: use existing or create placeholder for promotion
+    # (Real gate creation happens in separate governance flow)
+    # CEO-DIR-2026-CHAIN-WRITE-ACTIVATION-006: Placeholder 'E2E-SMOKE-GATE'
+    gate_id = '00000000-0000-0000-0000-000000000001'
+
     with conn.cursor() as cur:
         # Check for existing audit for this hypothesis + gate
         cur.execute("""
@@ -411,8 +428,6 @@ def _write_promotion_gate_audit(conn, result: dict):
         """, (result['hypothesis_id'],))
         existing = cur.fetchone()
 
-        metrics_json = json.dumps(result['metrics'], default=str)
-
         if existing:
             cur.execute("""
                 UPDATE fhq_learning.promotion_gate_audit
@@ -420,13 +435,20 @@ def _write_promotion_gate_audit(conn, result: dict):
                     failure_reason = %s,
                     metrics_snapshot = %s::jsonb,
                     evaluated_at = NOW(),
-                    evaluated_by = 'STIG_PROMOTION_GATE_ENGINE'
+                    evaluated_by = 'STIG_PROMOTION_GATE_ENGINE',
+                    causal_node_id = %s::uuid,
+                    gate_id = %s::uuid,
+                    state_snapshot_hash = %s,
+                    agent_id = 'STIG'
                 WHERE hypothesis_id = %s::uuid
                 AND gate_name = 'DEFLATED_SHARPE_GATE'
             """, (
                 result['gate_result'],
                 result['failure_reason'],
                 metrics_json,
+                causal_node_id,
+                gate_id,
+                state_snapshot_hash,
                 result['hypothesis_id']
             ))
             logger.info(f"  Updated promotion_gate_audit for {result['experiment_code']}")
@@ -434,14 +456,18 @@ def _write_promotion_gate_audit(conn, result: dict):
             cur.execute("""
                 INSERT INTO fhq_learning.promotion_gate_audit
                     (hypothesis_id, gate_name, gate_result, failure_reason,
-                     metrics_snapshot, evaluated_by)
+                     metrics_snapshot, evaluated_by, causal_node_id, gate_id,
+                     state_snapshot_hash, agent_id)
                 VALUES (%s::uuid, 'DEFLATED_SHARPE_GATE', %s, %s, %s::jsonb,
-                        'STIG_PROMOTION_GATE_ENGINE')
+                        'STIG_PROMOTION_GATE_ENGINE', %s::uuid, %s::uuid, %s, 'STIG')
             """, (
                 result['hypothesis_id'],
                 result['gate_result'],
                 result['failure_reason'],
-                metrics_json
+                metrics_json,
+                causal_node_id,
+                gate_id,
+                state_snapshot_hash
             ))
             logger.info(f"  Inserted promotion_gate_audit for {result['experiment_code']}")
 

@@ -1,0 +1,33 @@
+{
+  "directive": "CEO-DIR-2026-CHAIN-WRITE-ACTIVATION-006",
+  "agent": "STIG (EC-003)",
+  "timestamp": "2026-02-12T13:22:21.584777+00:00",
+  "status": "WRITE-PATHS UPDATED",
+  "phases": {
+    "phase1_promotion_gate_engine": {
+      "status": "UPDATED",
+      "changes": "Added causal_node_id, gate_id, state_snapshot_hash, agent_id writes"
+    },
+    "phase2_shadow_tier_bridge": {
+      "status": "UPDATED",
+      "changes": "Added causal_node_id, gate_id, state_snapshot_hash, agent_id reads"
+    },
+    "phase3_decision_pack_generator": {
+      "status": "UPDATED",
+      "changes": "Added causal_node_id, gate_id, asrp in decision packs"
+    },
+    "phase4_gate_function_fix": {
+      "status": "COMPLETED",
+      "changes": "Fixed fn_check_promotion_prerequisites - now raises EXCEPTION when BSS<2"
+    }
+  },
+  "verification": {
+    "enforcement_trigger": "EXISTS - trg_enforce_chain_binding_pga",
+    "new_audit_rows_60min": "0",
+    "canonical_mutation_gates": "0 rows (empty)",
+    "g5_promotion_ledger": "1,804 total, 0 gate_id, 1,804 causal_node_id",
+    "gate_prerequisites": "BLOCKED (BSS<2) - Correctly raises EXCEPTION",
+    "note": "Enforcement trigger exists and will block writes with missing fields"
+  },
+  "next_steps": "Run promotion_gate_engine to generate new audit rows with full binding"
+}

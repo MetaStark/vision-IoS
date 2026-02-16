@@ -1,0 +1,91 @@
+{
+  "directive_id": "CEO-DIR-2026-CANONICAL-TEST-RESOLUTION-001",
+  "issued_at": "2026-02-10T07:20:00+01:00",
+  "issued_by": "LARS",
+  "title": "Canonical Test Resolution - Overdue Tests",
+  "classification": "OPERATIONAL",
+  "urgency": "MEDIUM",
+  "description": "Resolution of overdue canonical tests per DAY41 morning review.",
+
+  "decisions": [
+    {
+      "test_code": "TEST-GN-SHADOW-001",
+      "test_name": "Golden Needles Shadow-Tier - Epistemic Calibration",
+      "current_day": 16,
+      "planned_days": 14,
+      "owner": "EC-003",
+      "decision": "CLOSE",
+      "rationale": "Sufficient shadow-tier data collected. 6 hypotheses generated and tracked. Deduplication blocking indicates saturation.",
+      "action": "Archive results to canonical_evidence. Mark test COMPLETED."
+    },
+    {
+      "test_code": "TEST-FINN-T-ALIGN-001",
+      "test_name": "FINN-T World-Model Alignment - N-Tier Causal Depth",
+      "current_day": 16,
+      "planned_days": 14,
+      "owner": "EC-004",
+      "decision": "CLOSE",
+      "rationale": "Superseded by CEO-DIR-2026-129 memory gate validation. 72h validation window provides more targeted learning validation.",
+      "action": "Archive results. Reference CEO-DIR-2026-129 as successor."
+    },
+    {
+      "test_code": "FHQ-EXP-PRETIER-G1.5",
+      "test_name": "G1.5 Calibration Freeze",
+      "current_day": 15,
+      "planned_days": 14,
+      "owner": "EC-003",
+      "decision": "CLOSE",
+      "rationale": "Primary trigger MET (171/30 deaths = 570%). Root cause identified: 98.8% hypothesis volume from finn_crypto_scheduler creating degenerate input distributions. Board report archived 2026-01-27.",
+      "action": "Mark COMPLETED. Require VEGA attestation for formal closure.",
+      "findings": {
+        "trigger_met": true,
+        "deaths_observed": 171,
+        "deaths_required": 30,
+        "pearson_r": -0.4920,
+        "root_cause": "Degenerate input distributions from single generator dominance",
+        "recommendation": "Diversify hypothesis generators before re-evaluating scoring formula"
+      }
+    },
+    {
+      "test_code": "TEST-EC022-OBS-001",
+      "test_name": "EC-022 Reward Logic Freeze - Context Lift Validation",
+      "current_day": 17,
+      "planned_days": 30,
+      "owner": "EC-022",
+      "decision": "CONTINUE",
+      "rationale": "Within scheduled timeframe. 13 days remaining.",
+      "action": "No action required. Continue observation."
+    }
+  ],
+
+  "implementation": {
+    "executor": "STIG",
+    "deadline": "2026-02-10T23:59:00+01:00",
+    "steps": [
+      "Update orchestrator to mark 3 tests as COMPLETED",
+      "Archive test evidence to canonical_evidence table",
+      "Update DAY41 runbook with closure documentation",
+      "Request VEGA attestation for G1.5 closure"
+    ]
+  },
+
+  "verification": {
+    "method": "Runbook update + database state check",
+    "success_criteria": [
+      "3 tests marked COMPLETED in next orchestrator run",
+      "TEST-EC022-OBS-001 continues ACTIVE",
+      "No ACTION_REQUIRED escalation for closed tests"
+    ]
+  },
+
+  "metadata": {
+    "created_by": "STIG",
+    "created_at": "2026-02-10T07:20:00+01:00",
+    "context": "DAY41 morning review identified 3 overdue canonical tests requiring CEO decision",
+    "related_directives": [
+      "CEO-DIR-2026-129",
+      "CEO-DIR-2026-128",
+      "CEO-DIR-2026-124"
+    ]
+  }
+}

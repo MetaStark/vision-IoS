@@ -1,0 +1,29 @@
+{
+  "runbook_id": "RB-42",
+  "directive": "CEO-DIR-2026-LEARNING-MEMORY-ADMISSION-041-060",
+  "objective": "STM Implementation and TTL Rules - Implement STM persistence boundaries and deletion policy",
+  "changes_made": [
+    "Created fhq_memory.stm_store table (T2) with TTL, ASRP binding columns",
+    "Created fhq_memory.containment_firewall_log table (T5)",
+    "Created 03_FUNCTIONS/asrp_binder.py - shared ASRP binding utility",
+    "Created 03_FUNCTIONS/memory_domain_manager.py - MemoryOS core with STM lifecycle",
+    "Registered CEO-DIR-2026-LEARNING-MEMORY-ADMISSION-041-060 in ceo_directives",
+    "Registered daemon heartbeat: memory_domain_manager",
+    "Logged ASRP state: MEMORY_OS_INITIALIZATION"
+  ],
+  "tests_executed": [
+    "STM Lifecycle Test: WRITE -> READ -> ASRP_VERIFY -> DELETE -> VERIFY_DELETE: ALL PASS",
+    "Containment Firewall Test: BLOCK canonical_features, BLOCK trades, ALLOW stm_store, ALLOW mtm_quarantine: ALL PASS",
+    "Domain Status Check: 3 domains, STM operational"
+  ],
+  "result": "PASS",
+  "evidence_bundle_ref": "evidence/MEMORY_ADMISSION_RB42_20260211.json",
+  "asrp_snapshot": {
+    "state_snapshot_hash": "31f052b4bd44726422a929ed5f877c612733c3ca149b3368a23c894c5ea239e4",
+    "state_timestamp": "2026-02-11T10:09:56.998918+00:00",
+    "agent_id": "STIG"
+  },
+  "defcon_at_execution": "YELLOW",
+  "signed_at": "2026-02-11T10:09:56.999440+00:00",
+  "signed_by": "STIG"
+}

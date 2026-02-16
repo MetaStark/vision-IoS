@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  CEO-DIR-2026-TRADE-LEARNING-ACTIVATION-004
+  Trade Falsification Daemon - Windows Task Scheduler Configuration
+
+  Requirements:
+  - Hidden window mode
+  - Single instance enforcement
+  - Heartbeat entry in daemon health
+  - Writes to unified system event log
+
+  Author: STIG (EC-003)
+  Date: 2026-02-10
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>2026-02-10T08:00:00</Date>
+    <Author>STIG</Author>
+    <Description>CEO-DIR-2026-TRADE-LEARNING-ACTIVATION-004: Trade-based hypothesis falsification daemon. Replaces OHLCV-based learning with realized trade performance.</Description>
+    <URI>\FHQ\trade_falsification_daemon</URI>
+  </RegistrationInfo>
+  <Triggers>
+    <!-- Run every hour -->
+    <CalendarTrigger>
+      <Repetition>
+        <Interval>PT1H</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+      <StartBoundary>2026-02-10T09:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>S-1-5-21-0-0-0-1000</UserId>
+      <LogonType>S4U</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>true</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT5M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>python</Command>
+      <Arguments>C:\fhq-market-system\vision-ios\03_FUNCTIONS\trade_falsification_daemon.py</Arguments>
+      <WorkingDirectory>C:\fhq-market-system\vision-ios\03_FUNCTIONS</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

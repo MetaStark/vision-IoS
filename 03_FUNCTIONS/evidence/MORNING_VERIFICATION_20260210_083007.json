@@ -1,0 +1,314 @@
+{
+  "indicators": {
+    "pass": false,
+    "sources": {
+      "price_series": {
+        "max_date": "2026-02-10",
+        "assets": 499,
+        "fresh": true
+      },
+      "volatility": {
+        "max_date": "2026-02-09",
+        "assets": 499,
+        "fresh": true
+      },
+      "momentum": {
+        "max_date": "2026-02-09",
+        "assets": 499,
+        "fresh": true
+      }
+    },
+    "override_reason": "FAIL-CLOSED: indicator_pulse audit trail shows STALE. Data freshness cannot be trusted without verified pipeline."
+  },
+  "indicator_pulse": {
+    "pass": false,
+    "status": "STALE",
+    "last_success": "2026-02-08 05:06:31+01:00",
+    "hours_since_success": 51.4,
+    "last_exit_code": 0,
+    "consecutive_failures": 0,
+    "detail": "FORELDET: 51.4t siden siste vellykkede kj\u00f8ring (grense: 36t)"
+  },
+  "outcomes": {
+    "pass": false,
+    "recent_outcomes_24h": 7450,
+    "pending_evaluable": 1716,
+    "daemon_status": "HEALTHY",
+    "daemon_age_hours": "9.4"
+  },
+  "zombies": {
+    "pass": false,
+    "zombies": [
+      {
+        "name": "hypothesis_experiment_bridge_daemon",
+        "age_hours": "131.8",
+        "expected_minutes": 65
+      },
+      {
+        "name": "decision_pack_generator",
+        "age_hours": "131.8",
+        "expected_minutes": 65
+      },
+      {
+        "name": "g2c_continuous_forecast_engine",
+        "age_hours": "62.7",
+        "expected_minutes": 30
+      },
+      {
+        "name": "ios003b_intraday_regime_delta",
+        "age_hours": "62.6",
+        "expected_minutes": 1440
+      },
+      {
+        "name": "ios001_daily_ingest",
+        "age_hours": "61.9",
+        "expected_minutes": 1440
+      },
+      {
+        "name": "lvi_calculator",
+        "age_hours": "12.5",
+        "expected_minutes": 30
+      },
+      {
+        "name": "promotion_gate_engine",
+        "age_hours": "9.5",
+        "expected_minutes": 60
+      },
+      {
+        "name": "mechanism_alpha_outcome",
+        "age_hours": "9.4",
+        "expected_minutes": 60
+      }
+    ],
+    "total_daemons": 17,
+    "alive": 17,
+    "dead": 0
+  },
+  "pipeline": {
+    "pass": false,
+    "experiments": [
+      {
+        "code": "EXP_ALPHA_SAT_A_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 19,
+        "outcomes": 19,
+        "wins": 0,
+        "win_rate": 0.0,
+        "min_sample": 30,
+        "progress_pct": 63.0,
+        "falsification_rule": null,
+        "causal_mechanism": "BBW < 10th percentile indicates compression. Energy release follows.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "LOW_VOL"
+        ],
+        "confidence": 0.5262215716341265
+      },
+      {
+        "code": "EXP_ALPHA_SAT_B_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "trend_win_rate < mean_reversion_win_rate",
+        "causal_mechanism": "RSI > 70 in STRONG_BULL = trend following outperforms mean reversion",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "STRONG_BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_C_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 30,
+        "progress_pct": 0.0,
+        "falsification_rule": "mean_touch_rate < 0.55",
+        "causal_mechanism": "Price > 2 StdDev (BB Top) in NEUTRAL regime triggers reversion to 20 SMA",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "WEAK_BEAR",
+          "WEAK_BULL"
+        ],
+        "confidence": 0.65
+      },
+      {
+        "code": "EXP_ALPHA_SAT_D_V1.0",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "breakout_continuation_rate < 0.50",
+        "causal_mechanism": "Close > bb_upper while BBW expanding (> p50) = momentum breakout. Expanding volatility confirms genuine move vs noise.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "BULL",
+          "NEUTRAL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_E_V1.0",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 20,
+        "progress_pct": 0.0,
+        "falsification_rule": "pullback_recovery_rate < 0.55",
+        "causal_mechanism": "RSI < 35 in BULL = temporary oversold. Regime momentum reasserts within 72h.",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_F_V1.0",
+        "status": "COMPLETED",
+        "promoted": true,
+        "triggers": 16,
+        "outcomes": 16,
+        "wins": 15,
+        "win_rate": 93.8,
+        "min_sample": 15,
+        "progress_pct": 107.0,
+        "falsification_rule": "bounce_rate < 0.45",
+        "causal_mechanism": "RSI < 20 + BEAR/STRESS = panic capitulation. Dead cat bounce within 24h is structural (short covering + dip buying).",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "BEAR",
+          "STRESS"
+        ],
+        "confidence": 0.49548807071178547
+      }
+    ],
+    "total_triggers": 35,
+    "total_outcomes": 35,
+    "total_wins": 15,
+    "regime_counts": {
+      "BEAR": 34535,
+      "BULL": 32782,
+      "NEUTRAL": 60202,
+      "STRESS": 16536
+    },
+    "gate": "OPEN",
+    "defcon": "YELLOW"
+  },
+  "pipeline_health": {
+    "pass": true,
+    "steps": [
+      {
+        "step": 1,
+        "name": "Hypotese",
+        "count": 1062,
+        "detail": "1062 aktive"
+      },
+      {
+        "step": 2,
+        "name": "Eksperiment",
+        "count": 5,
+        "detail": "5 kj\u00f8rer"
+      },
+      {
+        "step": 3,
+        "name": "Utfall",
+        "count": 8927,
+        "detail": "8927 samlet"
+      },
+      {
+        "step": 4,
+        "name": "Promotering",
+        "count": 325,
+        "detail": "325 evaluert (1 best\u00e5tt)"
+      },
+      {
+        "step": 5,
+        "name": "Skyggehandel",
+        "count": 1,
+        "detail": "1 registrert"
+      },
+      {
+        "step": 6,
+        "name": "Simulering",
+        "count": 5,
+        "detail": "5 aktive"
+      },
+      {
+        "step": 7,
+        "name": "Eligibilitet",
+        "count": 1,
+        "detail": "1 vurdert"
+      },
+      {
+        "step": 8,
+        "name": "Papirhandel",
+        "count": 0,
+        "detail": "0 fylt av 30"
+      },
+      {
+        "step": 9,
+        "name": "Ekte kapital",
+        "count": 0,
+        "detail": "Ikke aktivert (krever G4)"
+      }
+    ],
+    "active_steps": 7,
+    "total_steps": 9,
+    "first_break": 8,
+    "next_milestone": "Steg 8 aktiveres etter eligibilitetsvurdering"
+  },
+  "promotion_gate": {
+    "pass": false,
+    "status": "STALE",
+    "runs_today": 0,
+    "hours_since_success": 10.5,
+    "consecutive_failures": 0,
+    "detail": "FORELDET: 10.5t siden siste vellykkede kj\u00f8ring (grense: 2t)"
+  },
+  "run_ledger": {
+    "pass": false,
+    "tasks": {
+      "FHQ_INDICATOR_PULSE": {
+        "fresh": false,
+        "hours_since": 51.4,
+        "max_gap_hours": 36,
+        "description": "Indikator-beregning"
+      },
+      "FHQ_PROMOTION_GATE_PULSE": {
+        "fresh": false,
+        "hours_since": 10.5,
+        "max_gap_hours": 2,
+        "description": "Promoteringsport"
+      }
+    }
+  },
+  "learning": {
+    "global_brier": 0.270973,
+    "brier_prev": null,
+    "lvi": null,
+    "alpha_nodes": 16009,
+    "promoted_count": 1
+  },
+  "overall": "FAIL",
+  "timestamp": "2026-02-10T07:30:06.144819+00:00",
+  "telegram_sent": true
+}

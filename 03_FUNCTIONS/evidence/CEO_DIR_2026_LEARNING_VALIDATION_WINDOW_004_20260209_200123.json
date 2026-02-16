@@ -1,0 +1,91 @@
+{
+  "directive_id": "CEO-DIR-2026-LEARNING-VALIDATION-WINDOW-004",
+  "executed_at": "2026-02-09T19:01:23.470104+00:00",
+  "executed_by": "STIG",
+  "mode": "LEARNING_VALIDATION_WINDOW",
+  "duration_hours": 72,
+  "deadline": "2026-02-12 19:01:23.172271+00:00",
+  "results": {
+    "directive_registered": true,
+    "validation_window": {
+      "mode": "LEARNING_VALIDATION_WINDOW",
+      "ends_at": "2026-02-12 20:01:23.172271+01:00",
+      "hypothesis_generation": false,
+      "experiment_creation": false,
+      "manual_prior_changes": false,
+      "outcome_generation": true,
+      "alpha_graph_updates": true,
+      "auto_brier_prior": true
+    },
+    "baseline": {
+      "captured_at": "2026-02-09T19:01:23.464093+00:00",
+      "global_brier": 0.35037124664096275,
+      "total_nodes": 8559,
+      "brier_stddev": 0.03167426140341736,
+      "lvi_latest": {
+        "calculated_at": "2026-02-09 19:32:45.439663+01:00",
+        "global_brier": 0.35037124664096275,
+        "lvi_value": null,
+        "sample_size": 8559
+      },
+      "hypothesis_status": {
+        "ACTIVE": 5,
+        "FALSIFIED": 219,
+        "TIMEOUT_PENDING": 1062
+      }
+    },
+    "lvi_job": {
+      "job_name": "daily_lvi_calculation",
+      "schedule": "daily at 06:00 UTC",
+      "calculation": "LVI = (Brier_{t-1} - Brier_t) / delta_t",
+      "output": {
+        "global_brier_t": "Current global Brier",
+        "global_brier_t_minus_1": "Previous global Brier",
+        "lvi_value": "LVI calculation result"
+      },
+      "reporting_format": "Raw numbers only. No interpretation.",
+      "first_calculation": "2026-02-10 06:00 UTC"
+    },
+    "success_criteria": {
+      "deadline": "2026-02-12 19:01:23.172271+00:00",
+      "deadline_readable": "2026-02-12 ~19:40 UTC",
+      "success_conditions": [
+        {
+          "id": "BRIER_DECLINE",
+          "description": "Global Brier falls consistently",
+          "metric": "Global Brier(t) < Global Brier(t-1) for multiple t"
+        },
+        {
+          "id": "LVI_POSITIVE",
+          "description": "LVI > 0 on at least one day",
+          "metric": "LVI > 0"
+        },
+        {
+          "id": "PRIOR_CORRELATION",
+          "description": "Prior adjustments correlate with lower brier_contribution on new nodes",
+          "metric": "Correlation analysis pending"
+        }
+      ],
+      "failure_consequence": "Hypothesis-form destruction phase begins. No more data acquisition.",
+      "minimum_success": "At least ONE of the above conditions must be met"
+    }
+  },
+  "allowed_operations": {
+    "outcome_generation": true,
+    "alpha_graph_updates": true,
+    "auto_brier_prior": true
+  },
+  "forbidden_operations": {
+    "new_hypotheses": true,
+    "new_experiments": true,
+    "manual_prior_changes": true
+  },
+  "narrative_prohibition": [
+    "systemet l\u00e6rer",
+    "gjennombrudd",
+    "vi er der n\u00e5"
+  ],
+  "ceo_observation_mode": true,
+  "authority": "CEO",
+  "evidence_hash": "768efbdeaa5da1feffe697f2a57647e1"
+}

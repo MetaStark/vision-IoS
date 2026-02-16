@@ -1,0 +1,320 @@
+2026-02-16 02:50:40,727 | INFO | ======================================================================
+2026-02-16 02:50:40,727 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-02-16 02:50:40,758 | INFO | ======================================================================
+2026-02-16 02:50:40,774 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-02-16 02:50:40,789 | INFO | Executor: STIG (EC-003)
+2026-02-16 02:50:40,789 | INFO | Time: 2026-02-16T01:50:40.727211+00:00
+2026-02-16 02:50:40,789 | INFO | Asset Class Filter: EQUITY
+2026-02-16 02:50:40,836 | INFO | Dry Run: False
+2026-02-16 02:50:40,980 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-02-16 02:50:40,980 | INFO | ======================================================================
+2026-02-16 02:50:41,128 | INFO | Found 421 canonical assets
+2026-02-16 02:50:42,823 | INFO | ============================================================
+2026-02-16 02:50:42,823 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-02-16 02:50:42,823 | INFO | Assets: 421, Rate limit: 200/min
+2026-02-16 02:50:42,823 | INFO | ============================================================
+2026-02-16 02:50:42,823 | INFO |   [1COV.DE] Stale (1321.8h > 18h) - fetching
+2026-02-16 02:50:42,823 | INFO |   [ABBV] Stale (73.8h > 18h) - fetching
+2026-02-16 02:50:44,768 | WARNING |   [ABBV] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-02-16 02:50:45,275 | INFO |   [ABNB] Stale (73.8h > 18h) - fetching
+2026-02-16 02:50:45,388 | WARNING |   [ABNB] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-02-16 02:51:36,934 | INFO |   [ABT] Stale (73.9h > 18h) - fetching
+2026-02-16 02:51:37,564 | WARNING |   [ABT] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-02-16 02:51:38,077 | INFO |   [ACA.PA] Stale (73.9h > 18h) - fetching
+2026-02-16 02:51:38,077 | INFO |   [ADBE] Stale (73.9h > 18h) - fetching
+2026-02-16 02:51:38,202 | WARNING |   [ADBE] Alpaca error: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-02-16 02:51:38,800 | INFO |   [ADI] Stale (73.9h > 18h) - fetching
+2026-02-16 02:51:38,974 | WARNING |   [ADI] SIP subscription error (5 consecutive)
+2026-02-16 02:51:39,037 | WARNING |   EARLY TERMINATION: Alpaca SIP subscription not available
+2026-02-16 02:51:39,037 | WARNING |   Skipping remaining 414 Alpaca assets - will use fallback provider
+2026-02-16 02:51:39,053 | INFO | Alpaca: Updated 0 assets, 421 remaining
+2026-02-16 02:51:40,301 | INFO | ============================================================
+2026-02-16 02:51:40,301 | INFO | ATTEMPTING YAHOO FINANCE INGEST (Fallback Provider)
+2026-02-16 02:51:40,301 | INFO | Assets: 421, Using BATCH DOWNLOAD (efficient)
+2026-02-16 02:51:40,301 | INFO | ============================================================
+2026-02-16 02:51:40,301 | INFO |   Checking Yahoo Finance rate limit status...
+2026-02-16 02:51:46,987 | ERROR | 
+1 Failed download:
+2026-02-16 02:51:46,987 | ERROR | ['AAPL']: YFRateLimitError('Too Many Requests. Rate limited. Try after a while.')
+2026-02-16 02:51:47,002 | WARNING |   RATE LIMITED - Yahoo Finance is currently blocking requests
+2026-02-16 02:51:47,002 | WARNING |   Skipping Yahoo and marking all assets as failed
+2026-02-16 02:51:47,002 | INFO | Yahoo: Updated 0 assets, 421 remaining
+2026-02-16 02:51:47,002 | INFO | ============================================================
+2026-02-16 02:51:47,002 | INFO | ATTEMPTING TWELVEDATA EQUITY INGEST (Backup Provider)
+2026-02-16 02:51:47,002 | INFO | Assets: 421, Rate limit: 7/min (90% of free tier)
+2026-02-16 02:51:47,002 | INFO | Daily limit: 720 calls (90% of 800)
+2026-02-16 02:51:47,002 | INFO | ============================================================
+2026-02-16 02:51:47,002 | INFO |   Equity assets: 421, Non-equity: 0
+2026-02-16 02:51:57,162 | WARNING |   [ABBV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 02:52:06,465 | WARNING |   [ABNB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 02:53:36,725 | WARNING |   [ABT] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 02:57:36,703 | WARNING |   [ACA.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 02:59:36,730 | WARNING |   [ADBE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:01:36,755 | WARNING |   [ADI] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:03:36,754 | WARNING |   [ADS.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:07:36,830 | WARNING |   [ADSK] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:09:36,801 | WARNING |   [AEP] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:10:28,118 | WARNING |   [AFL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:11:36,831 | WARNING |   [AI.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:13:38,359 | WARNING |   [AIG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 03:26:06,835 | WARNING |   [AIR.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Read timed out. (read timeout=30)
+2026-02-16 03:30:20,542 | WARNING |   [AIR.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:41:41,527 | WARNING |   [AKAM] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 03:46:47,271 | WARNING |   [AKRBP.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 03:49:38,176 | WARNING |   [AKSO.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 03:50:12,530 | WARNING |   [AKVA.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:51:37,153 | WARNING |   [ALB] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 03:52:41,795 | WARNING |   [ALL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 04:00:06,973 | WARNING |   [ALO.PA] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 04:00:37,296 | WARNING |   [ALV.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:01:51,257 | WARNING |   [AMAT] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 04:02:20,614 | WARNING |   [AMD] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:02:50,809 | WARNING |   [AMGN] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:03:36,090 | WARNING |   [AMT] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 04:05:37,204 | WARNING |   [AMZN] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:07:37,235 | WARNING |   [AON] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:12:02,040 | WARNING |   [APD] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:15:37,265 | WARNING |   [ASML] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:19:37,298 | WARNING |   [ATO.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:20:33,936 | WARNING |   [AUSS.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:31:37,559 | WARNING |   [AUTO.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 04:33:37,432 | WARNING |   [AV.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:35:37,427 | WARNING |   [AVB] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:40:32,668 | WARNING |   [AVGO] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 04:41:37,467 | WARNING |   [AWK] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:42:08,333 | WARNING |   [AXP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 04:43:37,720 | WARNING |   [AZN.L] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 04:45:37,538 | WARNING |   [AZO] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:47:07,251 | WARNING |   [BA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 04:52:38,726 | WARNING |   [BA.L] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 04:52:49,975 | WARNING |   [BAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 04:53:37,524 | WARNING |   [BARC.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:03:37,584 | WARNING |   [BAS.DE] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:09:37,717 | WARNING |   [BATS.L] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:12:34,892 | WARNING |   [BAYN.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:12:34,892 | INFO |   Progress: 50/421 assets, 9 API calls
+2026-02-16 05:13:37,703 | WARNING |   [BEI.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:21:37,797 | WARNING |   [BEWI.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:22:42,989 | WARNING |   [BHP.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:31:37,928 | WARNING |   [BKNG] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:32:26,706 | WARNING |   [BKR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:39:38,005 | WARNING |   [BLK] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:49:37,928 | WARNING |   [BMW.DE] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 05:50:10,724 | WARNING |   [BMY] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:51:37,943 | WARNING |   [BN.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:52:22,230 | WARNING |   [BNP.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:52:43,061 | WARNING |   [BNR.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 05:53:37,990 | WARNING |   [BP.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:01:38,021 | WARNING |   [BRK.B] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 06:09:38,231 | WARNING |   [BSX] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 06:12:15,690 | WARNING |   [BT.A.L] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 06:15:38,116 | WARNING |   [BWO.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:20:20,852 | WARNING |   [C] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:21:38,158 | WARNING |   [CAG] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:22:43,142 | WARNING |   [CAP.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:23:38,169 | WARNING |   [CARR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:25:38,174 | WARNING |   [CAT] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:32:08,237 | WARNING |   [CB] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 06:33:38,262 | WARNING |   [CBK.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:41:38,293 | WARNING |   [CCI] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 06:49:38,386 | WARNING |   [CDNS] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 06:49:49,049 | WARNING |   [CF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 06:50:30,974 | WARNING |   [CHD] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:51:00,153 | WARNING |   [CHTR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:51:29,679 | WARNING |   [CI] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:51:38,382 | WARNING |   [CL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:52:07,634 | WARNING |   [CLX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:52:43,215 | WARNING |   [CMCSA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 06:57:38,406 | WARNING |   [CME] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 07:05:38,629 | WARNING |   [CMG] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 07:09:38,509 | WARNING |   [COF] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:11:38,516 | WARNING |   [COIN] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:19:38,751 | WARNING |   [CON.DE] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 07:20:41,130 | WARNING |   [COP] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:21:38,588 | WARNING |   [COST] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:22:43,259 | WARNING |   [CPG.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:23:33,374 | WARNING |   [CRM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 07:25:38,612 | WARNING |   [CRWD] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:28:26,152 | WARNING |   [CS.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Read timed out. (read timeout=30)
+2026-02-16 07:29:00,419 | WARNING |   [CSX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:29:38,643 | WARNING |   [CTAS] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:33:38,725 | WARNING |   [CTVA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:35:38,713 | WARNING |   [CVS] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:39:39,806 | WARNING |   [CVX] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 07:43:38,722 | WARNING |   [D] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:49:38,982 | WARNING |   [DAL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 07:49:38,982 | INFO |   Progress: 100/421 assets, 11 API calls
+2026-02-16 07:51:38,791 | WARNING |   [DBK.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:52:45,417 | WARNING |   [DD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 07:53:03,757 | WARNING |   [DDOG] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:53:42,442 | WARNING |   [DE] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 07:57:38,829 | WARNING |   [DECK] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 07:57:48,709 | WARNING |   [DG.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:00:08,103 | WARNING |   [DGE.L] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:00:37,570 | WARNING |   [DHER.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:00:48,828 | WARNING |   [DHI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:01:38,891 | WARNING |   [DHL.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:02:08,113 | WARNING |   [DHR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:04:39,428 | WARNING |   [DIA] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 08:04:51,951 | WARNING |   [DIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:05:38,889 | WARNING |   [DLR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:11:39,035 | WARNING |   [DNB.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 08:13:43,458 | WARNING |   [DOCU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:19:39,071 | WARNING |   [DOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:20:27,826 | WARNING |   [DPZ] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:21:01,367 | WARNING |   [DSY.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:21:39,007 | WARNING |   [DTE.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:25:39,020 | WARNING |   [DUK] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:31:39,141 | WARNING |   [DVN] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 08:34:44,030 | WARNING |   [DXCM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:35:39,105 | WARNING |   [EA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:41:39,311 | WARNING |   [EBAY] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 08:41:48,619 | WARNING |   [ECL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 08:45:39,175 | WARNING |   [ED] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 08:53:40,304 | WARNING |   [EIX] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 08:57:39,278 | WARNING |   [EL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:00:12,396 | WARNING |   [EL.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:01:47,690 | WARNING |   [ELMRA.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:04:44,147 | WARNING |   [ELV] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:05:39,343 | WARNING |   [EMR] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:15:39,412 | WARNING |   [EN.PA] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 09:17:39,433 | WARNING |   [ENGI.PA] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:21:36,655 | WARNING |   [ENR.DE] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 09:25:35,766 | WARNING |   [ENTRA.OL] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:29:35,876 | WARNING |   [EOAN.DE] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:34:44,628 | WARNING |   [EOG] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 09:35:35,855 | WARNING |   [EQIX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:43:35,995 | WARNING |   [EQNR.OL] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 09:43:46,592 | WARNING |   [EQR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 09:51:31,784 | WARNING |   [ES] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:52:06,043 | WARNING |   [ETN] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 09:58:14,913 | WARNING |   [ETSY] TwelveData error: ('Connection aborted.', ConnectionAbortedError(10053, 'En etablert tilkobling ble avbrutt av program
+2026-02-16 10:04:44,302 | WARNING |   [EW] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 10:05:33,960 | WARNING |   [EXC] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 10:09:53,721 | WARNING |   [F] TwelveData error: ('Connection aborted.', ConnectionResetError(10054, 'En eksisterende tilkobling ble tvangslukket av 
+2026-02-16 10:10:02,953 | WARNING |   [FANG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:10:11,536 | WARNING |   [FCX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 10:10:20,111 | WARNING |   [FDX] TwelveData error: HTTPSConnectionPool(host='api.twelvedata.com', port=443): Max retries exceeded with url: /time_serie
+2026-02-16 10:10:30,527 | WARNING |   [FIVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:10:40,080 | WARNING |   [FOX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:10:49,321 | WARNING |   [FRE.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:11:07,906 | WARNING |   [FTNT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:11:17,036 | WARNING |   [GD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:11:26,320 | WARNING |   [GE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:11:35,530 | WARNING |   [GILD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:11:44,748 | WARNING |   [GIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:12:22,341 | WARNING |   [GM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:12:31,588 | WARNING |   [GOOG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:12:40,724 | WARNING |   [GOOGL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:12:49,900 | WARNING |   [GS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:13:17,565 | WARNING |   [HAL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:13:26,703 | WARNING |   [HD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:13:36,008 | WARNING |   [HEN3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:13:45,479 | WARNING |   [HFG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:13:54,652 | WARNING |   [HLT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:14:03,738 | WARNING |   [HNR1.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:14:22,058 | WARNING |   [HON] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:14:40,339 | WARNING |   [HSY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:14:49,676 | WARNING |   [HUBS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:14:59,059 | WARNING |   [HUM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:15:17,476 | WARNING |   [ICE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:15:26,648 | WARNING |   [IFF] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:15:35,896 | WARNING |   [IFX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:15:54,289 | WARNING |   [INTC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:03,499 | WARNING |   [INTU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:12,735 | WARNING |   [ISRG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:22,221 | WARNING |   [ITW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:32,092 | WARNING |   [IWM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:41,198 | WARNING |   [JNJ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:16:50,325 | WARNING |   [JPM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:17:08,737 | WARNING |   [KHC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:17:27,084 | WARNING |   [KLAC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:17:36,165 | WARNING |   [KMB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:17:45,313 | WARNING |   [KMI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:17:54,624 | WARNING |   [KO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:18:12,929 | WARNING |   [KR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:18:22,058 | WARNING |   [LCID] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:18:31,260 | WARNING |   [LEN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:18:49,522 | WARNING |   [LHX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:18:58,722 | WARNING |   [LIN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:19:16,879 | WARNING |   [LLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:19:26,097 | WARNING |   [LMT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:19:35,339 | WARNING |   [LOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:19:53,542 | WARNING |   [LRCX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:11,819 | WARNING |   [LULU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:21,518 | WARNING |   [LUV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:30,721 | WARNING |   [LYFT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:39,878 | WARNING |   [LYV] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:49,097 | WARNING |   [MA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:20:58,243 | WARNING |   [MAR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:21:07,424 | WARNING |   [MBG.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:21:25,772 | WARNING |   [MCD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:21:34,964 | WARNING |   [MCHP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:21:44,116 | WARNING |   [MCK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:21:53,347 | WARNING |   [MCO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:02,421 | WARNING |   [MDB] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:11,469 | WARNING |   [MDLZ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:20,628 | WARNING |   [MDT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:29,857 | WARNING |   [MET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:39,059 | WARNING |   [META] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:22:57,579 | WARNING |   [MLM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:23:06,718 | WARNING |   [MMC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:23:15,887 | WARNING |   [MO] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:23:43,071 | WARNING |   [MPC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:23:52,145 | WARNING |   [MRK] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:01,349 | WARNING |   [MRK.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:24:10,460 | WARNING |   [MRVL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:19,585 | WARNING |   [MS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:30,696 | WARNING |   [MSCI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:40,058 | WARNING |   [MSFT] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:49,556 | WARNING |   [MTCH] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:24:58,674 | WARNING |   [MTX.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:25:07,923 | WARNING |   [MU] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:25:17,357 | WARNING |   [MUV2.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:25:26,723 | WARNING |   [NEE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:25:45,408 | WARNING |   [NEM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:25:54,845 | WARNING |   [NET] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:26:04,322 | WARNING |   [NFLX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:26:33,082 | WARNING |   [NKE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:26:42,530 | WARNING |   [NOC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:01,310 | WARNING |   [NOW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:10,714 | WARNING |   [NSC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:20,098 | WARNING |   [NUE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:29,850 | WARNING |   [NVDA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:39,203 | WARNING |   [NVR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:27:57,928 | WARNING |   [NXPI] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:28:07,384 | WARNING |   [OKE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:28:16,778 | WARNING |   [OKTA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:28:54,186 | WARNING |   [ORCL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:29:12,509 | WARNING |   [ORLY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:29:21,631 | WARNING |   [OTIS] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:29:30,736 | WARNING |   [OXY] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:29:39,848 | WARNING |   [P911.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:29:48,993 | WARNING |   [PAH3.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:29:58,189 | WARNING |   [PANW] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:07,394 | WARNING |   [PCG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:16,575 | WARNING |   [PEP] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:25,792 | WARNING |   [PFE] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:34,940 | WARNING |   [PG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:44,062 | WARNING |   [PGR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:30:53,222 | WARNING |   [PH] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:03,133 | WARNING |   [PHM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:21,498 | WARNING |   [PLD] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:30,978 | WARNING |   [PLTR] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:40,179 | WARNING |   [PM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:49,330 | WARNING |   [PNC] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:31:58,513 | WARNING |   [POOL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:32:07,644 | WARNING |   [PPG] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:32:25,903 | WARNING |   [PSA] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:32:35,129 | WARNING |   [PSX] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:32:53,304 | WARNING |   [PYPL] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:33:02,381 | WARNING |   [QCOM] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:33:11,574 | WARNING |   [QIA.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:33:20,864 | WARNING |   [QQQ] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:33:30,273 | WARNING |   [REGN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.
+2026-02-16 10:33:48,535 | WARNING |   [RHM.DE] TwelveData error: This symbol is available starting with Grow (Grow plan). Consider upgrading now at https://twelvedata.com/pricing
+2026-02-16 10:34:15,747 | WARNING |   [RIVN] TwelveData error: No data is available on the specified dates. Try setting different start/end dates.

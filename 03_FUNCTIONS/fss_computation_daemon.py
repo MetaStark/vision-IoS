@@ -62,14 +62,19 @@ def get_connection():
 
 
 def compute_fss(conn, baseline_method='NAIVE') -> list:
-    """Call compute_fss() SQL function and return results."""
+    """Call compute_fss() SQL function and return results.
+    HOTFIX CEO-DIR-2026-LEARNING-REANIMATION-023:
+    Explicitly pass p_base_rate to resolve function ambiguity.
+    Uses 6-param function OID 294205.
+    """
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
         SELECT asset_id, brier_actual, brier_ref, fss_value,
-               sample_size, baseline_method, computed_for_period,
-               evidence_hash
+               sample_size, baseline_method, period_start, period_end,
+               evidence_hash, base_rate
         FROM fhq_research.compute_fss(
-            p_baseline_method := %s
+            p_baseline_method := %s,
+            p_base_rate := NULL::numeric
         )
         WHERE fss_value IS NOT NULL
     """, (baseline_method,))
@@ -77,30 +82,19 @@ def compute_fss(conn, baseline_method='NAIVE') -> list:
 
 
 def log_fss_results(conn, results: list, baseline_method: str) -> int:
-    """Log FSS computation results to fss_computation_log."""
+    """Log FSS computation results to fss_computation_log.
+    HOTFIX CEO-DIR-2026-LEARNING-REANIMATION-023:
+    Handles 6-param function return format with period_start, period_end.
+    """
     if not results:
         return 0
 
     cur = conn.cursor()
     logged = 0
     for row in results:
-        period = row.get('computed_for_period')
-        # Parse daterange — format is [start,end)
-        period_start = None
-        period_end = None
-        if period:
-            period_str = str(period)
-            # psycopg2 returns DateRange or string
-            if hasattr(period, 'lower'):
-                period_start = period.lower
-                period_end = period.upper
-            else:
-                # Parse string format [2026-01-01,2026-02-05)
-                cleaned = period_str.strip('[]() ')
-                parts = cleaned.split(',')
-                if len(parts) == 2:
-                    period_start = parts[0].strip()
-                    period_end = parts[1].strip()
+        # 6-param function returns period_start and period_end directly
+        period_start = row.get('period_start')
+        period_end = row.get('period_end')
 
         cur.execute("""
             INSERT INTO fhq_research.fss_computation_log (

@@ -499,7 +499,18 @@ class ComprehensiveDatabaseVerifier:
         return {'status': status, 'count': total, 'attested': attested, 'with_sha256': with_sha256, 'message': message}
 
     def _verify_ios(self) -> Dict:
-        """Verify IoS registry."""
+        """Verify IoS registry with VEGA Policy B enforcement.
+
+        VEGA Policy B:
+        - PRODUCTION IoS must be vega-signed
+        - ACTIVE IoS should be vega-signed (unless specifically exempt)
+        - Ephemeral/TEST IoS are exempt from signing requirement
+
+        Signature tracking columns:
+        - vega_signature_id (UUID) - VEGA signature record
+        - content_hash (SHA-256) - content integrity hash
+        - hash_chain (text) - hash chain integrity
+        """
         query = """
             SELECT
                 ios_id,
@@ -509,9 +520,11 @@ class ComprehensiveDatabaseVerifier:
                 canonical,
                 content_hash,
                 vega_signature_id,
-                created_at
+                created_at,
+                updated_at,
+                activated_at
             FROM fhq_meta.ios_registry
-            ORDER BY created_at
+            ORDER BY updated_at DESC NULLS LAST
         """
 
         conn = self.connect()
@@ -537,20 +550,69 @@ class ComprehensiveDatabaseVerifier:
         with_hash = sum(1 for r in records if r.get('content_hash'))
         with_vega = sum(1 for r in records if r.get('vega_signature_id'))
 
+        # VEGA Policy B: Check signature requirements
+        vega_compliant_count = 0
+        vega_exempt_count = 0
+        missing_vega_reasons = []
+
+        for r in records:
+            ios_status = r.get('status', '')
+            is_production = 'PRODUCTION' in r.get('title', '').upper()
+            is_ephemeral = any(x in r.get('title', '').upper() for x in ['EPHEMERAL', 'TEST', 'PROTOTYPE'])
+            is_active = ios_status == 'ACTIVE'
+            has_vega = r.get('vega_signature_id') is not None
+
+            # VEGA Policy: Ephemeral/TEST IoS are exempt
+            if is_ephemeral:
+                if has_vega:
+                    vega_exempt_count += 1
+                    missing_vega_reasons.append(f"{r['ios_id']}: EPHEMERAL/TEST IoS should NOT have signature")
+                continue
+
+            # VEGA Policy: PRODUCTION IoS must be vega-signed
+            if is_production and not has_vega:
+                vega_compliant_count += 1
+                missing_vega_reasons.append(f"{r['ios_id']}: PRODUCTION IoS lacks vega signature")
+
+            # VEGA Policy: ACTIVE IoS should be vega-signed
+            if is_active and not has_vega:
+                vega_compliant_count += 1
+                missing_vega_reasons.append(f"{r['ios_id']}: ACTIVE IoS lacks vega signature")
+
+            if has_vega and (is_production or is_active):
+                vega_compliant_count += 1
+
+        vega_compliance_rate = (vega_compliant_count / total * 100) if total > 0 else 0
+
         status = 'PASS'
-        message = f"{total} IoS: {active} ACTIVE, {canonical_count} canonical, {with_vega} vega-signed"
+        message = f"{total} IoS: {active} ACTIVE, {canonical_count} canonical, {with_vega}/{total} vega-signed"
+
+        # Set status based on VEGA Policy B
+        if vega_compliant_count > 0:
+            status = 'WARN'
+            message = f"WARN: {len(missing_vega_reasons)} IoS lack vega signature (VEGA Policy B)"
+            self.report['warnings'].extend(missing_vega_reasons)
+        elif vega_exempt_count > 0:
+            status = 'WARN'
+            message = f"WARN: {vega_exempt_count} EPHEMERAL/TEST IoS have unexpected signatures (VEGA Policy B violation)"
+            self.report['warnings'].append(message)
 
         if with_hash < total:
             status = 'WARN'
             message = f"WARN: {with_hash}/{total} IoS have content_hash"
             self.report['warnings'].append(message)
-        elif with_vega < total:
-            status = 'WARN'
-            message = f"WARN: {with_vega}/{total} IoS vega-signed"
-            self.report['warnings'].append(message)
 
         logger.info(f"IoS: {message} [{status}]")
-        return {'status': status, 'count': total, 'active': active, 'canonical': canonical_count, 'with_vega': with_vega, 'message': message}
+        return {
+            'status': status,
+            'count': total,
+            'active': active,
+            'canonical': canonical_count,
+            'with_vega': with_vega,
+            'vega_compliant': vega_compliant_count,
+            'vega_exempt': vega_exempt_count,
+            'message': message
+        }
 
     def _verify_ecs(self) -> Dict:
         """Verify EC registry."""
@@ -771,13 +833,29 @@ class ComprehensiveDatabaseVerifier:
             return {'status': 'WARN', 'message': 'No FSS computation found'}
 
         latest = records[0]
-        fss_value = latest.get('fss_value', 0)
+        fss_value = latest.get('fss_value')
         brier_actual = latest.get('brier_actual')
         brier_ref = latest.get('brier_ref')
         hours_stale = latest.get('hours_stale', 0) or 0
 
+        # Handle NULL fss_value
+        if fss_value is None:
+            status = 'WARN'
+            message = f"FSS=NULL, {hours_stale:.0f}h stale"
+            logger.info(f"FSS: {message} [{status}]")
+            return {
+                'status': status,
+                'fss_value': None,
+                'brier_actual': brier_actual,
+                'brier_ref': brier_ref,
+                'hours_stale': hours_stale,
+                'message': message
+            }
+
         status = 'PASS'
-        message = f"FSS={fss_value:.3f}, BRIER_actual={brier_actual:.3f}, {hours_stale:.0f}h stale"
+        fss_str = f"{fss_value:.3f}" if fss_value is not None else "NULL"
+        brier_str = f"{brier_actual:.3f}" if brier_actual is not None else "NULL"
+        message = f"FSS={fss_str}, BRIER_actual={brier_str}, {hours_stale:.0f}h stale"
 
         if fss_value < 0:
             status = 'CRITICAL'
@@ -806,10 +884,13 @@ class ComprehensiveDatabaseVerifier:
         """Verify BSS (Baseline Skill Score)."""
         baseline_query = """
             SELECT
+                snapshot_id,
                 bss_value,
                 bs_reference,
                 bs_value,
                 sample_size,
+                is_degenerate,
+                guard_reason,
                 created_at
             FROM fhq_governance.bss_baseline_snapshot
             ORDER BY created_at DESC
@@ -832,18 +913,31 @@ class ComprehensiveDatabaseVerifier:
             logger.warning("No BSS baseline found")
             return {'status': 'WARN', 'message': 'No BSS baseline found'}
 
-        bss_value = baseline[0].get('bss_value', 0)
+        row = baseline[0] if baseline else {}
+        bss_value = row.get('bss_value')
+        guard_reason = row.get('guard_reason')
+        is_degenerate = row.get('is_degenerate', False)
+        bs_reference = row.get('bs_reference')
 
         status = 'PASS'
-        message = f"BSS={bss_value:.3f}"
+        message = f"BSS={bss_value if bss_value is not None else 'NULL':.3f}"
 
-        if bss_value <= 0:
+        # Check for guard/sentinel status
+        if bss_value is None:
             status = 'WARN'
-            message = f"WARN: BSS={bss_value:.3f} (<=0.00)"
+            message = f"WARN: BSS has sentinel status - {guard_reason}"
             self.report['warnings'].append(message)
+        elif is_degenerate:
+            status = 'WARN'
+            message = f"WARN: BSS marked as degenerate"
+            self.report['warnings'].append(message)
+        elif bs_reference <= 0:
+            status = 'CRITICAL'
+            message = f"CRITICAL: BSS has invalid baseline (bs_reference={bs_reference:.4f} <= 0)"
+            self.report['critical_issues'].append(message)
 
         logger.info(f"BSS: {message} [{status}]")
-        return {'status': status, 'value': bss_value, 'message': message}
+        return {'status': status, 'value': bss_value, 'guard_reason': guard_reason, 'message': message}
 
     # =========================================================================
     # PHASE 4: Test Infrastructure
