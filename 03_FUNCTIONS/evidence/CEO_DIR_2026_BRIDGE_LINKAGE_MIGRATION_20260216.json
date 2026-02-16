@@ -1,0 +1,103 @@
+{
+  "directive": "CEO-DIR-2026-BRIDGE-LINKAGE-GUARDRAIL-026",
+  "executed_at": "2026-02-16T11:00:00.000Z",
+  "executed_by": "STIG (EC-003)",
+  "decision": "Option A Approved - Update FK to fhq_learning.outcome_ledger",
+  "migration_steps": [
+    {
+      "step": 1,
+      "description": "Drop existing FK constraint",
+      "sql": "ALTER TABLE fhq_learning.outcome_pack_link DROP CONSTRAINT IF EXISTS fk_outcome_pack_link_outcome",
+      "status": "COMPLETED"
+    },
+    {
+      "step": 2,
+      "description": "Create new FK to fhq_learning.outcome_ledger",
+      "sql": "ALTER TABLE fhq_learning.outcome_pack_link ADD CONSTRAINT fk_outcome_pack_link_outcome FOREIGN KEY (outcome_id) REFERENCES fhq_learning.outcome_ledger(outcome_id) ON DELETE CASCADE",
+      "status": "COMPLETED"
+    },
+    {
+      "step": 3,
+      "description": "Add BRIDGE-only guardrail trigger",
+      "sql": "CREATE FUNCTION fhq_learning.trg_enforce_bridge_only_linkage() RETURNS TRIGGER",
+      "status": "COMPLETED",
+      "file": "dir_026_bridge_linkage_guardrail.sql"
+    },
+    {
+      "step": 4,
+      "description": "Backfill outcome_pack_link for 5 BRIDGE experiments",
+      "sql": "INSERT INTO fhq_learning.outcome_pack_link ...",
+      "status": "COMPLETED",
+      "links_created": 420
+    },
+    {
+      "step": 5,
+      "description": "G1/G2/G3 verification",
+      "status": "COMPLETED",
+      "result": "5/5 PASS"
+    }
+  ],
+  "results": {
+    "g1_g2_g3_verification": {
+      "experiments_processed": 5,
+      "g1_pass": 5,
+      "g1_fail": 0,
+      "g2_pass": 5,
+      "g2_fail": 0,
+      "g3_pass": 5,
+      "g3_fail": 0,
+      "overall_status": "PASS"
+    },
+    "backfill_summary": {
+      "total_outcomes": 420,
+      "links_created": 420,
+      "links_failed": 0,
+      "guardrail_violations": 0
+    }
+  },
+  "experiments_verified": [
+    {
+      "experiment_code": "EXP_BRIDGE_FINNT-CRE-20260206123819",
+      "g1_packs": 48,
+      "g2_links": 84,
+      "g3_outcomes": 84,
+      "status": "PASS"
+    },
+    {
+      "experiment_code": "EXP_BRIDGE_FINNT-CRE-20260206113809",
+      "g1_packs": 2,
+      "g2_links": 84,
+      "g3_outcomes": 84,
+      "status": "PASS"
+    },
+    {
+      "experiment_code": "EXP_BRIDGE_FINNT-CRE-20260206093750",
+      "g1_packs": 48,
+      "g2_links": 84,
+      "g3_outcomes": 84,
+      "status": "PASS"
+    },
+    {
+      "experiment_code": "EXP_BRIDGE_FINNT-CRE-20260206083740",
+      "g1_packs": 48,
+      "g2_links": 84,
+      "g3_outcomes": 84,
+      "status": "PASS"
+    },
+    {
+      "experiment_code": "EXP_BRIDGE_FINNT-CRE-20260206103800",
+      "g1_packs": 2,
+      "g2_links": 84,
+      "g3_outcomes": 84,
+      "status": "PASS"
+    }
+  ],
+  "schema_changes": {
+    "outcome_pack_link_fk": "Updated from fhq_research.outcome_ledger to fhq_learning.outcome_ledger",
+    "guardrail_trigger": "trg_bridge_only_linkage - enforces BRIDGE_THROUGHPUT only",
+    "unique_outcome_per_pack": "Retained - ensures one pack per outcome"
+    "unique_pack_per_outcome": "Dropped - allows one pack to multiple outcomes"
+    "link_method": "POST_MORTEM",
+    "link_confidence": 0.8"
+  }
+}

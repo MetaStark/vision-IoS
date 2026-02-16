@@ -105,7 +105,11 @@ def get_current_regime(conn) -> str:
 
 
 def find_eligible_hypotheses(conn) -> list:
-    """Find promoted hypotheses that have CLOSED shadow trades but no decision packs."""
+    """Find promoted hypotheses that have terminal (CLOSED or EXPIRED) shadow trades but no decision packs.
+
+    CEO-DIR-2026-TERMINAL-OUTCOME-CLARIFICATION-026 A1:
+    Terminal outcomes include both CLOSED (SL/TP) and EXPIRED (TTL).
+    """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT DISTINCT
@@ -115,7 +119,11 @@ def find_eligible_hypotheses(conn) -> list:
                 hc.asset_universe,
                 hc.current_confidence,
                 hc.asset_class,
-                pga.evaluated_at
+                pga.evaluated_at,
+                pga.causal_node_id,
+                pga.gate_id,
+                pga.state_snapshot_hash,
+                pga.agent_id
             FROM fhq_learning.promotion_gate_audit pga
             JOIN fhq_learning.hypothesis_canon hc ON pga.hypothesis_id = hc.canon_id
             WHERE pga.gate_result = 'PASS'
@@ -123,36 +131,48 @@ def find_eligible_hypotheses(conn) -> list:
               AND EXISTS (
                   SELECT 1 FROM fhq_execution.shadow_trades st
                   WHERE st.source_hypothesis_id = hc.canon_id::text
-                  AND st.status = 'CLOSED'
+                  AND st.status IN ('CLOSED', 'EXPIRED')
               )
             ORDER BY pga.evaluated_at
         """)
         return cur.fetchall()
 
 
-def get_shadow_trade_snapshots(conn, hypothesis_id: str) -> list:
-    """Get the most recent CLOSED shadow trade per asset for snapshot pricing."""
+def get_shadow_trade_snapshots(conn, hypothesis_uuid: str) -> list:
+    """Get the most recent terminal (CLOSED or EXPIRED) shadow trade per asset for snapshot pricing.
+
+    CEO-DIR-2026-TERMINAL-OUTCOME-CLARIFICATION-026 A1:
+    Terminal outcomes include both CLOSED (SL/TP) and EXPIRED (TTL).
+
+    Returns: List of shadow trade snapshots with status, exit_reason for terminal_reason mapping.
+    """
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT DISTINCT ON (asset_id)
                 asset_id, entry_price, exit_price, entry_time,
-                shadow_pnl, shadow_return_pct, direction, entry_regime
+                shadow_pnl, shadow_return_pct, direction, entry_regime,
+                status, exit_reason
             FROM fhq_execution.shadow_trades
             WHERE source_hypothesis_id = %s
-            AND status = 'CLOSED'
+            AND status IN ('CLOSED', 'EXPIRED')
             ORDER BY asset_id, entry_time DESC
-        """, (hypothesis_id,))
+        """, (hypothesis_uuid,))
         return cur.fetchall()
 
 
-def check_existing_pack(conn, hypothesis_id: str, asset: str) -> bool:
-    """Check if a decision pack already exists for this hypothesis+asset."""
+def check_existing_pack(conn, hypothesis_uuid: str, asset: str) -> bool:
+    """Check if a decision pack already exists for this hypothesis+asset.
+
+    CEO-DIR-2026-TERMINAL-OUTCOME-CLARIFICATION-026 A1 Fix:
+    Use hypothesis_uuid (UUID) to match decision_packs.hypothesis_uuid column.
+    Previous bug used hypothesis_id (TEXT) causing false negatives for EXPIRED hypotheses.
+    """
     with conn.cursor() as cur:
         cur.execute("""
             SELECT 1 FROM fhq_learning.decision_packs
-            WHERE hypothesis_id = %s AND asset = %s
+            WHERE hypothesis_uuid = %s AND asset = %s
             LIMIT 1
-        """, (hypothesis_id, asset))
+        """, (hypothesis_uuid, asset))
         return cur.fetchone() is not None
 
 
@@ -165,7 +185,26 @@ def compute_evidence_hash(pack_data: dict) -> str:
 def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
                          regime: str, dry_run: bool = False) -> dict:
     """Create a single decision pack from hypothesis + shadow trade snapshot."""
-    canon_id = str(hypothesis['canon_id'])
+    # CEO-DIR-2026-LVI-SETTLEMENT-RELINK-024: Use hypothesis_uuid (FK to hypothesis_ledger)
+    hypothesis_uuid = hypothesis['canon_id']  # Maps to hypothesis_ledger.hypothesis_id
+
+    # Hard fail: NULL hypothesis_uuid is not allowed
+    if hypothesis_uuid is None:
+        logger.error(f"  NULL hypothesis_uuid detected — ABORTING pack creation for hypothesis {hypothesis.get('hypothesis_code', 'UNKNOWN')}")
+        # Log to system_event_log for audit
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.system_event_log
+                    (event_type, severity, description, metadata, created_at)
+                VALUES
+                    ('PACK_GEN_NULL_UUID', 'ERROR', %s, %s, NOW())
+            """, (
+                f"NULL hypothesis_uuid in create_decision_pack for hypothesis_code={hypothesis.get('hypothesis_code')}",
+                json.dumps({'hypothesis': hypothesis, 'snapshot': snapshot})
+            ))
+            conn.commit()
+        return None
+
     asset = snapshot['asset_id']
     raw_direction = hypothesis['expected_direction']
     direction = DIRECTION_MAP.get(raw_direction)
@@ -192,10 +231,32 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
     # Risk/reward
     risk_reward_ratio = EWRE_TAKE_PROFIT_PCT / EWRE_STOP_LOSS_PCT
 
+    # CEO-DIR-2026-TERMINAL-OUTCOME-CLARIFICATION-026 A1: Terminal reason
+    # Map shadow trade status + exit_reason to terminal_reason for pack metadata
+    status = snapshot.get('status')
+    exit_reason = snapshot.get('exit_reason', 'UNKNOWN')
+    if status == 'CLOSED':
+        if exit_reason == 'STOP_LOSS':
+            terminal_reason = 'SL'
+        elif exit_reason == 'TAKE_PROFIT':
+            terminal_reason = 'TP'
+        else:
+            terminal_reason = exit_reason
+    elif status == 'EXPIRED':
+        terminal_reason = 'EXPIRY'
+    else:
+        terminal_reason = 'UNKNOWN'
+
     now = datetime.now(timezone.utc)
 
+    # CEO-DIR-2026-CHAIN-WRITE-ACTIVATION-006: Chain binding + ASRP
+    causal_node_id = hypothesis.get('causal_node_id')
+    gate_id = hypothesis.get('gate_id')
+    state_snapshot_hash = hypothesis.get('state_snapshot_hash')
+    agent_id = hypothesis.get('agent_id', 'STIG')
+
     pack_data = {
-        'hypothesis_id': canon_id,
+        'hypothesis_uuid': hypothesis_uuid,  # Maps to hypothesis_ledger.hypothesis_id
         'asset': asset,
         'direction': direction,
         'asset_class': asset_class,
@@ -213,6 +274,17 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
         'position_usd': position_usd,
         'position_qty': position_qty,
         'pack_version': PACK_VERSION,
+        # CEO-DIR-2026-TERMINAL-OUTCOME-CLARIFICATION-026 A1: Terminal reason
+        'terminal_reason': terminal_reason,
+        'shadow_trade_status': status,
+        'shadow_trade_exit_reason': exit_reason,
+        # CEO-DIR-2026-CHAIN-WRITE-ACTIVATION-006: Chain binding fields
+        'causal_node_id': causal_node_id,
+        'gate_id': gate_id,
+        'asrp': {
+            'state_snapshot_hash': state_snapshot_hash,
+            'agent_id': agent_id,
+        }
     }
 
     evidence_hash = compute_evidence_hash(pack_data)
@@ -221,13 +293,14 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
     if dry_run:
         logger.info(f"  [DRY RUN] Would create pack: {asset} {direction} | "
                     f"entry={entry_price} SL={stop_loss_price} TP={take_profit_price} | "
-                    f"size=${position_usd} qty={position_qty}")
+                    f"size=${position_usd} qty={position_qty} | "
+                    f"causal_node_id={causal_node_id}, gate_id={gate_id}")
         return pack_data
 
     with conn.cursor() as cur:
         cur.execute("""
             INSERT INTO fhq_learning.decision_packs
-                (hypothesis_id, asset, direction, asset_class,
+                (hypothesis_uuid, asset, direction, asset_class,
                  snapshot_price, snapshot_regime, snapshot_timestamp,
                  snapshot_ttl_valid_until,
                  raw_confidence, damped_confidence,
@@ -248,9 +321,9 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
                  %s, %s,
                  %s, %s, %s, %s,
                  'PENDING')
-            RETURNING pack_id
+            RETURNING hypothesis_uuid
         """, (
-            canon_id, asset, direction, asset_class,
+            hypothesis_uuid, asset, direction, asset_class,
             entry_price, regime, now,
             now,  # snapshot_ttl_valid_until (shadow, no real TTL)
             confidence, confidence,
@@ -267,7 +340,7 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
         pack_data['pack_id'] = str(pack_id)
         logger.info(f"  Created pack: {asset} {direction} | "
                     f"entry={entry_price} SL={stop_loss_price} TP={take_profit_price} | "
-                    f"pack_id={pack_id}")
+                    f"pack_id={pack_id} | causal_node_id={causal_node_id}, gate_id={gate_id}")
 
     return pack_data
 
