@@ -95,9 +95,14 @@
   "schema_changes": {
     "outcome_pack_link_fk": "Updated from fhq_research.outcome_ledger to fhq_learning.outcome_ledger",
     "guardrail_trigger": "trg_bridge_only_linkage - enforces BRIDGE_THROUGHPUT only",
-    "unique_outcome_per_pack": "Retained - ensures one pack per outcome"
-    "unique_pack_per_outcome": "Dropped - allows one pack to multiple outcomes"
+    "unique_outcome_per_pack": "Retained - ensures one pack per outcome",
+    "unique_pack_per_outcome": "Dropped - allows one pack to multiple outcomes",
     "link_method": "POST_MORTEM",
-    "link_confidence": 0.8"
-  }
+    "link_confidence": 0.8
+  },
+  "tech_debt": [
+    "Dual ledger architecture (fhq_research vs fhq_learning.outcome_ledger) requires future consolidation",
+    "Decision pack generator duplication bug identified - creates 48 duplicate packs over 18 minutes for single hypothesis",
+    "Outcome settlement daemon heartbeat constraint violation - valid_daemon_status check rejects outcome_settlement_daemon status"
+  ]
 }
