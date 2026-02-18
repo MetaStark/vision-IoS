@@ -20,6 +20,7 @@ import os
 import sys
 import time
 import logging
+import json
 from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -45,6 +46,50 @@ DB_CONFIG = {
 SYNC_INTERVAL_SECONDS = 300  # 5 minutes
 LOOKBACK_HOURS = 2
 
+DAEMON_NAME = 'alpha_graph_sync'
+
+
+def heartbeat(conn, status: str, details: dict = None):
+    """Write heartbeat to daemon_health table (Heartbeat Contract)."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
+                VALUES (%s, %s, NOW(), %s)
+                ON CONFLICT (daemon_name)
+                DO UPDATE SET status = EXCLUDED.status,
+                              last_heartbeat = NOW(),
+                              metadata = EXCLUDED.metadata,
+                              updated_at = NOW()
+            """, (DAEMON_NAME, status, json.dumps(details) if details else None))
+            conn.commit()
+            logger.debug(f"Heartbeat: {DAEMON_NAME} -> {status}")
+    except Exception as e:
+        logger.error(f"Heartbeat failed: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+def write_critical_event(conn, event_type: str, message: str, severity: str = 'CRITICAL', metadata: dict = None):
+    """Write CRITICAL event to system_event_log (Heartbeat Contract)."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.system_event_log
+                (event_type, severity, source_system, event_message, event_timestamp, metadata)
+                VALUES (%s, %s, %s, %s, NOW(), %s)
+            """, (event_type, severity, DAEMON_NAME, message, json.dumps(metadata) if metadata else None))
+            conn.commit()
+            logger.critical(f"Event written: {event_type} - {message}")
+    except Exception as e:
+        logger.error(f"Failed to write CRITICAL event: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
 
 def get_connection():
     return psycopg2.connect(**DB_CONFIG)
@@ -53,7 +98,13 @@ def get_connection():
 def run_sync():
     """Run a single sync cycle using CEO-DIR-007 validated function."""
     conn = get_connection()
+    result = None
+    prior_result = None
+
     try:
+        # Heartbeat: Cycle start (Heartbeat Contract)
+        heartbeat(conn, 'HEALTHY', {'status': 'cycle_start'})
+
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Run the VALIDATED sync function (CEO-DIR-007)
             # Uses 10-minute window for realtime sync
@@ -76,6 +127,14 @@ def run_sync():
                 prior_msg += f" (skipped: {prior_result['skipped_reason']})"
             logger.info(prior_msg)
 
+            # Heartbeat: Cycle complete (Heartbeat Contract)
+            heartbeat(conn, 'HEALTHY', {
+                'status': 'cycle_complete',
+                'sync_run_id': result['run_id'],
+                'inserted_count': result['inserted_count'],
+                'prior_adjusted': prior_result['adjusted_count']
+            })
+
             return {
                 'sync': dict(result),
                 'prior': dict(prior_result)
@@ -83,6 +142,15 @@ def run_sync():
 
     except Exception as e:
         logger.error(f"Sync failed: {e}")
+        write_critical_event(conn, 'ALPHA_GRAPH_SYNC_FAILURE', str(e), 'CRITICAL', {
+            'error_type': type(e).__name__,
+            'sync_run_id': result['run_id'] if result else None
+        })
+        # Heartbeat: Degraded on failure (Heartbeat Contract)
+        try:
+            heartbeat(conn, 'DEGRADED', {'status': 'failed', 'error': str(e)})
+        except Exception:
+            pass
         conn.rollback()
         raise
     finally:

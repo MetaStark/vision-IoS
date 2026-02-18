@@ -134,7 +134,7 @@ def create_outcome_pack_link(conn, pack: Dict, outcome: Dict) -> Optional[str]:
             INSERT INTO fhq_learning.outcome_pack_link
                 (outcome_id, pack_id, hypothesis_id, link_method, link_confidence, linked_at)
             VALUES (%s, %s, %s, %s, %s, NOW())
-            ON CONFLICT (pack_id) DO NOTHING
+            ON CONFLICT (outcome_id) DO NOTHING
             RETURNING link_id
         """, (
             outcome['outcome_id'],

@@ -92,6 +92,50 @@ REGIME_MAP = {
     'UNKNOWN': 'UNKNOWN',
 }
 
+DAEMON_NAME = 'decision_pack_generator'
+
+
+def heartbeat(conn, status: str, details: dict = None):
+    """Write heartbeat to daemon_health table (Heartbeat Contract)."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health (daemon_name, status, last_heartbeat, metadata)
+                VALUES (%s, %s, NOW(), %s)
+                ON CONFLICT (daemon_name)
+                DO UPDATE SET status = EXCLUDED.status,
+                              last_heartbeat = NOW(),
+                              metadata = EXCLUDED.metadata,
+                              updated_at = NOW()
+            """, (DAEMON_NAME, status, json.dumps(details) if details else None))
+            conn.commit()
+            logger.debug(f"Heartbeat: {DAEMON_NAME} -> {status}")
+    except Exception as e:
+        logger.error(f"Heartbeat failed: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+def write_critical_event(conn, event_type: str, message: str, severity: str = 'CRITICAL', metadata: dict = None):
+    """Write CRITICAL event to system_event_log (Heartbeat Contract)."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.system_event_log
+                (event_type, severity, source_system, event_message, event_timestamp, metadata)
+                VALUES (%s, %s, %s, %s, NOW(), %s)
+            """, (event_type, severity, DAEMON_NAME, message, json.dumps(metadata) if metadata else None))
+            conn.commit()
+            logger.critical(f"Event written: {event_type} - {message}")
+    except Exception as e:
+        logger.error(f"Failed to write CRITICAL event: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
 
 def get_current_regime(conn) -> str:
     """Get current regime."""
@@ -347,16 +391,22 @@ def create_decision_pack(conn, hypothesis: dict, snapshot: dict,
 
 def run_pack_generator(dry_run: bool = False):
     """Main entry: generate decision packs for all eligible hypotheses."""
-    logger.info("=" * 60)
-    logger.info("DECISION PACK GENERATOR — Formal execution intent")
-    logger.info(f"  dry_run={dry_run}")
-    logger.info(f"  directive=CEO-DIR-20260130-PIPELINE-COMPLETION-002 D2")
-    logger.info(f"  EWRE: SL={EWRE_STOP_LOSS_PCT*100}% TP={EWRE_TAKE_PROFIT_PCT*100}%")
-    logger.info(f"  Position: ${DEFAULT_POSITION_USD}")
-    logger.info("=" * 60)
-
     conn = psycopg2.connect(**DB_CONFIG)
+    packs_created = 0
+    hypotheses_processed = 0
+
     try:
+        # Heartbeat: Cycle start (Heartbeat Contract)
+        heartbeat(conn, 'HEALTHY', {'dry_run': dry_run, 'status': 'cycle_start'})
+
+        logger.info("=" * 60)
+        logger.info("DECISION PACK GENERATOR — Formal execution intent")
+        logger.info(f"  dry_run={dry_run}")
+        logger.info(f"  directive=CEO-DIR-20260130-PIPELINE-COMPLETION-002 D2")
+        logger.info(f"  EWRE: SL={EWRE_STOP_LOSS_PCT*100}% TP={EWRE_TAKE_PROFIT_PCT*100}%")
+        logger.info(f"  Position: ${DEFAULT_POSITION_USD}")
+        logger.info("=" * 60)
+
         regime = get_current_regime(conn)
         logger.info(f"Current regime: {regime}")
 
@@ -365,6 +415,7 @@ def run_pack_generator(dry_run: bool = False):
 
         if not hypotheses:
             logger.info("No hypotheses eligible for decision pack generation.")
+            heartbeat(conn, 'HEALTHY', {'dry_run': dry_run, 'status': 'no_hypotheses'})
             return
 
         all_packs = []
@@ -394,11 +445,14 @@ def run_pack_generator(dry_run: bool = False):
                 conn.commit()
             logger.info(f"  Packs {'would be ' if dry_run else ''}created: {created_for_hyp}")
 
+        packs_created = len(all_packs)
+        hypotheses_processed = len(hypotheses)
+
         # Summary
         logger.info("\n" + "=" * 60)
         logger.info(f"PACK GENERATOR SUMMARY")
-        logger.info(f"  Hypotheses processed: {len(hypotheses)}")
-        logger.info(f"  Packs {'would be ' if dry_run else ''}created: {len(all_packs)}")
+        logger.info(f"  Hypotheses processed: {hypotheses_processed}")
+        logger.info(f"  Packs {'would be ' if dry_run else ''}created: {packs_created}")
         logger.info("=" * 60)
 
         # Evidence
@@ -426,6 +480,28 @@ def run_pack_generator(dry_run: bool = False):
             json.dump(evidence, f, indent=2, default=str)
         logger.info(f"Evidence: {evidence_path}")
 
+        # Heartbeat: Cycle complete (Heartbeat Contract)
+        heartbeat(conn, 'HEALTHY', {
+            'dry_run': dry_run,
+            'status': 'cycle_complete',
+            'hypotheses_processed': hypotheses_processed,
+            'packs_created': packs_created
+        })
+
+    except Exception as e:
+        logger.error(f"Pack generator failed: {e}")
+        write_critical_event(conn, 'PACK_GENERATOR_FAILURE', str(e), 'CRITICAL', {
+            'dry_run': dry_run,
+            'hypotheses_processed': hypotheses_processed,
+            'packs_created': packs_created,
+            'error_type': type(e).__name__
+        })
+        # Heartbeat: Degraded on failure (Heartbeat Contract)
+        try:
+            heartbeat(conn, 'DEGRADED', {'dry_run': dry_run, 'status': 'failed', 'error': str(e)})
+        except Exception:
+            pass
+        raise
     finally:
         conn.close()
 

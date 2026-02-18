@@ -1,0 +1,120 @@
+{
+  "directive": "CEO-DIR-2026-END-TO-END-CHAIN-LIVENESS-VERIFICATION-046",
+  "assessment_date": "2026-02-16 19:30:00 UTC",
+  "assessed_by": "STIG",
+  "ec_contract": "EC-003",
+  "overall_verdict": "SYSTEM_NON-CERTIFIABLE",
+  "classification": "CHAIN_BROKEN",
+
+  "order_a_os_proof": {
+    "outcome_settlement_daemon": {
+      "scheduled_task": "NOT_FOUND",
+      "service_status": "NOT_RUNNING",
+      "last_heartbeat": "2026-02-16 09:16:31 UTC",
+      "age_hours": 10.7,
+      "sla_threshold": 75,
+      "sla_compliance": "BREACHED"
+    },
+    "lvi_calculator": {
+      "scheduled_task": "READY",
+      "service_status": "NOT_RUNNING",
+      "last_heartbeat": "2026-02-16 12:58:43 UTC",
+      "age_hours": 6.4,
+      "sla_threshold": 75,
+      "sla_compliance": "BREACHED"
+    },
+    "decision_pack_generator": {
+      "scheduled_task": "READY",
+      "service_status": "NOT_RUNNING",
+      "last_heartbeat": "2026-02-04 19:40:10 UTC",
+      "age_hours": 279.4,
+      "sla_threshold": 75,
+      "sla_compliance": "BREACHED"
+    },
+    "mechanism_alpha_trigger": {
+      "scheduled_task": "READY",
+      "status": "DEGRADED",
+      "last_heartbeat": "2026-02-16 19:17:02 UTC",
+      "age_minutes": 3.5,
+      "sla_threshold": 75,
+      "sla_compliance": "WITHIN_SLA"
+    },
+    "alpha_graph_sync": {
+      "scheduled_task": "RUNNING",
+      "status": "HEALTHY",
+      "last_heartbeat": "2026-02-16 13:15:30 UTC",
+      "age_hours": 6.1,
+      "sla_threshold": 75,
+      "sla_compliance": "BREACHED"
+    },
+    "finn_crypto_scheduler": {
+      "scheduled_task": "READY",
+      "service_status": "HEALTHY",
+      "last_heartbeat": "2026-02-16 13:17:51 UTC",
+      "age_hours": 6.0,
+      "sla_threshold": 75,
+      "sla_compliance": "BREACHED"
+    }
+  },
+
+  "order_b_db_proof": {
+    "heartbeat_freshness": {
+      "sla_threshold_minutes": 75,
+      "within_sla_count": 1,
+      "sla_breached_count": 5,
+      "overall": "FAIL"
+    }
+  },
+
+  "order_c_data_level_proof": {
+    "stage_throughput_last_1h": {
+      "settlement_throughput": 0,
+      "lvi_refresh": 3,
+      "decision_packs_created": 681,
+      "forecasts": 0,
+      "alpha_edges": 0
+    },
+    "liveness_status": {
+      "settlement_throughput": "DEAD",
+      "lvi_refresh": "ALIVE",
+      "decision_packs_created": "ALIVE",
+      "forecasts": "DEAD",
+      "alpha_edges": "DEAD"
+    },
+    "overall_liveness": "1_6_ALIVE"
+  },
+
+  "order_d_hourly_snapshot": {
+    "table_name": "fhq_governance.chain_liveness_hourly",
+    "snapshot_rows": 0,
+    "status": "NO_SNAPSHOTS"
+  },
+
+  "global_pass_condition": {
+    "required_consecutive_hours": 6,
+    "current_consecutive_hours": 0,
+    "no_heartbeat_gaps": "FALSE - 5 daemons breached",
+    "continuous_settlement_throughput": "FALSE - 0 rows/h",
+    "hourly_governance_snapshots": "FALSE - 0 rows/h",
+    "overall": "NOT_MET"
+  },
+
+  "critical_blocker": {
+    "summary": "outcome_settlement_daemon never installed as continuous service. 681 PENDING packs created 2026-02-16 12:20:01 UTC - all lack outcomes, cannot be settled.",
+    "chain_breakdown": "Data ingestion → Pack creation → [EXECUTION BLOCKED] → [SETTLEMENT BLOCKED] → [GOVERNANCE BLOCKED]",
+    "upstream_issue": "decision_pack_generator not running - 11 days stale"
+    "downstream_impact": "No settlements = no LVI updates = governance stall"
+  },
+
+  "certification_status": {
+    "institutional_grade": "DEPLOYED",
+    "runtime_liveness": "NON-CERTIFIABLE",
+    "allocator_grade": "NOT_CERTIFIABLE"
+  },
+
+  "files_created": [
+    "03_FUNCTIONS/evidence/DIR_046_CHAIN_LIVENESS_EVIDENCE_20260216.json"
+  ],
+
+  "evidence_hash": "sha256:TODO_GENERATE"
+}

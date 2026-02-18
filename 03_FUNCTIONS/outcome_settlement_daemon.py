@@ -407,10 +407,44 @@ def heartbeat(conn, status: str, details: dict = None):
             pass
 
 
+def system_event_log_heartbeat(conn, settlements_processed: int, errors_count: int, last_settled_outcome_id: Optional[str]):
+    """Write heartbeat to fhq_monitoring.system_event_log every 60 minutes."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.system_event_log (
+                    event_type, severity, source_system, event_message, event_timestamp, metadata
+                ) VALUES (
+                    %s, %s, %s, %s, NOW(), %s
+                )
+            """, (
+                'SETTLEMENT_DAEMON_HEARTBEAT',
+                'INFO',
+                DAEMON_NAME,
+                f'Settlement daemon heartbeat: {settlements_processed} settlements processed, {errors_count} errors',
+                json.dumps({
+                    'settlements_processed': settlements_processed,
+                    'errors_count': errors_count,
+                    'last_settled_outcome_id': last_settled_outcome_id,
+                    'daemon_version': DAEMON_VERSION
+                })
+            ))
+            conn.commit()
+            logger.info(f"System event log heartbeat: settlements={settlements_processed}, errors={errors_count}")
+    except Exception as e:
+        logger.warning(f"System event log heartbeat failed: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
 def run_cycle() -> Dict:
     """Run one settlement cycle."""
     conn = get_connection()
     settlements = []
+    errors_count = 0
+    last_settled_outcome_id = None
 
     try:
         # Get pending decision packs
@@ -418,22 +452,29 @@ def run_cycle() -> Dict:
         logger.info(f"Found {len(pending_packs)} pending decision packs to evaluate")
 
         for pack in pending_packs:
-            # Find matching outcome through outcome_pack_link
-            outcome = find_matching_outcome(conn, pack)
+            try:
+                # Find matching outcome through outcome_pack_link
+                outcome = find_matching_outcome(conn, pack)
 
-            # Settle pack to terminal state
-            settled, new_status, outcome_id, log_id = settle_decision_pack(conn, pack, outcome)
+                # Settle pack to terminal state
+                settled, new_status, outcome_id, log_id = settle_decision_pack(conn, pack, outcome)
 
-            if settled:
-                settlements.append({
-                    'pack_id': str(pack['pack_id']),
-                    'asset': pack['asset'],
-                    'new_status': new_status,
-                    'outcome_id': outcome_id,
-                    'post_mortem_id': None,  # EXECUTED doesn't get post_mortem
-                    'settlement_log_id': log_id if log_id else None,
-                    'settlement_reason_code': 'OUTCOME_LINKED' if new_status == 'EXECUTED' else 'OUTCOME_MISSING_TIMEOUT'
-                })
+                if settled:
+                    settlements.append({
+                        'pack_id': str(pack['pack_id']),
+                        'asset': pack['asset'],
+                        'new_status': new_status,
+                        'outcome_id': outcome_id,
+                        'post_mortem_id': None,  # EXECUTED doesn't get post_mortem
+                        'settlement_log_id': log_id if log_id else None,
+                        'settlement_reason_code': 'OUTCOME_LINKED' if new_status == 'EXECUTED' else 'OUTCOME_MISSING_TIMEOUT'
+                    })
+                    # Track last settled outcome ID
+                    if outcome_id:
+                        last_settled_outcome_id = outcome_id
+            except Exception as e:
+                errors_count += 1
+                logger.error(f"Failed to settle pack={pack['pack_id'][:8]}...: {e}")
 
         # Generate evidence
         if settlements:
@@ -447,7 +488,7 @@ def run_cycle() -> Dict:
                 json.dump(evidence, f, indent=2)
             logger.info(f"Evidence: {evidence_path}")
 
-        # Heartbeat
+        # Heartbeat to daemon_health
         heartbeat(conn, 'ACTIVE', {
             'pending_evaluated': len(pending_packs),
             'settled': len(settlements),
@@ -456,9 +497,14 @@ def run_cycle() -> Dict:
             'orphaned': sum(1 for s in settlements if s['new_status'] == 'ORPHANED_OUTCOME_MISSING')
         })
 
+        # Heartbeat to system_event_log (every 60 minutes)
+        system_event_log_heartbeat(conn, len(settlements), errors_count, last_settled_outcome_id)
+
         return {
             'pending_evaluated': len(pending_packs),
-            'settlements': settlements
+            'settlements': settlements,
+            'errors_count': errors_count,
+            'last_settled_outcome_id': last_settled_outcome_id
         }
 
     except Exception as e:
@@ -521,3 +567,6 @@ def main():
     logger.info(f"Daemon shutting down after {cycle_count} cycles")
     remove_pid()
     heartbeat(get_connection(), 'STOPPED', {'cycles_completed': cycle_count})
+
+if __name__ == '__main__':
+    main()

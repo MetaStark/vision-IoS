@@ -1,0 +1,121 @@
+{
+  "directive": "CEO-DIR-2026-DAEMON-EXECUTION-REPAIR-047",
+  "executed_at": "2026-02-16 21:10:00 UTC",
+  "executed_by": "STIG",
+  "overall_verdict": "PARTIAL_SUCCESS",
+
+  "work_order_a_code_repair": {
+    "target_file": "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\outcome_settlement_daemon.py",
+    "patch_applied": "if __name__ == '__main__':\\n    main()",
+    "preflight_test": "import_ok - PASSED",
+    "status": "COMPLETED"
+  },
+
+  "work_order_c_entrypoint_check": {
+    "outcome_settlement_daemon.py": "PATCHED - FIXED",
+    "decision_pack_generator.py": "EXISTS - OK",
+    "lvi_calculator.py": "EXISTS - OK",
+    "alpha_graph_sync_scheduler.py": "EXISTS - OK",
+    "status": "COMPLETED"
+  },
+
+  "work_order_b_controlled_start": {
+    "outcome_settlement_daemon": {
+      "manual_start": "SUCCESS",
+      "task_scheduler": "SUCCESS - Running",
+      "heartbeat_written": "YES",
+      "pending_packs_found": "0",
+      "status": "RUNNING"
+    },
+    "decision_pack_generator": {
+      "manual_start": "SUCCESS",
+      "hypotheses_processed": "64",
+      "packs_created": "0 (all exist)",
+      "task_scheduler": "NOT_CONFIGURED",
+      "status": "MANUAL_ONLY"
+    },
+    "lvi_calculator": {
+      "manual_start": "PARTIAL - KeyError: completed_experiments",
+      "lvi_computed": "0.1770 (F)",
+      "task_scheduler": "NOT_CONFIGURED",
+      "status": "DEGRADED - CODE_BUG"
+    },
+    "alpha_graph_sync": {
+      "manual_start": "SUCCESS",
+      "edges_inserted": "0",
+      "status": "SUCCESS"
+    }
+  },
+
+  "daemon_health_final": [
+    {
+      "daemon_name": "outcome_settlement_daemon",
+      "status": "HEALTHY",
+      "last_heartbeat": "2026-02-16T20:58:27.645Z",
+      "age_minutes": "< 75",
+      "sla_compliance": "PASS"
+    },
+    {
+      "daemon_name": "decision_pack_generator",
+      "status": "HEALTHY",
+      "last_heartbeat": "2026-02-04T19:40:10.515Z",
+      "age_minutes": "> 75 (12 days)",
+      "sla_compliance": "FAIL"
+    },
+    {
+      "daemon_name": "lvi_calculator",
+      "status": "DEGRADED",
+      "last_heartbeat": "2026-02-16T21:07:23.851Z",
+      "age_minutes": "< 75",
+      "sla_compliance": "DEGRADED - Code bug"
+    },
+    {
+      "daemon_name": "alpha_graph_sync",
+      "status": "HEALTHY",
+      "last_heartbeat": "2026-02-16T21:11:21.958Z",
+      "age_minutes": "< 75",
+      "sla_compliance": "PASS"
+    }
+  ],
+
+  "sla_pass_matrix": {
+    "outcome_settlement_daemon": "PASS",
+    "decision_pack_generator": "FAIL",
+    "lvi_calculator": "DEGRADED",
+    "alpha_graph_sync": "PASS"
+  },
+
+  "verification_queries": {
+    "settlements_last_1h": "0",
+    "brier_rows_last_1h": "PENDING - decision_pack_generator not running",
+    "alpha_edges_last_1h": "0",
+    "lvi_last_computed_at": "2026-02-16T21:07:23.851Z",
+    "lvi_age": "< 75 minutes"
+  },
+
+  "files_created": [
+    "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\run_settlement_continuous.bat",
+    "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\setup_continuous_service.bat",
+    "C:\\fhq-market-system\\vision-ios\\03_FUNCTIONS\\evidence\\DIR_047_DAEMON_REPAIR_EVIDENCE_20260216.json"
+  ],
+
+  "patches_applied": [
+    "outcome_settlement_daemon.py - Added if __name__ == '__main__': main()"
+  ],
+
+  "remaining_issues": [
+    "decision_pack_generator needs Task Scheduler configuration",
+    "lvi_calculator has KeyError: completed_experiments - code bug needs repair",
+    "alpha_graph_sync needs Task Scheduler configuration",
+    "decision_pack_generator not creating new packs (all existing) - upstream issue"
+  ],
+
+  "ceo_acceptance_criteria": {
+    "outcome_settlement_daemon_2h_consecutive": "IN_PROGRESS - currently 13 minutes",
+    "decision_pack_generator_in_sla": "FAIL - 12 days stale",
+    "lvi_canonical_age_65min": "PASS - 4 minutes ago",
+    "evidence_bundle_exists": "PASS"
+  },
+
+  "classification": "PARTIAL_REPAIR - 2/4 daemons running in SLA"
+}

@@ -1,0 +1,69 @@
+{
+  "directive": "CEO-DIR-2026-RUNTIME-LIVENESS-AUDIT-AND-SETTLEMENT-SLA-050",
+  "deliverable": "C1_WATCHDOG_INTEGRITY_PROOF",
+  "executed_at": "2026-02-16T22:46:08.147013+00:00",
+  "executed_by": "STIG",
+  "ec_contract": "EC-003",
+  "timestamp": "20260216_234608",
+  "watchdog_config": {
+    "file": "runtime_watchdog_v2.py",
+    "sla_threshold_minutes": 75,
+    "watch_interval_seconds": 300,
+    "critical_daemons": [
+      "outcome_settlement_daemon",
+      "decision_pack_generator",
+      "lvi_calculator",
+      "alpha_graph_sync"
+    ],
+    "task_mapping": {
+      "outcome_settlement_daemon": "FjordHQ_OutcomeSettlement_Daemon",
+      "decision_pack_generator": "FjordHQ_DecisionPackGenerator",
+      "lvi_calculator": "FjordHQ_LVICalculator",
+      "alpha_graph_sync": "FjordHQ_AlphaGraphSync"
+    }
+  },
+  "sla_breach_rules": {
+    "detection": "Heartbeat age > SLA_THRESHOLD_MINUTES",
+    "on_breach": [
+      "Log CRITICAL: \"SLA BREACH: {daemon} heartbeat age = {age} min\"",
+      "Write CRITICAL event to system_event_log",
+      "Attempt restart via Task Scheduler if daemon in TASK_MAPPING",
+      "Include suspected_cause in metadata"
+    ]
+  },
+  "critical_event_function": {
+    "function": "write_critical_event()",
+    "target_table": "fhq_monitoring.system_event_log",
+    "event_type": "DAEMON_HEARTBEAT_FAILURE",
+    "severity": "CRITICAL",
+    "columns": [
+      "event_type",
+      "severity",
+      "source_system",
+      "event_message",
+      "event_timestamp"
+    ]
+  },
+  "recent_critical_events": {
+    "outcome_settlement_daemon": {
+      "last_critical_event": "2026-02-16T22:41:00.820Z",
+      "critical_events_count_2h": 5,
+      "status": "Fixed at 22:44:13 - no new CRITICAL events since fix"
+    },
+    "decision_pack_generator": {
+      "last_critical_event": null,
+      "critical_events_count_2h": 0,
+      "status": "No SLA breaches"
+    },
+    "alpha_graph_sync": {
+      "last_critical_event": null,
+      "critical_events_count_2h": 0,
+      "status": "No SLA breaches"
+    },
+    "lvi_calculator": {
+      "last_critical_event": null,
+      "critical_events_count_2h": 0,
+      "status": "No SLA breaches (within daily cadence tolerance)"
+    }
+  }
+}
