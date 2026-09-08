@@ -2,7 +2,7 @@
 
 **Utsteder:** STIG (EC-003_2026_PRODUCTION)
 **Dato:** 2026-09-08
-**Status:** UTKAST — Fase 0 BLOKKERT (sannhetskilde utilgjengelig)
+**Status:** Fase 1 UTFØRT (se § 8) · Fase 3 KLAR · Fase 0/2 BLOKKERT (sannhetskilde utilgjengelig) · Fase 4 AVVENTER LARS
 **Mandat:** Teknisk implementering. Retning eies av LARS. Godkjenning av VEGA/G4.
 
 > **DAY-nummer ikke tildelt.** CLAUDE.md krever verifisering mot databaseklokken
@@ -301,3 +301,76 @@ planen i det hele tatt opererer på riktig kodebase.
 **Kvitteringer:** Alle kommandoer i seksjon 2 er reproduserbare mot
 commit `f9f148ef` (origin/master HEAD, 2026-03-09) merget inn i
 `claude/explain-learning-loop-Sa9z7`.
+
+---
+
+## 8. FASE 1 — UTFØRT 2026-09-08
+
+**Lukker:** D2 (skyggekode) og D3 (skyggekopi med credential-defekt).
+**Runtime-adferd endret:** ingen. **Reversibilitet:** ett `git revert`.
+
+### 8.1 Steg 1.1 — Påkallingsstier: NULL funnet
+
+Fem uavhengige søk, to av dem med ulik metode (sekvensiell og alternasjon) som ga identisk svar:
+
+| Søk | Metode | Resultat |
+|---|---|---|
+| Importer fra de 7 unike 05-beboerne | `grep -E "^(from\|import) <dup>"` | 0 treff |
+| `sys.path`-innsettinger mot 05 | 3 filer i 03_FUNCTIONS | Når kun `vendor_guard`, `defcon_router`, `ios014_orchestrator` — unike beboere, ikke duplikater |
+| Prefiksede referanser `05_ORCHESTRATOR/<dup>` | alternasjon + sekvensiell | Kun dette dokumentet |
+| Launchere (130 stk .bat/.ps1/.cmd/.sh) | bare navn + `cd`/`WorkingDirectory` | Alle løser til `03_FUNCTIONS`; de to som rører 05 kaller `orchestrator_v1.py` (unik) |
+| Fabrikksti / `sandbox_runner` | grep | Ukoblet — dispatch-fence respektert |
+
+**Restrisiko:** Windows Task Scheduler på runtime-maskinen er uobserverbar herfra.
+Mitigert i 1.3 ved at enhver sti inn i 05 fortsatt fungerer.
+
+### 8.2 Steg 1.2 — Divergens: ingenting å porte
+
+Alle tre 05-kopier stammer fra **én commit** `a21a837b` (2026-02-01). Hver diff går utelukkende 05→03:
+
+| Fil | 03 er nyere med | Kilde |
+|---|---|---|
+| `finn_brain_scheduler.py` | heartbeat til `daemon_health` + `daemon_lock` | migrasjon 346 fail-closed |
+| `ios010_forecast_reconciliation_daemon.py` | regime-spesifikk confidence-damper | CEO-DIR-2026-063R |
+| `epistemic_proposal_daemon.py` | credential fail-closed | GitGuardian 23618378, i dag |
+
+`03_FUNCTIONS` er strengt superset i alle tre. 05-kopien av `finn_brain_scheduler`
+(én av de 5 kontrollplan-forvaltede) manglet både heartbeat og lås — hadde den kjørt,
+ville den vært usynlig for fail-closed-håndhevingen og uten dobbeltkjøringsvern.
+
+### 8.3 Steg 1.3 — Konsolidering: forwarding-shim, ikke flytting
+
+**Avvik fra § 4 Fase 1.3** (`git mv` → `ARCHIVE/`). Begrunnelse:
+
+1. Task Scheduler uobserverbar → flytting risikerer stille daemon-død på produksjon (forbudt: *Ingen Silent Failures*).
+2. Git er allerede arkivet (`a21a837b`). En `ARCHIVE/`-katalog ville vært en **tredje** kopi.
+3. Shim uten logikk **kan ikke divergere** — D2 lukkes strukturelt, ikke bare for øyeblikket.
+
+Shim-garantier (alle bevist i 8.4): `__file__`, `argv[0]` og `sys.path[0]` settes til kanonisk
+katalog slik at eksekvering er identisk med direkte kall; fail-closed hvis kanonisk fil mangler;
+`ImportError` ved import (fail-loud, aldri stille).
+
+### 8.4 Steg 1.4 — Verifikasjon
+
+| # | Test | Resultat |
+|---|---|---|
+| V1 | `py_compile` × 33 | 0 feil |
+| V2 | Kanoniske søsken `daemon_lock.py`, `forecast_confidence_damper.py` i 03 | begge til stede |
+| V3 | 05-kopier med `def`/`class` | **0** (33 forwarder via `runpy`) |
+| V3 | 03-kanoniske filer endret | **0** |
+| V4 | `import finn_brain_scheduler` fra 05 | `ImportError` som peker på 03 |
+| V5a | Reelt traceback via shim | frame `03_FUNCTIONS/finn_brain_scheduler.py:18` — kontroll gikk inn i kanonisk fil |
+| V5b | Miljøuavhengig probe via shim | `FILE/ARGV0/PATH0 = 03_FUNCTIONS`, `SIBLING = 03_FUNCTIONS/daemon_lock.py`, `NAME = __main__`, arg passert, `rc=0`, 0 restfiler |
+| V6 | Alle 33 shims modulo filnavn | én hash: `50ba91276a344d25` = template |
+
+**Netto:** 33 filer, +916 / −22 288 linjer. Duplisert implementasjon i eksekverbar sti: **0**.
+
+### 8.5 Oppdatert status på funn
+
+| Funn | Status |
+|---|---|
+| D1 | Åpen — krever Fase 0 (DB) |
+| **D2** | **LUKKET** — 33 skyggekopier er nå logikkfrie shims |
+| **D3** | **LUKKET** — ingen kopi bærer lenger `PGPASSWORD`-fallback |
+| D4 | Åpen — Fase 3, kan starte nå |
+| D5 | Åpen — krever push av lokal utvikling |
