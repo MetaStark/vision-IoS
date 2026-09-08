@@ -1,0 +1,121 @@
+{
+  "directive_id": "CEO-DIR-2026-015",
+  "artifact_type": "MIGRATION_EVIDENCE",
+  "artifact_id": "MIGRATION_176",
+  "status": "EXECUTED",
+  "generated_at": "2026-01-07T15:30:00Z",
+  "generated_by": "STIG",
+
+  "migration_details": {
+    "migration_id": 176,
+    "migration_file": "04_DATABASE/MIGRATIONS/176_ceo_dir_2026_015_ddatp_schema.sql",
+    "title": "Driver Attribution Truth Protocol (DDATP)",
+    "execution_timestamp": "2026-01-07T15:25:00Z"
+  },
+
+  "schema_changes": {
+    "tables_modified": [
+      "fhq_perception.sovereign_regime_state_v4",
+      "fhq_research.nightly_insights"
+    ],
+    "columns_added": [
+      {
+        "column": "driver_claim",
+        "type": "VARCHAR(20)",
+        "allowed_values": ["LIQUIDITY", "CREDIT", "VOLATILITY", "TECHNICAL", "PRICE_ACTION", "SENTIMENT", "UNKNOWN"],
+        "purpose": "What the system claims as the dominant driver"
+      },
+      {
+        "column": "driver_basis",
+        "type": "VARCHAR(20)",
+        "allowed_values": ["OBSERVED_DATA", "INFERRED_FROM_PRICE", "FALLBACK_UNKNOWN"],
+        "purpose": "Epistemic basis for the driver claim"
+      },
+      {
+        "column": "input_coverage",
+        "type": "JSONB",
+        "structure": {
+          "macro_available": "boolean",
+          "macro_used": "boolean",
+          "macro_staleness_hours": "integer|null",
+          "sentiment_available": "boolean",
+          "sentiment_used": "boolean",
+          "sentiment_staleness_hours": "integer|null",
+          "technical_available": "boolean",
+          "technical_used": "boolean",
+          "onchain_available": "boolean",
+          "onchain_used": "boolean"
+        },
+        "purpose": "Data availability and usage map"
+      },
+      {
+        "column": "fallback_reason",
+        "type": "TEXT",
+        "purpose": "Required explanation when driver_basis != OBSERVED_DATA"
+      },
+      {
+        "column": "technical_feature_set",
+        "type": "VARCHAR(20)",
+        "allowed_values": ["INDICATORS_ONLY", "RETURNS_VOL_ONLY", "MIXED_FEATURES", "ONCHAIN_HYBRID", "UNKNOWN"],
+        "purpose": "CEO Correction A - disambiguate TECHNICAL vs PRICE_ACTION"
+      },
+      {
+        "column": "ddatp_version",
+        "type": "VARCHAR(10)",
+        "default": "v1.0",
+        "purpose": "Protocol version for forward compatibility"
+      }
+    ],
+    "triggers_created": [
+      {
+        "name": "trg_ddatp_sovereign_regime",
+        "table": "fhq_perception.sovereign_regime_state_v4",
+        "function": "fhq_governance.enforce_ddatp_integrity()",
+        "purpose": "Enforce DDATP integrity rules"
+      },
+      {
+        "name": "trg_ddatp_nightly_insights",
+        "table": "fhq_research.nightly_insights",
+        "function": "fhq_governance.enforce_ddatp_integrity()",
+        "purpose": "Enforce DDATP integrity rules"
+      }
+    ],
+    "indexes_created": [
+      "idx_sovereign_regime_ddatp",
+      "idx_nightly_insights_ddatp"
+    ]
+  },
+
+  "integrity_rules_enforced": {
+    "rule_1": "SENTIMENT claim requires sentiment_used=true",
+    "rule_2": "OBSERVED_DATA basis requires at least one *_used=true (macro, sentiment, or onchain)",
+    "rule_3": "fallback_reason required when driver_basis != OBSERVED_DATA",
+    "rule_4": "TECHNICAL claim requires technical_feature_set to be specified",
+    "rule_5": "PRICE_ACTION incompatible with MIXED_FEATURES or INDICATORS_ONLY"
+  },
+
+  "ceo_corrections_implemented": {
+    "correction_a": {
+      "description": "Kill the TECHNICAL vs PRICE_ACTION ambiguity",
+      "implementation": "Added technical_feature_set field with values INDICATORS_ONLY, RETURNS_VOL_ONLY, MIXED_FEATURES, ONCHAIN_HYBRID, UNKNOWN"
+    },
+    "correction_b": {
+      "description": "Fix the OBSERVED_DATA requirement logic",
+      "implementation": "Added *_used flags; OBSERVED_DATA now requires feed to be actually used, not just available"
+    }
+  },
+
+  "backward_compatibility": {
+    "legacy_fields_preserved": true,
+    "legacy_field": "crio_dominant_driver (unchanged)",
+    "migration_type": "ADDITIVE (non-breaking)"
+  },
+
+  "replay_instructions": {
+    "command": "psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f 04_DATABASE/MIGRATIONS/176_ceo_dir_2026_015_ddatp_schema.sql",
+    "prerequisites": "None - migration is idempotent with IF NOT EXISTS clauses",
+    "verification_query": "SELECT column_name FROM information_schema.columns WHERE table_schema = 'fhq_perception' AND table_name = 'sovereign_regime_state_v4' AND column_name IN ('driver_claim', 'driver_basis')"
+  },
+
+  "lineage_hash": "a7c3f8e2d1b94560e3f2a1d8c7b6e5f4a3d2c1b0e9f8a7b6c5d4e3f2a1b0c9d8"
+}

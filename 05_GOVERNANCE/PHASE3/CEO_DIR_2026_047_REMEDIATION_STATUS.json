@@ -1,0 +1,184 @@
+{
+  "directive": "CEO-DIR-2026-047",
+  "revision": "E (FINAL)",
+  "date": "2026-01-14",
+  "execution_owner": "STIG",
+  "mode": "CONTROLLED_REMEDIATION_MODE",
+  "status": "MIGRATION_PREPARED",
+
+  "gap_remediation_status": {
+    "GAP-001": {
+      "description": "Sub-Executive Contract Registration",
+      "status": "MIGRATION_PREPARED",
+      "owner": "STIG",
+      "details": {
+        "eligible_for_active": ["CDMO", "CEIO", "CRIO"],
+        "pending_heartbeat": ["CSEO", "CFAO"],
+        "contracts_to_insert": 5,
+        "active_contracts": 3,
+        "pending_contracts": 2
+      },
+      "blocking_for": "G4",
+      "migration_file": "CEO_DIR_2026_047_GAP_REMEDIATION.sql"
+    },
+    "GAP-002": {
+      "description": "Privilege Scope Enforcement",
+      "status": "MIGRATION_PREPARED",
+      "owner": "STIG",
+      "details": {
+        "agents_updated": ["CDMO", "CEIO", "CRIO", "CSEO", "CFAO"],
+        "canonical_write": "FALSE (all agents)",
+        "global_write": "FALSE (all agents)",
+        "scope_type": "SCHEMA_SCOPED"
+      },
+      "blocking_for": "G4",
+      "adr_reference": ["ADR-014", "ADR-013"]
+    },
+    "GAP-003": {
+      "description": "Graph Lineage Population",
+      "status": "MIGRATION_PREPARED",
+      "owner": "CRIO",
+      "details": {
+        "tables_updated": ["fhq_graph.nodes", "fhq_graph.edges"],
+        "hash_algorithm": "SHA256",
+        "chain_format": "BCBS239_CHAIN",
+        "expected_coverage": "100%"
+      },
+      "blocking_for": "ARL-5",
+      "compliance_reference": "BCBS-239"
+    },
+    "GAP-004": {
+      "description": "CNRP Latency Instrumentation",
+      "status": "CODE_CHANGE_COMPLETE",
+      "owner": "STIG",
+      "completed_at": "2026-01-13T12:15:00Z",
+      "details": {
+        "previous_state": "All daemons report 0ms",
+        "diagnosis": "started_at was not being captured before execution",
+        "fix_implemented": "Capture execution_started_at BEFORE execution, pass to log_cnrp_execution()",
+        "fixed_daemons": [
+          "ceio_evidence_refresh_daemon.py (R1)",
+          "crio_alpha_graph_rebuild.py (R2)",
+          "cdmo_data_hygiene_attestation.py (R3)",
+          "vega_epistemic_integrity_monitor.py (R4)"
+        ],
+        "pending_daemons": [],
+        "metrics_enabled": ["latency_ms", "latency_instrumented"],
+        "required_metrics": ["p50_ms", "p95_ms", "p99_ms"]
+      },
+      "blocking_for": "SLA",
+      "note": "All CNRP daemons (R1-R4) now have proper latency instrumentation."
+    }
+  },
+
+  "migration_file": {
+    "path": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+    "created_at": "2026-01-14",
+    "created_by": "STIG",
+    "execution_required": true,
+    "read_only_constraint": "Database connection is read-only; migration requires authorized operator"
+  },
+
+  "eligibility_matrix": {
+    "CDMO": {
+      "ed25519_key": "747bee2a8d42f2be",
+      "key_attested": true,
+      "heartbeat": true,
+      "health_score": 1.0,
+      "parent": "STIG",
+      "contract_status": "ACTIVE"
+    },
+    "CEIO": {
+      "ed25519_key": "c38c012a08b29bf6",
+      "key_attested": true,
+      "heartbeat": true,
+      "health_score": 1.0,
+      "parent": "STIG",
+      "contract_status": "ACTIVE"
+    },
+    "CRIO": {
+      "ed25519_key": "fb085bfc4eb49897",
+      "key_attested": true,
+      "heartbeat": true,
+      "health_score": 1.0,
+      "parent": "FINN",
+      "contract_status": "ACTIVE"
+    },
+    "CSEO": {
+      "ed25519_key": "61073303638c3dd2",
+      "key_attested": true,
+      "heartbeat": false,
+      "health_score": null,
+      "parent": "LARS",
+      "contract_status": "PENDING_HEARTBEAT"
+    },
+    "CFAO": {
+      "ed25519_key": "6f6289c1ef77ac5d",
+      "key_attested": true,
+      "heartbeat": false,
+      "health_score": null,
+      "parent": "LARS",
+      "contract_status": "PENDING_HEARTBEAT"
+    }
+  },
+
+  "next_steps": [
+    {
+      "step": 1,
+      "action": "Execute migration script",
+      "owner": "Database Operator",
+      "file": "CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+      "status": "PENDING"
+    },
+    {
+      "step": 2,
+      "action": "Implement CNRP latency instrumentation in daemon code",
+      "owner": "STIG",
+      "status": "COMPLETED",
+      "completed_at": "2026-01-13",
+      "affected_files": [
+        "ceio_evidence_refresh_daemon.py",
+        "crio_alpha_graph_rebuild.py",
+        "cdmo_data_hygiene_attestation.py"
+      ],
+      "changes_summary": "Added execution_started_at capture before execution, updated log_cnrp_execution() to include started_at column, enabled latency_ms calculation"
+    },
+    {
+      "step": 3,
+      "action": "Implement heartbeat daemons for CSEO/CFAO",
+      "owner": "STIG",
+      "status": "PENDING",
+      "note": "Required before contracts can be marked ACTIVE"
+    },
+    {
+      "step": 4,
+      "action": "VEGA G3 zero-trust attestation",
+      "owner": "VEGA",
+      "status": "PENDING",
+      "scope": [
+        "Sub-Executive contracts vs heartbeat state",
+        "Privilege scopes vs ADR-014 constraints",
+        "Graph lineage hash chains vs BCBS-239",
+        "Latency metrics vs raw measurements"
+      ]
+    }
+  ],
+
+  "constraints_enforced": {
+    "no_arl5_promotion": true,
+    "no_ios007_activation": true,
+    "no_ios008_activation": true,
+    "no_decision_plan_generation": true,
+    "no_alpha_signals": true,
+    "no_paper_trading": true,
+    "no_live_trading": true,
+    "no_capital_exposure": true
+  },
+
+  "attestation": {
+    "prepared_by": "STIG",
+    "prepared_at": "2026-01-14",
+    "vega_attestation": "PENDING",
+    "ceo_review": "BLOCKED_UNTIL_VEGA_SIGNOFF"
+  }
+}

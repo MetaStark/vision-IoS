@@ -1,0 +1,132 @@
+{
+  "directive_id": "CEO-DIR-2026-032",
+  "action": "CALIBRATION_GATES_DEPLOYED",
+  "classification": "CONSTITUTIONAL_FIX",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T12:00:00Z",
+  "authority": "CEO-DIR-2026-032 - The Diagnostic Pivot",
+
+  "problem_statement": {
+    "description": "Catastrophic inverse calibration discovered - higher confidence correlates with LOWER accuracy",
+    "root_cause": "Algorithmic Arrogance - system expressing misleading certainty",
+    "data_evidence": {
+      "PRICE_DIRECTION": {
+        "band_95_100": {"forecasts": 305, "correct": 65, "accuracy": "21.3%"},
+        "band_80_95": {"forecasts": 1776, "correct": 472, "accuracy": "26.6%"},
+        "band_60_80": {"forecasts": 4761, "correct": 1745, "accuracy": "36.7%"},
+        "band_40_60": {"forecasts": 9429, "correct": 4460, "accuracy": "47.3%"},
+        "band_below_40": {"forecasts": 376, "correct": 181, "accuracy": "48.1%"}
+      },
+      "REGIME": {
+        "band_95_100": {"forecasts": 55, "correct": 11, "accuracy": "20.0%"},
+        "band_80_95": {"forecasts": 38, "correct": 12, "accuracy": "31.6%"}
+      }
+    }
+  },
+
+  "solution_deployed": {
+    "mechanism": "Database-enforced confidence ceiling based on historical accuracy",
+    "principle": "Max confidence = historical accuracy + asymmetric safety margin",
+    "hardening_upgrades": [
+      {
+        "upgrade": "Sample-size floor",
+        "constraint": "n >= 100",
+        "rationale": "Prevents overreacting to statistically weak segments"
+      },
+      {
+        "upgrade": "Asymmetric safety margin",
+        "formula": "+5% when accuracy < 50%, +2% when 50-60%, +0% when >= 60%",
+        "rationale": "Keeps humility longer than optimism during recovery"
+      },
+      {
+        "upgrade": "Regime precedence",
+        "order": "exact match > forecast_type+ALL > global fallback (0.45)",
+        "rationale": "Avoids ambiguity during regime transitions"
+      }
+    ]
+  },
+
+  "gates_deployed": {
+    "PRICE_DIRECTION": {
+      "regime": "ALL",
+      "historical_accuracy": 0.4159,
+      "sample_size": 16647,
+      "safety_margin": 0.05,
+      "confidence_ceiling": 0.4659
+    },
+    "REGIME": {
+      "regime": "ALL",
+      "historical_accuracy": 0.2296,
+      "sample_size": 135,
+      "safety_margin": 0.05,
+      "confidence_ceiling": 0.2796
+    }
+  },
+
+  "verification": {
+    "test_85_percent": {
+      "input": 0.85,
+      "output": 0.4659,
+      "was_capped": true,
+      "reduction": 0.3841
+    },
+    "test_95_percent": {
+      "input": 0.95,
+      "output": 0.4659,
+      "was_capped": true,
+      "reduction": 0.4841
+    },
+    "violations_logged": true,
+    "gate_history_logged": true
+  },
+
+  "files_created": [
+    "04_DATABASE/MIGRATIONS/226_calibration_gates.sql",
+    "03_FUNCTIONS/calibration_gate_enforcer.py"
+  ],
+
+  "tables_created": [
+    "fhq_governance.confidence_calibration_gates",
+    "fhq_governance.calibration_gate_history",
+    "fhq_governance.gate_violation_log"
+  ],
+
+  "functions_created": [
+    "fhq_governance.calculate_asymmetric_safety_margin()",
+    "fhq_governance.get_active_confidence_ceiling()",
+    "fhq_governance.enforce_calibration_gate()",
+    "fhq_governance.recalculate_calibration_gates()"
+  ],
+
+  "impact": {
+    "before": {
+      "max_confidence": "99.95%",
+      "accuracy_at_high_conf": "20-21%",
+      "calibration_quality": "INVERTED (dangerous)"
+    },
+    "after": {
+      "max_confidence": "46.59% (PRICE_DIRECTION), 27.96% (REGIME)",
+      "ceiling_basis": "Historical accuracy + 5% margin",
+      "calibration_quality": "ALIGNED (confidence matches accuracy)"
+    }
+  },
+
+  "governance_compliance": {
+    "ADR-004_G0_G4": "Migration follows gate workflow",
+    "ADR-006_VEGA": "Gates require VEGA approval via vega_attestation_id field",
+    "ADR-012_NonExecution": "Gates only constrain confidence, not trading",
+    "CEO_Directive_CourtProof": "Full audit trail in gate_violation_log"
+  },
+
+  "next_steps": {
+    "weekly_recalibration": "Run calibration_gate_enforcer.py --recalculate weekly",
+    "finn_integration": "Apply enforce_calibration_gate() before G0DraftProposal output",
+    "monitoring": "Track violation counts and ceiling adjustments"
+  },
+
+  "closing_statement": {
+    "text": "Calibration gates successfully deployed. System now constrained to express only proven confidence levels. Higher confidence must be EARNED through improved accuracy, not declared.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10"
+  }
+}

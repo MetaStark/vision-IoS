@@ -1,0 +1,59 @@
+{
+  "directive_id": "CEO-DIR-2026-083",
+  "directive_title": "OKR FREEZE & REALIGNMENT - POST G4 ALPHA LOCK",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T02:10:29.999853+00:00",
+  "status": "EXECUTED",
+  "step_1_freeze": {
+    "okr_frozen": "STRESS regime confidence below 15%",
+    "okr_id": "e711e044-f4ab-4117-9cb1-13746277b084",
+    "reason": "Direct conflict with CEO-DIR-2026-080/081 canonical alpha",
+    "action_id": "a4a41c7e-c3b3-4b91-8d21-2f4accef4365",
+    "db_status": "FAILED",
+    "governance_status": "FROZEN",
+    "note": "DB constraint requires FAILED; governance log records FROZEN per CEO directive"
+  },
+  "step_2_activation": {
+    "okr_code": "OKR-2026-D18-001",
+    "okr_id": "78ebd6af-995a-492d-91b7-34accd38b133",
+    "objective": "Establish Direction-Only ROI Baseline - STRESS Inversion (EQUITY)",
+    "key_results": [
+      "KR1: Populate roi_direction_ledger_equity with \u22655 events in 7 days",
+      "KR2: Maintain inverted Brier < 0.01",
+      "KR3: Baseline Edge per Activation"
+    ],
+    "constraints": [
+      "No PnL",
+      "No execution",
+      "No options",
+      "Only truth"
+    ],
+    "status": "ACTIVE"
+  },
+  "step_3_migration": {
+    "migration": "306_ceo_dir_2026_082_roi_direction_ledger_equity.sql",
+    "table": "fhq_research.roi_direction_ledger_equity",
+    "views": ["fhq_research.roi_direction_equity_daily_ev", "fhq_research.roi_direction_equity_rolling_30d"],
+    "functions": ["fhq_research.append_roi_direction_event_equity", "fhq_research.capture_roi_direction_outcome_equity"],
+    "one_source_of_truth": true,
+    "status": "CONFIRMED"
+  },
+  "step_4_synchronization": {
+    "active_okrs": 1,
+    "frozen_okrs_excluded": true,
+    "latent_execution_pressure": false,
+    "status": "SYNCHRONIZED"
+  },
+  "canonical_principle": {
+    "rule": "Alpha speaks first. OKRs listen. Execution waits.",
+    "status": "GOVERNING_RULE"
+  },
+  "ceo_confirmation": {
+    "okr_frozen": true,
+    "new_okr_active": true,
+    "okr_agent_synchronized": true,
+    "migration_306_confirmed": true,
+    "ready_for_shadow_accumulation": true,
+    "confirmed_at": "2026-01-18T02:12:00Z"
+  }
+}

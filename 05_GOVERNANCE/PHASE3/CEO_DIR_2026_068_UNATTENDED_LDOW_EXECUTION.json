@@ -1,0 +1,160 @@
+{
+  "directive": "CEO-DIR-2026-068",
+  "title": "Unattended Continuous LDOW Execution",
+  "subtitle": "Night-Mode Observation Authorization",
+  "directive_type": "OPERATIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T03:45:00Z",
+  "applies_to": ["STIG", "FINN", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "effective": "IMMEDIATE",
+
+  "ldow_reference": {
+    "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
+    "status": "ACTIVE"
+  },
+
+  "purpose": {
+    "context": "CEO-DIR-2026-067 established continuous LDOW capture and rolling metrics",
+    "authorization": "Unattended, continuous execution of forecast and evaluation cycles within LDOW, even without human presence",
+    "principle": "System shall learn while human sleeps. But only by observing and counting."
+  },
+
+  "authorization": {
+    "scope": "Unattended execution of forecast cycles under LDOW",
+    "includes": [
+      "G2C forecast batch",
+      "Confidence dampening (locked hash)",
+      "Persistence with full IoS-010 lineage",
+      "Rolling LDOW aggregation"
+    ],
+    "applies_during": [
+      "Night",
+      "Weekend",
+      "CEO absence"
+    ],
+    "condition": "As long as all locks are respected"
+  },
+
+  "execution_constraints": {
+    "binding": true,
+    "hard": true,
+
+    "section_3_1_scope_lock": {
+      "allowed": [
+        "Generate forecasts",
+        "Persist forecasts",
+        "Update LDOW metrics",
+        "Aggregate Brier / Calibration / ΔFSS / latency"
+      ],
+      "forbidden": [
+        "Change damper parameters",
+        "Activate new FMCL tasks",
+        "Activate regime_sanity_gate",
+        "Escalate gates",
+        "Change orchestrator rights"
+      ],
+      "note": "Identical to manual LDOW - just continuous"
+    },
+
+    "section_3_2_scheduling_authority": {
+      "granted_to": "STIG",
+      "permissions": [
+        "Run forecast batches on fixed interval (cron/orchestrator)",
+        "Choose conservative frequency (no latency stress)",
+        "Pause automatically on error or deviation"
+      ],
+      "forbidden": [
+        "Adaptive timing",
+        "Optimization"
+      ]
+    }
+  },
+
+  "safety_and_auto_abort": {
+    "section_4_1_mandatory_auto_stop_conditions": {
+      "stop_if": [
+        "LDOW status != ACTIVE",
+        "damper_version_hash changes",
+        "intervention freeze is broken",
+        "lineage coverage < 100%",
+        "p95 latency exceeds 500ms (real, without startup noise)"
+      ],
+      "on_stop": [
+        "No restart",
+        "Flag in governance log",
+        "Wait for CEO"
+      ]
+    }
+  },
+
+  "governance_and_audit": {
+    "section_5_1_vega_boundary": {
+      "attestation_required": [
+        "Unattended mode does not expand system action space",
+        "This is operational automation, not cognitive autonomy"
+      ]
+    },
+    "section_5_2_audit_trail": {
+      "each_cycle_tagged_with": [
+        "execution_mode = UNATTENDED_LDOW",
+        "timestamp",
+        "LDOW ID",
+        "damper hash"
+      ]
+    }
+  },
+
+  "ceo_visibility": {
+    "morning_read": {
+      "shows": [
+        "Number of cycles run",
+        "Accumulated forecast volume",
+        "Updated rolling metrics",
+        "Explicit status: 'No actions taken. Observation only.'"
+      ],
+      "excludes": [
+        "Alerts",
+        "Interpretation"
+      ],
+      "nature": "FACTS_ONLY"
+    }
+  },
+
+  "relation_to_autonomy": {
+    "explicit": true,
+    "this_directive_does_NOT": [
+      "Grant autonomy",
+      "Start AEL",
+      "Change exit criteria"
+    ],
+    "autonomy_requirements_unchanged": [
+      ">=2 completed LDOW cycles",
+      "Attested negative learning delta",
+      "VEGA signature",
+      "CEO decision"
+    ]
+  },
+
+  "final_declaration": {
+    "system_state": "Permitted to work alone, but not permitted to decide",
+    "principles": [
+      "It learns in darkness",
+      "It counts in silence",
+      "It awaits judgment in daylight"
+    ]
+  },
+
+  "execution_assignment": {
+    "STIG": "Schedule unattended LDOW execution",
+    "FINN": "Maintain freeze & integrity",
+    "VEGA": "Guard autonomy boundary"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T03:45:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

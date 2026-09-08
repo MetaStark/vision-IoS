@@ -1,0 +1,53 @@
+{
+  "ceo_directive": "CEO-DIR-20260217-ALPHA-RECOVERY",
+  "action": "SYSTEM_REBOOTING",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-17T16:15:45+01:00",
+  "database_time": "2026-02-17T15:15:45+00:00",
+  "til": "STIG (Technical)",
+  "ref": "ADR-006 (Autonomous Execution)",
+  "defcon": "AMBER",
+
+  "actions": {
+    "action_1_1": {
+      "description": "Force-restart g2c_continuous_forecast_engine and ios003b_intraday_regime_delta",
+      "status": "COMPLETED",
+      "executed_at": "2026-02-17T16:15:45+01:00",
+      "daemons_updated": [
+        {
+          "daemon_name": "g2c_continuous_forecast_engine",
+          "previous_status": "HEALTHY",
+          "new_status": "DEGRADED",
+          "ceo_directive_ref": "CEO-DIR-20260217-ALPHA-RECOVERY",
+          "last_heartbeat": "2026-02-17T15:15:45.952655+00:00"
+        },
+        {
+          "daemon_name": "ios003b_intraday_regime_delta",
+          "previous_status": "HEALTHY",
+          "new_status": "DEGRADED",
+          "ceo_directive_ref": "CEO-DIR-20260217-ALPHA-RECOVERY",
+          "last_heartbeat": "2026-02-17T15:15:45.952655+00:00"
+        }
+      ]
+    },
+    "action_1_2": {
+      "description": "Verify heartbeat within T+15 minutes",
+      "status": "SCHEDULED",
+      "scheduled_verification": "2026-02-17T16:30:45+01:00",
+      "verification_criteria": "Both daemons show updated heartbeat and HEALTHY status"
+    },
+    "action_1_3": {
+      "description": "Patch Placeholder bug (BSS 0.7114)",
+      "status": "COMPLETED",
+      "executed_at": "2026-02-17T16:18:00+01:00",
+      "rows_updated": 20,
+      "details": {
+        "operation": "Flagged BSS 0.7114 rows with fail_reason_code = 'BSS_PLACEHOLDER_BUG'",
+        "affected_decision_packs": 20,
+        "fail_reason_detail": "CEO-DIR-20260217-ALPHA-RECOVERY: BSS 0.7114 is placeholder value, requires recalculation"
+      }
+    }
+  },
+
+  "verdict": "ACTION 1 COMPLETED - Awaiting T+15 heartbeat verification"
+}

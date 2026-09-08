@@ -1,0 +1,82 @@
+{
+  "directive_id": "CEO-DIR-2026-P0-CDS-VARIANCE-ROTATION-001",
+  "title": "P0 Gate Unblock - Deterministic Theory Rotation for POST_FIX CDS Variance",
+  "version": "1.1",
+  "status": "EXECUTED",
+  "executed_at": "2026-01-28T11:33:00+01:00",
+  "executor": "STIG (EC-003)",
+
+  "implementation": {
+    "scheduler_version": "3.0",
+    "selection_version": "POST_FIX_SELECTION_1.1.0",
+    "file_modified": "03_FUNCTIONS/finn_crypto_scheduler.py",
+    "hash_algorithm": "sha256_utf8",
+    "entropy_source": "hypothesis_id (UUID)"
+  },
+
+  "canonical_theory_order": [
+    {"index": 0, "theory_type": "FUNDING_DYNAMICS", "causal_depth": 2, "cds_score": 50.00},
+    {"index": 1, "theory_type": "VOLATILITY_CLUSTERING", "causal_depth": 2, "cds_score": 50.00},
+    {"index": 2, "theory_type": "REGIME_TRANSITION", "causal_depth": 3, "cds_score": 75.00},
+    {"index": 3, "theory_type": "LIQUIDATION_CASCADE", "causal_depth": 5, "cds_score": 100.00}
+  ],
+
+  "preflight_simulation": {
+    "n_samples": 100,
+    "distribution": {
+      "FUNDING_DYNAMICS": 23,
+      "VOLATILITY_CLUSTERING": 21,
+      "REGIME_TRANSITION": 29,
+      "LIQUIDATION_CASCADE": 27
+    },
+    "unique_theories": 4,
+    "max_concentration_pct": 29.0,
+    "acceptance_passed": true,
+    "evidence_file": "03_FUNCTIONS/evidence/CEO_DIR_2026_P0_CDS_PREFLIGHT_SIMULATION.json"
+  },
+
+  "post_deploy_verification": {
+    "verification_time": "2026-01-28T11:33:16+01:00",
+    "within_30_minutes": true,
+    "results": {
+      "n_post_fix_scored": 52,
+      "unique_cds_values": 3,
+      "cds_stddev": 10.6801,
+      "cds_values": [50.00, 75.00, 100.00],
+      "selection_metadata_present": true
+    }
+  },
+
+  "p0_gate_status": {
+    "gate_1_cds_variance": "OPEN",
+    "gate_2_post_fix_deaths": "BLOCKED (0/30)",
+    "gate_3_generator_balance": "OBSERVATION"
+  },
+
+  "hard_guards_preserved": {
+    "scoring_formula_unchanged": true,
+    "tier1_logic_unchanged": true,
+    "death_logic_unchanged": true,
+    "pre_fix_data_immutable": true
+  },
+
+  "audit_trail": {
+    "selection_metadata_stored": "mechanism_graph.selection_metadata",
+    "fields_stored": [
+      "theory_type_selected",
+      "theory_index",
+      "selection_entropy_source",
+      "selection_hash_alg",
+      "selection_hash_hex",
+      "selection_version",
+      "generated_at_utc"
+    ],
+    "vega_verifiable": true
+  },
+
+  "acceptance_criteria_met": {
+    "p0_gate_1_open": true,
+    "determinism_verifiable": true,
+    "runbook_updated": true
+  }
+}

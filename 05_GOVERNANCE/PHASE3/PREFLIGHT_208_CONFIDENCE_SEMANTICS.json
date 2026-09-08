@@ -1,0 +1,154 @@
+{
+  "document_id": "PREFLIGHT-208-CONFIDENCE-SEMANTICS",
+  "document_type": "GOVERNANCE_SPECIFICATION",
+  "classification": "GOVERNANCE-CRITICAL",
+  "directive": "CEO-DIR-2026-001",
+  "migration": "208_ceo_dir_2026_001_epistemic_separation.sql",
+  "timestamp": "2026-01-06T21:00:00Z",
+  "author": "STIG",
+
+  "section_1_confidence_fields": {
+    "fields": [
+      {
+        "table": "fhq_perception.model_belief_state",
+        "column": "belief_confidence",
+        "type": "NUMERIC(6,4)",
+        "range": "0.0000 - 1.0000",
+        "semantics": "Model's epistemic certainty in regime classification. Computed as max(belief_distribution). Higher = more certain.",
+        "constraint": "CHECK (belief_confidence >= 0 AND belief_confidence <= 1)",
+        "migration_line": "64"
+      },
+      {
+        "table": "fhq_perception.sovereign_policy_state",
+        "column": "policy_confidence",
+        "type": "NUMERIC(6,4)",
+        "range": "0.0000 - 1.0000",
+        "semantics": "Policy-adjusted confidence after governance constraints (hysteresis, DEFCON, risk limits). May differ from belief_confidence if suppression occurred.",
+        "constraint": "CHECK (policy_confidence >= 0 AND policy_confidence <= 1)",
+        "migration_line": "121"
+      },
+      {
+        "table": "fhq_perception.sovereign_policy_state",
+        "column": "belief_confidence (copy)",
+        "type": "NUMERIC(6,4)",
+        "range": "0.0000 - 1.0000",
+        "semantics": "Copy of belief_confidence at time of policy decision. Enables divergence calculation without JOIN.",
+        "migration_line": "99"
+      },
+      {
+        "table": "fhq_governance.epistemic_suppression_ledger",
+        "column": "suppressed_confidence",
+        "type": "NUMERIC(6,4)",
+        "range": "0.0000 - 1.0000",
+        "semantics": "Confidence of the belief that was suppressed (not acted upon).",
+        "migration_line": "153"
+      },
+      {
+        "table": "fhq_governance.epistemic_suppression_ledger",
+        "column": "chosen_confidence",
+        "type": "NUMERIC(6,4)",
+        "range": "0.0000 - 1.0000",
+        "semantics": "Confidence of the regime that was chosen instead (policy override).",
+        "migration_line": "157"
+      }
+    ]
+  },
+
+  "section_2_derived_metrics": {
+    "metrics": [
+      {
+        "name": "suppression_confidence_loss",
+        "formula": "suppressed_confidence - chosen_confidence",
+        "semantics": "Delta showing confidence sacrificed due to policy override. Positive = belief was more confident than policy.",
+        "range": "-1.0 to +1.0",
+        "typical_values": "0.0 to 0.3 (healthy), >0.5 (concerning)"
+      },
+      {
+        "name": "belief_policy_divergence",
+        "formula": "belief_confidence - policy_confidence (from sovereign_policy_state)",
+        "semantics": "How much confidence was adjusted during policy formation",
+        "indicator": "is_suppressed = TRUE when divergence > 0"
+      }
+    ]
+  },
+
+  "section_3_validation_rules": {
+    "check_constraints": [
+      {
+        "name": "belief_confidence_range",
+        "table": "model_belief_state",
+        "expression": "belief_confidence >= 0 AND belief_confidence <= 1",
+        "migration_line": "64"
+      },
+      {
+        "name": "policy_confidence_range",
+        "table": "sovereign_policy_state",
+        "expression": "policy_confidence >= 0 AND policy_confidence <= 1",
+        "migration_line": "121"
+      }
+    ],
+
+    "business_rules": [
+      {
+        "rule": "LOW_CONFIDENCE_ALERT",
+        "condition": "belief_confidence < 0.50",
+        "action": "Log to anomaly table, flag for human review",
+        "rationale": "Model is uncertain - decisions may be unreliable"
+      },
+      {
+        "rule": "DIVERGENCE_FLAG",
+        "condition": "is_suppressed = TRUE",
+        "action": "Create suppression_ledger entry",
+        "rationale": "Belief was overridden - track for learning"
+      },
+      {
+        "rule": "HIGH_SUPPRESSION_LOSS",
+        "condition": "suppression_confidence_loss > 0.30",
+        "action": "Flag for CEO review in v_suppression_summary",
+        "rationale": "Significant epistemic information discarded"
+      }
+    ]
+  },
+
+  "section_4_interpretation_guide": {
+    "confidence_bands": [
+      {
+        "range": "0.90 - 1.00",
+        "label": "VERY_HIGH",
+        "interpretation": "Model is highly confident in regime classification",
+        "action_guidance": "Trust signal, full position sizing allowed"
+      },
+      {
+        "range": "0.70 - 0.89",
+        "label": "HIGH",
+        "interpretation": "Model is confident but some uncertainty exists",
+        "action_guidance": "Trust signal, consider reduced sizing in volatile conditions"
+      },
+      {
+        "range": "0.50 - 0.69",
+        "label": "MODERATE",
+        "interpretation": "Model has meaningful uncertainty",
+        "action_guidance": "Use with caution, consider confirmation from other signals"
+      },
+      {
+        "range": "0.30 - 0.49",
+        "label": "LOW",
+        "interpretation": "Model is uncertain - near coin-flip probability",
+        "action_guidance": "Do not act on signal alone, seek additional confirmation"
+      },
+      {
+        "range": "0.00 - 0.29",
+        "label": "VERY_LOW",
+        "interpretation": "Model cannot reliably classify regime",
+        "action_guidance": "Treat as UNKNOWN regime, defensive positioning"
+      }
+    ]
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:00:00Z",
+    "status": "APPROVED"
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "report_id": "ADR024-LEARNING-READINESS-DATABASE-TRUTH-20260114",
+  "report_type": "DATABASE_TRUTH_REPORT",
+  "directive": "CEO Directive 2026-01-14: Database-Level Verification of Learning Readiness",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-14T22:56:00Z",
+  "contract": "EC-003_2026_PRODUCTION",
+
+  "executive_summary": {
+    "purpose": "Pure database-based truth audit of learning pathway per ADR-024",
+    "methodology": "No interpretations. No improvements. Only facts from database queries.",
+    "overall_status": "INFRASTRUCTURE_READY_CYCLES_PENDING"
+  },
+
+  "rung_a_measurement_completeness": {
+    "status": "VERIFIED",
+    "evidence": {
+      "forecast_outcome_pairs": {
+        "total_pairs": 16949,
+        "distinct_forecasts": 16865,
+        "distinct_outcomes": 16277,
+        "with_brier_score": 16949,
+        "first_reconciliation": "2026-01-09T19:33:15.642Z",
+        "last_reconciliation": "2026-01-14T20:34:09.512Z"
+      },
+      "forecast_ledger": {
+        "total_forecasts": 23930,
+        "earliest": "2025-12-09T12:17:22.667Z",
+        "latest": "2026-01-14T21:41:09.284Z"
+      },
+      "outcome_ledger": {
+        "total_outcomes": 21609,
+        "earliest": "2025-12-13T11:22:59.378Z",
+        "latest": "2026-01-14T00:05:09.062Z"
+      },
+      "ldow_forecast_captures": {
+        "total_captures": 1009,
+        "assets_captured": 37,
+        "regimes_captured": 1,
+        "damper_versions": 16,
+        "avg_dampening": 0.2587,
+        "first_capture": "2026-01-14T01:16:36.802Z",
+        "last_capture": "2026-01-14T22:47:22.268Z"
+      },
+      "ldow_unattended_executions": {
+        "total_cycles": 86,
+        "forecasts_generated": 1008,
+        "forecasts_persisted": 984,
+        "completed_cycles": 84,
+        "hashes_verified": 86,
+        "ldow_verified": 86
+      },
+      "ios_010_lineage_coverage": {
+        "total_pairs": 16949,
+        "with_damper_hash": 0,
+        "with_directive_ref": 16949,
+        "lineage_coverage_pct": 0.0,
+        "note": "IoS-010 lineage columns added via Migration 239, pre-existing pairs not backfilled"
+      }
+    },
+    "assessment": "Measurement infrastructure operational. 16,949 pairs reconciled. LDOW capturing actively."
+  },
+
+  "rung_b_canonical_evaluation_contract": {
+    "status": "VERIFIED",
+    "evidence": {
+      "frozen_holdout": {
+        "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+        "holdout_name": "M1_BOOTSTRAP_HOLDOUT_2026W02",
+        "period_start": "2026-01-08T23:00:00.000Z",
+        "period_end": "2026-01-11T23:00:00.000Z",
+        "record_count": 4237,
+        "is_frozen": true,
+        "frozen_at": "2026-01-13T23:04:20.213Z",
+        "isolation_verified": true,
+        "includes_stress_regime": true
+      },
+      "baseline_metrics": {
+        "brier_score": 0.5158,
+        "calibration_error": 0.5411,
+        "hit_rate": 0.3645,
+        "source": "holdout_evaluation_results"
+      },
+      "ldow_evaluation_deltas": {
+        "observed_brier": 0.2509,
+        "observed_calibration": 0.1117,
+        "brier_delta": -0.2649,
+        "calibration_delta": -0.4294,
+        "interpretation": "Negative delta = improvement"
+      },
+      "completion_thresholds": {
+        "coverage_minimum": {"value": 0.80, "unit": "ratio", "proposed_by": "STIG"},
+        "stability_variance_max": {"value": 0.05, "unit": "brier_delta", "proposed_by": "STIG"},
+        "damper_immutability": {"value": 1.0, "unit": "boolean", "proposed_by": "STIG"}
+      },
+      "adr_024_status": {
+        "adr_id": "ADR-024",
+        "adr_title": "AEL Phase Gate Protocol",
+        "adr_status": "APPROVED",
+        "governance_tier": "Tier-1",
+        "owner": "CEO",
+        "vega_attested": false
+      },
+      "rung_d_eligibility_view": {
+        "eligible_cycles": 0,
+        "attested_cycles": 0,
+        "rung_d_qualified": false,
+        "qualification_status": "Need 2 more completed cycles"
+      }
+    },
+    "assessment": "Canonical evaluation contract established. Baselines frozen. Thresholds defined. Awaiting cycle completion."
+  },
+
+  "rung_c_intervention_registry_causal_isolation": {
+    "status": "VERIFIED",
+    "evidence": {
+      "ael_intervention_registry": {
+        "total_interventions": 1,
+        "intervention_id": "439c1d75-0f88-4955-99c4-ff06315f7a1f",
+        "intervention_name": "ADR-024 Baseline Observation Record",
+        "intervention_category": "OBSERVATION_ONLY",
+        "intervention_status": "COMPLETED",
+        "ael_phase": 0,
+        "rung_qualification": "RUNG_C",
+        "stillness_compliant": true
+      },
+      "stillness_violations": {
+        "count": 0,
+        "status": "NO_VIOLATIONS"
+      },
+      "stillness_protocol_activated": {
+        "action_type": "STILLNESS_PROTOCOL_ACTIVATION",
+        "initiated_at": "2026-01-14T20:16:56.961Z",
+        "initiated_by": "STIG",
+        "decision": "EXECUTED"
+      },
+      "ldow_failure_incidents": {
+        "count": 0,
+        "status": "NO_FAILURES_RECORDED"
+      },
+      "task_activation_status": {
+        "task_name": "forecast_confidence_damper",
+        "is_enabled": true,
+        "activation_directive": "CEO-DIR-2026-063R",
+        "ldow_freeze": {
+          "frozen": true,
+          "frozen_at": "2026-01-14T02:50:00Z",
+          "frozen_by": "CEO-DIR-2026-065",
+          "modifications_forbidden": true
+        }
+      },
+      "governance_actions_log": {
+        "ldow_established": "2026-01-14T00:49:38.114Z",
+        "stillness_activated": "2026-01-14T20:16:56.961Z",
+        "evidence_completion_activated": "2026-01-14T21:54:23.913Z",
+        "failure_protocol_activated": "2026-01-14T22:25:19.226Z"
+      }
+    },
+    "assessment": "Causal isolation enforced. LDOW freeze active. Stillness protocol operational. Zero violations."
+  },
+
+  "rung_d_readiness_check": {
+    "status": "NOT_QUALIFIED",
+    "evidence": {
+      "cycle_1": {
+        "cycle_label": "LDOW-CYCLE-1",
+        "scheduled_at": "2026-01-15T01:30:00.000Z",
+        "completion_status": "SCHEDULED",
+        "forecasts_eligible": 0,
+        "forecasts_paired": 0,
+        "coverage_pass": false,
+        "stability_pass": null,
+        "rung_d_eligible": false,
+        "vega_attestation_id": null
+      },
+      "cycle_2": {
+        "cycle_label": "LDOW-CYCLE-2",
+        "scheduled_at": "2026-01-16T01:30:00.000Z",
+        "completion_status": "SCHEDULED",
+        "forecasts_eligible": 0,
+        "forecasts_paired": 0,
+        "coverage_pass": false,
+        "stability_pass": null,
+        "rung_d_eligible": false,
+        "vega_attestation_id": null
+      },
+      "rung_d_eligibility": {
+        "eligible_cycles": 0,
+        "attested_cycles": 0,
+        "rung_d_qualified": false,
+        "qualification_status": "Need 2 more completed cycles"
+      },
+      "scheduler_status": {
+        "FHQ_LDOW_Cycle1_Completion": "Ready (2026-01-15 02:30 CET)",
+        "FHQ_LDOW_Cycle2_Completion": "Ready (2026-01-16 02:30 CET)"
+      }
+    },
+    "assessment": "Rung D NOT QUALIFIED. Cycles scheduled. Awaiting execution and VEGA attestation.",
+    "path_to_qualification": [
+      "1. Cycle 1 executes 2026-01-15T01:30:00Z",
+      "2. Cycle 1 passes coverage (>=80%) and stability (<=5% Brier variance) thresholds",
+      "3. VEGA attests Cycle 1",
+      "4. Cycle 2 executes 2026-01-16T01:30:00Z",
+      "5. Cycle 2 passes coverage and stability thresholds",
+      "6. VEGA attests Cycle 2",
+      "7. v_rung_d_eligibility returns rung_d_qualified = TRUE"
+    ]
+  },
+
+  "database_infrastructure_summary": {
+    "ldow_tables_operational": [
+      "ldow_cycle_completion",
+      "ldow_task_execution_log",
+      "ldow_completion_thresholds",
+      "ldow_forecast_captures",
+      "ldow_cycle_metrics",
+      "ldow_regime_metrics",
+      "ldow_strategy_metrics",
+      "ldow_evaluation_log",
+      "ldow_unattended_executions",
+      "ldow_failure_incidents"
+    ],
+    "ldow_views_operational": [
+      "v_rung_d_eligibility",
+      "v_ldow_rolling_dashboard",
+      "v_ldow_failure_status"
+    ],
+    "ael_tables_operational": [
+      "ael_intervention_registry"
+    ],
+    "ael_views_operational": [
+      "v_ael_presignable_interventions",
+      "v_ael_stillness_audit",
+      "v_ael_stillness_violations"
+    ],
+    "migrations_completed": [
+      "244_ael_intervention_registry.sql",
+      "245_ael_stillness_protocol.sql",
+      "246_ldow_evidence_based_completion.sql",
+      "247_ldow_failure_protocol.sql"
+    ]
+  },
+
+  "attestation": {
+    "stig_signature": "Database truth report delivered per CEO Directive 2026-01-14",
+    "methodology": "All data sourced directly from database queries. No interpretations. No improvements.",
+    "constitutional_alignment": ["ADR-024", "ADR-013", "ADR-002"],
+    "verification_timestamp": "2026-01-14T22:56:00Z"
+  }
+}

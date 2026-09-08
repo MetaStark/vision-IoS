@@ -1,0 +1,55 @@
+{
+  "directive_id": "CEO-DIR-2026-019",
+  "artifact_type": "P0_1_1_REGRET_BACKFILL",
+  "status": "COMPLETE",
+  "generated_at": "2026-01-07T20:15:00Z",
+  "generated_by": "STIG",
+  "evidence_bundle_type": "BACKFILL",
+
+  "executive_summary": {
+    "task": "P0-1.1: Run historical regret backfill",
+    "result": "SUCCESS",
+    "finding": "100% WISDOM RATE - Hysteresis system is functioning correctly"
+  },
+
+  "regret_computation": {
+    "regret_id": "46ddb796-300b-4940-ba67-fa519d1ed35e",
+    "period_start": "2025-12-08",
+    "period_end": "2026-01-07",
+    "total_suppressions": 118,
+    "wisdom_count": 118,
+    "regret_count": 0,
+    "wisdom_rate_pct": 100.0,
+    "regret_rate_pct": 0.0,
+    "computation_hash": "673687ea9808f31222cff6024bf63bb1bd49e70a4b9e2a212ce4475c1f205972"
+  },
+
+  "regret_by_regime": {
+    "NEUTRAL": {"total": 59, "regret": 0, "wisdom_rate": 1.0},
+    "BULL": {"total": 37, "regret": 0, "wisdom_rate": 1.0},
+    "BEAR": {"total": 24, "regret": 0, "wisdom_rate": 1.0},
+    "STRESS": {"total": 2, "regret": 0, "wisdom_rate": 1.0}
+  },
+
+  "interpretation": {
+    "key_insight": "Every suppression that was applied turned out to be the correct decision",
+    "implication": "The hysteresis system (confirms_required=5) is NOT overly aggressive",
+    "recommendation": "Current hysteresis parameters appear well-calibrated - no mutation required for this metric"
+  },
+
+  "technical_fixes_applied": [
+    "Migration 212: Fixed compute_suppression_regret() to use 'REGIME' instead of 'REGIME_CLASSIFICATION'",
+    "Migration 212: Fixed sovereign_policy_state.policy_regime column reference",
+    "Migration 212: Added cognitive_fasting state columns to execution_state",
+    "Migration 212: Added can_exit_cognitive_fasting() function",
+    "Migration 212: Added evidence_bundle_type column to epistemic_proposals"
+  ],
+
+  "next_steps": [
+    "P0-1.2: Compute Brier scores on all forecasts",
+    "P0-1.3: Run lesson extraction engine",
+    "P0-1.4: Generate mutation proposal (G1)"
+  ],
+
+  "lineage_hash": "p0_1_1_regret_backfill_673687ea9808f31222cff6024bf63bb1bd49e70a4b9e2a212ce4475c1f205972"
+}

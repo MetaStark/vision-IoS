@@ -1,0 +1,110 @@
+{
+  "hotfix_id": "CEO-HOTFIX-REGIME-001",
+  "hotfix_name": "Regime Meta Sync Restoration",
+  "authority": "CEO Execution Order",
+  "priority": "P0",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-11T14:55:06Z",
+
+  "problem_statement": {
+    "symptom": "fhq_meta.regime_state was 5 days stale (last_updated_at = 2026-01-06)",
+    "root_causes": [
+      {
+        "id": "RC1",
+        "description": "varchar(20) overflow",
+        "details": "'ios003_v4.regime_sync' is 21 characters, column updated_by is varchar(20)",
+        "impact": "UPDATE fails silently"
+      },
+      {
+        "id": "RC2",
+        "description": "Silent failure pattern",
+        "details": "Exception was caught and logged but no governance trail or explicit fail status",
+        "impact": "No visibility into sync failures"
+      },
+      {
+        "id": "RC3",
+        "description": "Regime label mismatch",
+        "details": "v4 uses NEUTRAL/STRESS, fhq_meta.regime_state constraint allows SIDEWAYS/CRISIS",
+        "impact": "CHECK constraint violation on INSERT/UPDATE"
+      }
+    ]
+  },
+
+  "fix_applied": {
+    "option_chosen": "A",
+    "option_description": "Change constant string (lowest blast radius)",
+    "changes": [
+      {
+        "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "change": "updated_by value shortened from 'ios003_v4.regime_sync' (21 chars) to 'ios003_v4.sync' (14 chars)",
+        "line": 1016
+      },
+      {
+        "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "change": "Added v4->meta regime mapping (NEUTRAL->SIDEWAYS, STRESS->CRISIS)",
+        "lines": "978-985"
+      },
+      {
+        "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "change": "Eliminated silent failure - now logs to governance_actions_log with explicit EXECUTED/FAILED status",
+        "lines": "1031-1059"
+      }
+    ]
+  },
+
+  "verification": {
+    "before_state": {
+      "capture_timestamp": "2026-01-11T14:53:25.809Z",
+      "last_updated_at": "2026-01-06T15:06:26.616Z",
+      "staleness_days": 5,
+      "current_regime": "SIDEWAYS",
+      "regime_confidence": "0.0052",
+      "updated_by": "STIG.DIR_2026_001",
+      "updated_by_length": 17
+    },
+    "after_state": {
+      "capture_timestamp": "2026-01-11T14:55:19.859Z",
+      "last_updated_at": "2026-01-11T14:55:06.626Z",
+      "staleness_seconds": 13,
+      "current_regime": "SIDEWAYS",
+      "regime_confidence": "0.9911",
+      "updated_by": "ios003_v4.sync",
+      "updated_by_length": 14
+    },
+    "governance_log_entry": {
+      "action_id": "5b0cb064-d846-4e10-b6e5-f00b669ab259",
+      "action_type": "IOS003_REGIME_META_SYNC",
+      "decision": "EXECUTED",
+      "initiated_at": "2026-01-11T14:55:06.632Z",
+      "metadata": {
+        "sync_success": true,
+        "error": null,
+        "hotfix": "CEO-HOTFIX-REGIME-001"
+      }
+    },
+    "verification_status": "PASSED"
+  },
+
+  "out_of_scope": {
+    "note": "This hotfix addresses sync mechanism only. Separate P0/P1 for:",
+    "items": [
+      "ios001 timeout causing price data staleness (~16h for crypto)",
+      "Multi-asset price ingestion frequency"
+    ]
+  },
+
+  "governance_compliance": {
+    "adr_002": "All changes logged to governance_actions_log",
+    "adr_004": "Minimal change, no architectural impact",
+    "court_proof": "Before/after evidence captured with timestamps"
+  },
+
+  "vega_attestation": {
+    "required": true,
+    "status": "PENDING_POST_COMMIT",
+    "note": "VEGA attestation to be obtained after commit"
+  },
+
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-11T14:55:19Z"
+}

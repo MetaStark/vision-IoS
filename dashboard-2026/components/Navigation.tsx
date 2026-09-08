@@ -26,6 +26,9 @@ import {
   Telescope,
   Server,
   Crosshair,
+  BookOpen,
+  Gauge,
+  Calendar,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -103,6 +106,22 @@ const skillSection: NavItemType = {
   badge: 'G2C',
 }
 
+// CEO Directive Metacognitive Observability & Audit-Hardening
+const metacognitiveSection: NavItemType = {
+  name: 'Metacognitive',
+  href: '/metacognitive',
+  icon: Eye,
+  badge: 'CEO',
+}
+
+// CEO-DIR-2026-057 Learning Observability Dashboard
+const learningSection: NavItemType = {
+  name: 'Learning',
+  href: '/learning',
+  icon: BookOpen,
+  badge: 'D57',
+}
+
 // EC-018 Meta-Alpha & Freedom Optimizer
 // G0 = Hypothesis Only, ZERO execution authority
 const alphaDiscoverySection: NavItemType = {
@@ -132,6 +151,22 @@ const ccoSection: NavItemType = {
   href: '/cco',
   icon: Crosshair,
   badge: 'W17',
+}
+
+// CEO-DIR-2026-024: IoS-013 Signal Overview
+const ios013Section: NavItemType = {
+  name: 'IoS-013 – Signals',
+  href: '/ios-signals',
+  icon: Gauge,
+  badge: 'D24',
+}
+
+// CEO-DIR-2026-CALENDAR-GOVERNED-TESTING-001: FjordHQ Calendar
+const calendarSection: NavItemType = {
+  name: 'FjordHQ Calendar',
+  href: '/calendar',
+  icon: Calendar,
+  badge: 'CGT',
 }
 
 export function Navigation() {
@@ -200,6 +235,8 @@ export function Navigation() {
           {navigationItems.map((item) => (
             <NavItem key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
           ))}
+          <NavItem item={ios013Section} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={calendarSection} pathname={pathname} collapsed={collapsed} />
         </ul>
 
         {/* Cinematic Separator */}
@@ -231,6 +268,8 @@ export function Navigation() {
         <ul className="space-y-2">
           <NavItem item={aolSection} pathname={pathname} collapsed={collapsed} />
           <NavItem item={skillSection} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={metacognitiveSection} pathname={pathname} collapsed={collapsed} />
+          <NavItem item={learningSection} pathname={pathname} collapsed={collapsed} />
         </ul>
 
         {/* Alpha Discovery Separator */}

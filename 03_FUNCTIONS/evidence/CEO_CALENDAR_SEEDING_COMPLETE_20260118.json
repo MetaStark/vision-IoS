@@ -1,0 +1,51 @@
+{
+  "directive": "CEO-DIR-2026-086",
+  "title": "Trading Calendar Canonicalization",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T16:00:00Z",
+  "status": "COMPLETE",
+  "summary": {
+    "action": "Established trading calendar as first-class economic primitive",
+    "tables_populated": [
+      "fhq_meta.trading_calendars",
+      "fhq_meta.calendar_days"
+    ],
+    "functions_created": [
+      "fhq_meta.is_trading_day(date, calendar_id)",
+      "fhq_meta.trading_days_forward(date, days, calendar_id)",
+      "fhq_meta.next_trading_close(timestamp, calendar_id)",
+      "fhq_research.roi_horizon_date(timestamp, days, calendar_id)"
+    ]
+  },
+  "calendar_statistics": {
+    "calendar_id": "US_EQUITY",
+    "calendar_name": "US Equity Markets (NYSE/NASDAQ)",
+    "coverage_start": "2025-01-01",
+    "coverage_end": "2027-12-31",
+    "total_days": 1095,
+    "trading_days": 753,
+    "holidays": 30,
+    "early_close_days": 5
+  },
+  "function_tests": {
+    "is_trading_day": {
+      "2026-01-18_sunday": false,
+      "2026-01-19_mlk_day": false,
+      "2026-01-20_tuesday": true
+    },
+    "roi_horizon_date": {
+      "2026-01-15_plus_3T": "2026-01-21",
+      "2026-01-16_plus_3T": "2026-01-22"
+    }
+  },
+  "governance_impact": {
+    "eliminates_ambiguity": "trading_day vs calendar_day confusion resolved",
+    "canonical_question": "'What is T+N trading days from X?' now has ONE answer",
+    "roi_accuracy": "Outcome capture will use trading days, not calendar days"
+  },
+  "artifacts": [
+    "04_DATABASE/MIGRATIONS/308_ceo_dir_2026_086_trading_calendar_canonicalization.sql",
+    "03_FUNCTIONS/populate_calendar_days.sql",
+    "03_FUNCTIONS/ceo_dir_2026_086_populate_trading_calendar.py"
+  ]
+}

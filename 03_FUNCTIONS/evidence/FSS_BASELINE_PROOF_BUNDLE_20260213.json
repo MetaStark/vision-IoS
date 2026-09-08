@@ -1,0 +1,124 @@
+{
+  "report_id": "FSS_BASELINE_PROOF_BUNDLE",
+  "report_type": "CEO-DIR-2026-FIX-005_DEGRADED_BASELINE",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-13T13:51:37.098Z",
+  "updated_at": "2026-02-13T14:04:31.933Z",
+  "directive": "CEO-DIR-2026-FIX-005",
+  "directive_subject": "Deactivate Skill Layer Until Baseline Integrity Restored",
+  "raw_sql_outputs": {
+    "capture_timestamp": "2026-02-13T13:51:37.098Z",
+    "report_type": "FSS_BASELINE_PROOF_BUNDLE",
+    "summary": {
+      "fss_summary": [
+        {
+          "total_rows": 21948,
+          "distinct_brier_ref": 1,
+          "min_brier_ref": 0.25,
+          "max_brier_ref": 0.25,
+          "min_fss_value": -2.9974,
+          "max_fss_value": 0.9982857142857143,
+          "avg_fss_value": -1.28266651461693,
+          "distinct_assets": 489,
+          "earliest_computation": "2026-02-05T18:34:00.759706+01:00",
+          "latest_computation": "2026-02-13T13:32:48.865142+01:00",
+          "null_brier_ref_count": 0,
+          "null_baseline_method_count": 0
+        }
+      ],
+      "bss_summary": [
+        {
+          "total_rows": 4,
+          "valid_bss_count": 3,
+          "sentinel_count": 1,
+          "guard_reason_count": 1,
+          "min_bss_value": -1.769028,
+          "max_bss_value": -0.555762,
+          "min_bs_reference": 0.19932,
+          "max_bs_reference": 0.25,
+          "invalid_bs_ref_count": 0,
+          "earliest_snapshot": "2026-02-12T12:05:09.38411+01:00",
+          "latest_snapshot": "2026-02-12T12:05:09.38411+01:00"
+        }
+      ]
+    }
+  },
+  "critical_findings": [
+    "FSS: All 21,948 rows have brier_ref = 0.25 (hardcoded placeholder confirmed)",
+    "FSS: Average fss_value = -1.2827 (negative values indicate baseline > actual performance)",
+    "FSS: 489 distinct assets affected by hardcoded baseline",
+    "BSS: 3 valid baselines, 1 sentinel record (bss_value IS NULL)",
+    "BSS: Guard reason populated for sentinel record"
+  ],
+  "skill_layer_status": {
+    "fss_skill_status": "DEGRADED_BASELINE",
+    "deactivated_at": "2026-02-13T14:00:00Z",
+    "fss_excluded_from": [
+      "Promotion gates",
+      "Golden Needle selection",
+      "Regime scoring",
+      "Portfolio weighting"
+    ],
+    "lvi_without_fss": true,
+    "sql_work_status": "STOPPED_PENDING_CONCEPTUAL_DEFINITION"
+  },
+  "freeze_status": {
+    "fss_table": "FROZEN",
+    "bss_table": "FROZEN",
+    "freeze_requested_at": "2026-02-13T13:51:37.098Z",
+    "freeze_completed_at": "2026-02-13T13:54:25.672Z",
+    "freeze_type": "PERSISTENT_FILE_MARKER",
+    "marker_file": "03_FUNCTIONS/.locks/FSS_BSS_FREEZE.lock"
+  },
+  "baseline_definition_v1": {
+    "status": "LOCKED",
+    "fss_formula": "FSS = 1 - (Brier_model / Brier_baseline)",
+    "baseline_model": {
+      "type": "BASE_RATE_EMPIRICAL_BETA",
+      "p_base_formula": "(a0 + n_pos) / (a0 + b0 + n_total)",
+      "prior": "Beta(a0=1, b0=1)",
+      "lookback_days": 30,
+      "leakage_rule": "outcome_timestamp < period_start (strict)",
+      "baseline_method": "BASE_RATE_EMPIRICAL_BETA_30D_STRICT"
+    },
+    "gating": {
+      "N_min": 50,
+      "N_min_action": "fss_value = NULL, skill_status = INSUFFICIENT_SAMPLE",
+      "degenerate_guard": "Brier_baseline <= 1e-9",
+      "degenerate_action": "fss_value = NULL, guard_reason = BASELINE_DEGENERATE"
+    },
+    "implementation": {
+      "script": "03_FUNCTIONS/one_shots/patch_fss_baseline_v1.py",
+      "type": "Deterministic batch job (no migrations)",
+      "controls": [
+        "Control A: DB identity handshake (fail-closed)",
+        "Control B: Preflight checks (fail-closed)",
+        "Control C: Write-freeze compliance (--override-freeze required)"
+      ]
+    }
+  },
+  "pending_conceptual_questions": [
+    "What is the mathematical definition of FSS in FjordHQ?",
+    "What is the baseline model?",
+    "Is baseline global or regime-specific?",
+    "Is baseline time-window dependent?",
+    "Should baseline be dynamic or static?"
+  ],
+  "conceptual_answers": {
+    "fss_formula": "FSS = 1 - (Brier_model / Brier_baseline) (LOCKED)",
+    "baseline_model": "Base rate empirical with Beta(1,1) prior (LOCKED)",
+    "baseline_scope": "Per asset, per horizon, per period (LOCKED)",
+    "time_window": "Lookback 30 days, leakage-strict (LOCKED)",
+    "dynamics": "Dynamic per period with strict leakage prevention (LOCKED)"
+  },
+  "attestation": {
+    "sha256_hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+    "status": "DEGRADED_BASELINE",
+    "skill_layer": "DEACTIVATED",
+    "baseline_definition": "LOCKED_V1",
+    "evidence_files": [
+      "FSS_BASELINE_PROOF_BUNDLE_20260213.json",
+      "03_FUNCTIONS/.locks/FSS_BSS_FREEZE.lock"
+    ]
+  }
+}

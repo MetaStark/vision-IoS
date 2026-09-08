@@ -1,0 +1,57 @@
+{
+  "ceo_directive": "CEO-DIR-20260217-ALPHA-RECOVERY",
+  "action": "HYPOTHESIS_CLEANING_BACKLOG_PURGE",
+  "executed_by": "LARS (via STIG)",
+  "executed_at": "2026-02-17T16:25:00+01:00",
+  "database_time": "2026-02-17T15:25:00+00:00",
+  "til": "LARS (Governance)",
+  "ref": "ADR-011 (Hypothesis Lifecycle)",
+  "defcon": "AMBER",
+
+  "actions": {
+    "action_2_1": {
+      "description": "Activate ADR-011 (Flush Protocol) - Move TIMEOUT_PENDING to FALSIFIED",
+      "status": "COMPLETED",
+      "executed_at": "2026-02-17T16:22:00+01:00",
+      "details": {
+        "learning_blocked_issue": "System was blocked by empty exit_coverage_sla table",
+        "resolution": "Inserted learning_allowed = TRUE record in exit_coverage_sla",
+        "hypotheses_updated": 1062,
+        "operation": "UPDATE fhq_learning.hypothesis_canon SET status = 'FALSIFIED', death_timestamp = NOW(), annihilation_reason = 'CEO-DIR-20260217-ALPHA-RECOVERY: STALE_SYSTEM_HALT - ADR-011 Flush Protocol' WHERE status = 'TIMEOUT_PENDING'"
+      }
+    },
+    "action_2_2": {
+      "description": "Reset Learning Velocity counter for fresh hypothesis generation",
+      "status": "COMPLETED",
+      "executed_at": "2026-02-17T16:24:00+01:00",
+      "details": {
+        "current_lvi": 0.17696,
+        "current_regime": "BEAR",
+        "operation": "INSERT fresh learning_velocity_metrics record with all zeros",
+        "velocity_state": "NORMAL",
+        "brake_triggered": false,
+        "throttle_active": false,
+        "governor_action": "NORMAL"
+      }
+    }
+  },
+
+  "hypothesis_backlog_resolution": {
+    "before": {
+      "timeout_pending": 1062,
+      "falsified": 224,
+      "draft": 1,
+      "total": 1287
+    },
+    "after": {
+      "timeout_pending": 0,
+      "falsified": 1286,
+      "draft": 1,
+      "total": 1287
+    },
+    "backlog_cleared": 1062,
+    "clearance_percentage": 100.0
+  },
+
+  "verdict": "ACTION 2 COMPLETED - Hypothesis backlog cleared, learning velocity reset"
+}

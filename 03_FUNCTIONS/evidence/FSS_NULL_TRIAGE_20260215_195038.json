@@ -1,0 +1,51 @@
+{
+  "document_type": "FSS_NULL_TRIAGE",
+  "directive_ref": "CEO-DIR-2026-GOV-017",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-15T18:50:38.967127+00:00",
+  "raw_sql_outputs": {
+    "C0": {
+      "query": "SELECT\n  now() AS server_now,\n  current_database() AS db,\n  current_user AS db_user,\n  inet_server_addr() AS server_addr,\n  inet_server_port() AS server_port,\n  version() AS server_version,\n  current_setting('search_path') AS search_path;",
+      "result": {
+        "server_now": "2026-02-15 19:50:38.907164+01:00",
+        "db": "postgres",
+        "db_user": "postgres",
+        "server_addr": "127.0.0.1",
+        "server_port": 54322,
+        "server_version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35217, 64-bit",
+        "search_path": "\"$user\", public"
+      }
+    },
+    "F0": {
+      "query": "SELECT\n  COUNT(*) AS n_rows,\n  COUNT(*) FILTER (WHERE fss_value IS NULL) AS n_null_fss,\n  COUNT(DISTINCT baseline_method) AS n_baseline_methods,\n  MIN(computation_timestamp) AS oldest_ts,\n  MAX(computation_timestamp) AS newest_ts\nFROM fhq_research.fss_computation_log;",
+      "result": {
+        "n_rows": 21948,
+        "n_null_fss": 15567,
+        "n_baseline_methods": 2,
+        "oldest_ts": "2026-02-05 18:34:00.759706+01:00",
+        "newest_ts": "2026-02-13 13:32:48.865142+01:00"
+      }
+    },
+    "F1": {
+      "query": "SELECT\n  COALESCE(baseline_method, 'NULL') AS baseline_method,\n  COUNT(*) AS n\nFROM fhq_research.fss_computation_log\nWHERE fss_value IS NULL\nGROUP BY 1\nORDER BY n DESC;",
+      "result": {
+        "baseline_method": "BASE_RATE_EMPIRICAL_BETA_30D_STRICT",
+        "n": 15567
+      }
+    },
+    "F2": {
+      "query": "SELECT\n  COUNT(*) FILTER (WHERE sample_size < 50 AND fss_value IS NOT NULL) AS gate_violation,\n  COUNT(*) FILTER (WHERE sample_size < 50 AND fss_value IS NULL) AS gated_ok\nFROM fhq_research.fss_computation_log;",
+      "result": {
+        "gate_violation": 5943,
+        "gated_ok": 15556
+      }
+    },
+    "F3": {
+      "query": "SELECT\n  baseline_method,\n  COUNT(*) AS n,\n  COUNT(*) FILTER (WHERE fss_value IS NULL) AS n_null,\n  ROUND(AVG(sample_size)::numeric, 2) AS avg_n,\n  MIN(computation_timestamp) AS oldest_ts,\n  MAX(computation_timestamp) AS newest_ts\nFROM fhq_research.fss_computation_log\nWHERE computation_timestamp >= now() - interval '24 hours'\nGROUP BY 1\nORDER BY n DESC;",
+      "result": []
+    }
+  },
+  "attestation": {
+    "sha256_hash": "82216f177a1a7f15ad0d29af1a2cb8209aae6d8a570f6549ac048413021704a3"
+  }
+}

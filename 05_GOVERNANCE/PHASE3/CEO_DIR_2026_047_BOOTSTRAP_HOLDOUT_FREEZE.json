@@ -1,0 +1,147 @@
+{
+  "directive": "CEO-DIR-2026-047",
+  "title": "Bootstrap Holdout Freeze & Learning Mode Authorization Protocol",
+  "directive_type": "CONSTITUTIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-13T23:00:00Z",
+  "applies_to": ["STIG", "FINN", "VEGA"],
+  "status": "EXECUTED",
+
+  "executive_summary": {
+    "purpose": "Establish first industry-standard holdout and authorize transition to LEARNING_MODE",
+    "outcome": "Bootstrap holdout frozen, isolation verified, evaluation complete, transition authorized"
+  },
+
+  "system_reality_confirmed": {
+    "aci_active": true,
+    "brier_computed": true,
+    "forecasts_hash_bound": true,
+    "registries_active": true,
+    "previous_mode": "LEARNING_PREPARATION_MODE"
+  },
+
+  "holdout_specification": {
+    "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+    "holdout_name": "M1_BOOTSTRAP_HOLDOUT_2026W02",
+    "type": "Time-based, contiguous, non-shuffled",
+    "training_window": "All data < 2026-01-09 00:00:00 UTC",
+    "holdout_window": {
+      "start": "2026-01-09",
+      "end": "2026-01-12",
+      "inclusive": true
+    },
+    "forecast_horizon": "24h",
+    "assets": "ALL (cross-sectional regime inference)",
+    "record_count": 4237,
+    "data_hash": "34da433d2c50329e908785a2e48c0824",
+    "freeze_mechanism": "Cryptographic data_hash over forecast_ledger + outcome set"
+  },
+
+  "bootstrap_semantics": {
+    "purpose": [
+      "Establish out-of-sample discipline",
+      "Verify that in-sample ≠ out-of-sample",
+      "Lock semantics around learning claims"
+    ],
+    "not_intended_for": [
+      "Statistical significance",
+      "Final generalization proof"
+    ],
+    "sufficient_for": "First transition to LEARNING_MODE"
+  },
+
+  "anti_gaming_governance_lock": {
+    "effective_from": "2026-01-09T00:00:00Z",
+    "prohibited_actions": [
+      "Hyperparameter changes",
+      "Feature set changes",
+      "Threshold adjustments",
+      "Re-labeling or outcome redefinition",
+      "Selective exclusion of forecasts or assets"
+    ],
+    "violation_consequence": "Holdout invalidation, full bootstrap restart, governance deviation logged",
+    "violations_detected": 0
+  },
+
+  "execution_record": {
+    "holdout_frozen": {
+      "timestamp": "2026-01-13T23:04:20Z",
+      "executed_by": "FINN",
+      "authority": "CEO-DIR-2026-047 Section 7"
+    },
+    "isolation_verified": {
+      "timestamp": "2026-01-13T23:04:48Z",
+      "verified_by": "STIG",
+      "checks_passed": [
+        "No parameter changes during holdout period",
+        "No feature modifications",
+        "No threshold adjustments",
+        "No selective exclusions"
+      ]
+    },
+    "evaluation_completed": {
+      "timestamp": "2026-01-13T23:05:34Z",
+      "evaluation_id": "fa064665-9511-42f9-8fe0-1c1fb5f383e2",
+      "executed_by": "STIG"
+    }
+  },
+
+  "holdout_evaluation_results": {
+    "overall": {
+      "n": 214,
+      "brier_score": 0.5158,
+      "hit_rate": 0.3645,
+      "calibration_error": 0.5411
+    },
+    "by_regime": {
+      "BULL": {"n": 70, "brier": 0.5604, "hit_rate": 0.3000},
+      "BEAR": {"n": 20, "brier": 0.7061, "hit_rate": 0.1500},
+      "NEUTRAL": {"n": 121, "brier": 0.4468, "hit_rate": 0.4463},
+      "STRESS": {"n": 3, "brier": 0.9873, "hit_rate": 0.0000}
+    },
+    "interpretation": {
+      "brier_0.5158": "Worse than random baseline (0.25 for 4-class), indicates miscalibration",
+      "hit_rate_36%": "Below 25% random baseline for 4-class, suggests overconfidence",
+      "calibration_error_0.54": "High systematic bias - predicted probabilities do not match outcomes",
+      "bootstrap_value": "Establishes OOS discipline and baseline for improvement measurement"
+    }
+  },
+
+  "transition_authorization": {
+    "criteria_met": {
+      "holdout_frozen_and_registered": true,
+      "evaluation_completed_without_violations": true,
+      "results_logged_as_readonly": true
+    },
+    "transition": {
+      "from": "LEARNING_PREPARATION_MODE",
+      "to": "LEARNING_MODE",
+      "authorized_at": "2026-01-13T23:05:34Z",
+      "governance_action_id": "be306904-7977-48c8-8c4b-6fa9d28fbcf0"
+    }
+  },
+
+  "database_artifacts": {
+    "frozen_holdout_registry": {
+      "row_inserted": true,
+      "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53"
+    },
+    "holdout_evaluation_results": {
+      "row_inserted": true,
+      "evaluation_id": "fa064665-9511-42f9-8fe0-1c1fb5f383e2"
+    },
+    "governance_actions_log": {
+      "row_inserted": true,
+      "action_id": "be306904-7977-48c8-8c4b-6fa9d28fbcf0"
+    }
+  },
+
+  "attestation": {
+    "holdout_frozen_by": "FINN",
+    "isolation_verified_by": "STIG",
+    "evaluation_executed_by": "STIG",
+    "transition_authorized_by": "CEO",
+    "governance_certified_by": "VEGA (pending)",
+    "timestamp": "2026-01-13T23:06:00Z"
+  }
+}

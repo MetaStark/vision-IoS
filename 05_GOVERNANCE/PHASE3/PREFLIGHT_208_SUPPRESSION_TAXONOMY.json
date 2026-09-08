@@ -1,0 +1,243 @@
+{
+  "document_id": "PREFLIGHT-208-SUPPRESSION-TAXONOMY",
+  "document_type": "GOVERNANCE_SPECIFICATION",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL",
+  "directive": "CEO-DIR-2026-001",
+  "migration": "208_ceo_dir_2026_001_epistemic_separation.sql",
+  "timestamp": "2026-01-06T21:00:00Z",
+  "author": "STIG",
+
+  "section_1_suppression_categories": {
+    "column": "suppression_category",
+    "type": "TEXT NOT NULL",
+    "location": "fhq_governance.epistemic_suppression_ledger",
+    "migration_line": "161",
+
+    "categories": [
+      {
+        "id": "HYSTERESIS",
+        "description": "Regime stability filter prevents flip-flop trading",
+        "governance_impact": "LOW",
+        "review_required": false,
+        "typical_duration": "1-5 days",
+        "learning_value": "Normal operation - model belief was correct but policy waited for confirmation",
+        "constraint_type": "consecutive_confirms",
+        "example": "Model sees STRESS but policy waits for 5 consecutive STRESS days before acting"
+      },
+      {
+        "id": "DEFCON",
+        "description": "Circuit breaker override due to systemic risk",
+        "governance_impact": "HIGH",
+        "review_required": true,
+        "typical_duration": "Hours to days",
+        "learning_value": "Critical - model may have been correct but risk was too high to act",
+        "constraint_type": "defcon_level",
+        "example": "DEFCON RED prevents any regime change regardless of model belief"
+      },
+      {
+        "id": "RISK_LIMIT",
+        "description": "Position or exposure limit triggered",
+        "governance_impact": "MEDIUM",
+        "review_required": false,
+        "typical_duration": "Immediate",
+        "learning_value": "Economic constraint - model correct but portfolio risk too high",
+        "constraint_type": "risk_scalar",
+        "example": "Cannot increase BTC position because max allocation reached"
+      },
+      {
+        "id": "LIQUIDITY",
+        "description": "Insufficient market liquidity to execute desired position",
+        "governance_impact": "MEDIUM",
+        "review_required": false,
+        "typical_duration": "Hours",
+        "learning_value": "Execution constraint - model correct but market cannot absorb trade",
+        "constraint_type": "liquidity_score",
+        "example": "Small-cap crypto signal suppressed due to thin order book"
+      },
+      {
+        "id": "MANUAL_OVERRIDE",
+        "description": "Human intervention overriding model belief",
+        "governance_impact": "HIGH",
+        "review_required": true,
+        "typical_duration": "Variable",
+        "learning_value": "Critical for meta-learning - human judgment vs model",
+        "constraint_type": "human_override",
+        "example": "CEO overrides BULL signal due to non-public information"
+      },
+      {
+        "id": "OTHER",
+        "description": "Unclassified suppression requiring categorization",
+        "governance_impact": "HIGH",
+        "review_required": true,
+        "typical_duration": "N/A",
+        "learning_value": "Must be reclassified - indicates missing category",
+        "constraint_type": "unspecified",
+        "example": "New constraint type not yet in taxonomy"
+      }
+    ],
+
+    "check_constraint": {
+      "name": "valid_suppression_category",
+      "expression": "CHECK (suppression_category IN ('HYSTERESIS', 'DEFCON', 'RISK_LIMIT', 'LIQUIDITY', 'MANUAL_OVERRIDE', 'OTHER'))",
+      "migration_line": "180-182"
+    }
+  },
+
+  "section_2_required_fields_per_suppression": {
+    "mandatory_fields": [
+      {
+        "field": "suppression_category",
+        "type": "TEXT NOT NULL",
+        "purpose": "Classification from taxonomy above"
+      },
+      {
+        "field": "suppression_reason",
+        "type": "TEXT NOT NULL",
+        "purpose": "Human-readable explanation"
+      },
+      {
+        "field": "constraint_type",
+        "type": "TEXT NOT NULL",
+        "purpose": "Which governance constraint triggered suppression"
+      },
+      {
+        "field": "constraint_value",
+        "type": "TEXT",
+        "purpose": "Actual value of constraint at time of suppression"
+      },
+      {
+        "field": "constraint_threshold",
+        "type": "TEXT",
+        "purpose": "Threshold that triggered suppression"
+      }
+    ],
+
+    "opportunity_cost_fields": [
+      {
+        "field": "opportunity_cost_estimated",
+        "type": "NUMERIC(12,4)",
+        "purpose": "Estimated $ impact at time of suppression",
+        "when_filled": "At suppression time"
+      },
+      {
+        "field": "market_outcome",
+        "type": "TEXT",
+        "purpose": "What actually happened after suppression",
+        "when_filled": "T+1 to T+5 by IoS-010"
+      },
+      {
+        "field": "opportunity_cost_realized",
+        "type": "NUMERIC(12,4)",
+        "purpose": "Actual $ impact (filled post-facto)",
+        "when_filled": "After market outcome known"
+      }
+    ],
+
+    "learning_fields": [
+      {
+        "field": "lesson_extracted",
+        "type": "TEXT",
+        "purpose": "Insight for meta-learning from this suppression",
+        "when_filled": "By learning loop after review"
+      },
+      {
+        "field": "reviewed_at",
+        "type": "TIMESTAMPTZ",
+        "purpose": "When suppression was reviewed by governance"
+      },
+      {
+        "field": "reviewed_by",
+        "type": "TEXT",
+        "purpose": "Who reviewed (VEGA, CEO, etc.)"
+      }
+    ]
+  },
+
+  "section_3_governance_impact_matrix": {
+    "description": "Review and escalation requirements by category",
+
+    "matrix": [
+      {
+        "category": "HYSTERESIS",
+        "review_sla": "Weekly batch",
+        "escalation": "None unless >10 suppressions/day",
+        "vega_attestation": "Included in weekly summary"
+      },
+      {
+        "category": "DEFCON",
+        "review_sla": "Same day",
+        "escalation": "CEO notification required",
+        "vega_attestation": "Individual attestation required"
+      },
+      {
+        "category": "RISK_LIMIT",
+        "review_sla": "Daily batch",
+        "escalation": "If >5% portfolio impact",
+        "vega_attestation": "Included in daily summary"
+      },
+      {
+        "category": "LIQUIDITY",
+        "review_sla": "Daily batch",
+        "escalation": "If affects >3 assets",
+        "vega_attestation": "Included in daily summary"
+      },
+      {
+        "category": "MANUAL_OVERRIDE",
+        "review_sla": "Immediate",
+        "escalation": "Automatic - CEO already involved",
+        "vega_attestation": "Individual attestation required"
+      },
+      {
+        "category": "OTHER",
+        "review_sla": "Same day",
+        "escalation": "Must be reclassified within 24h",
+        "vega_attestation": "Individual attestation required"
+      }
+    ]
+  },
+
+  "section_4_summary_view_specification": {
+    "view_name": "fhq_governance.v_suppression_summary",
+    "purpose": "Daily suppression analytics for CEO/VEGA review",
+    "migration_line": "253-266",
+
+    "columns": [
+      "suppression_date (DATE)",
+      "suppression_category (TEXT)",
+      "suppression_count (INTEGER)",
+      "avg_suppressed_confidence (NUMERIC)",
+      "total_realized_cost (NUMERIC)",
+      "unreviewed_count (INTEGER)"
+    ],
+
+    "sample_query": "SELECT * FROM fhq_governance.v_suppression_summary WHERE suppression_date = CURRENT_DATE ORDER BY suppression_count DESC;"
+  },
+
+  "section_5_meta_learning_integration": {
+    "principle": "Every suppression is a learning opportunity",
+
+    "learning_loop": {
+      "step_1": "Record suppression with full context",
+      "step_2": "Track market outcome (what actually happened)",
+      "step_3": "Compute realized opportunity cost",
+      "step_4": "Extract lesson (was model right? was policy right?)",
+      "step_5": "Feed back to model calibration (with CEO approval per CEO-DIR-2026-META-LEARNING-001)"
+    },
+
+    "key_questions_per_suppression": [
+      "Was the model's belief correct?",
+      "Was the policy's override justified?",
+      "What was the economic cost of the override?",
+      "Should this constraint threshold be adjusted?",
+      "Is there a pattern in suppressions for this category?"
+    ]
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:00:00Z",
+    "status": "APPROVED"
+  }
+}

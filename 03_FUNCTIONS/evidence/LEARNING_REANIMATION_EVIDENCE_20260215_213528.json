@@ -1,0 +1,64 @@
+{
+  "directive_ref": "CEO-DIR-2026-LEARNING-REANIMATION-023",
+  "hotfix_applied": "CEO-DIR-2026-LEARNING-REANIMATION-023-P0",
+  "hardening_applied": "CEO-DIR-2026-LEARNING-REANIMATION-023-P1",
+  "document_type": "LEARNING_REANIMATION_EVIDENCE",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-15T20:35:28.844521+00:00",
+  "raw_sql_outputs": {
+    "compute_fss_functions": [
+      {
+        "oid": 294205,
+        "proname": "compute_fss",
+        "parameters": "p_asset_id text DEFAULT NULL::text, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date, p_baseline_method text DEFAULT 'NAIVE'::text, p_regime text DEFAULT NULL::text, p_base_rate numeric DEFAULT NULL::numeric"
+      }
+    ],
+    "fss_status": {
+      "total_rows": 22574,
+      "non_null_count": 1064,
+      "last_computed": "2026-02-15 21:33:36.314967+01:00",
+      "minutes_stale": "1.8765558333333333"
+    },
+    "lvi_status": {
+      "lvi_value": "0.0",
+      "computed_at": "2026-02-15 21:15:21.468339+01:00",
+      "hours_stale": "0.33539999388888888889"
+    }
+  },
+  "hotfix_verification": {
+    "unique_function_exists": true,
+    "has_p_base_rate_param": true,
+    "hotfix_success": true
+  },
+  "canonical_call_test": {
+    "called_successfully": true,
+    "returned_rows": 626
+  },
+  "fss_acceptance": {
+    "non_null_count": 1064,
+    "minutes_stale": 1.8765558333333332,
+    "within_60min": true
+  },
+  "gate_invariant": {
+    "violation_count": 611,
+    "invariant_holds": false,
+    "rule": "sample_size < 50 \u2192 fss_value IS NULL"
+  },
+  "lvi_bottleneck": {
+    "lvi_value": "0.0",
+    "hours_stale": 0.3353999938888889,
+    "completed_experiments_7d": 0,
+    "bottleneck_identified": true,
+    "bottleneck_description": "LVI = 0 without completed experiments"
+  },
+  "overall_acceptance": {
+    "hotfix_p0": true,
+    "canonical_call": true,
+    "fss_within_60min": true,
+    "gate_invariant": false,
+    "all_acceptance_tests_passed": false
+  },
+  "attestation": {
+    "sha256_hash": "41a18128d024788ccc90033eba32d8f42cc1f12a7294eba86176324b0b5681d0"
+  }
+}

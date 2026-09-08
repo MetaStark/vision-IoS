@@ -1,0 +1,115 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_IMPLEMENTATION",
+  "directive_code": "CEO-DIR-2026-TRADE-LEARNING-ACTIVATION-004",
+  "title": "Activate Trade-Based Falsification - With Sample-Size and Exit-Coverage Guards",
+  "timestamp": "2026-02-10T09:15:00+01:00",
+  "executed_by": "STIG",
+  "status": "PARTIALLY_IMPLEMENTED",
+
+  "implementation_status": {
+    "step_1_migration": {
+      "status": "READY_FOR_EXECUTION",
+      "files": [
+        "01_SCHEMA/migrations/20260210_001_hypothesis_trade_performance.sql",
+        "01_SCHEMA/migrations/20260210_002_trade_learning_guardrails.sql"
+      ],
+      "pending": "CEO must execute migrations in PostgreSQL"
+    },
+    "step_2_scheduler": {
+      "status": "READY_FOR_IMPORT",
+      "file": "03_FUNCTIONS/scheduler/trade_falsification_daemon_task.xml",
+      "config": {
+        "hidden_window_mode": true,
+        "single_instance_enforcement": true,
+        "interval": "PT1H",
+        "execution_time_limit": "PT30M"
+      },
+      "pending": "Import via: schtasks /create /xml trade_falsification_daemon_task.xml /tn FHQ\\trade_falsification_daemon"
+    },
+    "step_3_sample_size_guardrail": {
+      "status": "IMPLEMENTED",
+      "n_min": 30,
+      "enforcement": "Database trigger + daemon check",
+      "proof": "See migration 20260210_002 - trg_enforce_sample_size"
+    },
+    "step_4_exit_coverage_sla": {
+      "status": "CRITICAL_ALERT",
+      "current_state": {
+        "open_count": 32,
+        "closed_count": 8,
+        "expired_count": 7436,
+        "closed_pct": "0.11%",
+        "last_realized_exit": "2026-01-29",
+        "days_since_exit": 12,
+        "exits_last_48h": 0
+      },
+      "sla_threshold": 1,
+      "sla_window_hours": 48,
+      "sla_met": false,
+      "learning_blocked": true,
+      "enforcement": "Database function + daemon check blocks status writes"
+    },
+    "step_5_backfill": {
+      "status": "READY_AFTER_MIGRATION",
+      "action": "Will recompute from 8 historical CLOSED trades",
+      "reconciliation_audit": "All changes logged to fhq_governance.learning_audit_log"
+    },
+    "step_6_vega_attestation": {
+      "status": "PENDING",
+      "requirements": [
+        "status-write permissions restricted to trade_falsification_daemon",
+        "falsification derives solely from realized trades",
+        "evidence bundle exists"
+      ]
+    }
+  },
+
+  "guardrails_implemented": {
+    "n_min_guardrail": {
+      "parameter": "N_min = 30",
+      "enforcement": "Trigger on hypothesis_trade_performance + daemon constant",
+      "behavior": "closed_trades < 30 = status stays ACTIVE/TIMEOUT_PENDING"
+    },
+    "exit_coverage_sla": {
+      "threshold": "1 exit per 48 hours minimum",
+      "enforcement": "Function check_exit_coverage_sla() + daemon check",
+      "fail_closed": true,
+      "behavior": "exits < threshold for 48h = LEARNING_BLOCKED, no status writes"
+    }
+  },
+
+  "critical_finding": {
+    "issue": "EXIT ENGINE NOT PRODUCING EXITS",
+    "evidence": {
+      "total_trades": 7484,
+      "closed_trades": 8,
+      "closure_rate": "0.11%",
+      "last_exit_date": "2026-01-29",
+      "days_without_exit": 12
+    },
+    "impact": "LEARNING_BLOCKED - System cannot learn without trade exits",
+    "required_action": "Exit engine must convert OPEN -> CLOSED with discipline",
+    "ceo_attention": "Without exits, new architecture is correct but STARVED"
+  },
+
+  "artifacts_created": [
+    "01_SCHEMA/migrations/20260210_001_hypothesis_trade_performance.sql",
+    "01_SCHEMA/migrations/20260210_002_trade_learning_guardrails.sql",
+    "03_FUNCTIONS/trade_falsification_daemon.py",
+    "03_FUNCTIONS/scheduler/trade_falsification_daemon_task.xml"
+  ],
+
+  "success_criteria_72h": {
+    "criterion_1": "closed_trades increases (requires exit engine fix)",
+    "criterion_2": "hypothesis_trade_performance populates for active hypotheses",
+    "criterion_3": "LVI moves above 0.0",
+    "current_assessment": "BLOCKED by exit engine - 0 exits in 12 days"
+  },
+
+  "next_steps_for_ceo": [
+    "1. Execute migrations in PostgreSQL",
+    "2. Import scheduler task",
+    "3. FIX EXIT ENGINE - This is blocking ALL learning",
+    "4. Request VEGA attestation after migrations complete"
+  ]
+}

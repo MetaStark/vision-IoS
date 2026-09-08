@@ -1,0 +1,354 @@
+{
+  "validation_id": "VEGA-IOS014-G2-20260113_003730",
+  "timestamp": "2026-01-13T00:37:30.602106+00:00",
+  "tests": [
+    {
+      "test_name": "Soft ceiling configured within valid range (50-95%) for all vendors",
+      "passed": true,
+      "details": {
+        "vendors_tested": 16,
+        "details": [
+          {
+            "vendor": "DEEPSEEK",
+            "free_tier_limit": 10000,
+            "soft_ceiling_pct": 0.95,
+            "calculated_ceiling": 9500,
+            "reported_ceiling": 9500,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "BINANCE",
+            "free_tier_limit": 1200,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 1080,
+            "reported_ceiling": 1080,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "ALPACA",
+            "free_tier_limit": 200,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 180,
+            "reported_ceiling": 180,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "BINANCE_PUBLIC",
+            "free_tier_limit": 1200,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 1080,
+            "reported_ceiling": 1080,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "YFINANCE",
+            "free_tier_limit": 2000,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 1800,
+            "reported_ceiling": 1800,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "FRED",
+            "free_tier_limit": 500,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 450,
+            "reported_ceiling": 450,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "GEMINI",
+            "free_tier_limit": 1500,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 1350,
+            "reported_ceiling": 1350,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "MARKETAUX",
+            "free_tier_limit": 100,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 90,
+            "reported_ceiling": 90,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "THENEWSAPI",
+            "free_tier_limit": 100,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 90,
+            "reported_ceiling": 90,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "FINNHUB",
+            "free_tier_limit": 60,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 54,
+            "reported_ceiling": 54,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "TWELVEDATA",
+            "free_tier_limit": 800,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 720,
+            "reported_ceiling": 720,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "FMP",
+            "free_tier_limit": 250,
+            "soft_ceiling_pct": 0.9,
+            "calculated_ceiling": 225,
+            "reported_ceiling": 225,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "OPENAI",
+            "free_tier_limit": 500,
+            "soft_ceiling_pct": 0.8,
+            "calculated_ceiling": 400,
+            "reported_ceiling": 400,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "ANTHROPIC",
+            "free_tier_limit": 500,
+            "soft_ceiling_pct": 0.8,
+            "calculated_ceiling": 400,
+            "reported_ceiling": 400,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "NEWSAPI",
+            "free_tier_limit": 100,
+            "soft_ceiling_pct": 0.5,
+            "calculated_ceiling": 50,
+            "reported_ceiling": 50,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          },
+          {
+            "vendor": "ALPHAVANTAGE",
+            "free_tier_limit": 25,
+            "soft_ceiling_pct": 0.5,
+            "calculated_ceiling": 12,
+            "reported_ceiling": 12,
+            "is_valid_pct": true,
+            "ceiling_match": true
+          }
+        ]
+      },
+      "timestamp": "2026-01-13T00:37:30.694361+00:00"
+    },
+    {
+      "test_name": "Blocks requests exceeding soft ceiling",
+      "passed": true,
+      "details": {
+        "vendor": "ALPHAVANTAGE",
+        "soft_ceiling": 12,
+        "requested": 13,
+        "blocked": true,
+        "decision": "USE_FALLBACK"
+      },
+      "timestamp": "2026-01-13T00:37:30.703951+00:00"
+    },
+    {
+      "test_name": "Provides fallback when blocked",
+      "passed": true,
+      "details": {
+        "fallback_vendor": "TWELVEDATA",
+        "decision": "USE_FALLBACK"
+      },
+      "timestamp": "2026-01-13T00:37:30.703951+00:00"
+    },
+    {
+      "test_name": "Fallback chains configured",
+      "passed": true,
+      "details": {
+        "chains": [
+          {
+            "vendor": "DEEPSEEK",
+            "fallback": "GEMINI",
+            "tier": "LAKE"
+          },
+          {
+            "vendor": "BINANCE",
+            "fallback": "YFINANCE",
+            "tier": "LAKE"
+          },
+          {
+            "vendor": "ALPACA",
+            "fallback": "FINNHUB",
+            "tier": "LAKE"
+          },
+          {
+            "vendor": "YFINANCE",
+            "fallback": "ALPHAVANTAGE",
+            "tier": "LAKE"
+          },
+          {
+            "vendor": "MARKETAUX",
+            "fallback": "THENEWSAPI",
+            "tier": "PULSE"
+          },
+          {
+            "vendor": "TWELVEDATA",
+            "fallback": "YFINANCE",
+            "tier": "PULSE"
+          },
+          {
+            "vendor": "ALPHAVANTAGE",
+            "fallback": "TWELVEDATA",
+            "tier": "SNIPER"
+          }
+        ]
+      },
+      "timestamp": "2026-01-13T00:37:30.703951+00:00"
+    },
+    {
+      "test_name": "Fallback chain resolves to available vendor",
+      "passed": true,
+      "details": {
+        "start_vendor": "DEEPSEEK",
+        "resolved_to": "DEEPSEEK",
+        "decision": "PROCEED"
+      },
+      "timestamp": "2026-01-13T00:37:30.703951+00:00"
+    },
+    {
+      "test_name": "DEFCON state readable",
+      "passed": true,
+      "details": {
+        "level": "GREEN",
+        "triggered_by": "STIG"
+      },
+      "timestamp": "2026-01-13T00:37:30.785434+00:00"
+    },
+    {
+      "test_name": "All tasks run at DEFCON GREEN",
+      "passed": true,
+      "details": {
+        "results": [
+          {
+            "task": "ios003_daily_regime_update",
+            "should_run": true,
+            "reason": "DEFCON GREEN: Task allowed (criticality=CRITICAL, freq=1.0x)"
+          },
+          {
+            "task": "daily_ingest_worker",
+            "should_run": true,
+            "reason": "DEFCON GREEN: Task allowed (criticality=HIGH, freq=1.0x)"
+          },
+          {
+            "task": "ios012_g3_system_loop",
+            "should_run": true,
+            "reason": "DEFCON GREEN: Task allowed (criticality=MEDIUM, freq=1.0x)"
+          },
+          {
+            "task": "finn_night_research_executor",
+            "should_run": true,
+            "reason": "DEFCON GREEN: Task allowed (criticality=LOW, freq=1.0x)"
+          }
+        ]
+      },
+      "timestamp": "2026-01-13T00:37:30.785434+00:00"
+    },
+    {
+      "test_name": "Task criticality mapping configured",
+      "passed": true,
+      "details": {
+        "mapped_tasks": 16
+      },
+      "timestamp": "2026-01-13T00:37:30.785434+00:00"
+    },
+    {
+      "test_name": "Execution mode readable",
+      "passed": true,
+      "details": {
+        "mode": "SHADOW_PAPER",
+        "set_by": "CEO_DIRECTIVE_001_CEIO"
+      },
+      "timestamp": "2026-01-13T00:37:30.860754+00:00"
+    },
+    {
+      "test_name": "Safe execution mode active (PAPER_PROD, SHADOW_PAPER, or LOCAL_DEV)",
+      "passed": true,
+      "details": {
+        "current_mode": "SHADOW_PAPER",
+        "safe_modes": [
+          "PAPER_PROD",
+          "SHADOW_PAPER",
+          "LOCAL_DEV"
+        ]
+      },
+      "timestamp": "2026-01-13T00:37:30.860754+00:00"
+    },
+    {
+      "test_name": "Mode restrictions configured",
+      "passed": true,
+      "details": {
+        "restrictions": {
+          "max_universe_size": 100,
+          "allowed_vendors": null,
+          "execution_enabled": true,
+          "expensive_llm_enabled": true
+        }
+      },
+      "timestamp": "2026-01-13T00:37:30.860754+00:00"
+    },
+    {
+      "test_name": "Paper execution allowed in PAPER_PROD",
+      "passed": true,
+      "details": {
+        "allowed": true,
+        "reason": "Execution allowed in SHADOW_PAPER mode"
+      },
+      "timestamp": "2026-01-13T00:37:30.860754+00:00"
+    },
+    {
+      "test_name": "Live execution blocked in safe mode",
+      "passed": true,
+      "details": {
+        "allowed": false,
+        "reason": "Live execution requires LIVE_PROD mode (current: SHADOW_PAPER)"
+      },
+      "timestamp": "2026-01-13T00:37:30.860754+00:00"
+    },
+    {
+      "test_name": "Quota event logging functional",
+      "passed": true,
+      "details": {
+        "recent_events": 5,
+        "event_types_seen": [
+          "SOFT_CEILING_REACHED",
+          "USAGE_INCREMENT"
+        ]
+      },
+      "timestamp": "2026-01-13T00:37:30.933589+00:00"
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0
+  },
+  "g2_status": "PASSED",
+  "pass_rate": 100.0,
+  "evidence_hash": "b3b2fb5daa91694bbd9489028c186ee6c63dda46cfa49f21d65363ac983b8a4e"
+}

@@ -1,0 +1,84 @@
+{
+  "directive_id": "CEO-DIR-2026-046",
+  "directive_name": "Regime Reality Continuity & Cognitive Availability",
+  "authority": "CEO (Orjan Skjold)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T20:45:00Z",
+  "status": "DEPLOYED",
+  "context": {
+    "predecessor": "CEO-DIR-2026-045 (Calibration Gates Phase 1)",
+    "problem": "System can operate cognitively with stale regime beliefs, leading to EPISTEMICALLY_BLIND decisions",
+    "solution": "Constitutional constraint: Regime must refresh every <=6h or system enters DATA_BLACKOUT"
+  },
+  "invariants_implemented": {
+    "RCI_regime_continuity_invariant": {
+      "description": "Regime must refresh at fixed cadence <= 6 hours",
+      "sla_hours": 6,
+      "violation_action": "Automatic DATA_BLACKOUT with reason REGIME_REALITY_VIOLATION",
+      "enforcement_point": "orchestrator_v1.py:run_cycle()"
+    },
+    "CEG_cognitive_eligibility_gate": {
+      "description": "All cognitive queries must have fresh regime to be valid",
+      "violation_message": "SYSTEMIC_REALITY_GAP: regime is Xh stale - system is EPISTEMICALLY_BLIND",
+      "enforcement_point": "data_liveness_checker.py:check_domain_liveness()"
+    },
+    "protected_regime_tasks": {
+      "description": "ios003 regime tasks cannot be skipped or classified as daemon",
+      "protected_tasks": [
+        "ios003_daily_regime_update_v4",
+        "ios003_regime_freshness_sentinel"
+      ],
+      "enforcement_point": "orchestrator_v1.py:PROTECTED_REGIME_TASKS"
+    }
+  },
+  "implementation_details": {
+    "database_functions": {
+      "fhq_governance.check_regime_freshness": {
+        "purpose": "Check if regime belief state is within 6h SLA",
+        "returns": "is_fresh, regime_state, staleness_hours"
+      },
+      "fhq_governance.trigger_regime_blackout": {
+        "purpose": "Trigger DATA_BLACKOUT for regime staleness",
+        "returns": "blackout_id"
+      },
+      "fhq_governance.regime_continuity_status": {
+        "purpose": "View showing current regime status and system state",
+        "fields": ["is_fresh", "regime_state", "staleness_hours", "system_state"]
+      }
+    },
+    "orchestrator_integration": {
+      "check_regime_freshness_method": "OrchestratorDatabase.check_regime_freshness()",
+      "trigger_regime_blackout_method": "OrchestratorDatabase.trigger_regime_blackout()",
+      "location": "run_cycle() after task classification check"
+    },
+    "data_liveness_checker": {
+      "regime_state_sla": "6 hours (was 12h)",
+      "special_message": "SYSTEMIC_REALITY_GAP for regime staleness"
+    }
+  },
+  "files_modified": [
+    "05_ORCHESTRATOR/orchestrator_v1.py",
+    "03_FUNCTIONS/data_liveness_checker.py"
+  ],
+  "database_objects_created": [
+    "fhq_governance.check_regime_freshness()",
+    "fhq_governance.trigger_regime_blackout()",
+    "fhq_governance.regime_continuity_status"
+  ],
+  "vega_attestation": {
+    "attestation_id": "cdfa9146-6b37-4ba3-b5c2-3af5cfca55d4",
+    "decision": "APPROVED",
+    "invariants_attested": [
+      "RCI - Regime Continuity Invariant (6h SLA)",
+      "CEG - Cognitive Eligibility Gate",
+      "Protected Regime Tasks"
+    ]
+  },
+  "governance_compliance": {
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_006": "VEGA attestation obtained",
+    "court_proof": "All changes documented with audit trail"
+  },
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-10T20:45:00Z"
+}

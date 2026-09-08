@@ -1,0 +1,111 @@
+{
+  "directive": "CEO-DIR-2026-CAPITAL-READINESS-GATE-041",
+  "assessment_date": "2026-02-16 18:40:00 UTC",
+  "assessed_by": "STIG",
+  "ec_contract": "EC-003",
+  "current_status": "CERTIFIABLE-NOT-YET-FUNDABLE",
+  "governance_spine": "ALLOCATOR-GRADE-READY",
+
+  "requirements_gap_analysis": {
+    "minimum_statistical_depth": {
+      "status": "FAILED",
+      "threshold_1": "≥100 terminalized events per asset",
+      "current_max": 23 (BTC-USD: 3 EXECUTED + 20 FAILED),
+      "gap": "77 events short per asset (worst case)",
+      "threshold_2": "≥1,000 system-wide independent decision cycles",
+      "current": "31 terminalized packs",
+      "gap": "969 cycles short"
+    },
+    "replay_stability": {
+      "status": "NOT_TESTED",
+      "threshold_1": "30-day replay reproducibility = 1.0000",
+      "current": "N/A",
+      "threshold_2": "7 consecutive runs identical hash",
+      "current": "N/A"
+    },
+    "drift_simulation": {
+      "status": "NOT_TESTED",
+      "threshold": "Inject 5% corrupted linkage, verify invariant fail-closed",
+      "current": "N/A"
+    },
+    "stress_execution": {
+      "status": "NOT_TESTED",
+      "threshold": "Simulate 10× decision pack throughput",
+      "current": "N/A"
+    },
+    "lvi_confidence_interval": {
+      "status": "NOT_IMPLEMENTED",
+      "threshold_1": "Provide 95% CI per asset",
+      "threshold_2": "Provide regime-segmented variance",
+      "current": "N/A"
+    }
+  },
+
+  "current_system_state": {
+    "decision_packs": {
+      "total": 712,
+      "pending": 681,
+      "executed": 11,
+      "failed": 20,
+      "terminalized": 31,
+      "unique_assets": 12,
+      "latest_pack": "2026-02-16T12:20:01.911Z"
+    },
+    "terminalized_events_per_asset": [
+      {"asset": "BTC-USD", "executed": 3, "failed": 20, "total": 23},
+      {"asset": "ETH-USD", "executed": 2, "failed": 0, "total": 2},
+      {"asset": "CRO-USD", "executed": 1, "failed": 0, "total": 1},
+      {"asset": "EOS-USD", "executed": 1, "failed": 0, "total": 1},
+      {"asset": "FIL-USD", "executed": 1, "failed": 0, "total": 1},
+      {"asset": "ICP-USD", "executed": 1, "failed": 0, "total": 1},
+      {"asset": "NEAR-USD", "executed": 1, "failed": 0, "total": 1},
+      {"asset": "SOL-USD", "executed": 1, "failed": 0, "total": 1}
+    ]
+  },
+
+  "blocker_analysis": {
+    "primary_blocker": "681 PENDING packs not being executed",
+    "root_cause": "Decision pack executor daemon not running in production",
+    "impact": "No terminalized events being generated despite high pending volume"
+  },
+
+  "certification_readiness": {
+    "governance_infrastructure": "DEPLOYED",
+    "lvi_canonical": "OPERATIONAL",
+    "settlement_gate": "OPERATIONAL",
+    "shadow_linkage_layer": "DEPLOYED",
+    "replay_protocol": "DEPLOYED",
+    "delta_analysis": "OPERATIONAL"
+  },
+
+  "path_to_fundable": {
+    "phase_1_decision_pack_throughput": {
+      "action": "Activate decision pack executor daemon",
+      "target": "Process 681 PENDING → EXECUTED/FAILED",
+      "expected_time": "7-14 days (at 50-100 packs/day)",
+      "measurable": "Terminalized events ≥100 per asset"
+    },
+    "phase_2_replay_stability": {
+      "action": "Execute 30-day replay certification",
+      "target": "7 consecutive identical hashes, reproducibility = 1.0000",
+      "measurable": "fhq_governance.lvi_replay_bundles records"
+    },
+    "phase_3_statistical_confidence": {
+      "action": "Implement LVI 95% CI per asset",
+      "target": "Standard error calculation with regime-segmented variance",
+      "measurable": "lvi_confidence_intervals table"
+    },
+    "phase_4_stress_and_drift": {
+      "action": "Execute 5% corruption test and 10× stress test",
+      "target": "Fail-closed behavior verified, no race conditions",
+      "measurable": "stress_test_evidence table"
+    }
+  },
+
+  "executive_summary": {
+    "assessment": "Governance spine is allocator-grade. Statistical depth is not.",
+    "gap": "We have the infrastructure to scale. We lack the decision cycles.",
+    "blocking_factor": "Decision pack executor production deployment",
+    "time_to_fundable": "Estimated 14-30 days (subject to throughput)"
+  }
+}

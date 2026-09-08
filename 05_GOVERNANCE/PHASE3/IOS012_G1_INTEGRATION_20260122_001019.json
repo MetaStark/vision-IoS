@@ -1,0 +1,263 @@
+{
+  "metadata": {
+    "validation_type": "IOS012_G1_INTEGRATION",
+    "module": "IoS-012",
+    "gate": "G1",
+    "mode": "PAPER_MOCK",
+    "started_at": "2026-01-22T00:10:15.965125+00:00",
+    "validator": "STIG/LINE",
+    "authority": "BOARD",
+    "nacl_available": false,
+    "completed_at": "2026-01-22T00:10:17.997195+00:00"
+  },
+  "tests": {
+    "G1-HANDSHAKE": {
+      "test_id": "G1-HANDSHAKE",
+      "test_name": "THE_HANDSHAKE",
+      "decision_id": "eec48883-f0a8-4e6a-9285-8912994fbac8",
+      "lifecycle": {
+        "decision_id": "eec48883-f0a8-4e6a-9285-8912994fbac8",
+        "stages": [
+          {
+            "stage": "DETECTION",
+            "latency_ms": 16,
+            "passed": true
+          },
+          {
+            "stage": "VERIFICATION",
+            "latency_ms": 0,
+            "passed": true,
+            "checks": {
+              "ttl_valid": {
+                "passed": true,
+                "current_time": "2026-01-22T00:10:16.401068+00:00",
+                "valid_until": "2026-01-22T01:25:16.334225+01:00"
+              },
+              "signature_present": {
+                "passed": true
+              },
+              "signature_valid": {
+                "passed": true,
+                "reason": "VALID_MOCK"
+              },
+              "context_hash_present": {
+                "passed": true
+              },
+              "schema_valid": {
+                "passed": true,
+                "missing_fields": []
+              }
+            }
+          },
+          {
+            "stage": "HV001_IOS008_MANDATE",
+            "latency_ms": 20,
+            "passed": true
+          },
+          {
+            "stage": "HV002_DEFCON_CIRCUIT_BREAKER",
+            "latency_ms": 9,
+            "passed": true
+          },
+          {
+            "stage": "CV002_EXECUTION_GUARD",
+            "latency_ms": 3,
+            "passed": false
+          }
+        ],
+        "success": false,
+        "constitutional_checks": {
+          "HV001_IOS008_MANDATE": {
+            "passed": true,
+            "signature_agent": "IoS-008",
+            "failure_reason": null,
+            "latency_ms": 20
+          },
+          "HV002_DEFCON_CIRCUIT_BREAKER": {
+            "passed": true,
+            "current_defcon": 4,
+            "enforcement_rule": "DEFCON_NORMAL_OPERATIONS",
+            "blocked_reason": null,
+            "latency_ms": 9
+          },
+          "CV002_EXECUTION_GUARD": {
+            "passed": false,
+            "skill_score": 0.8,
+            "min_required_skill": 0.3,
+            "economic_safety_check": "BLOCKED_POSITION_LIMIT",
+            "rejection_reason": "POSITION_SIZE_EXCEEDED",
+            "latency_ms": 3
+          }
+        },
+        "error": "CV002_GUARD_BLOCK: POSITION_SIZE_EXCEEDED"
+      },
+      "checks": {
+        "detection_under_1000ms": {
+          "passed": true,
+          "latency_ms": 16
+        },
+        "signature_verified": {
+          "passed": true
+        },
+        "position_diff_computed": {
+          "passed": true
+        },
+        "mock_execution_generated": {
+          "passed": true
+        }
+      },
+      "status": "PASS"
+    },
+    "G1-SENTINEL": {
+      "test_id": "G1-SENTINEL",
+      "test_name": "THE_SENTINEL",
+      "subtests": {
+        "A_EXPIRED_TTL": {
+          "decision_id": "04a4debc-7549-4f02-a506-c0dbda18f4f9",
+          "rejected": true,
+          "ttl_correctly_identified": false,
+          "reason": "CV002_GUARD_BLOCK: POSITION_SIZE_EXCEEDED",
+          "status": "PASS"
+        },
+        "B_INVALID_SIGNATURE": {
+          "decision_id": "4840a1ed-dfba-426c-b131-b3c51b5d6c1b",
+          "rejected": true,
+          "reason": "HV001_VIOLATION: MISSING_OR_INVALID_SIGNATURE",
+          "status": "PASS"
+        },
+        "C_MISSING_HASH": {
+          "decision_id": "14c54536-5240-4d3b-9cff-6f92e60164a8",
+          "rejected": true,
+          "reason": "CV002_GUARD_BLOCK: POSITION_SIZE_EXCEEDED",
+          "status": "PASS"
+        }
+      },
+      "security_alerts_logged": 5341,
+      "status": "PASS"
+    }
+  },
+  "security_events": [
+    {
+      "type": "CV002_GUARD_REJECTION",
+      "decision_id": "eec48883-f0a8-4e6a-9285-8912994fbac8",
+      "description": "ExecutionGuard blocked: POSITION_SIZE_EXCEEDED",
+      "timestamp": "2026-01-22T00:10:16.444963+00:00"
+    },
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "04a4debc-7549-4f02-a506-c0dbda18f4f9",
+      "description": "DecisionPlan failed verification: TTL_EXPIRED",
+      "timestamp": "2026-01-22T00:10:17.955389+00:00"
+    },
+    {
+      "type": "CV002_GUARD_REJECTION",
+      "decision_id": "04a4debc-7549-4f02-a506-c0dbda18f4f9",
+      "description": "ExecutionGuard blocked: POSITION_SIZE_EXCEEDED",
+      "timestamp": "2026-01-22T00:10:17.955389+00:00"
+    },
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "4840a1ed-dfba-426c-b131-b3c51b5d6c1b",
+      "description": "DecisionPlan failed verification: INVALID_MOCK_SIGNATURE",
+      "timestamp": "2026-01-22T00:10:17.964046+00:00"
+    },
+    {
+      "type": "HV001_MANDATE_VIOLATION",
+      "decision_id": "4840a1ed-dfba-426c-b131-b3c51b5d6c1b",
+      "description": "IoS-008 mandate enforcement failed: MISSING_OR_INVALID_SIGNATURE",
+      "timestamp": "2026-01-22T00:10:17.964046+00:00"
+    },
+    {
+      "type": "VERIFICATION_FAILED",
+      "decision_id": "14c54536-5240-4d3b-9cff-6f92e60164a8",
+      "description": "DecisionPlan failed verification: MISSING_CONTEXT_HASH",
+      "timestamp": "2026-01-22T00:10:17.975197+00:00"
+    },
+    {
+      "type": "CV002_GUARD_REJECTION",
+      "decision_id": "14c54536-5240-4d3b-9cff-6f92e60164a8",
+      "description": "ExecutionGuard blocked: POSITION_SIZE_EXCEEDED",
+      "timestamp": "2026-01-22T00:10:17.980196+00:00"
+    }
+  ],
+  "mock_lifecycle": [
+    {
+      "decision_id": "eec48883-f0a8-4e6a-9285-8912994fbac8",
+      "stages": [
+        {
+          "stage": "DETECTION",
+          "latency_ms": 16,
+          "passed": true
+        },
+        {
+          "stage": "VERIFICATION",
+          "latency_ms": 0,
+          "passed": true,
+          "checks": {
+            "ttl_valid": {
+              "passed": true,
+              "current_time": "2026-01-22T00:10:16.401068+00:00",
+              "valid_until": "2026-01-22T01:25:16.334225+01:00"
+            },
+            "signature_present": {
+              "passed": true
+            },
+            "signature_valid": {
+              "passed": true,
+              "reason": "VALID_MOCK"
+            },
+            "context_hash_present": {
+              "passed": true
+            },
+            "schema_valid": {
+              "passed": true,
+              "missing_fields": []
+            }
+          }
+        },
+        {
+          "stage": "HV001_IOS008_MANDATE",
+          "latency_ms": 20,
+          "passed": true
+        },
+        {
+          "stage": "HV002_DEFCON_CIRCUIT_BREAKER",
+          "latency_ms": 9,
+          "passed": true
+        },
+        {
+          "stage": "CV002_EXECUTION_GUARD",
+          "latency_ms": 3,
+          "passed": false
+        }
+      ],
+      "success": false,
+      "constitutional_checks": {
+        "HV001_IOS008_MANDATE": {
+          "passed": true,
+          "signature_agent": "IoS-008",
+          "failure_reason": null,
+          "latency_ms": 20
+        },
+        "HV002_DEFCON_CIRCUIT_BREAKER": {
+          "passed": true,
+          "current_defcon": 4,
+          "enforcement_rule": "DEFCON_NORMAL_OPERATIONS",
+          "blocked_reason": null,
+          "latency_ms": 9
+        },
+        "CV002_EXECUTION_GUARD": {
+          "passed": false,
+          "skill_score": 0.8,
+          "min_required_skill": 0.3,
+          "economic_safety_check": "BLOCKED_POSITION_LIMIT",
+          "rejection_reason": "POSITION_SIZE_EXCEEDED",
+          "latency_ms": 3
+        }
+      },
+      "error": "CV002_GUARD_BLOCK: POSITION_SIZE_EXCEEDED"
+    }
+  ],
+  "overall_status": "PASS",
+  "integrity_hash": "a99be8acde84fa4a5f53ee2953b27d60f29fa7c63e40ab4fd46d661896176601"
+}

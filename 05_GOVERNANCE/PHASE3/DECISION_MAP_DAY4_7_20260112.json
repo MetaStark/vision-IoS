@@ -1,0 +1,269 @@
+{
+  "document_id": "DECISION_MAP_DAY4_7_20260112",
+  "document_type": "GOVERNANCE_DECISION_MAP",
+  "phase": "M1_BOOTSEQ",
+  "coverage": "Day 4-7 (2026-01-12 to 2026-01-15)",
+  "generated_at": "2026-01-12T01:35:00Z",
+  "generated_by": "STIG (EC-003_2026_PRODUCTION)",
+  "authority": "CEO-DIR-2026-035",
+
+  "decision_philosophy": {
+    "principle": "Observe, don't intervene",
+    "rationale": "System is on track. Deviations are explained and expected. Intervention now would be premature.",
+    "mbb_guidance": "The most professional action is inaction when criteria are not yet measurable."
+  },
+
+  "daily_decision_nodes": {
+    "day_4": {
+      "date": "2026-01-12",
+      "objective": "First review window",
+      "decision_type": "CHECKPOINT",
+      "inputs": [
+        "ios001 split ingest status (crypto 01:00 UTC, fx/equity 22:00 UTC)",
+        "IOS-003-B first 24h delta production",
+        "Regime sync latency"
+      ],
+      "decision_logic": {
+        "if_all_inputs_nominal": {
+          "action": "CONTINUE",
+          "escalation": "NONE",
+          "ceo_attention": false
+        },
+        "if_ios001_fails": {
+          "action": "DIAGNOSE",
+          "escalation": "STIG reviews logs, no CEO escalation unless >2h delay",
+          "ceo_attention": false
+        },
+        "if_ios003b_zero_cycles": {
+          "action": "INVESTIGATE",
+          "escalation": "Check daemon status, restart if crashed",
+          "ceo_attention": false
+        },
+        "if_regime_sync_stale": {
+          "threshold": ">1h latency",
+          "action": "ALERT",
+          "escalation": "STIG diagnoses, CEO notified if >4h",
+          "ceo_attention": "conditional"
+        }
+      },
+      "expected_outcome": "All systems nominal, no intervention required",
+      "tripwire": "Any system offline >2h triggers STIG investigation"
+    },
+
+    "day_5": {
+      "date": "2026-01-13",
+      "objective": "Calibration assessment begins",
+      "decision_type": "DATA_COLLECTION",
+      "inputs": [
+        "48h of IOS-003-B delta_log entries",
+        "New outcome pairs (should be >0)",
+        "Brier score trend (3-day window)"
+      ],
+      "decision_logic": {
+        "if_outcome_pairs_still_zero": {
+          "action": "DIAGNOSE_HORIZON_MISMATCH",
+          "escalation": "STIG audits forecast_horizon vs outcome_window alignment",
+          "ceo_attention": false,
+          "note": "This is diagnostic, not a failure"
+        },
+        "if_delta_log_empty": {
+          "action": "VERIFY_IOS003B_RUNNING",
+          "escalation": "Check process, restart if needed",
+          "ceo_attention": false
+        },
+        "if_brier_degrading": {
+          "threshold": ">0.05 increase from baseline",
+          "action": "FLAG_FOR_DAY_7_REVIEW",
+          "escalation": "Document trend, no intervention",
+          "ceo_attention": false
+        }
+      },
+      "expected_outcome": "Data accumulation continues, trends emerging",
+      "tripwire": "Brier >0.40 triggers documentation (not intervention)"
+    },
+
+    "day_6": {
+      "date": "2026-01-14",
+      "objective": "Trend confirmation",
+      "decision_type": "TREND_ANALYSIS",
+      "inputs": [
+        "5-day forecast volume trend",
+        "72h IOS-003-B variance analysis",
+        "Outcome pair accumulation rate"
+      ],
+      "decision_logic": {
+        "if_forecast_volume_declining": {
+          "threshold": "<800 forecasts/day (3-day avg)",
+          "action": "INVESTIGATE_FINN_HEALTH",
+          "escalation": "STIG reviews FINN logs",
+          "ceo_attention": false
+        },
+        "if_ios003b_variance_zero": {
+          "action": "DOCUMENT_NULL_HYPOTHESIS_EVIDENCE",
+          "escalation": "This supports 'daily is sufficient' conclusion",
+          "ceo_attention": false,
+          "note": "Zero variance is a valid finding, not a failure"
+        },
+        "if_trends_nominal": {
+          "action": "PREPARE_DAY_7_GATE_PACKAGE",
+          "escalation": "NONE",
+          "ceo_attention": false
+        }
+      },
+      "expected_outcome": "Clear trend data available for Day 7 decision",
+      "tripwire": "No new data for 24h triggers system health check"
+    },
+
+    "day_7": {
+      "date": "2026-01-15",
+      "objective": "Phase gate (M1 -> M2)",
+      "decision_type": "GATE_DECISION",
+      "inputs": [
+        "7-day Brier trend",
+        "Go/No-Go matrix evaluation",
+        "All standing constraint verifications"
+      ],
+      "decision_logic": {
+        "if_all_criteria_met": {
+          "action": "RECOMMEND_M2_TRANSITION",
+          "escalation": "CEO approval required",
+          "ceo_attention": true,
+          "deliverable": "M1_EXIT_PACKAGE with evidence bundle"
+        },
+        "if_criteria_partially_met": {
+          "action": "EXTEND_M1_BY_3_DAYS",
+          "escalation": "Document gaps, CEO notified",
+          "ceo_attention": true,
+          "deliverable": "Gap analysis with remediation timeline"
+        },
+        "if_criteria_failed": {
+          "action": "ESCALATE_TO_CEO",
+          "escalation": "Full diagnostic required",
+          "ceo_attention": true,
+          "deliverable": "Failure analysis with options"
+        }
+      },
+      "expected_outcome": "Data-driven gate decision",
+      "tripwire": "Insufficient data = automatic 3-day extension (not failure)"
+    }
+  },
+
+  "escalation_matrix": {
+    "levels": [
+      {
+        "level": 0,
+        "name": "NOMINAL",
+        "description": "All systems operating within bounds",
+        "action": "Continue observation",
+        "ceo_involvement": "None"
+      },
+      {
+        "level": 1,
+        "name": "DIAGNOSTIC",
+        "description": "Deviation detected, cause being investigated",
+        "action": "STIG investigates, documents findings",
+        "ceo_involvement": "None unless >4h unresolved"
+      },
+      {
+        "level": 2,
+        "name": "ATTENTION",
+        "description": "Sustained deviation or approaching threshold",
+        "action": "STIG prepares brief, CEO notified",
+        "ceo_involvement": "Async notification"
+      },
+      {
+        "level": 3,
+        "name": "DECISION_REQUIRED",
+        "description": "Gate decision or intervention needed",
+        "action": "Full package prepared for CEO",
+        "ceo_involvement": "Synchronous decision"
+      }
+    ]
+  },
+
+  "trigger_definitions": {
+    "system_health_triggers": [
+      {
+        "trigger_id": "T1",
+        "name": "DAEMON_OFFLINE",
+        "condition": "Any daemon (orchestrator, ios003b) not responding >30min",
+        "action": "Restart daemon, log incident",
+        "escalation_level": 1
+      },
+      {
+        "trigger_id": "T2",
+        "name": "DATA_STALE",
+        "condition": "No new data in any pipeline >2h during market hours",
+        "action": "Diagnose pipeline, check API status",
+        "escalation_level": 1
+      },
+      {
+        "trigger_id": "T3",
+        "name": "GOVERNANCE_VIOLATION",
+        "condition": "Any unauthorized write to fhq_governance.*",
+        "action": "IMMEDIATE HALT, CEO notification",
+        "escalation_level": 3
+      }
+    ],
+    "performance_triggers": [
+      {
+        "trigger_id": "P1",
+        "name": "BRIER_SPIKE",
+        "condition": "Daily Brier >0.50",
+        "action": "Document, flag for review (no intervention)",
+        "escalation_level": 1
+      },
+      {
+        "trigger_id": "P2",
+        "name": "FORECAST_COLLAPSE",
+        "condition": "<500 forecasts/day for 2 consecutive days",
+        "action": "Investigate FINN, check data feeds",
+        "escalation_level": 2
+      },
+      {
+        "trigger_id": "P3",
+        "name": "ZERO_OUTCOMES",
+        "condition": "0 new outcome pairs for 3 consecutive days",
+        "action": "Audit horizon alignment, document finding",
+        "escalation_level": 1
+      }
+    ]
+  },
+
+  "non_intervention_principles": [
+    {
+      "principle": "NO_PARAMETER_TUNING",
+      "description": "Do not adjust thresholds, weights, or configurations during M1",
+      "rationale": "Clean baseline requires stable parameters"
+    },
+    {
+      "principle": "NO_MODEL_CHANGES",
+      "description": "Do not retrain, fine-tune, or swap models during M1",
+      "rationale": "Calibration requires consistent model behavior"
+    },
+    {
+      "principle": "NO_EXPOSURE",
+      "description": "Zero trading, zero position changes",
+      "rationale": "Observation phase must be capital-neutral"
+    },
+    {
+      "principle": "DOCUMENT_DONT_FIX",
+      "description": "Deviations are documented, not corrected",
+      "rationale": "Understanding precedes optimization"
+    }
+  ],
+
+  "daily_deliverables": {
+    "day_4": ["ios001 split verification", "IOS-003-B 24h status"],
+    "day_5": ["48h delta analysis", "Outcome pair audit"],
+    "day_6": ["Trend confirmation report", "Day 7 gate prep"],
+    "day_7": ["Go/No-Go evaluation", "M1 Exit Package OR Extension Request"]
+  },
+
+  "attestation": {
+    "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+    "attestation_timestamp": "2026-01-12T01:35:00Z",
+    "authority_reference": "CEO-DIR-2026-035",
+    "validity": "Day 4-7 (2026-01-12 to 2026-01-15)"
+  }
+}

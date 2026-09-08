@@ -1,0 +1,116 @@
+{
+  "attestation_id": "VEGA-G3-CHECKPOINT-B-20260106",
+  "attestation_type": "G3_PERCEPTION_AUDIT",
+  "directive": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "checkpoint": "B",
+  "checkpoint_name": "Perception Completeness (Belief-Policy Integrity, Suppression Logs)",
+  "timestamp": "2026-01-06T23:15:00Z",
+  "issuing_authority": "VEGA",
+
+  "phases_covered": ["Phase 3", "Phase 4"],
+
+  "perception_integrity_audit": {
+    "model_belief_state": {
+      "total_records": 15,
+      "with_lineage_hash": 15,
+      "integrity_pct": 100.0,
+      "status": "PASS"
+    },
+    "sovereign_policy_state": {
+      "total_records": 13,
+      "with_belief_fk": 13,
+      "fk_integrity_pct": 100.0,
+      "status": "PASS"
+    },
+    "epistemic_suppression_ledger": {
+      "total_records": 5,
+      "with_belief_fk": 5,
+      "fk_integrity_pct": 100.0,
+      "status": "PASS"
+    },
+    "regime_daily": {
+      "total_records_7d": 2180,
+      "with_quad_hash": 2180,
+      "integrity_pct": 100.0,
+      "status": "PASS"
+    }
+  },
+
+  "belief_policy_chain_analysis": {
+    "total_beliefs": 15,
+    "beliefs_with_policy": 13,
+    "aligned_count": 8,
+    "divergent_count": 7,
+    "divergence_rate": "46.7%",
+    "divergences_logged": 5,
+    "note": "7 divergent includes 2 test records without policy. 5 real divergences all logged to suppression_ledger."
+  },
+
+  "suppression_taxonomy_audit": {
+    "total_suppressions": 5,
+    "categories_used": ["HYSTERESIS"],
+    "category_distribution": {
+      "HYSTERESIS": 5
+    },
+    "assets_affected": 5,
+    "all_suppressions_categorized": true,
+    "status": "PASS"
+  },
+
+  "g3_gate_criteria": {
+    "criterion_1": {
+      "name": "All beliefs have lineage hash",
+      "threshold": "100%",
+      "actual": "100%",
+      "status": "MET"
+    },
+    "criterion_2": {
+      "name": "All policies reference source belief",
+      "threshold": "100% FK integrity",
+      "actual": "100%",
+      "status": "MET"
+    },
+    "criterion_3": {
+      "name": "All divergences logged to suppression ledger",
+      "threshold": "No silent suppressions",
+      "actual": "5/5 divergences logged",
+      "status": "MET"
+    },
+    "criterion_4": {
+      "name": "Suppression categories valid",
+      "threshold": "All in taxonomy (HYSTERESIS, DEFCON, RISK_LIMIT, LIQUIDITY, OTHER)",
+      "actual": "HYSTERESIS only - valid",
+      "status": "MET"
+    }
+  },
+
+  "ceo_conditions_compliance": {
+    "NBC-001": {
+      "condition": "Belief sample size is still small",
+      "compliance": "15 beliefs acknowledged as integration validation only",
+      "status": "COMPLIANT"
+    },
+    "NBC-002": {
+      "condition": "Ontology remediation remains open",
+      "compliance": "fhq_meta.regime_state not used as epistemic authority",
+      "status": "COMPLIANT"
+    }
+  },
+
+  "checkpoint_b_summary": {
+    "total_criteria": 4,
+    "criteria_met": 4,
+    "criteria_failed": 0,
+    "gate_status": "PASS"
+  },
+
+  "decision": "G3 CHECKPOINT B PASSED - PROCEED TO PHASE 5",
+
+  "attestation": {
+    "issuing_agent": "VEGA",
+    "role": "Verification & Governance Authority",
+    "timestamp": "2026-01-06T23:15:00Z",
+    "statement": "VEGA hereby attests that G3 Checkpoint B criteria are MET. Perception integrity verified: belief-policy FK chain 100% intact, all divergences explicitly logged to suppression ledger (5 HYSTERESIS events), lineage hashes present on all records. CEO conditions NBC-001 and NBC-002 acknowledged and compliant. Authorization granted to proceed to Phase 5.",
+    "signature_placeholder": "VEGA-G3-CKB-20260106-PASS"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "directive_id": "VCEO-DIR-2026-CE-UNBLOCK-001",
+  "directive_name": "CAUSAL EDGES UNBLOCK - COGNITIVE QUERIES RESTORED",
+  "authority": "Vice-CEO",
+  "executed_by": "STIG (CTO)",
+  "attested_by": "VEGA (CGO)",
+  "execution_timestamp": "2026-01-10T22:58:26Z",
+  "attestation_timestamp": "2026-01-10T23:15:00Z",
+  "status": "COMPLETED_AND_ATTESTED",
+  "hash_chain_id": "db40068952914fa09e5d8dc8baa7a3ead9d5c4dcdc0f40f32e5e810b2e727e3b",
+  "context": {
+    "problem": "fhq_alpha.causal_edges staleness breached 48h SLA (actual: 143.43h)",
+    "impact": "Cognitive Engine blocked at P0 gate - all cognitive queries rejected",
+    "root_cause": "crio_alpha_graph_rebuild.py only deactivated stale edges but did not generate new ones"
+  },
+  "root_cause_analysis": {
+    "scheduler_truth": {
+      "task_exists": true,
+      "task_enabled": true,
+      "task_name": "crio_alpha_graph_rebuild",
+      "execution_log_status": "SUCCESS",
+      "conclusion": "Scheduler was running correctly"
+    },
+    "code_deficiency": {
+      "file": "03_FUNCTIONS/crio_alpha_graph_rebuild.py",
+      "function": "update_causal_edges_freshness()",
+      "issue": "Function only SET is_active=FALSE on old edges, did not CREATE new edges",
+      "result": "0 active edges after each execution"
+    }
+  },
+  "fix_implemented": {
+    "new_function": "generate_causal_edges_from_evidence()",
+    "edge_types_created": [
+      {
+        "type": "REGIME_CAUSAL",
+        "source": "fhq_perception.model_belief_state",
+        "logic": "Link assets in same regime state with confidence > 0.7",
+        "limit": 100
+      },
+      {
+        "type": "EVIDENCE_CAUSAL",
+        "source": "fhq_canonical.evidence_relationships",
+        "logic": "Convert high-strength (>0.7) evidence relationships to causal edges",
+        "limit": 100
+      }
+    ],
+    "integration": "Called from update_causal_edges_freshness() after deactivation"
+  },
+  "verification": {
+    "pre_fix": {
+      "causal_edges_staleness_hours": 143.43,
+      "active_edges": 0,
+      "cognitive_queries_blocked": true
+    },
+    "post_fix": {
+      "causal_edges_staleness_hours": 0.25,
+      "active_edges": 400,
+      "edge_distribution": {
+        "REGIME_CAUSAL": 200,
+        "EVIDENCE_CAUSAL": 200
+      },
+      "cognitive_queries_blocked": false
+    },
+    "orchestrator_verification": {
+      "p0_gate_result": "PASS",
+      "p0_message": "All data domains fresh",
+      "cognitive_queries_executed": 3,
+      "execution_mode": "SHADOW_SIGNAL"
+    }
+  },
+  "prevention_layer_1": {
+    "watchdog_file": "03_FUNCTIONS/graph_freshness_watchdog.py",
+    "thresholds": {
+      "target_hours": 6,
+      "warn_hours": 24,
+      "sla_hours": 48
+    },
+    "actions": {
+      "optimal": "Log status only",
+      "warning": "Emit governance warning event",
+      "critical": "Emit breach event + trigger auto-rebuild"
+    },
+    "verified": true,
+    "test_result": "OPTIMAL | SLA Status: PASS"
+  },
+  "cnrp_execution_log": {
+    "cycle_id": "CNRP-20260110-225825",
+    "phase": "R2",
+    "daemon_name": "crio_alpha_graph_rebuild",
+    "status": "SUCCESS",
+    "records_processed": 212,
+    "evidence_hash": "5d9e6042712b7a65ad1afe26375a79927a13cf833a9a6a6a650529c838fa64e9"
+  },
+  "data_liveness_status": {
+    "regime_state": {"hours_stale": 1.7, "sla_hours": 6, "status": "FRESH"},
+    "market_prices": {"hours_stale": 10.6, "sla_hours": 12, "status": "FRESH"},
+    "evidence_nodes": {"hours_stale": 0.22, "sla_hours": 24, "status": "FRESH"},
+    "causal_edges": {"hours_stale": 0.25, "sla_hours": 48, "status": "FRESH"}
+  },
+  "files_modified": [
+    "03_FUNCTIONS/crio_alpha_graph_rebuild.py"
+  ],
+  "files_created": [
+    "03_FUNCTIONS/graph_freshness_watchdog.py",
+    "03_FUNCTIONS/evidence/VCEO_DIR_2026_CE_UNBLOCK_001_ATTESTATION_20260110.json"
+  ],
+  "vega_attestation": {
+    "attestation_id": "VEGA-ATT-20260110-CE-UNBLOCK",
+    "decision": "APPROVED",
+    "verification_checklist": {
+      "root_cause_documented": true,
+      "fix_implemented": true,
+      "fix_tested": true,
+      "cognitive_queries_restored": true,
+      "watchdog_deployed": true,
+      "no_silent_drift_possible": true
+    },
+    "cognitive_queries_reopened": true,
+    "rationale": "Root cause identified, fix implemented and verified, prevention watchdog deployed. Cognitive queries may proceed."
+  },
+  "governance_compliance": {
+    "adr_002": "All actions logged to governance_actions_log",
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_006": "VEGA attestation obtained",
+    "adr_013": "Infrastructure sovereignty maintained - STIG sole executor",
+    "court_proof": "All changes documented with full audit trail and hash chain"
+  },
+  "standing_order": "The causal graph is the substrate of reasoning. Without fresh edges, cognitive inference is forbidden.",
+  "attested_by_stig": "EC-003_2026_PRODUCTION",
+  "attested_by_vega": "VEGA-CGO-2026"
+}

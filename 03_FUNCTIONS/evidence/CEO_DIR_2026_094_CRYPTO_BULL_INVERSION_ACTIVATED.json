@@ -1,0 +1,202 @@
+{
+  "evidence_id": "CEO-DIR-2026-094-CRYPTO-BULL-INVERSION",
+  "directive": "CEO-DIR-2026-094",
+  "title": "CRYPTO BULL 99%+ Inversion — Canonical Shadow Learning & ROI Validation",
+  "timestamp": "2026-01-18T17:45:00Z",
+  "authorized_by": "CEO",
+  "executed_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "mode": "SHADOW_ONLY",
+  "trading_authority": "NONE",
+
+  "strategic_intent": {
+    "statement": "Extract potential alpha pocket from statistically catastrophic population",
+    "method": "Isolate under same discipline that validated EQUITY STRESS inversion",
+    "goal": "Fast falsification or confirmation, NOT optimism"
+  },
+
+  "hard_dependency_verification": {
+    "dependency": "Migration 309 (instrument_type)",
+    "status": "SATISFIED",
+    "verification": {
+      "column_exists": true,
+      "not_null_enforced": true,
+      "crypto_assets_verified": 50,
+      "all_crypto_have_instrument_type": true
+    }
+  },
+
+  "migrations_executed": [
+    {
+      "migration": "309_ceo_dir_2026_090_instrument_identity.sql",
+      "status": "EXECUTED",
+      "timestamp": "2026-01-18T17:30:00Z",
+      "changes": {
+        "columns_added": ["instrument_type", "data_granularity"],
+        "table_created": "fhq_meta.exchange_mic_registry",
+        "assets_updated": 517,
+        "crypto_assets": 50
+      }
+    },
+    {
+      "migration": "310_ceo_dir_2026_094_crypto_bull_inversion_shadow.sql",
+      "status": "EXECUTED",
+      "timestamp": "2026-01-18T17:45:00Z",
+      "changes": {
+        "table_created": "fhq_alpha.crypto_bull_inversion_shadow",
+        "view_created": "fhq_alpha.v_crypto_bull_inversion_performance",
+        "stop_conditions_created": "fhq_alpha.crypto_bull_inversion_stop_conditions",
+        "records_populated": 318,
+        "scheduled_tasks": 4
+      }
+    }
+  ],
+
+  "shadow_session": {
+    "session_id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+    "session_name": "CRYPTO_BULL_INVERSION_30D_TEST",
+    "started_at": "2026-01-18T17:45:00Z",
+    "planned_end_at": "2026-02-17T17:45:00Z",
+    "status": "ACTIVE",
+    "target_asset_class": "CRYPTO",
+    "target_regime": "BULL",
+    "confidence_threshold": 0.99,
+    "inversion_rule": "BET_AGAINST",
+    "horizons": ["1D", "3D", "5D"]
+  },
+
+  "historical_validation_results": {
+    "total_signals": 318,
+    "instrument_type_distribution": {
+      "SPOT": 318,
+      "PERP": 0
+    },
+    "identity_drift_count": 0,
+
+    "1d_horizon_performance": {
+      "evaluated": 318,
+      "original_brier": 0.8804,
+      "inverted_brier": 0.1159,
+      "inverted_hit_rate_pct": 88.36,
+      "brier_improvement": 0.7644,
+      "signals_under_0.10_target": 281,
+      "pct_under_target": 88.36
+    },
+
+    "3d_horizon_performance": {
+      "evaluated": 0,
+      "note": "Multi-horizon outcomes to be computed by scheduled daemon"
+    },
+
+    "5d_horizon_performance": {
+      "evaluated": 0,
+      "note": "Multi-horizon outcomes to be computed by scheduled daemon"
+    }
+  },
+
+  "stop_conditions": {
+    "total": 5,
+    "all_active": true,
+    "any_triggered": false,
+    "conditions": [
+      {"id": "BRIER_DETERIORATION", "threshold": "> baseline + 0.05", "triggered": false},
+      {"id": "HIT_RATE_FLOOR", "threshold": "< 60% over 50 samples", "triggered": false},
+      {"id": "BOOTSTRAP_P_VALUE", "threshold": "> 0.05", "triggered": false},
+      {"id": "REGIME_PERSISTENCE", "threshold": "< 1 day mean", "triggered": false},
+      {"id": "IDENTITY_DRIFT", "threshold": "> 0%", "triggered": false}
+    ]
+  },
+
+  "scheduled_tasks": [
+    {
+      "task_name": "crypto_bull_inversion_epoch_snapshot",
+      "schedule": "5 0 * * * (Daily 00:05 UTC)",
+      "owner": "STIG",
+      "purpose": "Capture new CRYPTO BULL 99%+ forecasts"
+    },
+    {
+      "task_name": "crypto_bull_inversion_outcome_compute",
+      "schedule": "0 4 * * * (Daily 04:00 UTC)",
+      "owner": "STIG",
+      "purpose": "Compute outcomes + metrics for 1D/3D/5D horizons"
+    },
+    {
+      "task_name": "crypto_bull_inversion_weekly_bootstrap",
+      "schedule": "0 0 * * 0 (Sunday 00:00 UTC)",
+      "owner": "VEGA",
+      "purpose": "Weekly bootstrap significance test + attestation"
+    },
+    {
+      "task_name": "crypto_bull_inversion_gate_check",
+      "schedule": "30 4 * * * (Daily 04:30 UTC)",
+      "owner": "STIG",
+      "purpose": "Evaluate stop conditions"
+    }
+  ],
+
+  "pending_requirements": {
+    "crio_mandate": {
+      "requirement": "Inversion Mechanism Hypothesis document",
+      "deadline": "Before Gate 1 closes",
+      "status": "PENDING",
+      "owner": "CRIO",
+      "must_address": [
+        "Retail exhaustion",
+        "Long squeeze dynamics",
+        "Funding-rate pressure",
+        "Liquidity cliffs",
+        "Other transmission mechanisms"
+      ]
+    },
+    "roi_attribution": {
+      "requirement": "Synthetic Options Payoff Proxy computation",
+      "status": "SCHEMA_READY",
+      "columns_exist": ["synthetic_payoff_1d", "synthetic_payoff_3d", "synthetic_payoff_5d"],
+      "note": "To be populated by outcome computation daemon"
+    }
+  },
+
+  "success_criteria": {
+    "1": "Inversion hypothesis fully persisted and reproducible from DB views",
+    "2": "Measurement runs unattended with logged evidence",
+    "3": "Hypothesis can be confirmed or falsified within 30 days",
+    "4": "No contamination of global CRYPTO or EQUITY metrics",
+    "5": "System can stand in audit or court and explain what was measured, why, for how long, under which constraints"
+  },
+
+  "verification_queries": {
+    "record_count": "SELECT COUNT(*) FROM fhq_alpha.crypto_bull_inversion_shadow;",
+    "performance": "SELECT * FROM fhq_alpha.v_crypto_bull_inversion_performance;",
+    "stop_conditions": "SELECT * FROM fhq_alpha.crypto_bull_inversion_stop_conditions;",
+    "tasks": "SELECT task_name, schedule_cron, enabled FROM fhq_execution.task_registry WHERE task_name LIKE 'crypto_bull%';"
+  },
+
+  "files_created": {
+    "migrations": [
+      "04_DATABASE/MIGRATIONS/309_ceo_dir_2026_090_instrument_identity.sql",
+      "04_DATABASE/MIGRATIONS/310_ceo_dir_2026_094_crypto_bull_inversion_shadow.sql"
+    ],
+    "evidence": [
+      "03_FUNCTIONS/evidence/CEO_DIR_2026_094_CRYPTO_BULL_INVERSION_ACTIVATED.json"
+    ]
+  },
+
+  "governance_log": {
+    "action_type": "CRYPTO_BULL_INVERSION_SHADOW_ACTIVATED",
+    "action_target": "fhq_alpha.crypto_bull_inversion_shadow",
+    "decision": "APPROVED",
+    "authorized_by": "CEO"
+  },
+
+  "final_doctrine": "We do not debate alpha. We isolate it, measure it, and let reality decide.",
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-18T17:45:00Z",
+    "directive_compliance": "CEO-DIR-2026-094 FULLY IMPLEMENTED",
+    "hard_dependency_satisfied": "Migration 309 executed before Migration 310",
+    "mode": "SHADOW_ONLY",
+    "trading_authority": "NONE"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "directive_id": "CEO-DIR-2026-019",
+  "artifact_type": "P0_1_CIRCULAR_VALIDATION_FIX",
+  "status": "CRITICAL_FINDING_CONFIRMED",
+  "generated_at": "2026-01-07T22:15:00Z",
+  "generated_by": "STIG",
+  "evidence_bundle_type": "BACKFILL",
+
+  "executive_summary": {
+    "discovery": "CIRCULAR VALIDATION ELIMINATED - TRUE FORECAST SKILL REVEALED",
+    "severity": "CRITICAL",
+    "implication": "All prior Brier scores and hit-rates were MEANINGLESS"
+  },
+
+  "before_fix": {
+    "evidence_source": "sovereign_regime_state_v4",
+    "problem": "Outcomes derived FROM predictions (self-referential)",
+    "hit_rate": 1.0,
+    "brier_score": 0.023,
+    "status": "INVALID - circular validation"
+  },
+
+  "after_fix": {
+    "evidence_source": "fhq_market.prices",
+    "method": "5-day SPY return: >+1% BULL, <-1% BEAR, else NEUTRAL",
+    "hit_rate": 0.2366,
+    "brier_score": 0.6346,
+    "status": "VALID - independent source"
+  },
+
+  "metrics_comparison": {
+    "hit_rate_contaminated": "100.0%",
+    "hit_rate_independent": "23.66%",
+    "delta": "-76.34 percentage points",
+    "brier_contaminated": 0.023,
+    "brier_independent": 0.6346,
+    "delta_brier": "+0.6116 (dramatically worse)"
+  },
+
+  "confusion_matrix": {
+    "note": "786 forecasts matched to 31 independent outcomes",
+    "correct_predictions": 186,
+    "wrong_predictions": 600,
+    "breakdown": [
+      {"predicted": "NEUTRAL", "actual": "BULL", "count": 331, "status": "WRONG"},
+      {"predicted": "BEAR", "actual": "BULL", "count": 237, "status": "WRONG"},
+      {"predicted": "BULL", "actual": "BULL", "count": 182, "status": "CORRECT"},
+      {"predicted": "STRESS", "actual": "BULL", "count": 25, "status": "WRONG"},
+      {"predicted": "BEAR", "actual": "NEUTRAL", "count": 7, "status": "WRONG"},
+      {"predicted": "NEUTRAL", "actual": "NEUTRAL", "count": 4, "status": "CORRECT"}
+    ]
+  },
+
+  "key_insight": {
+    "observation": "System predicted BEAR/NEUTRAL/STRESS while market was actually BULL",
+    "pattern": "593 forecasts predicted non-BULL when market was BULL (75.4% of forecasts)",
+    "diagnosis": "Regime classifier has significant BEARISH BIAS or LAGGING indicator"
+  },
+
+  "independent_outcomes_created": {
+    "count": 31,
+    "date_range": "2025-12-08 to 2026-01-07",
+    "source": "fhq_market.prices",
+    "method": "compute_price_based_regime(SPY, date, 5)",
+    "thresholds": {
+      "BULL": ">+1% 5-day return",
+      "BEAR": "<-1% 5-day return",
+      "NEUTRAL": "between -1% and +1%"
+    }
+  },
+
+  "infrastructure_created": {
+    "migration": "213_independent_regime_outcome_source.sql",
+    "functions": [
+      "fhq_research.compute_price_based_regime()",
+      "fhq_research.backfill_independent_regime_outcomes()",
+      "fhq_research.compute_brier_score_independent()"
+    ],
+    "views": [
+      "fhq_research.v_outcome_integrity_audit"
+    ]
+  },
+
+  "governance_implications": {
+    "prior_lessons_contaminated": true,
+    "prior_brier_scores_invalid": true,
+    "mutation_proposals_blocked": "Cannot generate G1 proposals from contaminated metrics",
+    "required_action": "Re-compute all skill metrics using independent outcomes only"
+  },
+
+  "ceo_directive_compliance": {
+    "circular_validation_fixed": true,
+    "independent_source_created": true,
+    "audit_trail_preserved": true,
+    "outcome_integrity_verifiable": true
+  },
+
+  "lineage_hash": "p0_1_circular_fix_23.66_hit_rate_independent_20260107"
+}

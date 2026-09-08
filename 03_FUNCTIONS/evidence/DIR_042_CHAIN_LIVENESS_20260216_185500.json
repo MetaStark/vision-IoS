@@ -1,0 +1,89 @@
+{
+  "directive": "CEO-DIR-2026-END-TO-END-CHAIN-LIVENESS-042",
+  "assessment_date": "2026-02-16 18:55:00 UTC",
+  "assessed_by": "STIG",
+  "ec_contract": "EC-003",
+  "overall_verdict": "DEGRADED",
+
+  "phase_a_os_liveness": {
+    "status": "MIXED",
+    "services": {
+      "FHQ-G2C-Daemon": {"name": "FHQ G2-C Alpha Daemon", "status": "Running", "start_type": "Automatic"},
+      "FjordHQ_CCO_Daemon": {"name": "FjordHQ CCO Daemon", "status": "Disabled"},
+      "FjordHQ_Daemon_Watchdog": {"name": "FjordHQ Daemon Watchdog", "status": "Ready"},
+      "FjordHQ-IoS003C-Learning-00": {"name": "IoS003C Learning 00", "status": "Ready"},
+      "FjordHQ-IoS003C-Learning-06": {"name": "IoS003C Learning 06", "status": "Ready"},
+      "FjordHQ-IoS003C-Learning-12": {"name": "IoS003C Learning 12", "status": "Ready"},
+      "FjordHQ-IoS003C-Learning-18": {"name": "IoS003C Learning 18", "status": "Ready"},
+      "FjordHQ-IoS003C-Outcomes": {"name": "IoS003C Outcomes", "status": "Ready"}
+    }
+  },
+
+  "phase_b_heartbeat_proof": {
+    "status": "DEGRADED",
+    "daemons_ok_6h": [
+      {"name": "shadow_trade_creator", "last_heartbeat": "2026-02-16T17:41:29Z", "time_ago": "14m"},
+      {"name": "autonomy_clock_tick", "last_heartbeat": "2026-02-16T17:27:29Z", "time_ago": "28m"},
+      {"name": "mechanism_alpha_outcome", "last_heartbeat": "2026-02-16T17:05:03Z", "time_ago": "50m", "is_critical": true},
+      {"name": "orphan_state_cleanup", "last_heartbeat": "2026-02-16T17:00:09Z", "time_ago": "55m"}
+    ],
+    "daemons_degraded": [
+      {"name": "mechanism_alpha_trigger", "last_heartbeat": "2026-02-16T17:47:04Z", "time_ago": "8m", "is_critical": true}
+    ],
+    "daemons_missing_gt4h": [
+      {"name": "lvi_calculator", "last_heartbeat": "2026-02-16T12:58:43Z", "time_ago": "6h"},
+      {"name": "alpha_graph_sync", "last_heartbeat": "2026-02-16T13:15:30Z", "time_ago": "5h"},
+      {"name": "finn_crypto_scheduler", "last_heartbeat": "2026-02-16T13:17:51Z", "time_ago": "5h", "is_critical": true},
+      {"name": "outcome_settlement_daemon", "last_heartbeat": "2026-02-16T09:16:31Z", "time_ago": "10h"},
+      {"name": "decision_pack_generator", "last_heartbeat": "2026-02-04T19:40:10Z", "time_ago": "12 days"}
+    ]
+  },
+
+  "phase_c_data_freshness": {
+    "status": "MIXED",
+    "timestamps": [
+      {"table": "brier_score_ledger", "max_timestamp": "2026-02-13T23:00:00Z", "age": "3 days"},
+      {"table": "outcome_ledger (fhq_research)", "max_timestamp": "2026-02-16T17:55:05Z", "age": "45m"},
+      {"table": "outcome_ledger (fhq_learning)", "max_timestamp": "2026-02-13T08:05:03Z", "age": "3 days"},
+      {"table": "decision_packs", "max_timestamp": "2026-02-16T12:20:01Z", "age": "6h"},
+      {"table": "outcome_settlement_log", "max_timestamp": "2026-02-09T14:55:45Z", "age": "7 days"}
+    ]
+  },
+
+  "phase_d_indicator_continuity": {
+    "status": "FAIL",
+    "rows_last_24h": [
+      {"table": "brier_score_ledger", "rows": 0},
+      {"table": "outcome_ledger (fhq_research)", "rows": 684},
+      {"table": "decision_packs", "rows": 681},
+      {"table": "outcome_settlement_log", "rows": 0}
+    ]
+  },
+
+  "phase_e_perception_alpha_graph": {
+    "status": "FAIL",
+    "forecasts": {"rows_last_24h": 0, "latest": null, "unique_assets": 0},
+    "alpha_graph_edges": {"rows_last_24h": 0, "latest": null, "active_edges": 0}
+  },
+
+  "phase_f_execution_loop": {
+    "status": "FAIL",
+    "stages": [
+      {"stage": "Decision Packs Created", "rows_last_24h": 681, "latest": "2026-02-16T12:20:01Z"},
+      {"stage": "Packs TERMINALIZED", "rows_last_24h": 0, "latest": null},
+      {"stage": "Outcomes Produced", "rows_last_24h": 684, "latest": "2026-02-16T17:55:05Z"},
+      {"stage": "Settlement (Last 24h)", "rows_last_24h": 0, "latest": "2026-02-09T14:55:45Z"},
+      {"stage": "LVI Canonical", "rows_last_24h": 0, "latest": "2026-02-16T15:02:31Z"}
+    ]
+  },
+
+  "summary_table": [
+    {"stage": "Ingest Freshness", "sla": "<1h", "latest_timestamp": "2026-02-16T17:55:05Z", "rows_last_hour": "684", "daemon_last_heartbeat": "finn_crypto_scheduler (5h)", "status": "DEGRADED", "suspected_cause": "Ingest daemon running but no indicator processing"},
+    {"stage": "Indicator Continuity", "sla": "<2h lag", "latest_timestamp": "2026-02-16T12:20:01Z", "rows_last_hour": "681", "daemon_last_heartbeat": "decision_pack_generator (12 days)", "status": "FAIL", "suspected_cause": "Brier scores not being computed"},
+    {"stage": "Forecast Production", "sla": "continuous", "latest_timestamp": "2026-02-13T23:00:00Z", "rows_last_hour": "0", "daemon_last_heartbeat": "mechanism_alpha_trigger (DEGRADED)", "status": "FAIL", "suspected_cause": "Alpha trigger daemon degraded"},
+    {"stage": "Alpha Graph Edges", "sla": "continuous", "latest_timestamp": "null", "rows_last_hour": "0", "daemon_last_heartbeat": "alpha_graph_sync (5h)", "status": "FAIL", "suspected_cause": "No edges produced in 24h"},
+    {"stage": "Decision Packs Execution", "sla": "continuous", "latest_timestamp": "null", "rows_last_hour": "0", "daemon_last_heartbeat": "outcome_settlement_daemon (10h)", "status": "FAIL", "suspected_cause": "Settlement daemon not running"},
+    {"stage": "Outcome Settlement", "sla": "<1h lag", "latest_timestamp": "2026-02-09T14:55:45Z", "rows_last_hour": "0", "daemon_last_heartbeat": "outcome_settlement_daemon (10h)", "status": "FAIL", "suspected_cause": "No settlement, backfill only"},
+    {"stage": "LVI Canonical", "sla": "hourly", "latest_timestamp": "2026-02-16T15:02:31Z", "rows_last_hour": "0", "daemon_last_heartbeat": "lvi_calculator (6h)", "status": "DEGRADED", "suspected_cause": "Calculator running but no new terminalized events"}
+  ]
+}

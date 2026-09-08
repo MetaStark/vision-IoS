@@ -1,0 +1,70 @@
+{
+  "validation_id": "7b02e051da2c37df",
+  "validated_at": "2026-01-19T19:40:43.674831+00:00",
+  "tests": [
+    {
+      "name": "write_path_isolation",
+      "description": "Shadow writes isolated from live execution",
+      "status": "PASS",
+      "evidence": {
+        "shadow_records": 39,
+        "live_records": 0,
+        "cross_schema_triggers": 0
+      }
+    },
+    {
+      "name": "deterministic_replay",
+      "description": "Same inputs produce same outputs",
+      "status": "PASS",
+      "evidence": {
+        "run1_hash": "69b79c5824de6c59",
+        "run2_hash": "69b79c5824de6c59",
+        "match": true
+      }
+    },
+    {
+      "name": "health_idempotence",
+      "description": "Health check is idempotent",
+      "status": "PASS",
+      "evidence": {
+        "iterations": 3,
+        "consistent_status": "INSUFFICIENT_DATA",
+        "all_identical": true
+      }
+    },
+    {
+      "name": "schema_isolation",
+      "description": "Inversion tables isolated in fhq_alpha",
+      "status": "PASS",
+      "evidence": {
+        "alpha_inversion_tables": [
+          "stress_inversion_shadow",
+          "crypto_bull_inversion_shadow",
+          "crypto_bull_inversion_stop_conditions",
+          "inversion_universe",
+          "inversion_overlay_shadow",
+          "inversion_exit_rules",
+          "inversion_hindsight_compliance",
+          "inversion_regime_transitions",
+          "inversion_timing_config"
+        ],
+        "execution_ios012b_tables": 0
+      }
+    },
+    {
+      "name": "no_cross_schema_triggers",
+      "description": "No triggers bridging shadow to execution",
+      "status": "PASS",
+      "evidence": {
+        "total_triggers": 0,
+        "dangerous_triggers": 0
+      }
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "total": 5,
+    "pass_rate": "5/5",
+    "g1_status": "VERIFIED"
+  }
+}

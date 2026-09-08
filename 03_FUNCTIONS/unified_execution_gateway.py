@@ -39,11 +39,47 @@ EXECUTION_FREEZE = False  # LIFTED by CEO 2025-12-22 after successful liquidatio
 
 import os
 import logging
+import psycopg2
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 logger = logging.getLogger('UNIFIED_GATEWAY')
+
+# =============================================================================
+# DATABASE CONNECTION FOR EXECUTION STATE
+# =============================================================================
+
+def _get_execution_state():
+    """CEO-DIR-2026-020 D4: Read execution_state for cognitive fasting check."""
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv('PGHOST', '127.0.0.1'),
+            port=os.getenv('PGPORT', '54322'),
+            database=os.getenv('PGDATABASE', 'postgres'),
+            user=os.getenv('PGUSER', 'postgres'),
+            password=os.getenv('PGPASSWORD', 'postgres')
+        )
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT cognitive_fasting, fasting_reason, defcon_level
+                FROM fhq_governance.execution_state
+                ORDER BY state_id DESC
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+        conn.close()
+        if row:
+            return {
+                'cognitive_fasting': row[0],
+                'fasting_reason': row[1],
+                'defcon_level': row[2]
+            }
+        return {'cognitive_fasting': False, 'fasting_reason': None, 'defcon_level': 'NORMAL'}
+    except Exception as e:
+        logger.error(f"Failed to read execution_state: {e}")
+        # Fail-closed: assume fasting if we can't read state
+        return {'cognitive_fasting': True, 'fasting_reason': 'STATE_READ_FAILED', 'defcon_level': 'UNKNOWN'}
 
 # =============================================================================
 # EXECUTION DECISION (Non-Negotiable Contract)
@@ -210,6 +246,25 @@ def validate_execution_permission(
             timestamp=timestamp
         )
 
+    # =========================================================================
+    # CEO-DIR-2026-020 D4: COGNITIVE FASTING CHECK
+    # Block execution when system is in cognitive fasting state
+    # =========================================================================
+    exec_state = _get_execution_state()
+    if exec_state.get('cognitive_fasting', False):
+        fasting_reason = exec_state.get('fasting_reason', 'Unknown')
+        logger.warning(
+            f"COGNITIVE FASTING ACTIVE: {symbol} blocked - {fasting_reason}"
+        )
+        return ExecutionDecision(
+            allowed=False,
+            reason=f"CEO-DIR-2026-020: COGNITIVE FASTING - {fasting_reason}",
+            execution_scope='BLOCKED',
+            asset_class='FASTING',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
     # Classify the asset
     asset_class = classify_asset(symbol)
 
@@ -273,6 +328,111 @@ def validate_execution_permission(
     )
 
 
+# =============================================================================
+# OPTIONS EXECUTION PERMISSION (IoS-012-C)
+# CEO-DIR-2026-OPS-AUTONOMY-001 / G1 Technical Validation
+# =============================================================================
+
+def validate_options_permission(
+    symbol: str,
+    strategy_type: str,
+    source_signal: Optional[str] = None
+) -> ExecutionDecision:
+    """
+    Validate whether an options order is permitted.
+
+    This is the OPTIONS-SPECIFIC gateway. Called by options_shadow_adapter
+    BEFORE any options order construction.
+
+    Checks:
+    1. Master kill switch (EXECUTION_FREEZE)
+    2. Cognitive fasting
+    3. DEFCON level (options require GREEN or YELLOW)
+    4. Strategy type is in allowed set
+
+    Args:
+        symbol: The underlying symbol (e.g., 'AAPL')
+        strategy_type: Options strategy type (e.g., 'VERTICAL_SPREAD')
+        source_signal: Optional source signal
+
+    Returns:
+        ExecutionDecision with allowed status
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    # Inherit all base gateway checks
+    if EXECUTION_FREEZE:
+        return ExecutionDecision(
+            allowed=False,
+            reason="CEO DIRECTIVE: EXECUTION FREEZE - options blocked",
+            execution_scope='BLOCKED',
+            asset_class='OPTIONS',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
+    exec_state = _get_execution_state()
+    if exec_state.get('cognitive_fasting', False):
+        return ExecutionDecision(
+            allowed=False,
+            reason=f"COGNITIVE FASTING: options blocked - {exec_state.get('fasting_reason')}",
+            execution_scope='BLOCKED',
+            asset_class='OPTIONS',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
+    # Options-specific: DEFCON must be GREEN or YELLOW
+    defcon = exec_state.get('defcon_level', 'UNKNOWN')
+    options_allowed_defcon = {'NORMAL', 'GREEN', 'DEFCON_5_GREEN', 'YELLOW', 'DEFCON_4_YELLOW'}
+    if defcon not in options_allowed_defcon:
+        log_blocked_execution(
+            symbol=symbol,
+            asset_class='OPTIONS',
+            reason=f"DEFCON {defcon}: options require GREEN or YELLOW",
+            source_signal=source_signal
+        )
+        return ExecutionDecision(
+            allowed=False,
+            reason=f"DEFCON {defcon}: options trading halted (requires GREEN or YELLOW)",
+            execution_scope='BLOCKED',
+            asset_class='OPTIONS',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
+    # Strategy validation
+    allowed_strategies = {
+        'CASH_SECURED_PUT', 'COVERED_CALL', 'VERTICAL_SPREAD',
+        'IRON_CONDOR', 'PROTECTIVE_PUT'
+    }
+    if strategy_type not in allowed_strategies:
+        log_blocked_execution(
+            symbol=symbol,
+            asset_class='OPTIONS',
+            reason=f"Strategy {strategy_type} not in allowed set",
+            source_signal=source_signal
+        )
+        return ExecutionDecision(
+            allowed=False,
+            reason=f"Strategy {strategy_type} blocked by gateway (not in allowed set)",
+            execution_scope='BLOCKED',
+            asset_class='OPTIONS',
+            symbol=symbol,
+            timestamp=timestamp
+        )
+
+    logger.info(f"OPTIONS GATEWAY PERMITTED: {symbol} / {strategy_type}")
+    return ExecutionDecision(
+        allowed=True,
+        reason=f"Options shadow permitted: {strategy_type} on {symbol}",
+        execution_scope='OPTIONS',
+        asset_class='OPTIONS',
+        symbol=symbol,
+        timestamp=timestamp
+    )
+
+
 def can_execute(symbol: str, source_signal: Optional[str] = None) -> bool:
     """
     Quick boolean check for execution permission.
@@ -293,12 +453,14 @@ def get_gateway_status() -> dict:
     Get current gateway configuration status.
     """
     return {
-        'gateway_version': '1.0.0',
+        'gateway_version': '1.1.0',
         'holiday_gate_available': HOLIDAY_GATE_AVAILABLE,
         'holiday_mode_enabled': HOLIDAY_MODE_ENABLED,
         'paper_mode_enabled': PAPER_MODE_ENABLED,
         'paper_max_exposure_pct': PAPER_MODE_MAX_EXPOSURE_PCT,
         'approved_crypto_assets': list(APPROVED_CRYPTO_ASSETS) if HOLIDAY_GATE_AVAILABLE else [],
+        'options_gateway_enabled': True,
+        'options_execution_mode': 'SHADOW_PAPER',
         'checked_at': datetime.now(timezone.utc).isoformat()
     }
 

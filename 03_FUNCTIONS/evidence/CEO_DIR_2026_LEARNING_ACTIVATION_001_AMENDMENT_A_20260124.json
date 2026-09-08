@@ -1,0 +1,135 @@
+{
+  "directive": "CEO-DIR-2026-LEARNING-ACTIVATION-001",
+  "amendment": "A",
+  "title": "CEO Tightening of Throughput, Error-Binding, and Escalation",
+  "issued": "2026-01-24T17:50:00+01:00",
+  "accepted": "2026-01-24T18:00:00+01:00",
+  "accepted_by": "STIG (EC-003)",
+
+  "phase_0": {
+    "start": "2026-01-24T18:00:00+01:00",
+    "end": "2026-01-27T18:00:00+01:00",
+    "duration_hours": 72,
+    "minimum_n": 3,
+    "minimum_m": 3,
+    "error_coverage": "100%_NON_NEGOTIABLE"
+  },
+
+  "dynamic_scaling_conditions": {
+    "tier1_death_rate_range": "[60%, 90%]",
+    "no_duplicate_embeddings": "similarity_threshold",
+    "no_p_hacking_alerts": true,
+    "scaling_step": 2,
+    "requires_ceo_approval": false,
+    "must_be_logged": true
+  },
+
+  "wiring_verification": {
+    "error_to_hypothesis_binding": {
+      "column": "origin_error_id",
+      "status": "WIRED",
+      "evidence": "All 3 hypotheses have origin_error_id populated"
+    },
+    "rejection_memory": {
+      "columns": ["falsification_count", "max_falsifications", "falsified_at"],
+      "status": "WIRED",
+      "evidence": "HYP-2026-0002 falsified when count=3 reached max=3"
+    },
+    "duplicate_detection": {
+      "columns": [],
+      "status": "GAP",
+      "impact": "N capped at 3 until resolved",
+      "resolution": "Add semantic_hash column in Migration 345"
+    },
+    "negative_knowledge_accounting": {
+      "columns": ["hypotheses_killed", "hypotheses_weakened", "tier1_deaths", "death_rate_pct"],
+      "status": "WIRED"
+    }
+  },
+
+  "escalation_triggers": {
+    "HYPO_STALL": {
+      "condition": "No new hypothesis in 24h",
+      "action": "ESCALATE"
+    },
+    "EXP_STALL": {
+      "condition": "No experiment completed in 24h",
+      "action": "ESCALATE"
+    },
+    "DEATH_TOO_SOFT": {
+      "condition": "Tier-1 death rate <50% over rolling 48h",
+      "action": "ESCALATE"
+    },
+    "DEATH_TOO_BRUTAL": {
+      "condition": "Tier-1 death rate >95% over rolling 48h",
+      "action": "ESCALATE"
+    }
+  },
+
+  "escalation_requirements": {
+    "create_calendar_event": true,
+    "insert_runbook_entry": true,
+    "require_ceo_acknowledge": true,
+    "no_human_interpretation": true
+  },
+
+  "reward_gating_verification": {
+    "query": "SELECT COUNT(*) FROM table_constraints WHERE fhq_learning FK to reward/capital",
+    "result": 0,
+    "status": "CONFIRMED_NOT_GATED",
+    "one_line_proof": "Learning-to-Reward FK constraints: 0"
+  },
+
+  "gaps_identified": [
+    {
+      "gap": "No error_frequency_percentile column",
+      "severity": "MEDIUM",
+      "owner": "FINN",
+      "target": "Day 26"
+    },
+    {
+      "gap": "No duplicate detection (embedding/semantic_hash)",
+      "severity": "HIGH",
+      "owner": "STIG",
+      "target": "Day 25",
+      "impact": "N capped at 3"
+    },
+    {
+      "gap": "No mechanical escalation function",
+      "severity": "HIGH",
+      "owner": "STIG",
+      "target": "Day 25"
+    },
+    {
+      "gap": "Tier-1 death rate = 100% (outside 60-90% range)",
+      "severity": "MEDIUM",
+      "owner": "FINN",
+      "target": "Day 26-27"
+    }
+  ],
+
+  "concrete_example": {
+    "error_id": "b922468d-b5e0-4feb-a15d-0f80a7b44de3",
+    "hypothesis_born": {
+      "code": "HYP-2026-0002",
+      "origin_type": "ERROR_DRIVEN",
+      "created_at": "2026-01-23T21:55:13Z"
+    },
+    "killed": {
+      "status": "FALSIFIED",
+      "falsification_count": 3,
+      "max_falsifications": 3
+    },
+    "manual_intervention_required": false
+  },
+
+  "decisions": {
+    "learning_state_transition": "CONFIRMED",
+    "finn_hypothesis_generation": "AUTHORIZED_UNDER_CONSTRAINTS",
+    "throughput": "CONDITIONALLY_APPROVED_ADAPTIVE_AFTER_72H",
+    "reward_logic": "FROZEN_NO_EXCEPTIONS",
+    "scaling_authorization": "BLOCKED_UNTIL_GAPS_RESOLVED"
+  },
+
+  "hash": "c9e5f3a1d7b2408e6f3a5c2b1d8e9f4c"
+}

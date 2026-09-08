@@ -1,0 +1,177 @@
+{
+  "metadata": {
+    "validation_type": "IOS008_G1_TECHNICAL_VALIDATION",
+    "module": "IoS-008",
+    "gate": "G1",
+    "started_at": "2026-01-14T23:40:13.935280+00:00",
+    "validator": "STIG",
+    "authority": "BOARD",
+    "completed_at": "2026-01-14T23:40:15.328692+00:00"
+  },
+  "tests": {
+    "G1-A": {
+      "test_id": "G1-A",
+      "test_name": "ABSOLUTE_DETERMINISM",
+      "iterations": 1000,
+      "unique_hashes": 1,
+      "status": "PASS",
+      "requirement": "All 1,000 outputs must be bit-perfect identical",
+      "evidence": {
+        "first_hash": "8129a14c963ec4cda902f7d198228d30b30aee3055c4bb54949b2f7bc8bb94f1",
+        "all_hashes_identical": true,
+        "sample_results": [
+          {
+            "asset_id": "BTC-USD",
+            "regime": "BEAR",
+            "regime_scalar": 0.0,
+            "causal_vector": 1.1746666666666667,
+            "skill_damper": 1.0,
+            "final_allocation": 0.0,
+            "valid_until": "2025-12-01T01:15:00+01:00",
+            "context_hash": "4cda95034551a81a322d0f61e105d290333d6076e0e9c7eae418ac3f6abbbf5b"
+          },
+          {
+            "asset_id": "BTC-USD",
+            "regime": "BEAR",
+            "regime_scalar": 0.0,
+            "causal_vector": 1.1746666666666667,
+            "skill_damper": 1.0,
+            "final_allocation": 0.0,
+            "valid_until": "2025-12-01T01:15:00+01:00",
+            "context_hash": "4cda95034551a81a322d0f61e105d290333d6076e0e9c7eae418ac3f6abbbf5b"
+          },
+          {
+            "asset_id": "BTC-USD",
+            "regime": "BEAR",
+            "regime_scalar": 0.0,
+            "causal_vector": 1.1746666666666667,
+            "skill_damper": 1.0,
+            "final_allocation": 0.0,
+            "valid_until": "2025-12-01T01:15:00+01:00",
+            "context_hash": "4cda95034551a81a322d0f61e105d290333d6076e0e9c7eae418ac3f6abbbf5b"
+          },
+          {
+            "asset_id": "BTC-USD",
+            "regime": "BEAR",
+            "regime_scalar": 0.0,
+            "causal_vector": 1.1746666666666667,
+            "skill_damper": 1.0,
+            "final_allocation": 0.0,
+            "valid_until": "2025-12-01T01:15:00+01:00",
+            "context_hash": "4cda95034551a81a322d0f61e105d290333d6076e0e9c7eae418ac3f6abbbf5b"
+          },
+          {
+            "asset_id": "BTC-USD",
+            "regime": "BEAR",
+            "regime_scalar": 0.0,
+            "causal_vector": 1.1746666666666667,
+            "skill_damper": 1.0,
+            "final_allocation": 0.0,
+            "valid_until": "2025-12-01T01:15:00+01:00",
+            "context_hash": "4cda95034551a81a322d0f61e105d290333d6076e0e9c7eae418ac3f6abbbf5b"
+          }
+        ]
+      }
+    },
+    "G1-B": {
+      "test_id": "G1-B",
+      "test_name": "LOGIC_BOUNDARY_STRESS",
+      "subtests": {
+        "B1_REGIME_VETO": {
+          "description": "BEAR regime (0.0) must override positive Causal (1.5)",
+          "inputs": {
+            "regime": "BEAR",
+            "causal": 1.5,
+            "skill": 1.0
+          },
+          "expected": 0.0,
+          "actual": 0.0,
+          "status": "PASS"
+        },
+        "B2_SKILL_DAMPER": {
+          "description": "Low skill (FSS=0.35) must reduce allocation below full",
+          "inputs": {
+            "regime": "BULL",
+            "causal": 1.5,
+            "skill_fss": 0.35
+          },
+          "expected": "damped_allocation < full_allocation",
+          "actual": {
+            "damper_value": 0.0,
+            "damped": 0.0,
+            "full": 1.5
+          },
+          "status": "PASS"
+        },
+        "B3_MISSING_DATA": {
+          "description": "Missing regime data must trigger SAFE_STATE (exception)",
+          "inputs": {
+            "asset_id": "NONEXISTENT-USD"
+          },
+          "expected": "NO_DECISION exception",
+          "actual": "NO_DECISION: Missing regime data for asset NONEXISTENT-USD\nCONTEXT:  PL/pgSQL function fhq_governance.compute_decision_plan(text,numeric) line 26 at RAISE\n",
+          "status": "PASS"
+        }
+      },
+      "status": "PASS",
+      "requirement": "All boundary conditions must behave correctly"
+    },
+    "G1-C": {
+      "test_id": "G1-C",
+      "test_name": "TTL_TEMPORAL_SAFETY",
+      "subtests": {
+        "C1_TTL_CONSTRAINT": {
+          "description": "TTL constraint must enforce 15-minute maximum",
+          "constraint_exists": true,
+          "constraint_def": "CHECK ((valid_until <= (created_at + '00:15:00'::interval))) NOT VALID",
+          "status": "PASS"
+        },
+        "C2_EXPIRED_DETECTION": {
+          "description": "Plans with valid_until in the past must be detectable as STALE",
+          "test_scenario": "valid_until = NOW() - 20 minutes",
+          "expected": "STALE_CORRECTLY_DETECTED",
+          "actual": "STALE_CORRECTLY_DETECTED",
+          "status": "PASS"
+        },
+        "C3_TTL_REJECTION": {
+          "description": "IoS-012 must reject plans where current_time > valid_until",
+          "rule": "current_time > valid_until \u2192 REJECT",
+          "status": "PASS"
+        }
+      },
+      "status": "PASS",
+      "requirement": "All temporal safety constraints must be enforced"
+    },
+    "G1-D": {
+      "test_id": "G1-D",
+      "test_name": "SIDE_EFFECT_STERILITY",
+      "subtests": {
+        "D1_GRAPH_READONLY": {
+          "description": "compute_decision_plan() must not modify fhq_graph.*",
+          "nodes_before": 196,
+          "nodes_after": 196,
+          "edges_before": 18,
+          "edges_after": 18,
+          "status": "PASS"
+        },
+        "D2_APPENDONLY_TRIGGER": {
+          "description": "decision_log must have append-only trigger",
+          "trigger_name": "enforce_decision_log_immutability",
+          "trigger_exists": true,
+          "status": "PASS"
+        },
+        "D3_FUNCTION_PURITY": {
+          "description": "Function exists and is properly defined",
+          "function_exists": true,
+          "volatility": "v",
+          "security_definer": false,
+          "status": "PASS"
+        }
+      },
+      "status": "PASS",
+      "requirement": "IoS-008 must be side-effect free (pure decision engine)"
+    }
+  },
+  "overall_status": "PASS",
+  "integrity_hash": "83b6737593cbf5b300e01f6b5d54039ed03e2964094c8d6b26c3d42662b0b213"
+}

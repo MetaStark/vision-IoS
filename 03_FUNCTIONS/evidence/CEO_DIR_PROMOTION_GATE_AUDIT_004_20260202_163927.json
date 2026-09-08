@@ -1,0 +1,137 @@
+{
+  "directive": "CEO-DIR-2026-PROMOTION-GATE-AUDIT-004",
+  "title": "Tier-2 Audit of Promotion Gate Integrity and Signal Attrition",
+  "gate": "ADR-004 -> G2 (Analytical Audit)",
+  "execution_authority": "NONE",
+  "capital_authority": "ZERO",
+  "recorded_at": "2026-02-02T15:39:27.837625+00:00",
+  "recorded_by": "EC-003_STIG",
+  "deliverable_A_promotion_attrition_decomposition": {
+    "summary": "The Promotion Gate is NOT the bottleneck. Signal attrition occurs upstream at hypothesis-to-experiment conversion.",
+    "pipeline_funnel": {
+      "step1_hypotheses": 1048,
+      "step2_experiments": 8,
+      "step3_triggers": 35,
+      "step4_outcomes": 35,
+      "step5_promotion_evaluations": 1,
+      "step6_shadow_trades": 24,
+      "step7_shadow_tier": 1,
+      "step8_promotion_queue": 11,
+      "step9_live_eligible": 0
+    },
+    "attrition_points": {
+      "hypothesis_to_experiment": {
+        "input": 1048,
+        "output": 8,
+        "attrition_pct": 99.2,
+        "diagnosis": "CRITICAL BOTTLENECK. 61 active hypotheses with ZERO experiments. Hypothesis-to-Experiment conversion pipeline is broken for FINN-T and finn_crypto_scheduler."
+      },
+      "experiment_to_min_sample": {
+        "input": 8,
+        "output": 1,
+        "attrition_pct": 87.5,
+        "diagnosis": "Only EXP_ALPHA_SAT_F (16/15) reached min_sample_size. EXP_ALPHA_SAT_A at 19/30 (63%). 6 experiments had 0 outcomes."
+      },
+      "promotion_gate_evaluation": {
+        "input": 1,
+        "output": 1,
+        "pass_rate_pct": 100.0,
+        "diagnosis": "Gate works correctly. ONE evaluation -> PASS (DSR=1.438, PBO=0.4, family_risk=0). Gate is sharp, not opaque."
+      }
+    },
+    "single_gate_evaluation": {
+      "hypothesis": "ALPHA_SAT_F_PANIC_BOTTOM_V1.0",
+      "gate_result": "PASS",
+      "deflated_sharpe": 1.438266,
+      "pbo_probability": 0.4,
+      "family_inflation_risk": 0,
+      "win_rate": 0.9375,
+      "n_outcomes": 16,
+      "note": "Hypothesis later FALSIFIED despite passing gate"
+    },
+    "v_promotion_gate_status_blocking": {
+      "total_active": 61,
+      "blocked_no_overfitting_metrics": 61,
+      "blocked_high_inflation": 0,
+      "blocked_high_pbo": 0,
+      "eligible": 0,
+      "binding_criterion": "family_inflation_risk IS NULL AND pbo_probability IS NULL"
+    }
+  },
+  "deliverable_B_near_miss_identification": {
+    "definition": "Hypotheses surviving Tier-1 (ACTIVE) but unable to reach Promotion Gate due to pipeline gap",
+    "total_near_miss": 61,
+    "by_generator": {
+      "FINN_T": {
+        "count": 45,
+        "avg_causal_depth": 4.2,
+        "avg_trials": 0
+      },
+      "finn_crypto_scheduler": {
+        "count": 16,
+        "avg_causal_depth": 2.75,
+        "avg_trials": 0
+      }
+    },
+    "age_range_hours": {
+      "oldest": 69.5,
+      "newest": 0.5
+    },
+    "common_profile": {
+      "trial_count": "0 for ALL",
+      "has_experiment": "FALSE for ALL",
+      "has_falsification_criteria": "TRUE for ALL",
+      "overfitting_metrics": "NULL for ALL"
+    },
+    "failure_mode": "SINGLE_CRITERION: No overfitting metrics (no experiments to compute them)",
+    "informational_value": "UNDETERMINED - cannot assess without experiment outcomes"
+  },
+  "deliverable_C_counterfactual_analysis": {
+    "Q1_is_zero_promotions_plausible": {
+      "answer": "NO",
+      "evidence": "0/1045 is caused by pipeline failure, not gate strictness. The ONE gate evaluation PASSED (DSR=1.438).",
+      "caveat": "n=1 evaluation insufficient for statistical inference"
+    },
+    "Q2_binding_criterion": {
+      "answer": "YES - single binding constraint",
+      "criterion": "No overfitting metrics (100% of blocks)",
+      "root_cause": "No experiments exist for active hypotheses, so metrics cannot be computed",
+      "gate_criteria_never_tested": [
+        "family_inflation_risk > 0.30",
+        "pbo_probability > 0.50"
+      ]
+    },
+    "Q3_near_miss_value": {
+      "answer": "UNDETERMINED",
+      "evidence": "61 hypotheses have falsification_criteria and causal_graph_depth 2-5 (structural validity), but no outcome data exists",
+      "recommendation": "Fix hypothesis-to-experiment conversion before reassessing"
+    },
+    "regime_context": {
+      "macro": "CRISIS",
+      "micro": "MR_SELECTIVE",
+      "confidence": 0.9615
+    }
+  },
+  "root_cause_diagnosis": {
+    "primary": "PIPELINE GAP: No mechanism converts FINN-T/finn_crypto_scheduler hypotheses into experiments",
+    "secondary": "OUTCOME STARVATION: Even legacy experiments collect outcomes slowly (19/30 max)",
+    "tertiary": "HORIZON EXPIRY: Hypotheses die at 24-72h timeout before experiments created",
+    "gate_verdict": "GATE IS HEALTHY - 100% pass rate on eligible entries",
+    "pipeline_verdict": "PIPELINE IS BROKEN at step 1->2 (hypothesis to experiment)"
+  },
+  "recommendations": [
+    "R1: URGENT - Fix hypothesis-to-experiment conversion for FINN-T and finn_crypto_scheduler",
+    "R2: Extend horizon expiry from 24h to 48h for ACTIVE hypotheses with falsification_criteria",
+    "R3: Do NOT modify Promotion Gate thresholds (insufficient data, gate works when tested)",
+    "R4: Increase outcome generation rate (35 total outcomes all-time is critically low)",
+    "R5: Create alert when active_hypotheses > 50 with zero experiments"
+  ],
+  "hard_constraints_verified": {
+    "falsification_thresholds_modified": false,
+    "promotion_gate_rules_relaxed": false,
+    "new_promotion_states_introduced": false,
+    "gates_bypassed": false,
+    "execution_enabled": false
+  },
+  "content_hash_sha256": "ccd074aea86d36dd9811d9617d97d20eb97e509a1d4a4cd6cfe2e355d0e5686a"
+}

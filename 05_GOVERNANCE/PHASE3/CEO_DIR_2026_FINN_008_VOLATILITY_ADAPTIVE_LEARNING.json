@@ -1,0 +1,189 @@
+{
+  "directive_id": "CEO-DIR-2026-FINN-008",
+  "title": "Volatility-Adaptive Learning Protocol",
+  "codename": "Operation Freedom 2026 - Phase 2: Adaptivity",
+  "classification": "STRATEGIC-CRITICAL",
+  "status": "CEO_SIGNED",
+  "effective_date": "2025-12-31T01:00:00Z",
+  "supersedes": null,
+  "extends": "CEO-DIR-2026-FINN-007",
+
+  "preamble": {
+    "context": "Batch 1-2 (Runs 1-200) established stability baseline. Retrieval Discipline remained static at 0.4545. Infrastructure deployed but not activated. Batch 3 marks transition from STABILITY to ADAPTIVITY.",
+    "problem_statement": "Without volatility-aware learning rates, the system cannot distinguish between regimes where aggressive adaptation is beneficial vs. harmful.",
+    "strategic_intent": "Maximize Freedom Score = (Alpha Signal Precision) / (Time Investment) by enabling autonomous adaptation within governance-controlled bounds."
+  },
+
+  "section_1_volatility_adjusted_safe_bounds": {
+    "description": "Dynamic adjustment limits based on IoS-003 regime volatility quartiles",
+
+    "volatility_quartiles": {
+      "Q1_LOW": {
+        "regime_volatility_percentile": [0, 25],
+        "max_down_weight": 0.20,
+        "max_up_weight": 0.10,
+        "rationale": "Low volatility = high overfitting risk. Conservative adjustments only.",
+        "learning_rate_multiplier": 0.5
+      },
+      "Q2_Q3_MEDIUM": {
+        "regime_volatility_percentile": [25, 75],
+        "max_down_weight": 0.40,
+        "max_up_weight": 0.20,
+        "rationale": "Standard operating range. Original CEO-DIR-007 bounds apply.",
+        "learning_rate_multiplier": 1.0
+      },
+      "Q4_HIGH": {
+        "regime_volatility_percentile": [75, 95],
+        "max_down_weight": 0.50,
+        "max_up_weight": 0.30,
+        "rationale": "High volatility = rapid pattern emergence. Aggressive adaptation permitted.",
+        "learning_rate_multiplier": 1.5
+      },
+      "EXTREME_DEFCON": {
+        "regime_volatility_percentile": [95, 100],
+        "trigger": "DEFCON ORANGE or RED",
+        "action": "FREEZE_ALL_ADJUSTMENTS",
+        "rationale": "ADR-016 Circuit Breaker. No autonomous changes during crisis.",
+        "learning_rate_multiplier": 0.0,
+        "human_review_required": true
+      }
+    },
+
+    "implementation": {
+      "volatility_source": "IoS-003 regime_confidence + VIX proxy",
+      "calculation": "PERCENTILE_RANK(current_volatility, historical_90d_window)",
+      "update_frequency": "Every batch checkpoint (50 runs)"
+    }
+  },
+
+  "section_2_path_euthanasia_protocol": {
+    "description": "Mechanism for quarantining and eventually eliminating low-yield ontology paths",
+
+    "yield_threshold": 0.05,
+    "checkpoint_window": 3,
+    "stages": {
+      "ACTIVE": {
+        "criteria": "yield >= 0.05 OR checkpoints_below_threshold < 3",
+        "action": "Normal operation"
+      },
+      "QUARANTINE": {
+        "criteria": "yield < 0.05 for 3 consecutive checkpoints",
+        "action": "Path excluded from retrieval, logged for review",
+        "reversible": true,
+        "authority_to_reactivate": "CSEO"
+      },
+      "EUTHANASIA": {
+        "criteria": "Quarantined path shows no recovery potential after human review",
+        "action": "Permanent deletion from fhq_graph active set",
+        "reversible": false,
+        "authority_to_execute": "VEGA + CSEO joint approval"
+      }
+    },
+
+    "governance_constraint": "Append-only audit trail. Even 'deleted' paths remain in historical tables per ADR-020 APPEND_ONLY invariant."
+  },
+
+  "section_3_stop_loss_mechanism": {
+    "description": "Circuit breaker for learning loop if improvements fail to materialize",
+
+    "checkpoints": [
+      {
+        "run": 250,
+        "metric": "retrieval_discipline",
+        "threshold": 0.55,
+        "action_if_below": "PAUSE_AND_REVIEW",
+        "escalation": "CSEO + VEGA"
+      },
+      {
+        "run": 300,
+        "metric": "retrieval_discipline",
+        "threshold": 0.60,
+        "action_if_below": "RECALIBRATE_HEURISTICS",
+        "escalation": "CEO"
+      }
+    ],
+
+    "batch_3_success_criteria": {
+      "minimum_retrieval_discipline": 0.55,
+      "target_retrieval_discipline": 0.60,
+      "stretch_goal": 0.70
+    }
+  },
+
+  "section_4_delegation_of_authority": {
+    "description": "CEO delegates operational adjustment authority to enable autonomous operation",
+
+    "cseo_authority": {
+      "scope": "All weight adjustments within current volatility quartile bounds",
+      "limit": "No single adjustment may exceed ±20% without VEGA attestation",
+      "reporting": "Daily summary to CEO dashboard",
+      "override": "CEO may revoke at any time"
+    },
+
+    "vega_authority": {
+      "scope": "Attestation of adjustments exceeding CSEO limits",
+      "veto_power": "May block any adjustment that violates Strategic Constitution",
+      "escalation": "Class A violations escalate immediately to CEO"
+    },
+
+    "ceo_intervention_triggers": [
+      "Class A governance violation",
+      "Regime shift (BULLISH <-> BEARISH transition)",
+      "DEFCON ORANGE or higher",
+      "Retrieval Discipline drops below 0.40",
+      "Cumulative cost exceeds daily budget by >50%"
+    ]
+  },
+
+  "section_5_freedom_score_kpi": {
+    "formula": "Freedom Score = Alpha_Signal_Precision / Time_Investment",
+    "components": {
+      "alpha_signal_precision": "Golden needles promoted / Total G0 proposals",
+      "time_investment": "CEO hours spent on system oversight (target: minimize)"
+    },
+    "success_metric": "Freedom Score > 10 (meaning 10x more alpha per hour of oversight)"
+  },
+
+  "section_6_batch_3_operational_parameters": {
+    "run_range": [201, 300],
+    "learning_mode": "ACTIVE",
+    "checkpoints": [225, 250, 275, 300],
+    "path_weight_recalculation": "Every 25 runs",
+    "dinco_calibration": "Every 50 runs",
+    "entropy_stopping": "ENABLED",
+
+    "initial_volatility_assessment": {
+      "source": "IoS-003 latest regime",
+      "fallback": "Q2_Q3_MEDIUM if unavailable"
+    }
+  },
+
+  "section_7_signatures": {
+    "author": {
+      "agent": "STIG",
+      "role": "CTO",
+      "timestamp": "2025-12-31T01:00:00Z"
+    },
+    "strategic_approval": {
+      "agent": "LARS",
+      "status": "APPROVED",
+      "timestamp": "2025-12-31T01:00:00Z"
+    },
+    "governance_review": {
+      "agent": "VEGA",
+      "status": "APPROVED",
+      "timestamp": "2025-12-31T01:00:00Z"
+    },
+    "ceo_signature": {
+      "status": "CEO_SIGNED",
+      "timestamp": "2025-12-31T01:00:00Z",
+      "delegation_confirmed": true,
+      "cseo_authority_granted": true
+    }
+  },
+
+  "closing_statement": {
+    "mantra": "Stability was Phase 1. Adaptivity is Phase 2. Freedom is the destination.",
+    "commitment": "The system will learn autonomously within bounds. The CEO will be notified only when it matters."
+  }
+}

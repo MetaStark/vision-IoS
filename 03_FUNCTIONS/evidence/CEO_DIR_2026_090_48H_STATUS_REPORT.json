@@ -1,0 +1,180 @@
+{
+  "report_id": "CEO-DIR-2026-090-STATUS-48H",
+  "directive": "CEO-DIR-2026-090",
+  "title": "IoS-001 CANONICAL SCHEMA EXPANSION - 48H STATUS REPORT",
+  "submitted_by": "STIG (EC-003)",
+  "submitted_at": "2026-01-18T19:00:00Z",
+  "report_type": "CEO_48H_STATUS",
+
+  "section_1_g0_specification": {
+    "_title": "G0 Change Proposal Status",
+    "_status": "READY_FOR_REVIEW",
+
+    "proposal_file": "05_GOVERNANCE/PHASE3/G0_IOS001_INSTRUMENT_IDENTITY_PROPOSAL.json",
+    "migration_file": "04_DATABASE/MIGRATIONS/309_ceo_dir_2026_090_instrument_identity.sql",
+
+    "deliverables_complete": {
+      "problem_statement": true,
+      "schema_specification": true,
+      "exchange_mic_decomposition_design": true,
+      "agent_assignments": true,
+      "gate_requirements": true,
+      "risk_assessment": true,
+      "backward_compatibility_analysis": true
+    },
+
+    "columns_to_add": [
+      {
+        "name": "instrument_type",
+        "type": "VARCHAR(20)",
+        "values": ["SPOT", "PERP", "FUTURE", "OPTION"],
+        "default": "SPOT",
+        "nullable": false
+      },
+      {
+        "name": "data_granularity",
+        "type": "VARCHAR(20)",
+        "values": ["AGGREGATED", "EXCHANGE_RAW"],
+        "default": "AGGREGATED",
+        "nullable": false
+      }
+    ],
+
+    "new_table": {
+      "name": "fhq_meta.exchange_mic_registry",
+      "purpose": "Canonical reference for exchange identifiers",
+      "seeded_with": ["XNYS", "XNAS", "XBIN", "XBYB", "XOKX", "XDRB", "XCBS", "XCRY"]
+    },
+
+    "recommendation": "G0 specification complete. Ready for CEO review and G1 approval workflow."
+  },
+
+  "section_2_cdmo_airlock_confirmation": {
+    "_title": "CDMO Mapping in AIRLOCK",
+    "_status": "ASSIGNED_PENDING_EXECUTION",
+
+    "assignment_registered": {
+      "action_id": "b8547511-7eba-4945-9abd-ad521e1bafd4",
+      "assignee": "CDMO",
+      "gate": "G1",
+      "deadline": "2026-01-22"
+    },
+
+    "scope": {
+      "crypto_assets_to_map": 50,
+      "current_exchange_mic": "XCRY (generic)",
+      "current_instrument_type": "NOT_PRESENT"
+    },
+
+    "cdmo_deliverables": [
+      "Map each of 50 crypto assets to correct instrument_type (SPOT/PERP/FUTURE/OPTION)",
+      "Map each to correct data_granularity (AGGREGATED/EXCHANGE_RAW)",
+      "Deliver signed mapping document for G1 approval"
+    ],
+
+    "airlock_constraint": "No migration executes until CDMO mapping is complete and signed.",
+
+    "current_state": "All 50 crypto assets remain in AIRLOCK with default SPOT + AGGREGATED pending CDMO verification."
+  },
+
+  "section_3_exchange_mic_decomposition": {
+    "_title": "Exchange MIC Decomposition Plan",
+    "_status": "DESIGN_COMPLETE",
+
+    "current_state": {
+      "all_crypto_use": "XCRY (generic aggregator)",
+      "problem": "Cannot distinguish Binance spot from Coinbase spot from aggregated data"
+    },
+
+    "proposed_mic_codes": [
+      {"exchange": "Binance", "mic": "XBIN", "type": "CEX", "priority": 1},
+      {"exchange": "Bybit", "mic": "XBYB", "type": "CEX", "priority": 2},
+      {"exchange": "OKX", "mic": "XOKX", "type": "CEX", "priority": 3},
+      {"exchange": "Deribit", "mic": "XDRB", "type": "CEX", "priority": 4},
+      {"exchange": "Coinbase", "mic": "XCBS", "type": "CEX", "priority": 5},
+      {"exchange": "Aggregated", "mic": "XCRY", "type": "AGGREGATOR", "priority": 99}
+    ],
+
+    "implementation_phases": {
+      "phase_1": {
+        "name": "MIC Registry Table",
+        "deadline": "G0 (now)",
+        "status": "COMPLETE",
+        "deliverable": "fhq_meta.exchange_mic_registry created and seeded"
+      },
+      "phase_2": {
+        "name": "Derivative Feed Integration",
+        "deadline": "G2 (2026-02-01)",
+        "status": "PENDING",
+        "owner": "CEIO",
+        "dependency": "Coinglass and Laevitas integration"
+      },
+      "phase_3": {
+        "name": "MIC Accuracy Audit",
+        "deadline": "G3 (2026-02-15)",
+        "status": "PENDING",
+        "owner": "VEGA"
+      }
+    },
+
+    "governance_benefit": "Exchange-level MIC enables Lane C microstructure research with full provenance."
+  },
+
+  "section_4_risk_if_not_implemented": {
+    "_title": "Risk Assessment - Immediate Action Required",
+
+    "risk_paragraph": "If CEO-DIR-2026-090 is not implemented now, IoS-003C Gate 2 cannot be approved because canonical ID tagging verification (Section 4.4 of IoS-003C) requires instrument_type distinction between spot and derivatives. Without this column, Lane C research (funding rates, liquidations, basis) will produce non-auditable conclusions that cannot distinguish whether price movements come from spot or perpetual markets. This is a Class A violation of ADR-013 (One-Source-of-Truth) and blocks the entire crypto regime research stream. The architectural blind spot identified in CEO-DIR-2026-089 Section 4.4.2 would remain unresolved, leaving FjordHQ's crypto research epistemically compromised.",
+
+    "blockers_if_delayed": [
+      "IoS-003C Gate 2 BLOCKED (canonical ID verification impossible)",
+      "CRIO Lane C research BLOCKED (cannot distinguish spot from perp)",
+      "CEIO derivative ingestion BLOCKED (no instrument_type to tag)",
+      "ADR-013 violation persists (One-Source-of-Truth compromised)"
+    ],
+
+    "probability_of_impact": "CERTAIN",
+    "severity": "HIGH",
+    "mitigation": "Immediate execution of CEO-DIR-2026-090 per gate sequence"
+  },
+
+  "section_5_execution_summary": {
+    "_title": "STIG Execution Summary",
+
+    "actions_completed": [
+      {
+        "action": "CEO-DIR-2026-090 registered in governance_actions_log",
+        "action_id": "168bb475-155d-4659-8f81-0389e1996fb5",
+        "status": "COMPLETE"
+      },
+      {
+        "action": "G0 Change Proposal created",
+        "file": "G0_IOS001_INSTRUMENT_IDENTITY_PROPOSAL.json",
+        "status": "COMPLETE"
+      },
+      {
+        "action": "Migration 309 created",
+        "file": "309_ceo_dir_2026_090_instrument_identity.sql",
+        "status": "COMPLETE"
+      },
+      {
+        "action": "CDMO assignment registered",
+        "action_id": "b8547511-7eba-4945-9abd-ad521e1bafd4",
+        "status": "COMPLETE"
+      },
+      {
+        "action": "CEIO assignment registered",
+        "action_id": "29970eb9-f592-4deb-99bb-7f9e3f058816",
+        "status": "COMPLETE"
+      }
+    ],
+
+    "next_steps": [
+      "CEO reviews G0 specification",
+      "CDMO executes asset mapping in AIRLOCK",
+      "G1 approval workflow initiated",
+      "Migration 309 executed after G1 approval"
+    ]
+  },
+
+  "principle": "We build one canonical truth - and it holds in court."
+}

@@ -1,0 +1,130 @@
+{
+  "directive_id": "CEO-DIR-2026-015",
+  "artifact_type": "FINN_SCHEMA_UPDATE_SPECIFICATION",
+  "artifact_id": "FINN_SCHEMA_UPDATE",
+  "status": "SPECIFICATION_COMPLETE",
+  "generated_at": "2026-01-07T15:40:00Z",
+  "generated_by": "STIG",
+
+  "update_scope": {
+    "file": "06_AGENTS/FINN/finn_deepseek_researcher.py",
+    "component": "CRIO_SYSTEM_PROMPT and CRIO_ANALYSIS_PROMPT",
+    "impact": "Forward-only - affects new CRIO analyses, not historical"
+  },
+
+  "current_schema": {
+    "output_format": {
+      "fragility_score": "<float 0.0-1.0>",
+      "dominant_driver": "<LIQUIDITY|CREDIT|VOLATILITY|SENTIMENT|UNKNOWN>",
+      "regime_assessment": "<STRONG_BULL|BULL|NEUTRAL|BEAR|STRONG_BEAR|UNCERTAIN>",
+      "confidence": "<float 0.0-1.0>",
+      "key_observations": "[<string>, ...]",
+      "risk_factors": "[<string>, ...]",
+      "reasoning_summary": "<brief explanation>"
+    },
+    "issues_identified": [
+      "SENTIMENT fallback used when no sentiment data exists",
+      "No epistemic basis tracking",
+      "No input coverage documentation",
+      "No distinction between TECHNICAL and PRICE_ACTION"
+    ]
+  },
+
+  "required_schema_changes": {
+    "replace_dominant_driver_with": {
+      "driver_claim": {
+        "type": "string",
+        "allowed_values": ["LIQUIDITY", "CREDIT", "VOLATILITY", "TECHNICAL", "PRICE_ACTION", "SENTIMENT", "UNKNOWN"],
+        "rule": "SENTIMENT only permitted if sentiment data was provided in context"
+      },
+      "driver_basis": {
+        "type": "string",
+        "allowed_values": ["OBSERVED_DATA", "INFERRED_FROM_PRICE", "FALLBACK_UNKNOWN"],
+        "rule": "OBSERVED_DATA requires external feed in context payload"
+      },
+      "technical_feature_set": {
+        "type": "string",
+        "allowed_values": ["INDICATORS_ONLY", "RETURNS_VOL_ONLY", "MIXED_FEATURES", "ONCHAIN_HYBRID", "UNKNOWN"],
+        "rule": "Required when driver_claim = TECHNICAL"
+      },
+      "input_coverage": {
+        "type": "object",
+        "structure": {
+          "macro_available": "boolean - was macro data in context?",
+          "macro_used": "boolean - did you use it in reasoning?",
+          "sentiment_available": "boolean - was sentiment data in context?",
+          "sentiment_used": "boolean - did you use it in reasoning?",
+          "technical_available": "boolean - was price/technical data in context?",
+          "technical_used": "boolean - did you use it in reasoning?",
+          "onchain_available": "boolean - was onchain data in context?",
+          "onchain_used": "boolean - did you use it in reasoning?"
+        }
+      },
+      "fallback_reason": {
+        "type": "string",
+        "rule": "Required when driver_basis != OBSERVED_DATA"
+      }
+    }
+  },
+
+  "new_output_schema": {
+    "fragility_score": "<float 0.0-1.0>",
+    "driver_claim": "<LIQUIDITY|CREDIT|VOLATILITY|TECHNICAL|PRICE_ACTION|SENTIMENT|UNKNOWN>",
+    "driver_basis": "<OBSERVED_DATA|INFERRED_FROM_PRICE|FALLBACK_UNKNOWN>",
+    "technical_feature_set": "<INDICATORS_ONLY|RETURNS_VOL_ONLY|MIXED_FEATURES|ONCHAIN_HYBRID|UNKNOWN>",
+    "input_coverage": {
+      "macro_available": "<boolean>",
+      "macro_used": "<boolean>",
+      "sentiment_available": "<boolean>",
+      "sentiment_used": "<boolean>",
+      "technical_available": "<boolean>",
+      "technical_used": "<boolean>",
+      "onchain_available": "<boolean>",
+      "onchain_used": "<boolean>"
+    },
+    "fallback_reason": "<string, required if driver_basis != OBSERVED_DATA>",
+    "regime_assessment": "<STRONG_BULL|BULL|NEUTRAL|BEAR|STRONG_BEAR|UNCERTAIN>",
+    "confidence": "<float 0.0-1.0>",
+    "key_observations": "[<string>, ...]",
+    "risk_factors": "[<string>, ...]",
+    "reasoning_summary": "<brief explanation>"
+  },
+
+  "prompt_changes_required": {
+    "CRIO_SYSTEM_PROMPT": {
+      "add_rule": "5. ATTRIBUTION TRUTH: You must accurately report what data was available and used. Never claim SENTIMENT if no sentiment data was provided. Use driver_basis to indicate your epistemic confidence.",
+      "update_schema": "Replace dominant_driver with the 5-field driver attribution block"
+    },
+    "CRIO_ANALYSIS_PROMPT": {
+      "add_section": "=== DATA AVAILABILITY FLAGS ===\nMacro data present: {macro_present}\nSentiment data present: {sentiment_present}\nOnchain data present: {onchain_present}\n\nYou MUST reflect these flags accurately in your input_coverage output."
+    }
+  },
+
+  "hard_constraints_for_finn": [
+    "If sentiment data section is empty/absent in context, driver_claim CANNOT be SENTIMENT",
+    "If macro data section is empty/absent in context, driver_basis CANNOT be OBSERVED_DATA for LIQUIDITY/CREDIT claims",
+    "If only price data is provided, driver_basis MUST be INFERRED_FROM_PRICE",
+    "technical_feature_set is REQUIRED when driver_claim = TECHNICAL"
+  ],
+
+  "backward_compatibility": {
+    "strategy": "Dual-write during transition",
+    "legacy_field": "dominant_driver (continue populating for 30 days)",
+    "new_fields": "driver_claim, driver_basis, technical_feature_set, input_coverage, fallback_reason",
+    "migration_period": "30 days, then deprecate legacy field"
+  },
+
+  "implementation_owner": "STIG",
+  "implementation_status": "PENDING - Prompt updates not yet applied to finn_deepseek_researcher.py",
+  "deployment_gate": "Requires VEGA review before production deployment",
+
+  "replay_instructions": {
+    "step_1": "Update CRIO_SYSTEM_PROMPT in finn_deepseek_researcher.py with new schema",
+    "step_2": "Update CRIO_ANALYSIS_PROMPT to include data availability flags",
+    "step_3": "Update output parsing to extract new fields",
+    "step_4": "Update nightly_insights INSERT to populate new columns",
+    "verification": "Run test CRIO analysis and verify all 5 driver attribution fields are populated"
+  },
+
+  "lineage_hash": "c9e5f0a4d3b16782g5h4c3f0e9d8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0"
+}

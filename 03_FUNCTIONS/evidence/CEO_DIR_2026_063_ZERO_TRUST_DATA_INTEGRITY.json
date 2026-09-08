@@ -1,0 +1,168 @@
+{
+  "directive": "CEO-DIR-2026-063",
+  "title": "Zero-Trust Data Integrity Enforcement - Immediate Lockdown of LLM-Generated Numerical Data",
+  "issued_by": "CEO",
+  "recipient": "STIG",
+  "issued_at": "2026-01-17T14:00:00Z",
+  "received_at": "2026-01-17T14:00:00Z",
+  "mode": "EXECUTION_AUTHORIZED_P0",
+  "severity": "CLASS_A_GOVERNANCE_BREACH_RESPONSE",
+  "authority_chain": ["ADR-001", "ADR-003", "ADR-004", "ADR-013", "ADR-014", "ADR-016", "ADR-018"],
+  "contract": "EC-003_2026_PRODUCTION",
+
+  "executive_determination": {
+    "finding": "CLASS_A_GOVERNANCE_BREACH_CONFIRMED",
+    "incident": "IoS-016 Economic Calendar contained LLM-fabricated numerical data",
+    "mechanism": "Seed migration introduced plausible-but-false macro data promoted to canonical truth",
+    "prevented_by": "Manual CEO intervention via post-hoc audit",
+    "classification": "SYSTEMIC_VULNERABILITY",
+    "trust_status": "REVOKED"
+  },
+
+  "root_cause_formal_finding": {
+    "framework_gap": "ADR-004 Change Gate verified form, not truth",
+    "verified": ["schema_correctness", "permissioning", "determinism", "hash_integrity"],
+    "not_verified": "NUMERICAL_TRUTH",
+    "affected_migrations": [290, 291, 292, 293],
+    "affected_systems": ["IoS-003", "IoS-005", "IoS-007", "IoS-008"],
+    "o4_status": "Temporarily false positive - corrected",
+    "diagnosis": "TRUTH_GAP_NOT_TOOLING_BUG"
+  },
+
+  "orders": {
+    "order_3_1": {
+      "title": "Absolute Prohibition: LLM-Generated Numerical Data",
+      "status": "EFFECTIVE_IMMEDIATELY",
+      "prohibition": {
+        "forbidden": "LLMs generating, seeding, or proposing numerical financial/macro data",
+        "includes": [
+          "interest_rates",
+          "inflation_figures",
+          "employment_numbers",
+          "GDP_PMI_CPI_PPI",
+          "policy_rates",
+          "consensus_values",
+          "historical_previous_values"
+        ],
+        "permitted": ["parse", "summarize", "explain", "reason_over_verified_data"],
+        "rule": "ABSOLUTE"
+      }
+    },
+
+    "order_3_2": {
+      "title": "Mandatory API-Sourced Canonical Data",
+      "enforcement": "ADR-013",
+      "requirement": "All canonical macro data must originate from signed, verifiable API calls",
+      "approved_sources": [
+        "Central_Bank_endpoints",
+        "FRED",
+        "BLS",
+        "BEA",
+        "ECB_official",
+        "BOE_official",
+        "BOJ_official",
+        "PBOC_official"
+      ],
+      "affected_tables": ["raw_staging", "canonical", "ios016_calendar"],
+      "mandatory_field": "source_lineage_metadata",
+      "rule": "NO_SOURCE_NO_INGESTION_NO_EXCEPTIONS"
+    },
+
+    "order_3_3": {
+      "title": "Airlock Protocol Hardening",
+      "requirement": "Seed migrations with numerical data cannot exit quarantine without API verification",
+      "behavior": {
+        "trigger": "Migration attempting numeric macro write without verified API source",
+        "action_1": "FAIL_VALIDATION",
+        "action_2": "REJECT_AT_G1",
+        "action_3": "LOG_AS_GOVERNANCE_VIOLATION"
+      },
+      "scope": "RETROACTIVE_AND_PROSPECTIVE"
+    },
+
+    "order_4": {
+      "title": "G3.75 Truth Gate",
+      "type": "NEW_MANDATORY_GATE",
+      "amendment_to": "ADR-004",
+      "requirements": {
+        "trigger": "G4 activation involving macro or financial data",
+        "action": "Human officer spot-check",
+        "officers": ["CEO", "LARS"],
+        "sample_size": "minimum 5 numerical values",
+        "verification": "Against primary external source (official website or terminal)",
+        "properties": ["blocking", "explicit", "non_delegable"],
+        "rule": "NO_SIGNOFF_NO_G4"
+      }
+    },
+
+    "order_5": {
+      "title": "Automated Drift Detection (DEFCON-Coupled)",
+      "requirement": "Daily automated job comparing canonical vs live API values",
+      "thresholds": {
+        "rates": "5bps",
+        "macro_prints": "material_threshold"
+      },
+      "on_deviation": [
+        "IMMEDIATE_ALERT",
+        "AUTOMATIC_DEFCON_ESCALATION",
+        "FREEZE_IOS008_DECISION_ENGINE"
+      ],
+      "status": "NOT_OPTIONAL"
+    },
+
+    "order_6": {
+      "title": "Retroactive Audit",
+      "scope": "Migrations 200-299",
+      "coordinator": "STIG",
+      "auditor": "VEGA",
+      "target": [
+        "LLM_generated_data",
+        "plausible_but_false",
+        "numerically_unverified"
+      ],
+      "requirement": "All findings documented, no silent fixes"
+    }
+  },
+
+  "accountability_statement": {
+    "cause": "System trusted correctness of form over correctness of truth",
+    "trust_status": "REVOKED",
+    "new_principles": [
+      "Verification beats velocity",
+      "Retrieval beats generation",
+      "Truth beats elegance"
+    ],
+    "future_breach_consequence": "Direct breach of executive mandate"
+  },
+
+  "stig_acknowledgment": {
+    "received_by": "STIG",
+    "received_at": "2026-01-17T14:00:00Z",
+    "status": "ACKNOWLEDGED",
+    "execution_status": "IN_PROGRESS",
+    "implementation_plan": {
+      "phase_1": "Create G3.75 Truth Gate specification",
+      "phase_2": "Implement Airlock hardening constraints",
+      "phase_3": "Deploy drift detection job",
+      "phase_4": "Execute retroactive audit of migrations 200-299",
+      "phase_5": "Amend ADR-004 with new gate"
+    }
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T14:00:00Z",
+    "summary": [
+      "CEO-DIR-2026-063 received and acknowledged",
+      "Class A governance breach response - EXECUTION AUTHORIZED P0",
+      "LLM numerical data generation ABSOLUTELY PROHIBITED effective immediately",
+      "All canonical macro data must be API-sourced with lineage metadata",
+      "G3.75 Truth Gate implementation ordered",
+      "Airlock hardening to reject unverified numeric migrations",
+      "Daily drift detection with DEFCON coupling ordered",
+      "Retroactive audit of migrations 200-299 ordered",
+      "Trust revoked - Verification beats velocity"
+    ]
+  }
+}

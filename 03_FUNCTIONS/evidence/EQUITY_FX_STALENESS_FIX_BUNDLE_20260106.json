@@ -1,0 +1,71 @@
+{
+  "directive": "CEO-DIR-2026-SITC-DATA-BLACKOUT-FIX-001-EQUITY",
+  "timestamp": "2026-01-06T11:01:49.556195+00:00",
+  "issue": "Equity/FX prices stale (26-35h) on Tuesday - not weekend issue",
+  "root_cause": {
+    "bug": "Date-based skip logic in bulletproof_ingest.py",
+    "mechanism": "get_last_price_date() returns MAX(timestamp::date)",
+    "failure": "If data exists for today, start_date=tomorrow > end_date=today -> SKIP",
+    "result": "Monday market close data never fetched"
+  },
+  "bad_data_source": {
+    "source": "TWELVEDATA",
+    "issue": "Inserted Jan 2 close (683.17) with wrong Jan 5 timestamp",
+    "correct_jan5_close": "SPY=687.72, QQQ=617.99"
+  },
+  "catch_up": {
+    "method": "TwelveData API",
+    "symbols": [
+      "SPY",
+      "QQQ",
+      "EUR/USD"
+    ],
+    "rows_inserted": 30
+  },
+  "code_fixes": [
+    {
+      "file": "ios001_bulletproof_ingest.py",
+      "change": "Use timestamp-based staleness for EQUITY/FX (like crypto)",
+      "constants_added": [
+        "EQUITY_STALENESS_HOURS = 18",
+        "FX_STALENESS_HOURS = 18"
+      ]
+    },
+    {
+      "file": "price_freshness_heartbeat.py",
+      "change": "Adjusted equity thresholds for daily data",
+      "old": {
+        "max_ok": 2,
+        "warn": 4,
+        "blackout": 8
+      },
+      "new": {
+        "max_ok": 18,
+        "warn": 24,
+        "blackout": 30
+      }
+    }
+  ],
+  "verification": {
+    "heartbeat_status": "HEALTHY",
+    "assets_healthy": "6/6",
+    "crypto": [
+      "BTC-USD: 0.0h",
+      "ETH-USD: 0.0h",
+      "SOL-USD: 0.0h"
+    ],
+    "equity": [
+      "SPY: 11.0h",
+      "QQQ: 11.0h"
+    ],
+    "fx": [
+      "EURUSD=X: -13.0h (fresh from today)"
+    ]
+  },
+  "commit": "0d66aa4",
+  "hardening": {
+    "equity_logic": "Now uses timestamp comparison with 18h threshold",
+    "fx_logic": "Same as equity - timestamp comparison",
+    "fetch_window": "7 days when stale to catch any missed data"
+  }
+}

@@ -23,6 +23,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 interface IndicatorMatrixProps {
   listingId?: string
   className?: string
+  refreshKey?: number
 }
 
 interface Indicator {
@@ -49,7 +50,7 @@ interface IndicatorsResponse {
   categories: string[]
 }
 
-export function IndicatorMatrix({ listingId = 'LST_BTC_XCRYPTO', className }: IndicatorMatrixProps) {
+export function IndicatorMatrix({ listingId = 'LST_BTC_XCRYPTO', className, refreshKey = 0 }: IndicatorMatrixProps) {
   const [data, setData] = useState<IndicatorsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,7 +79,7 @@ export function IndicatorMatrix({ listingId = 'LST_BTC_XCRYPTO', className }: In
     }
 
     fetchData()
-  }, [listingId])
+  }, [listingId, refreshKey])
 
   const getStatusColor = (status: string | null) => {
     switch (status) {

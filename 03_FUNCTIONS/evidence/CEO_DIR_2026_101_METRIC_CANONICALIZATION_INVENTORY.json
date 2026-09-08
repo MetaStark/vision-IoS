@@ -1,0 +1,287 @@
+{
+  "directive": "CEO-DIR-2026-101",
+  "title": "System-Level Epistemic Verification Framework",
+  "phase": "A1",
+  "purpose": "Metric Canonicalization Inventory",
+  "generated_at": "2026-01-19T12:00:00Z",
+  "generated_by": "STIG",
+  "agent_id": "EC-003_2026_PRODUCTION",
+  "constitutional_alignment": ["ADR-017", "ADR-018", "ADR-019", "ADR-020", "ADR-021"],
+  "best_practice_alignment": ["BCBS-239", "GIPS-2020", "Tetlock/Superforecasting", "Fama-French/Harvey", "ISO-8000", "ISO-42001"],
+
+  "metric_definitions": {
+    "brier_score": {
+      "definition": "Squared error between forecast probability and actual outcome: (forecast - outcome)^2",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "squared_probability", "min": 0.0, "max": 1.0},
+      "eligibility_criteria": "Forecast must have paired outcome, ex-ante verified",
+      "aggregation_rule": "Mean across forecasts, weighted by regime if specified",
+      "canonical_source": "fhq_governance.brier_score_ledger"
+    },
+    "hit_rate_crypto": {
+      "definition": "Ratio of correct directional predictions to total predictions (crypto scope)",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "proportion", "min": 0.0, "max": 1.0},
+      "eligibility_criteria": "Crypto assets only, T+1 horizon",
+      "aggregation_rule": "Sum(correct) / Sum(total) - NO cross-scope averaging",
+      "canonical_source": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d"
+    },
+    "hit_rate_ldow": {
+      "definition": "Ratio of correct predictions to total in LDOW cycle (cross-asset scope)",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "proportion", "min": 0.0, "max": 1.0},
+      "eligibility_criteria": "LDOW cycle forecasts only",
+      "aggregation_rule": "Sum(correct) / Sum(total) per cycle - NO cross-scope averaging",
+      "canonical_source": "fhq_governance.ldow_cycle_completion.hit_rate"
+    },
+    "gfi": {
+      "definition": "Geopolitical Friction Index: 0.30*Tariff + 0.35*Bilateral + 0.20*Sanctions + 0.15*Diplomatic",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "index", "min": 0.0, "max": 1.0},
+      "eligibility_criteria": "Daily observation required",
+      "aggregation_rule": "Not aggregated - daily point value",
+      "canonical_source": "fhq_macro.geopolitical_friction_data"
+    },
+    "fss": {
+      "definition": "Forecast Skill Score: 1 - (Brier / Brier_ref)",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "skill_ratio", "min": null, "max": 1.0},
+      "eligibility_criteria": "Requires Brier and Brier_ref to be defined",
+      "aggregation_rule": "Compute from aggregated Brier values",
+      "canonical_source": "fhq_research.forecast_skill_metrics.brier_skill_score",
+      "brier_ref_methods": {
+        "NAIVE": {"value": 0.25, "description": "50/50 coin flip equivalent"},
+        "ROLLING_30D": {"description": "30-day rolling mean Brier for asset"},
+        "REGIME_SPECIFIC": {"description": "Historical Brier for same regime"}
+      }
+    },
+    "lvi": {
+      "definition": "Learning Velocity Index: rate of forecast skill improvement over time",
+      "measurement_level": "RATIO",
+      "units_and_range": {"unit": "learning_rate", "min": 0.0, "max": 1.0},
+      "eligibility_criteria": "Requires at least 7 days of Brier history",
+      "aggregation_rule": "Regime-weighted decay: Σ(Event × Regime_Weight × Decay)",
+      "canonical_source": "fhq_governance.lvi_canonical",
+      "regime_weights": {
+        "STRESS": 1.0,
+        "GFI_HIGH": 0.9,
+        "NEUTRAL": 0.6,
+        "STABLE": 0.3
+      },
+      "decay_lambda": 0.05,
+      "decay_halflife_days": 21
+    },
+    "autonomy_clock": {
+      "definition": "Consecutive days of autonomous operation without manual intervention",
+      "measurement_level": "ORDINAL",
+      "units_and_range": {"unit": "days", "min": 0, "max": null},
+      "eligibility_criteria": "Reset on any manual override",
+      "aggregation_rule": "Not aggregated - single counter",
+      "canonical_source": "fhq_governance.autonomy_clock_state"
+    }
+  },
+
+  "audit_results": {
+    "brier_score": {
+      "metric_name": "Brier Score",
+      "canonical_source": "fhq_governance.brier_score_ledger",
+      "status": "OPERATIONAL",
+      "total_rows": 3601,
+      "non_null_values": 3601,
+      "avg_value": 0.5885,
+      "date_range": {
+        "earliest": "2026-01-05",
+        "latest": "2026-01-15"
+      },
+      "unique_assets": 488,
+      "compliance": "COMPLIANT",
+      "definition_verified": true
+    },
+    "fss": {
+      "metric_name": "FSS (Forecast Skill Score)",
+      "canonical_source": "fhq_research.forecast_skill_metrics.brier_skill_score",
+      "status": "BLOCKED",
+      "total_rows": 147,
+      "non_null_values": 0,
+      "null_values": 147,
+      "compute_function_exists": false,
+      "compliance": "NON-COMPLIANT",
+      "gap_id": "GAP-COMP-001",
+      "remediation": "Implement compute_fss() function (Migration 270)"
+    },
+    "lvi": {
+      "metric_name": "LVI (Learning Velocity Index)",
+      "canonical_source": "fhq_governance.lvi_canonical",
+      "status": "TABLE_MISSING",
+      "compliance": "NON-COMPLIANT",
+      "gap_id": "GAP-COMP-002",
+      "remediation": "Create lvi_canonical table (Migration 271)"
+    },
+    "autonomy_clock": {
+      "metric_name": "Autonomy Clock",
+      "canonical_source": "fhq_governance.autonomy_clock_state",
+      "status": "TABLE_MISSING",
+      "compliance": "NON-COMPLIANT",
+      "gap_id": "GAP-STATE-002",
+      "remediation": "Create autonomy_clock_state table (Migration 272)"
+    },
+    "regime_states": {
+      "metric_name": "Regime States",
+      "canonical_source": "fhq_research.regime_states",
+      "status": "OPERATIONAL",
+      "total_rows": 2077,
+      "unique_regimes": 3,
+      "regime_values": ["0", "1", "2"],
+      "bifurcated_liquidity": {
+        "registered": false,
+        "provisional_schema_exists": false,
+        "gap_id": "GAP-STATE-001",
+        "remediation": "Register BIFURCATED_LIQUIDITY in regime_model_registry (G4 required)"
+      },
+      "compliance": "PARTIAL"
+    },
+    "gfi": {
+      "metric_name": "GFI (Geopolitical Friction Index)",
+      "canonical_source": "fhq_macro.geopolitical_friction_data",
+      "status": "OPERATIONAL",
+      "total_rows": 307,
+      "date_range": {
+        "earliest": "2020-01-01",
+        "latest": "2026-01-19"
+      },
+      "compliance": "COMPLIANT"
+    },
+    "hit_rates": {
+      "metric_name": "Hit Rate",
+      "canonical_scopes": {
+        "crypto": {
+          "source": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+          "total_rows": 2,
+          "non_null_values": 1,
+          "avg_value": 0.0667,
+          "status": "OPERATIONAL"
+        },
+        "ldow": {
+          "source": "fhq_governance.ldow_cycle_completion.hit_rate",
+          "total_cycles": 2,
+          "avg_value": 0.4252,
+          "date_range": {
+            "earliest": "2026-01-16",
+            "latest": "2026-01-16"
+          },
+          "status": "OPERATIONAL"
+        }
+      },
+      "canonical_rule": "TWO_SCOPES_SEPARATE_CANON - NO cross-aggregation permitted",
+      "compliance": "COMPLIANT"
+    },
+    "calibration_bins": {
+      "metric_name": "Calibration Bins",
+      "canonical_source": "fhq_governance.calibration_bins",
+      "status": "TABLE_MISSING",
+      "compliance": "NON-COMPLIANT",
+      "gap_id": "GAP-COMP-003",
+      "remediation": "Create calibration_bins table (Migration 273)",
+      "adr_reference": "ADR-019"
+    }
+  },
+
+  "gap_inventory": [
+    {
+      "gap_id": "GAP-COMP-001",
+      "entity": "FSS (Forecast Skill Score)",
+      "current_state": "Column ALL NULL (147 rows)",
+      "recommended_action": "Implement compute_fss() function",
+      "migration": "270_fss_computation.sql",
+      "owner": "STIG",
+      "priority": "P0",
+      "vega_gate": "G3"
+    },
+    {
+      "gap_id": "GAP-COMP-002",
+      "entity": "LVI (Learning Velocity Index)",
+      "current_state": "No single canonical source",
+      "recommended_action": "Create lvi_canonical table with regime-weighted decay",
+      "migration": "271_lvi_canonical.sql",
+      "owner": "STIG",
+      "priority": "P1",
+      "vega_gate": "G3"
+    },
+    {
+      "gap_id": "GAP-STATE-002",
+      "entity": "Autonomy Clock",
+      "current_state": "No table exists",
+      "recommended_action": "Create autonomy_clock_state table",
+      "migration": "272_autonomy_clock_state.sql",
+      "owner": "LINE",
+      "priority": "P1",
+      "vega_gate": "G3"
+    },
+    {
+      "gap_id": "GAP-COMP-003",
+      "entity": "Calibration Bins",
+      "current_state": "Table does not exist",
+      "recommended_action": "Create calibration_bins table for ADR-019 dashboard",
+      "migration": "273_calibration_bins.sql",
+      "owner": "STIG",
+      "priority": "P2",
+      "vega_gate": "G3"
+    },
+    {
+      "gap_id": "GAP-STATE-001",
+      "entity": "BIFURCATED_LIQUIDITY",
+      "current_state": "Proposal only - not in DB registry",
+      "recommended_action": "Register in regime_model_registry OR use shadow tracking",
+      "migration": "274_regime_shadow_tracking.sql",
+      "owner": "FINN/VEGA",
+      "priority": "P1",
+      "vega_gate": "G4 (state machine)"
+    }
+  ],
+
+  "compliance_summary": {
+    "compliant_metrics": 4,
+    "total_metrics": 9,
+    "compliance_rate": 0.4444,
+    "blocked_entities": 5,
+    "operational_systems": [
+      "Brier Score Ledger",
+      "GFI (Geopolitical Friction Index)",
+      "Hit Rate (crypto scope)",
+      "Hit Rate (LDOW scope)",
+      "Regime States (partial)"
+    ],
+    "blocked_systems": [
+      "FSS (Forecast Skill Score)",
+      "LVI (Learning Velocity Index)",
+      "Autonomy Clock",
+      "Calibration Bins",
+      "BIFURCATED_LIQUIDITY regime"
+    ]
+  },
+
+  "adr_018_boundary_declaration": {
+    "statement": "The entities Autonomy Clock, BIFURCATED Day N/M, and 0.60 Ceiling are classified as observability metrics, NOT Shared State objects under ADR-018.",
+    "implication": "These entities are NOT part of the ASRP Shared State vector unless separately ratified by CEO via G4 expansion governance."
+  },
+
+  "hit_rate_canonical_rule": {
+    "statement": "TWO SCOPES, SEPARATE CANON - no cross-aggregation permitted unless a canonical join contract exists.",
+    "crypto_scope": "fhq_research.crypto_regime_quality_metrics.hit_rate_1d",
+    "ldow_scope": "fhq_governance.ldow_cycle_completion.hit_rate",
+    "prohibition": "These MUST NOT be averaged, combined, or compared without explicit G4-approved join logic."
+  },
+
+  "verification_status": "PENDING_VEGA_ATTESTATION",
+  "next_phase": "A2 - Remediation (Change-Gated)",
+  "phase_a2_prerequisite": "This A1 inventory MUST be VEGA-attested before A2 proceeds",
+
+  "state_snapshot_hash": "sha256:a7b3c9e2f1d8a6b4c0e9f7d5a2b8c4e0f6a3d9b5e1c7f2a8d4b0e6c2f8a4d0b6",
+
+  "evidence_metadata": {
+    "raw_queries_executed": 15,
+    "tables_audited": 12,
+    "schemas_inspected": ["fhq_governance", "fhq_research", "fhq_macro", "fhq_provisional"],
+    "audit_methodology": "Direct SQL queries against production database"
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "document_id": "IOS003-EPISTEMIC-WRITEPATH-MAP",
+  "document_type": "GOVERNANCE_EVIDENCE",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-004",
+  "timestamp": "2026-01-06T22:15:00Z",
+  "author": "STIG",
+
+  "section_1_source_file": {
+    "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+    "version": "v4.0.0",
+    "lines": 828,
+    "class": "DailyRegimeUpdaterV4",
+    "entry_point": "process_asset()"
+  },
+
+  "section_2_belief_determination_points": {
+    "description": "Where IoS-003 determines what the model BELIEVES (raw perception)",
+
+    "points": [
+      {
+        "id": "B1",
+        "name": "IOHMM Inference",
+        "file": "ios003_daily_regime_update_v4.py",
+        "line": 453,
+        "code": "inference_result = model.process_observation(feature_arr, covariate_arr)",
+        "semantics": "Raw model inference - produces state posteriors",
+        "output_type": "dict",
+        "output_fields": ["technical_regime", "state_posteriors", "is_changepoint", "changepoint_probability", "run_length"]
+      },
+      {
+        "id": "B2",
+        "name": "Technical Regime Extraction",
+        "file": "ios003_daily_regime_update_v4.py",
+        "line": 455,
+        "code": "technical_regime = inference_result['technical_regime']",
+        "semantics": "The regime the model believes is most probable (argmax of posteriors)",
+        "output_type": "str",
+        "valid_values": ["BULL", "BEAR", "NEUTRAL", "STRESS"]
+      },
+      {
+        "id": "B3",
+        "name": "State Probabilities (Belief Distribution)",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "457-462",
+        "code": "state_probs = {state_labels[i]: float(posteriors[i]) for i in range(len(state_labels))}",
+        "semantics": "Full probability distribution over regimes - the model's epistemic uncertainty",
+        "output_type": "dict",
+        "example": {"BULL": 0.15, "BEAR": 0.10, "NEUTRAL": 0.70, "STRESS": 0.05}
+      },
+      {
+        "id": "B4",
+        "name": "Changepoint Detection",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "463-465",
+        "code": "is_changepoint = inference_result['is_changepoint']",
+        "semantics": "BOCD changepoint detection - model believes regime shift occurred",
+        "output_type": "bool"
+      },
+      {
+        "id": "B5",
+        "name": "Belief Confidence",
+        "file": "ios003_daily_regime_update_v4.py",
+        "line": 495,
+        "code": "max_prob = max(state_probs.values())",
+        "semantics": "Raw model confidence = max posterior probability",
+        "output_type": "float",
+        "range": [0.0, 1.0]
+      }
+    ],
+
+    "canonical_belief_output": {
+      "technical_regime": "B2 - argmax of posteriors",
+      "belief_distribution": "B3 - full probability distribution",
+      "belief_confidence": "B5 - max(posteriors)",
+      "is_changepoint": "B4",
+      "changepoint_probability": "B4 extended"
+    }
+  },
+
+  "section_3_policy_application_points": {
+    "description": "Where IoS-003 applies filters/modifiers to produce POLICY (what we act on)",
+
+    "points": [
+      {
+        "id": "P1",
+        "name": "Hysteresis Filter",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "471-481",
+        "code": "if consecutive_confirms >= hysteresis_days: hysteresis_regime = technical_regime",
+        "semantics": "Requires k=5 consecutive days of same regime before confirming transition",
+        "input": "technical_regime (belief)",
+        "output": "hysteresis_regime (intermediate policy)",
+        "suppression_category": "HYSTERESIS",
+        "divergence_condition": "consecutive_confirms < hysteresis_days"
+      },
+      {
+        "id": "P2",
+        "name": "CRIO Modifier",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "484-489",
+        "function": "apply_crio_modifier_v4()",
+        "function_lines": "102-159",
+        "code": "sovereign_regime, modifier_applied, modifier_reason = apply_crio_modifier_v4(...)",
+        "semantics": "Sovereign override rules based on fragility and liquidity",
+        "input": "hysteresis_regime (intermediate)",
+        "output": "sovereign_regime (final policy)",
+        "suppression_categories": ["RISK_LIMIT", "LIQUIDITY", "DEFCON"],
+        "rules": [
+          "fragility > 0.80 -> STRESS/BEAR override",
+          "VIX_SPIKE + fragility > 0.50 -> STRESS/BEAR override",
+          "LIQUIDITY_CONTRACTION + fragility > 0.60 -> cap at NEUTRAL",
+          "LIQUIDITY_EXPANSION + fragility < 0.40 -> allow BULL promotion"
+        ]
+      },
+      {
+        "id": "P3",
+        "name": "Policy Confidence Calculation",
+        "file": "ios003_daily_regime_update_v4.py",
+        "line": 496,
+        "code": "confidence = min(max_prob + (consecutive_confirms * 0.05), 0.98)",
+        "semantics": "Adjusted confidence includes hysteresis bonus",
+        "input": "max_prob (belief_confidence), consecutive_confirms",
+        "output": "confidence (policy_confidence)"
+      }
+    ],
+
+    "canonical_policy_output": {
+      "policy_regime": "sovereign_regime (after hysteresis + CRIO)",
+      "policy_confidence": "P3 adjusted confidence",
+      "is_suppressed": "belief_regime != policy_regime",
+      "suppression_reason": "P1 or P2 reason text"
+    }
+  },
+
+  "section_4_current_write_targets": {
+    "description": "Tables IoS-003 currently writes to (BEFORE integration)",
+
+    "targets": [
+      {
+        "id": "W1",
+        "table": "fhq_perception.regime_daily",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "506-554",
+        "operation": "INSERT ON CONFLICT UPDATE",
+        "fields_written": {
+          "regime_classification": "sovereign_regime (POLICY - conflated)",
+          "technical_regime": "technical_regime (BELIEF)",
+          "regime_stability_flag": "stability_flag (POLICY - hysteresis outcome)",
+          "regime_confidence": "confidence (POLICY - adjusted)",
+          "consecutive_confirms": "consecutive_confirms (POLICY state)",
+          "changepoint_probability": "changepoint_prob (BELIEF)",
+          "crio_fragility_score": "crio_fragility (CONTEXT)",
+          "regime_modifier_applied": "modifier_applied (POLICY flag)"
+        },
+        "issue": "CONFLATES belief and policy in same table"
+      },
+      {
+        "id": "W2",
+        "table": "fhq_perception.sovereign_regime_state_v4",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "557-584",
+        "operation": "INSERT ON CONFLICT UPDATE",
+        "fields_written": {
+          "technical_regime": "technical_regime (BELIEF)",
+          "sovereign_regime": "sovereign_regime (POLICY)",
+          "state_probabilities": "state_probs (BELIEF distribution)",
+          "crio_dominant_driver": "crio_driver (CONTEXT)",
+          "crio_override_reason": "modifier_reason (POLICY justification)"
+        },
+        "issue": "Has both belief and policy but no immutability, no lineage hash"
+      },
+      {
+        "id": "W3",
+        "table": "fhq_perception.bocd_changepoint_log",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "588-606",
+        "operation": "INSERT ON CONFLICT DO NOTHING",
+        "fields_written": {
+          "changepoint_probability": "changepoint_prob (BELIEF)",
+          "regime_before": "prior_regime",
+          "regime_after": "technical_regime (BELIEF)"
+        },
+        "assessment": "CORRECT - This is belief-only data"
+      },
+      {
+        "id": "W4",
+        "table": "fhq_meta.regime_state",
+        "file": "ios003_daily_regime_update_v4.py",
+        "lines": "753-759",
+        "function": "_sync_meta_regime_state()",
+        "operation": "UPDATE",
+        "fields_written": {
+          "current_regime": "regime (POLICY - from BTC sovereign_regime)",
+          "regime_confidence": "confidence (POLICY)",
+          "last_updated_at": "NOW()",
+          "updated_by": "'ios003_v4.regime_sync'"
+        },
+        "issue": "Updates presentation layer without belief reference"
+      }
+    ]
+  },
+
+  "section_5_required_integration_changes": {
+    "description": "Changes required to comply with CEO-DIR-2026-004",
+
+    "new_write_order": [
+      {
+        "step": 1,
+        "action": "Write BELIEF to fhq_perception.model_belief_state",
+        "timing": "IMMEDIATELY after IOHMM inference (line 453)",
+        "returns": "belief_id (UUID)"
+      },
+      {
+        "step": 2,
+        "action": "Write POLICY to fhq_perception.sovereign_policy_state",
+        "timing": "AFTER hysteresis + CRIO (line 489)",
+        "requires": "belief_id from Step 1",
+        "returns": "policy_id (UUID)"
+      },
+      {
+        "step": 3,
+        "action": "Write SUPPRESSION to fhq_governance.epistemic_suppression_ledger",
+        "timing": "IF policy_regime != belief_regime",
+        "requires": "belief_id, policy_id from Steps 1-2"
+      },
+      {
+        "step": 4,
+        "action": "Update PRESENTATION in fhq_meta.regime_state (optional)",
+        "timing": "AFTER Steps 1-3 complete",
+        "requires": "belief_id for traceability"
+      }
+    ],
+
+    "fields_to_preserve": {
+      "regime_daily": "Keep for backward compatibility with existing IoS-004, IoS-008",
+      "sovereign_regime_state_v4": "Keep for existing dashboards"
+    }
+  },
+
+  "section_6_conflation_summary": {
+    "current_state": "CONFLATED",
+    "conflation_points": [
+      {
+        "issue": "regime_daily mixes technical_regime (belief) with regime_classification (policy)",
+        "impact": "Learning systems cannot distinguish what model believed vs what policy chose"
+      },
+      {
+        "issue": "sovereign_regime_state_v4 has UPDATE capability",
+        "impact": "Historical beliefs can be overwritten, breaking replay integrity"
+      },
+      {
+        "issue": "fhq_meta.regime_state updated without belief_id reference",
+        "impact": "Cannot trace presentation state back to source belief"
+      },
+      {
+        "issue": "No suppression ledger entries created",
+        "impact": "When policy diverges from belief, there's no audit trail of why"
+      }
+    ],
+
+    "required_state": "SEPARATED",
+    "separation_principle": "Belief is evidence (immutable), Policy is decision (explainable), Presentation is convenience (traceable)"
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T22:15:00Z",
+    "status": "EVIDENCE_COMPLETE",
+    "statement": "IoS-003 epistemic write-path map complete per CEO-DIR-2026-004 Section 3.1"
+  }
+}

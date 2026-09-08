@@ -1,0 +1,77 @@
+{
+  "directive_id": "CEO-DIR-2026-037",
+  "title": "Continuous Price Ingestion - Truth Verification & Orchestrator Lock",
+  "classification": "VERIFICATION_ATTESTATION",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T12:26:00Z",
+
+  "verification_outcome": "OUTCOME_B_NOT_VERIFIABLE",
+
+  "section_3_1_orchestrator_registration": {
+    "query": "SELECT job_id, job_name, job_type, schedule, owner_ec, enabled FROM fhq_governance.orchestrator_jobs WHERE job_type = 'PRICE_INGEST_CONTINUOUS'",
+    "result": "ERROR: relation 'fhq_governance.orchestrator_jobs' does not exist",
+    "finding": "CRITICAL - orchestrator_jobs table DOES NOT EXIST",
+    "job_id": null,
+    "compliance": false
+  },
+
+  "section_3_2_liveness_proof": {
+    "query": "SELECT job_id, MAX(run_timestamp) AS last_run FROM fhq_governance.orchestrator_job_runs GROUP BY job_id",
+    "result": "ERROR: relation 'fhq_governance.orchestrator_job_runs' does not exist",
+    "finding": "CRITICAL - orchestrator_job_runs table DOES NOT EXIST",
+    "last_run": null,
+    "heartbeat_verified": false
+  },
+
+  "alternative_tables_checked": {
+    "scheduled_tasks": {
+      "exists": true,
+      "price_ingestion_tasks_found": 0,
+      "query": "SELECT * FROM fhq_governance.scheduled_tasks WHERE task_type ILIKE '%price%' OR action_type ILIKE '%ingest%'",
+      "result": "[]"
+    },
+    "orchestrator_cycles": {
+      "exists": true,
+      "description": "Tracks orchestrator execution cycles, not job definitions"
+    }
+  },
+
+  "section_3_3_empirical_reality": {
+    "query": "SELECT canonical_id, NOW() - MAX(timestamp) AS staleness FROM fhq_market.prices WHERE canonical_id IN ('SPY','GLD','BTC-USD','SOL-USD','ETH-USD') GROUP BY canonical_id",
+    "result": [
+      {"canonical_id": "BTC-USD", "staleness_minutes": 21.7, "sla_minutes": 15, "sla_status": "EXCEEDS_SLA"},
+      {"canonical_id": "SOL-USD", "staleness_minutes": 21.7, "sla_minutes": 15, "sla_status": "EXCEEDS_SLA"},
+      {"canonical_id": "ETH-USD", "staleness_minutes": 686.0, "sla_minutes": 15, "sla_status": "EXCEEDS_SLA"},
+      {"canonical_id": "GLD", "staleness_minutes": 13.4, "sla_minutes": 60, "sla_status": "WITHIN_SLA"},
+      {"canonical_id": "SPY", "staleness_minutes": 13.5, "sla_minutes": 60, "sla_status": "WITHIN_SLA"}
+    ],
+    "finding": "Crypto assets (BTC-USD, SOL-USD, ETH-USD) EXCEED SLA. Equity/commodity (SPY, GLD) WITHIN SLA.",
+    "note": "Fresh prices without orchestrator proof = UNTRUSTED DATA per directive"
+  },
+
+  "verdict": {
+    "outcome": "B",
+    "description": "NOT VERIFIABLE - No continuous price ingestion job registered in orchestrator",
+    "evidence_summary": [
+      "orchestrator_jobs table does not exist",
+      "orchestrator_job_runs table does not exist",
+      "No PRICE_INGEST_CONTINUOUS task in scheduled_tasks",
+      "Crypto SLA already breached (21.7 min > 15 min threshold)",
+      "Current price freshness is result of manual ad-hoc ingestion, not orchestrated"
+    ]
+  },
+
+  "required_action_per_directive": {
+    "section": "5. Outcome B",
+    "action": "CEO authorizes exactly one new orchestrated job, registered, owned by EC-009, with full audit trail",
+    "awaiting": "CEO authorization"
+  },
+
+  "stig_attestation": {
+    "statement": "I, STIG (CTO), attest that continuous price ingestion is NOT verifiable through database and orchestrator evidence. The required tables (orchestrator_jobs, orchestrator_job_runs) do not exist. No registered job of type PRICE_INGEST_CONTINUOUS was found. Current price freshness is the result of manual ad-hoc execution, not orchestrated continuous ingestion.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-10",
+    "vega_attestation_id": null,
+    "note": "VEGA attestation pending CEO authorization for canonical instantiation"
+  }
+}

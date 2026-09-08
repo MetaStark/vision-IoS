@@ -1,0 +1,127 @@
+{
+  "directive_id": "CEO-DIR-2026-029",
+  "report_type": "DAILY_EXECUTIVE_TRUTH_REPORT",
+  "report_number": 1,
+  "classification": "SIGNAL_OVER_NARRATIVE",
+  "produced_by": "STIG",
+  "report_timestamp": "2026-01-09T23:45:00Z",
+  "report_date": "2026-01-09",
+
+  "section_i_where_are_we_today": {
+    "calibration_metrics": {
+      "avg_brier_score": 0.3171,
+      "brier_threshold": 0.30,
+      "brier_status": "ABOVE_THRESHOLD",
+      "hit_rate_pct": 40.7,
+      "correct_predictions": 5561,
+      "incorrect_predictions": 8091,
+      "total_scored_forecasts": 13652,
+      "overconfidence_flag": "OFF",
+      "assessment": "System is miscalibrated. Brier 0.3171 > 0.30 threshold. Hit rate 40.7% indicates systematic bias toward incorrect predictions."
+    },
+    "execution_metrics": {
+      "active_capital_at_risk_usd": 0,
+      "open_positions": 0,
+      "unrealized_pnl_usd": 0,
+      "realized_pnl_mtd_usd": 0,
+      "trades_executed_24h": 0,
+      "shadow_trades_24h": 0,
+      "assessment": "No capital deployed. System is in observation/learning mode only."
+    },
+    "governance_metrics": {
+      "defcon_level": "GREEN",
+      "defcon_since": "2025-12-11T15:28:46Z",
+      "agent_contracts_registered": 5,
+      "revenue_activation_status": "AUTHORIZED",
+      "revenue_activation_date": "2026-01-09T21:43:57Z"
+    },
+    "epistemic_metrics": {
+      "total_suppressions": 290,
+      "regret_count": 33,
+      "wisdom_count": 162,
+      "unresolved_count": 95,
+      "regret_rate_pct": 16.6,
+      "wisdom_rate_pct": 81.4,
+      "assessment": "81.4% wisdom rate indicates suppression mechanism is learning. 16.6% regret rate is within acceptable bounds."
+    },
+    "data_coverage": {
+      "total_forecasts": 17675,
+      "scored_forecasts": 13652,
+      "coverage_pct": 77.2,
+      "orphaned_forecasts": 4023,
+      "assessment": "77.2% coverage achieved (up from 4.5% baseline). Remaining gaps: GLD (2431), TLT (689), REGIME (903)."
+    },
+    "regime_state": {
+      "dominant_regime": "BEAR",
+      "belief_confidence": 0.9756,
+      "entropy": 0.1692,
+      "last_updated": "2026-01-09T21:35:20Z"
+    }
+  },
+
+  "section_ii_single_goal_for_tomorrow": {
+    "goal": "Achieve >90% Forecast-Outcome Coverage via CEIO GLD/TLT Price Backfill",
+    "rationale": "Current coverage at 77.2%. Missing GLD (2431) and TLT (689) price data blocks 3120 forecasts from reconciliation. CEIO backfill will unlock 94.7% coverage. This is prerequisite to accurate Brier calibration.",
+    "owner": "CEIO",
+    "success_criteria": "fhq_market.prices contains GLD and TLT prices for 2025-12-01 through 2026-01-09",
+    "blocking": true,
+    "priority": "P0"
+  },
+
+  "section_iii_on_track_to_economic_freedom": {
+    "current_state": "PRE-EXECUTION",
+    "revenue_seeking_authorized": true,
+    "capital_deployed": false,
+    "blockers": [
+      {
+        "blocker_id": "B1",
+        "description": "Brier score above threshold (0.3171 > 0.30)",
+        "severity": "HIGH",
+        "resolution": "Improve forecasting accuracy before capital deployment"
+      },
+      {
+        "blocker_id": "B2",
+        "description": "Hit rate below baseline (40.7% < 50%)",
+        "severity": "HIGH",
+        "resolution": "Systematic bias correction required"
+      },
+      {
+        "blocker_id": "B3",
+        "description": "No capital allocated for paper trading",
+        "severity": "MEDIUM",
+        "resolution": "CEO to authorize initial paper capital allocation"
+      }
+    ],
+    "eta_to_economic_freedom": {
+      "status": "INDETERMINATE",
+      "reason": "System must first demonstrate consistent calibration (Brier < 0.30, Hit Rate > 50%) before ETA can be calculated. Current metrics show miscalibration.",
+      "preconditions": [
+        "Brier Score < 0.30 for 7 consecutive days",
+        "Hit Rate > 50% for 7 consecutive days",
+        "Paper trading shows positive Sharpe Ratio",
+        "VEGA attestation of calibration stability"
+      ]
+    },
+    "honest_assessment": "FjordHQ has built the infrastructure for revenue-seeking autonomy. Governance is operational. Mandates are closed. Revenue activation is authorized. But the forecasting engine is currently WRONG more often than RIGHT (40.7% hit rate). We cannot deploy capital until this is fixed. This is not a governance problem. This is a calibration problem. FINN must improve."
+  },
+
+  "raw_queries": {
+    "brier_score_query": "SELECT ROUND(AVG(brier_score)::numeric, 4) as avg_brier, COUNT(*) FILTER (WHERE hit_rate_contribution = true) as correct, COUNT(*) FILTER (WHERE hit_rate_contribution = false) as incorrect FROM fhq_research.forecast_outcome_pairs WHERE brier_score IS NOT NULL",
+    "capital_query": "SELECT COUNT(*) as position_count, COALESCE(SUM(ABS(notional_usd)), 0) as total_exposure_usd FROM fhq_execution.paper_positions",
+    "defcon_query": "SELECT defcon_level, triggered_by, trigger_reason FROM fhq_governance.defcon_state WHERE is_current = true",
+    "suppression_query": "SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE regret_classification = 'REGRET') as regret, COUNT(*) FILTER (WHERE regret_classification = 'WISDOM') as wisdom FROM fhq_governance.epistemic_suppression_ledger"
+  },
+
+  "court_proof_compliance": {
+    "raw_queries_attached": true,
+    "all_metrics_database_sourced": true,
+    "no_narrative_inflation": true,
+    "evidence_hash": null
+  },
+
+  "closing_statement": {
+    "text": "Day 1. No mercy on ourselves. The system is authorized to seek revenue but not yet calibrated to earn it. Tomorrow we close the data gap. Then we fix the predictions.",
+    "signed_by": "STIG - CTO, FjordHQ",
+    "date": "2026-01-09"
+  }
+}

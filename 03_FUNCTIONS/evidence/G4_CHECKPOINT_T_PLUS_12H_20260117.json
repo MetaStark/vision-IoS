@@ -1,0 +1,117 @@
+{
+  "event": "G4_CHECKPOINT_T_PLUS_12H",
+  "checkpoint_id": "T+12h",
+  "scheduled_time": "2026-01-17T13:30:00Z",
+  "captured_at": "2026-01-17T10:45:00Z",
+  "status": "CAPTURED",
+  "captured_by": "STIG",
+
+  "baseline_anchoring": {
+    "baseline_brier": 0.5358,
+    "stop_loss_brier": 0.5658,
+    "frozen_at": "2026-01-17T01:30:00Z"
+  },
+
+  "current_measurement": {
+    "current_brier": 0.5567,
+    "headroom_to_stop_loss": 0.0091,
+    "brier_vs_baseline": 0.0209,
+    "direction": "ABOVE_BASELINE",
+    "brier_30d": 0.5885,
+    "new_forecasts_since_T0": 0,
+    "new_forecasts_since_T6h": 74,
+    "note": "74 forecasts generated but not yet paired with outcomes during G4 stillness"
+  },
+
+  "okr_progress_t12h": {
+    "summary": {
+      "total_krs": 12,
+      "achieved": 5,
+      "on_track": 3,
+      "in_progress": 4,
+      "at_risk": 0,
+      "completion_pct": 41.7
+    },
+    "by_objective": [
+      {"objective": "O1: Kill Catastrophic Overconfidence", "achieved": 0, "total": 3, "status": "IN_PROGRESS"},
+      {"objective": "O2: Improve Learning Quality", "achieved": 2, "total": 3, "status": "ON_TRACK"},
+      {"objective": "O3: Reduce Capital Risk", "achieved": 1, "total": 3, "status": "ON_TRACK"},
+      {"objective": "O4: Preserve Defensibility", "achieved": 2, "total": 3, "status": "ON_TRACK"}
+    ],
+    "kr_status": {
+      "O1_KR1": {"target": "STRESS conf <15%", "current": 0.9103, "status": "IN_PROGRESS"},
+      "O1_KR2": {"target": "Calibration gap <10pts", "current": 0.9103, "status": "IN_PROGRESS"},
+      "O1_KR3": {"target": "Brier <0.5358", "current": 0.5567, "status": "IN_PROGRESS"},
+      "O2_KR1": {"target": "Adj LVI >10%", "current": 1.38, "status": "IN_PROGRESS"},
+      "O2_KR2": {"target": "EVENT_ADJACENT excluded", "current": "100%", "status": "ACHIEVED"},
+      "O2_KR3": {"target": "Surprise classification", "current": "100%", "status": "ACHIEVED"},
+      "O3_KR1": {"target": "Brier improves 48h", "current": 0.5567, "status": "IN_PROGRESS"},
+      "O3_KR2": {"target": "Brier <stop-loss", "current": 0.5567, "status": "ON_TRACK"},
+      "O3_KR3": {"target": "Changes logged", "current": "100%", "status": "ACHIEVED"},
+      "O4_KR1": {"target": "Learning signed", "current": "100%", "status": "ACHIEVED"},
+      "O4_KR2": {"target": "VEGA attestation", "current": "100%", "status": "ON_TRACK"},
+      "O4_KR3": {"target": "Stillness violations=0", "current": 0, "status": "ON_TRACK"}
+    }
+  },
+
+  "governance_status": {
+    "stillness_violations_since_T0": 0,
+    "stillness_violations_since_T6h": 0,
+    "calibrations_executed_since_T0": 0,
+    "constitutional_constraints_held": true
+  },
+
+  "friction_001_status": {
+    "ceilings_active": {
+      "STRESS": 0.10,
+      "BULL": 0.35,
+      "NEUTRAL": 0.39,
+      "BEAR": 0.43
+    },
+    "enforcement": "ACTIVE",
+    "note": "74 new forecasts will be subject to ceilings when paired"
+  },
+
+  "temporal_progress": {
+    "checkpoint_sequence": ["T0", "T+6h", "T+12h", "T+24h", "T+36h", "T+48h"],
+    "current_checkpoint": "T+12h",
+    "next_checkpoint": "T+24h (2026-01-18T01:30:00Z)",
+    "deadline": "2026-01-19T01:30:00Z",
+    "hours_elapsed": 9.25,
+    "hours_remaining": 38.75
+  },
+
+  "comparison_to_t6h": {
+    "brier_change": 0.0,
+    "stillness_violations_change": 0,
+    "krs_achieved_change": 0,
+    "verdict": "STABLE - No material change from T+6h"
+  },
+
+  "sanity_check": {
+    "verdict": "ON_TRACK",
+    "details": [
+      "Brier 0.5567 < stop-loss 0.5658 - SAFE (headroom 0.0091)",
+      "0 stillness violations - CORRECT",
+      "74 new forecasts generated - EXPECTED (system continues forecasting)",
+      "0 new forecast-outcome pairs - EXPECTED (G4 stillness means no evaluation)",
+      "O1 remains at 0% - EXPECTED (requires new paired forecasts)",
+      "No material change from T+6h - STABLE"
+    ],
+    "risk_assessment": "LOW - System stable within constitutional constraints"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T10:45:00Z",
+    "summary": [
+      "T+12h checkpoint CAPTURED",
+      "Brier 0.5567 remains below stop-loss 0.5658",
+      "0 stillness violations - constitutional constraints held",
+      "74 new forecasts generated but not yet paired",
+      "No material change from T+6h - system stable",
+      "Next checkpoint: T+24h at 2026-01-18T01:30:00Z"
+    ]
+  }
+}

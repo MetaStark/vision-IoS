@@ -1,0 +1,167 @@
+{
+  "document_id": "M209-CONSTITUTIONAL-JUSTIFICATION",
+  "document_type": "GOVERNANCE_JUSTIFICATION",
+  "version": "1.0",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-003",
+  "migration": "209_epistemic_immutability_controls.sql",
+  "timestamp": "2026-01-06T21:50:00Z",
+  "author": "STIG",
+
+  "section_1_adr_013_alignment": {
+    "adr": "ADR-013 (Canonical Governance & One-Source-of-Truth Architecture)",
+    "status": "CEO Approved",
+    "tier": "Constitutional Governance (Tier-1.5)",
+
+    "relevant_provisions": [
+      {
+        "section": "3.1 One-Source-of-Truth Principle",
+        "text": "For every domain, asset, frequency, timestamp, or artifact that influences research, strategy, risk, or reporting, there shall exist exactly one canonical source of truth.",
+        "application_to_m209": "model_belief_state is the ONE canonical source for epistemic beliefs. Immutability ensures this truth cannot be retroactively modified."
+      },
+      {
+        "section": "3.5 Kernel-Level Enforcement",
+        "text": "immutable truth snapshotting",
+        "application_to_m209": "Migration 209 implements immutable truth snapshotting for belief records via append-only enforcement."
+      },
+      {
+        "section": "3.4 Reconciliation and Canonicalization",
+        "text": "Canonical data cannot be overwritten or replaced without G1 technical validation, G2 governance validation, G3 audit verification, G4 CEO canonicalization. No bypass is permitted.",
+        "application_to_m209": "Trigger-based immutability enforces 'no bypass' at database level. Even authorized users cannot modify historical beliefs without system exception."
+      }
+    ],
+
+    "compliance_statement": "Migration 209 implements the ADR-013 mandate for 'immutable truth snapshotting' in the epistemic domain. The append-only guarantee ensures that belief records, once written, cannot be modified or deleted, preserving the integrity of the canonical belief source."
+  },
+
+  "section_2_adr_004_alignment": {
+    "adr": "ADR-004 (Change Gates Architecture)",
+    "status": "CEO Approved",
+    "governing_agent": "VEGA",
+
+    "relevant_provisions": [
+      {
+        "section": "Executive Summary",
+        "text": "Change Gates form the governance nervous system of FjordHQ.",
+        "application_to_m209": "Migration 209 follows the G0-G3 gate structure for activation."
+      },
+      {
+        "section": "G1 Technical Validation",
+        "text": "Validate the technical safety and integrity of the change. Checks: schema validity, no staging leakage, deterministic builds, reproducible outputs.",
+        "application_to_m209": "M209 preflight evidence demonstrates schema integrity and deterministic trigger behavior."
+      },
+      {
+        "section": "G3 Audit Verification",
+        "text": "VEGA must verify audit trail completeness and governance integrity.",
+        "application_to_m209": "VEGA test suite verifies immutability enforcement and audit logging of violations."
+      }
+    ],
+
+    "gate_status": {
+      "G0_submission": "COMPLETE - CEO-DIR-2026-003 issued",
+      "G1_technical": "IN_PROGRESS - Preflight evidence pack under construction",
+      "G2_governance": "COMPLETE - CEO directive provides governance approval",
+      "G3_audit": "PENDING - VEGA attestation required before execution",
+      "G4_ceo": "NOT_REQUIRED - Per CEO-DIR-2026-003 Section 4"
+    },
+
+    "compliance_statement": "Migration 209 follows ADR-004 change gate discipline. G4 is explicitly waived per CEO directive unless scope expands beyond belief immutability."
+  },
+
+  "section_3_ceo_dir_2026_001_alignment": {
+    "directive": "CEO-DIR-2026-001 (Epistemic Separation Architecture)",
+    "status": "EXECUTED (Migration 208)",
+
+    "relevant_provisions": [
+      {
+        "provision": "Learning SHALL reference belief, not action",
+        "application_to_m209": "Immutability ensures the learning system sees exactly what the model believed at time t, without risk of retroactive modification."
+      },
+      {
+        "provision": "Separation of model perception from policy decisions",
+        "application_to_m209": "model_belief_state captures raw model perception. Immutability prevents policy from contaminating historical belief records."
+      },
+      {
+        "provision": "Court-proof evidence chain",
+        "application_to_m209": "Append-only guarantees create an immutable audit trail suitable for regulatory and legal review."
+      }
+    ],
+
+    "compliance_statement": "Migration 209 completes the CEO-DIR-2026-001 architecture by hardening the belief layer as 'evidence, not data'. The immutability control ensures belief records are forensically trustworthy."
+  },
+
+  "section_4_immutability_approach_justification": {
+    "chosen_approach": "BEFORE UPDATE OR DELETE trigger raising exception",
+
+    "alternatives_considered": [
+      {
+        "approach": "Row-Level Security (RLS) denying UPDATE/DELETE",
+        "rejected_reason": "RLS can be bypassed by table owners and is complex to maintain",
+        "assessment": "INSUFFICIENT"
+      },
+      {
+        "approach": "REVOKE UPDATE, DELETE privileges from all roles",
+        "rejected_reason": "Superuser (postgres) bypasses privilege restrictions; does not provide audit logging",
+        "assessment": "INSUFFICIENT"
+      },
+      {
+        "approach": "Application-layer enforcement only",
+        "rejected_reason": "Bypassed by direct SQL access; not defense-in-depth",
+        "assessment": "INSUFFICIENT"
+      },
+      {
+        "approach": "BEFORE trigger with RAISE EXCEPTION + governance logging",
+        "selected_reason": "Provides: 1) Database-level enforcement, 2) Clear violation messages, 3) Audit trail, 4) Works for all non-superuser connections",
+        "assessment": "SELECTED"
+      }
+    ],
+
+    "superuser_limitation": {
+      "statement": "PostgreSQL superusers can bypass triggers via session configuration or direct catalog manipulation. This is an architectural database limitation.",
+      "mitigation": [
+        "Production access to superuser accounts is restricted",
+        "All superuser sessions are logged at PostgreSQL level",
+        "CEO-DIR-2026-003 establishes governance policy layer",
+        "Governance actions log captures application-level violation attempts"
+      ],
+      "acceptance": "ACKNOWLEDGED - Technical controls are defense-in-depth, not absolute guarantee"
+    },
+
+    "justification_statement": "The BEFORE trigger approach provides the strongest practical enforcement within PostgreSQL constraints. Combined with governance logging and procedural controls, it meets the constitutional requirement for immutable truth snapshotting per ADR-013."
+  },
+
+  "section_5_replay_integrity_proof": {
+    "requirement": "ADR-013 mandates deterministic replay capability",
+
+    "how_m209_enables_replay": [
+      "All belief records are timestamped (belief_timestamp, created_at)",
+      "Each record has a lineage_hash for chain verification",
+      "No records can be modified after creation",
+      "No records can be deleted",
+      "Learning systems can replay historical belief state at any point in time"
+    ],
+
+    "verification_method": "SELECT * FROM fhq_perception.model_belief_state WHERE belief_timestamp <= $target_time ORDER BY belief_timestamp",
+
+    "guarantee": "Given the same target_time, the query always returns the same result set because no records can be modified or deleted."
+  },
+
+  "section_6_learning_safety_verification": {
+    "requirement": "CEO-DIR-2026-003 Acceptance Criterion 4: Learning systems read from v_canonical_belief, not fhq_meta.regime_state",
+
+    "canonical_read_path": "fhq_perception.v_canonical_belief",
+    "prohibited_read_path": "fhq_meta.regime_state (policy-facing, contains SIDEWAYS legacy value)",
+
+    "verification_query": "SELECT view_definition FROM information_schema.views WHERE table_schema = 'fhq_perception' AND table_name = 'v_canonical_belief'",
+
+    "enforcement": "Learning systems MUST be updated to bind to v_canonical_belief. This is a separate integration task per CEO-DIR-2026-001 Section 6.3."
+  },
+
+  "attestation": {
+    "author": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-06T21:50:00Z",
+    "status": "JUSTIFICATION_COMPLETE",
+    "statement": "Constitutional alignment proof complete per CEO-DIR-2026-003 Section 3.2. Migration 209 is justified against ADR-013, ADR-004, and CEO-DIR-2026-001."
+  }
+}

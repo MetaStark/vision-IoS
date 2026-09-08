@@ -1,0 +1,102 @@
+{
+  "directive_id": "CEO-DIR-2026-040",
+  "confirmation_type": "CADENCE_POLICY_IMPLEMENTATION",
+  "confirmation_timestamp": "2026-01-12T19:33:43Z",
+  "executor": "STIG",
+  "authority": "CEO",
+
+  "policy_implementation": {
+    "baseline_cadence": {
+      "interval_minutes": 120,
+      "runs_per_day": 12,
+      "status": "IMPLEMENTED",
+      "description": "Default operating state - 2 hour cadence"
+    },
+    "burst_mode": {
+      "interval_minutes": 60,
+      "mode_name": "HOURLY_ESCALATION",
+      "status": "IMPLEMENTED",
+      "triggers": [
+        "AT_RISK status with unexpected violations",
+        "BLOCKED status",
+        "forecasts_last_24h below at_risk threshold",
+        "type_x_share > 50% with non-HORIZON_NOT_MATURED explanation"
+      ],
+      "revert_rule": "2 consecutive GREEN snapshots"
+    },
+    "incident_mode": {
+      "interval_minutes": 30,
+      "mode_name": "INCIDENT",
+      "status": "IMPLEMENTED",
+      "max_duration_hours": 4,
+      "max_runs": 8,
+      "requires_incident_id": true,
+      "auto_revert": true
+    }
+  },
+
+  "code_artifacts": {
+    "main_engine": "05_ORCHESTRATOR/tasks/ios_truth_snapshot_engine.py",
+    "cadence_state_file": "12_DAILY_REPORTS/TRUTH_SNAPSHOT/CADENCE_STATE.json",
+    "functions_added": [
+      "load_cadence_state()",
+      "save_cadence_state()",
+      "detect_escalation_triggers()",
+      "evaluate_cadence_transition()",
+      "enter_incident_mode()"
+    ],
+    "constants_added": [
+      "CADENCE_BASELINE_MINUTES = 120",
+      "CADENCE_BURST_MINUTES = 60",
+      "CADENCE_INCIDENT_MINUTES = 30",
+      "CONSECUTIVE_GREEN_FOR_REVERT = 2",
+      "INCIDENT_MODE_MAX_RUNS = 8"
+    ]
+  },
+
+  "snapshot_metadata_fields": {
+    "cadence.mode": "Current cadence mode (BASELINE/HOURLY_ESCALATION/INCIDENT)",
+    "cadence.interval_minutes": "Current interval in minutes",
+    "cadence.escalation_reason": "Trigger that caused escalation (null if none)",
+    "cadence.consecutive_green": "Count of consecutive OK status snapshots",
+    "cadence.incident_id": "Incident identifier if in INCIDENT mode",
+    "cadence.transition": "Mode transition if one occurred this snapshot"
+  },
+
+  "first_snapshot_with_cadence": {
+    "snapshot_id": "TRUTH_20260112_1833",
+    "cadence_state": {
+      "mode": "BASELINE",
+      "interval_minutes": 120,
+      "consecutive_green": 0,
+      "escalation_reason": null,
+      "transition": null
+    },
+    "status": "AT_RISK",
+    "escalation_triggered": false,
+    "reason_no_escalation": "AT_RISK violations are expected causes (outcomes_0h_1h_last_24h, type_x_share_pct) - system is maturing"
+  },
+
+  "governance_constraints_enforced": {
+    "per_run_llm_cap_usd": 0.03,
+    "daily_cap_usd": 0.50,
+    "monthly_cap_usd": 15.00,
+    "ec_020_021_022_mode": "SHADOW",
+    "zero_exposure_invariant": true,
+    "no_db_mutation": true
+  },
+
+  "auditability": {
+    "cadence_state_persisted": true,
+    "escalations_logged": true,
+    "reverts_logged": true,
+    "transitions_in_snapshot": true,
+    "rolling_7d_tracks_cadence": true
+  },
+
+  "_meta": {
+    "generated_at": "2026-01-12T19:33:43Z",
+    "generated_by": "STIG",
+    "directive_reference": "CEO-DIR-2026-040"
+  }
+}

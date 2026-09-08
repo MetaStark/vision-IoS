@@ -1,0 +1,86 @@
+{
+  "evidence_id": "PRE-TIER-G1-20260125-2208",
+  "directive": "CEO-DIR-2026-PRE-TIER-GRADIENT-001",
+  "gate": "G1",
+  "status": "COMPLETE",
+  "timestamp": "2026-01-25T22:08:34Z",
+  "executor": "STIG",
+  "executor_ec": "EC-003",
+  "evidence_hash": "b74b2a1524477c133ca5442536b436c19e748db48e439c7a2c9dd8e6efcf3ead",
+
+  "migration_file": "04_DATABASE/MIGRATIONS/350_pre_tier_gradient_g1.sql",
+  "board_report": "05_GOVERNANCE/PHASE3/CEO_DIR_2026_PRE_TIER_GRADIENT_G1_BOARD_REPORT.md",
+
+  "schema_changes": {
+    "enum_created": "fhq_learning.pre_tier_score_status_enum",
+    "enum_values": ["PENDING", "SCORING", "SCORED", "FAIL_CLOSED", "STALE"],
+
+    "columns_added_to_hypothesis_canon": [
+      "pre_tier_score NUMERIC(5,2)",
+      "evidence_density_score NUMERIC(5,2)",
+      "data_freshness_score NUMERIC(5,2)",
+      "causal_depth_score NUMERIC(5,2)",
+      "cross_agent_agreement_score NUMERIC(5,2)",
+      "draft_age_hours NUMERIC(10,2)",
+      "draft_decay_penalty NUMERIC(5,2)",
+      "pre_tier_score_version VARCHAR(10)",
+      "pre_tier_score_status TEXT",
+      "pre_tier_scored_by JSONB",
+      "pre_tier_scored_at TIMESTAMPTZ",
+      "pre_tier_birth_hash TEXT",
+      "pre_tier_hash_verified BOOLEAN",
+      "pre_tier_defcon_at_score TEXT"
+    ],
+
+    "tables_created": [
+      "fhq_learning.pre_tier_validator_scores",
+      "fhq_governance.pre_tier_calibration_audit"
+    ],
+
+    "functions_created": [
+      "fhq_learning.calculate_pre_tier_score",
+      "fhq_learning.calculate_agreement_score",
+      "fhq_learning.generate_pre_tier_birth_hash"
+    ],
+
+    "views_created": [
+      "fhq_learning.v_pre_tier_scoring_status",
+      "fhq_learning.v_oxygen_rule_eligible"
+    ]
+  },
+
+  "governance_changes": {
+    "orchestrator_registered": {
+      "id": "FHQ-PreTier-Scoring-Orchestrator",
+      "owner": "VEGA (EC-004)",
+      "scope": "Hypothesis pre-tier scoring coordination"
+    },
+    "vega_rule_added": {
+      "name": "Anti-Echo Pre-Tier Scoring",
+      "type": "HARD_CONSTRAINT",
+      "action": "BLOCK"
+    }
+  },
+
+  "ceo_decisions_implemented": {
+    "1_causal_depth": "Option A - Saturating mapping (depth * 25, cap 100)",
+    "2_orchestrator": "VEGA (EC-004) owns status transitions",
+    "3_disagreement": "Normalized StdDev dispersion",
+    "4_sample_size": "n < 30 = INSUFFICIENT_DATA",
+    "5_tables": "APPROVED and created"
+  },
+
+  "execution_result": "COMMIT - All 13 steps successful",
+
+  "completed_steps": [
+    "Migration executed by STIG",
+    "Schema changes verified",
+    "12 DRAFT hypotheses initialized",
+    "Board report delivered"
+  ],
+
+  "pending": [
+    "VEGA attestation for final G1 closure",
+    "Initial scoring cycle with 2+ validators"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "directive_id": "CEO-DIR-2026-085",
+  "directive_title": "ROI LEDGER HORIZON CALCULATION CORRECTION (EQUITY)",
+  "authority": "CEO",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T03:15:00Z",
+  "status": "COMPLETED",
+
+  "factual_finding": {
+    "issue": "3D and 5D hit rates were calculated using total events (n=31) instead of events with non-NULL outcomes",
+    "consequence": "Artificial decay appeared in horizon comparisons (58% -> 22% -> 16%)",
+    "root_cause": "CASE WHEN correct_direction_3d THEN 1.0 ELSE 0.0 treated NULL as 0",
+    "reality": "Hit rate is stable ~56-58% across all horizons when calculated correctly"
+  },
+
+  "correction_applied": {
+    "denominator_rule": "For each horizon H: Denominator = COUNT(events WHERE outcome_H IS NOT NULL)",
+    "implementation": "Added FILTER (WHERE price_t0_plus_Xd IS NOT NULL) to all hit rate calculations",
+    "data_quality_annotations": "Added completeness percentages and status flags per horizon"
+  },
+
+  "migration": {
+    "file": "307_ceo_dir_2026_085_horizon_calculation_fix.sql",
+    "views_modified": [
+      "fhq_research.roi_direction_equity_daily_ev",
+      "fhq_research.roi_direction_equity_rolling_30d"
+    ],
+    "views_created": [
+      "fhq_research.roi_direction_equity_horizon_summary"
+    ]
+  },
+
+  "verification": {
+    "before_fix": {
+      "hit_rate_1d": "58.06%",
+      "hit_rate_3d": "22.58%",
+      "hit_rate_5d": "16.13%",
+      "appearance": "DECAYING"
+    },
+    "after_fix": {
+      "hit_rate_1d": {"value": "58.06%", "sample": 31},
+      "hit_rate_3d": {"value": "58.33%", "sample": 12},
+      "hit_rate_5d": {"value": "55.56%", "sample": 9},
+      "appearance": "STABLE"
+    },
+    "outcome_completeness": {
+      "3d": "38.7%",
+      "5d": "29.0%",
+      "reason": "Recent signals - outcomes not yet occurred"
+    }
+  },
+
+  "success_criteria_met": {
+    "correct_denominator": true,
+    "no_artificial_decay": true,
+    "data_quality_annotations": true,
+    "no_signal_data_altered": true,
+    "ledger_append_only_preserved": true
+  },
+
+  "governance": {
+    "classification": "MEASUREMENT_FIX",
+    "not_a_model_change": true,
+    "historical_data_unaltered": true
+  },
+
+  "ceo_principle": "Alpha did not fail. Measurement did. Fix the lens. Do not touch the signal."
+}

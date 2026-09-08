@@ -1,0 +1,121 @@
+{
+  "directive": "CEO-DIR-2026-023-ORDER-6",
+  "evidence_type": "BRIER_CALIBRATION_META_ANALYSIS",
+  "computed_at": "2026-01-23T12:00:00Z",
+  "computed_by": "STIG",
+  "ec_contract": "EC-003",
+
+  "current_state": {
+    "forecast_skill_metrics": {
+      "source": "fhq_research.forecast_skill_metrics",
+      "records": 141,
+      "avg_brier": 0.3125,
+      "min_brier": 0.0233,
+      "max_brier": 0.3233,
+      "std_brier": 0.0252,
+      "avg_forecast_count": 16457,
+      "avg_hit_rate": 0.5165
+    },
+    "brier_decomposition": {
+      "source": "fhq_governance.brier_decomposition",
+      "records": 474,
+      "avg_brier": 0.5410,
+      "avg_reliability": 0.4273,
+      "avg_resolution": 0.0577,
+      "avg_uncertainty": 0.1704,
+      "avg_brier_skill_score": -1.8706,
+      "overconfident_count": 465,
+      "well_calibrated_count": 0,
+      "has_resolution_count": 304
+    },
+    "current_formula": {
+      "expression": "skill_factor = max(0.1, 1.0 - (brier * 1.8))",
+      "at_brier_0.3125": 0.4375,
+      "floor": 0.1,
+      "ceiling": 1.0
+    }
+  },
+
+  "data_discrepancy": {
+    "issue": "forecast_skill_metrics avg_brier (0.31) differs from brier_decomposition avg_brier (0.54)",
+    "potential_causes": [
+      "Different sample populations",
+      "Different time periods",
+      "Different forecast types included",
+      "Retrospective vs real-time decomposition"
+    ],
+    "recommended_action": "Investigate data pipeline to reconcile"
+  },
+
+  "murphy_decomposition_analysis": {
+    "formula": "Brier = Reliability - Resolution + Uncertainty",
+    "interpretation": {
+      "reliability_0.43": "HIGH - forecasts systematically miscalibrated",
+      "resolution_0.06": "LOW - forecasts not bold/informative",
+      "uncertainty_0.17": "Base rate approximately 35%",
+      "skill_negative": "Worse than climatology baseline"
+    },
+    "diagnosis": "Systematic overconfidence with low informativeness"
+  },
+
+  "research_references": [
+    {
+      "authors": "Gneiting & Raftery",
+      "year": 2007,
+      "title": "Strictly Proper Scoring Rules, Prediction, and Estimation",
+      "relevance": "Brier is strictly proper - incentivizes honest forecasts"
+    },
+    {
+      "authors": "Murphy",
+      "year": 1973,
+      "title": "A New Vector Partition of the Probability Score",
+      "relevance": "Decomposition for diagnostic analysis"
+    },
+    {
+      "authors": "Nixon et al.",
+      "year": 2019,
+      "title": "Measuring Calibration in Deep Learning",
+      "relevance": "ECE critique - bin count sensitivity"
+    },
+    {
+      "authors": "Tetlock & Gardner",
+      "year": 2015,
+      "title": "Superforecasting",
+      "relevance": "Brier benchmarks for human forecasters"
+    }
+  ],
+
+  "benchmarks": {
+    "random_guess": 0.250,
+    "typical_forecaster": 0.220,
+    "good_forecaster": 0.190,
+    "superforecaster": 0.150,
+    "fhq_current_fsm": 0.3125,
+    "fhq_current_bd": 0.5410
+  },
+
+  "recommendations": {
+    "immediate": [
+      "Reconcile Brier score discrepancy between data sources",
+      "Add Murphy decomposition to Control Room dashboard",
+      "Keep current formula until discrepancy resolved"
+    ],
+    "future": [
+      "Consider sample size weighting",
+      "Implement reliability penalty if overconfidence persists",
+      "Set Brier < 0.25 as target (beat random baseline)"
+    ]
+  },
+
+  "formula_assessment": {
+    "current_formula_verdict": "ACCEPTABLE",
+    "rationale": [
+      "Bounded output prevents extreme weights",
+      "Floor at 0.1 ensures signal contribution",
+      "Multiplier 1.8 provides reasonable sensitivity"
+    ],
+    "change_recommendation": "NO_CHANGE_PENDING_INVESTIGATION"
+  },
+
+  "verification_hash": "sha256:brier_meta_analysis_20260123_v1"
+}

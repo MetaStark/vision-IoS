@@ -1,0 +1,149 @@
+{
+  "directive_id": "CEO-DIR-2026-020",
+  "artifact_type": "EVIDENCE_ATTACHMENT_INVENTORY",
+  "d2_objective": "Every decision-producing or summary-producing flow must emit court-proof evidence or fail",
+  "generated_at": "2026-01-08T01:00:00Z",
+  "updated_at": "2026-01-08T13:00:00Z",
+  "generated_by": "STIG",
+
+  "inventory": [
+    {
+      "flow_id": "FLOW-001",
+      "flow_name": "FINN CRIO Cycle",
+      "file": "06_AGENTS/FINN/finn_deepseek_researcher.py",
+      "summary_type": "NIGHTLY_INSIGHT",
+      "generating_agent": "FINN",
+      "evidence_sources": ["fhq_market.prices", "fhq_research.macro_factors"],
+      "integration_status": "VERIFIED_LIVE",
+      "integration_method": "CourtProofEnforcerV2.attach_evidence_with_asrp()",
+      "baseline_records": 3,
+      "requires_action": "NONE",
+      "notes": "Verified live - 3 evidence records in ledger from 2026-01-07."
+    },
+    {
+      "flow_id": "FLOW-002",
+      "flow_name": "Regime Update",
+      "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+      "summary_type": "REGIME_UPDATE",
+      "generating_agent": "STIG",
+      "evidence_sources": ["fhq_market.prices", "fhq_perception.model_belief_state"],
+      "integration_status": "INTEGRATED",
+      "integration_method": "attach_evidence()",
+      "baseline_records": 0,
+      "requires_action": "NONE",
+      "notes": "Integration complete. Evidence will flow on next regime update execution."
+    },
+    {
+      "flow_id": "FLOW-003",
+      "flow_name": "G2 Macro Ingest",
+      "file": "03_FUNCTIONS/ios006_g2_macro_ingest.py",
+      "summary_type": "G2_INGEST_SUMMARY",
+      "generating_agent": "CEIO",
+      "evidence_sources": ["FRED", "YAHOO", "fhq_macro.canonical_series"],
+      "integration_status": "INTEGRATED",
+      "integration_method": "attach_evidence()",
+      "baseline_records": 0,
+      "requires_action": "NONE",
+      "notes": "Integration complete. Evidence will flow on next G2 pipeline execution."
+    },
+    {
+      "flow_id": "FLOW-004",
+      "flow_name": "LIDS Binding",
+      "file": "03_FUNCTIONS/ios006_crio_lids_binding.py",
+      "summary_type": "LIDS_BINDING",
+      "generating_agent": "STIG",
+      "evidence_sources": ["fhq_research.nightly_insights"],
+      "integration_status": "INTEGRATED",
+      "integration_method": "attach_evidence()",
+      "baseline_records": 0,
+      "requires_action": "NONE",
+      "notes": "Integration complete. Evidence will flow on next LIDS binding execution."
+    },
+    {
+      "flow_id": "FLOW-005",
+      "flow_name": "Golden Needle Promotion",
+      "file": "03_FUNCTIONS/wave12_golden_needle_framework.py",
+      "summary_type": "GOLDEN_NEEDLE_PROMOTION",
+      "generating_agent": "STIG",
+      "evidence_sources": ["fhq_research.alpha_signals", "fhq_research.hypothesis_registry"],
+      "integration_status": "INTEGRATED",
+      "integration_method": "attach_evidence()",
+      "baseline_records": 0,
+      "requires_action": "NONE",
+      "notes": "Integration complete. Evidence will flow on next golden needle report generation."
+    }
+  ],
+
+  "baseline_metrics": {
+    "total_evidence_records": 3,
+    "distinct_agents": 1,
+    "distinct_summary_types": 1,
+    "agents_contributing": ["FINN"],
+    "summary_types_present": ["NIGHTLY_INSIGHT"],
+    "first_record": "2026-01-07T21:50:49.132Z",
+    "last_record": "2026-01-07T21:54:42.566Z"
+  },
+
+  "target_metrics": {
+    "agents_contributing": ["FINN", "STIG", "CEIO"],
+    "summary_types_present": [
+      "NIGHTLY_INSIGHT",
+      "REGIME_UPDATE",
+      "G2_INGEST_SUMMARY",
+      "LIDS_BINDING",
+      "GOLDEN_NEEDLE_PROMOTION"
+    ],
+    "daily_growth": true,
+    "zero_violations": true
+  },
+
+  "integration_plan": {
+    "phase_1": {
+      "description": "Create mandatory_evidence_contract.py",
+      "status": "COMPLETE",
+      "file": "03_FUNCTIONS/mandatory_evidence_contract.py"
+    },
+    "phase_2": {
+      "description": "Integrate into ios003_daily_regime_update_v4.py",
+      "status": "COMPLETE"
+    },
+    "phase_3": {
+      "description": "Integrate into ios006_g2_macro_ingest.py",
+      "status": "COMPLETE"
+    },
+    "phase_4": {
+      "description": "Integrate into ios006_crio_lids_binding.py",
+      "status": "COMPLETE"
+    },
+    "phase_5": {
+      "description": "Integrate into wave12_golden_needle_framework.py",
+      "status": "COMPLETE"
+    },
+    "phase_6": {
+      "description": "Verify FINN CRIO emits evidence",
+      "status": "COMPLETE"
+    }
+  },
+
+  "enforcement_mechanism": {
+    "contract_file": "03_FUNCTIONS/mandatory_evidence_contract.py",
+    "decorator": "@require_evidence(summary_type, generating_agent, evidence_sources)",
+    "function": "attach_evidence(conn, summary_id, summary_type, ...)",
+    "fail_closed_behavior": "MissingEvidenceViolation raised, logged to governance, operation aborted"
+  },
+
+  "verification_criteria": {
+    "criterion_1": "vision_verification.summary_evidence_ledger shows daily growth",
+    "criterion_2": "More than 1 agent contributing",
+    "criterion_3": "More than 1 summary type present",
+    "criterion_4": "Verification daemon detects zero summaries without evidence",
+    "criterion_5": "Any violation escalates governance event"
+  },
+
+  "stig_attestation": {
+    "attestor": "STIG",
+    "role": "Chief Technology Officer",
+    "timestamp": "2026-01-08T13:00:00Z",
+    "declaration": "All 5 evidence-producing flows have been integrated with mandatory evidence attachment. D2 implementation is COMPLETE. Evidence will begin flowing when each integrated flow executes."
+  }
+}

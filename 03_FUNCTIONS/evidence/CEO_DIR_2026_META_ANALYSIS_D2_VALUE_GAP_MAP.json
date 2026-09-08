@@ -1,0 +1,209 @@
+{
+  "directive": "CEO-DIR-2026-META-ANALYSIS",
+  "deliverable": "D2",
+  "title": "Value Gap Map",
+  "generated_at": "2026-01-23T13:30:00.000Z",
+  "generated_by": "STIG (EC-003)",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "executive_summary": {
+    "system_completeness": "70%",
+    "learning_loop_status": "BLOCKED (LVI = 0.0)",
+    "critical_blocker": "coverage_rate = 0 prevents LVI computation",
+    "highest_value_fix": "Backfill hypothesis_ledger for past events"
+  },
+
+  "gap_ranking_by_alpha_impact": [
+    {
+      "rank": 1,
+      "gap": "LVI = 0.0 (Learning Loop Blocked)",
+      "impact": "CRITICAL",
+      "alpha_loss": "100% of learning feedback",
+      "time_loss": "Every day without LVI = no measurable improvement",
+      "root_cause": "coverage_rate = 0 (past events have no hypotheses)",
+      "fix": "Backfill hypothesis_ledger linking events to hypotheses",
+      "complexity": "LOW",
+      "estimated_gain": "LVI > 0.1 enables learning scorecard"
+    },
+    {
+      "rank": 2,
+      "gap": "tag_event_proximity() BROKEN",
+      "impact": "HIGH",
+      "alpha_loss": "Event proximity penalty not applied to signals",
+      "time_loss": "Signals generated without event context",
+      "root_cause": "Schema mismatch in v_tag record field",
+      "fix": "Migration 340 to correct field reference",
+      "complexity": "LOW",
+      "estimated_gain": "Event-aware signal confidence"
+    },
+    {
+      "rank": 3,
+      "gap": "Brier = 0.32 (Target < 0.20)",
+      "impact": "HIGH",
+      "alpha_loss": "12 percentage points above industry standard",
+      "time_loss": "Overconfident forecasts reduce signal quality",
+      "root_cause": "No Platt scaling or automated recalibration",
+      "fix": "Implement platt_scaling_calibrator.py",
+      "complexity": "MEDIUM",
+      "estimated_gain": "Brier improvement to ~0.25 (22% reduction)"
+    },
+    {
+      "rank": 4,
+      "gap": "IoS-013 Missing 3/6 Sources",
+      "impact": "MEDIUM-HIGH",
+      "alpha_loss": "50% of signal inputs not integrated",
+      "time_loss": "Technical + macro + event signals siloed",
+      "root_cause": "ios013_signal_aggregator.py only documents 3 sources",
+      "fix": "Extend aggregator with IoS-002, IoS-006, IoS-016 feeds",
+      "complexity": "MEDIUM",
+      "estimated_gain": "Multi-source signal synthesis"
+    },
+    {
+      "rank": 5,
+      "gap": "No Automated Recalibration Triggers",
+      "impact": "MEDIUM",
+      "alpha_loss": "Drift detection is manual only",
+      "time_loss": "Calibration decay undetected for days",
+      "root_cause": "No drift threshold triggers in ios010_skill_metrics_aggregator.py",
+      "fix": "Add drift detection (if Brier delta > 0.05 over 7d, alert)",
+      "complexity": "LOW",
+      "estimated_gain": "Proactive calibration maintenance"
+    },
+    {
+      "rank": 6,
+      "gap": "8 Stale Daemon Heartbeats",
+      "impact": "MEDIUM",
+      "alpha_loss": "System health unknown",
+      "time_loss": "Alerts firing but not actionable",
+      "root_cause": "Daemons not registering heartbeats",
+      "fix": "Update heartbeat registration in each daemon",
+      "complexity": "LOW",
+      "estimated_gain": "Clear system health visibility"
+    },
+    {
+      "rank": 7,
+      "gap": "No Sentiment Scheduler",
+      "impact": "MEDIUM",
+      "alpha_loss": "News context not systematic",
+      "time_loss": "Market surprises not anticipated",
+      "root_cause": "Serper exists but no scheduled ingestion daemon",
+      "fix": "Create news_sentiment_scheduler_daemon.py",
+      "complexity": "MEDIUM",
+      "estimated_gain": "Systematic news awareness"
+    },
+    {
+      "rank": 8,
+      "gap": "Dashboard Not Real-Time",
+      "impact": "LOW-MEDIUM",
+      "alpha_loss": "Manual refresh required",
+      "time_loss": "CEO visibility delayed",
+      "root_cause": "No SSE/WebSocket streaming",
+      "fix": "Add polling or SSE to dashboard",
+      "complexity": "MEDIUM",
+      "estimated_gain": "30-second auto-refresh"
+    },
+    {
+      "rank": 9,
+      "gap": "No Factor Attribution",
+      "impact": "LOW",
+      "alpha_loss": "Cannot distinguish alpha from factor beta",
+      "time_loss": "Performance attribution unclear",
+      "root_cause": "Fama-French data stored but not decomposed",
+      "fix": "Create factor_attribution_daemon.py",
+      "complexity": "MEDIUM",
+      "estimated_gain": "True alpha visibility"
+    }
+  ],
+
+  "marginal_learning_per_module": {
+    "hypothesis_ledger_backfill": {
+      "learning_gain": "HIGH",
+      "description": "Enables LVI computation, unlocks learning scorecard",
+      "dependencies": "None",
+      "effort": "1 day"
+    },
+    "tag_event_proximity_fix": {
+      "learning_gain": "HIGH",
+      "description": "Event context flows into signal confidence",
+      "dependencies": "None",
+      "effort": "0.5 days"
+    },
+    "platt_scaling": {
+      "learning_gain": "MEDIUM-HIGH",
+      "description": "Removes systematic overconfidence from forecasts",
+      "dependencies": "Brier data",
+      "effort": "3 days"
+    },
+    "signal_source_expansion": {
+      "learning_gain": "MEDIUM",
+      "description": "Richer multi-source signals",
+      "dependencies": "IoS-002, IoS-006, IoS-016 operational",
+      "effort": "5 days"
+    },
+    "sentiment_scheduler": {
+      "learning_gain": "MEDIUM",
+      "description": "Systematic news context for decisions",
+      "dependencies": "Serper API",
+      "effort": "3 days"
+    }
+  },
+
+  "quick_wins_vs_architectural": {
+    "quick_wins": [
+      {
+        "gap": "Fix tag_event_proximity()",
+        "effort": "< 1 day",
+        "impact": "Unblocks event tagging"
+      },
+      {
+        "gap": "Fix daemon heartbeats",
+        "effort": "< 1 day",
+        "impact": "Clears WARNING alerts"
+      },
+      {
+        "gap": "Add recalibration drift trigger",
+        "effort": "1 day",
+        "impact": "Proactive monitoring"
+      }
+    ],
+    "architectural_changes": [
+      {
+        "gap": "Platt scaling calibration",
+        "effort": "1 week",
+        "impact": "Brier improvement"
+      },
+      {
+        "gap": "Expand IoS-013 to 6 sources",
+        "effort": "1 week",
+        "impact": "Full signal integration"
+      },
+      {
+        "gap": "Real-time dashboard streaming",
+        "effort": "1 week",
+        "impact": "CEO visibility"
+      }
+    ]
+  },
+
+  "signal_to_decision_determinism": {
+    "current_flow": "Signal → confidence → threshold check → BLOCKED (all < 0.45)",
+    "missing_for_determinism": [
+      "Event proximity context (tag_event_proximity broken)",
+      "Macro regime inputs (IoS-006 not in aggregator)",
+      "Calibrated confidence (Platt scaling missing)",
+      "LVI feedback (learning loop blocked)"
+    ],
+    "deterministic_target": "Signal → calibrated confidence → regime-gated strategy → G4 execution"
+  },
+
+  "recommended_priority_order": [
+    "1. Fix tag_event_proximity() [Quick Win]",
+    "2. Backfill hypothesis_ledger [Critical for LVI]",
+    "3. Fix daemon heartbeats [Quick Win]",
+    "4. Add recalibration triggers [Quick Win]",
+    "5. Implement Platt scaling [Brier improvement]",
+    "6. Expand IoS-013 sources [Full integration]",
+    "7. Create sentiment scheduler [News context]",
+    "8. Dashboard streaming [CEO visibility]"
+  ]
+}

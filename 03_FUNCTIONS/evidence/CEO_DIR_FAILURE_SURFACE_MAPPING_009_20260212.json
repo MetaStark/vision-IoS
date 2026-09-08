@@ -1,0 +1,101 @@
+{
+  "directive": "CEO-DIR-2026-FAILURE-SURFACE-MAPPING-009",
+  "agent": "STIG (EC-003)",
+  "analyzed_at": "2026-02-12T14:00:00Z",
+  "status": "COMPLETE",
+  "phase_a": {
+    "description": "Distribution analysis of deflated_sharpe from promotion_gate_audit (last 60 min)",
+    "n": 150,
+    "histogram": [
+      {
+        "bucket": "< -5",
+        "count": 56,
+        "pct": 37.33
+      },
+      {
+        "bucket": "-5 to -1",
+        "count": 40,
+        "pct": 26.67
+      },
+      {
+        "bucket": "-1 to 0",
+        "count": 0,
+        "pct": 0.00
+      },
+      {
+        "bucket": "0 to 0.5",
+        "count": 22,
+        "pct": 14.67
+      },
+      {
+        "bucket": "0.5 to 1.0",
+        "count": 0,
+        "pct": 0.00
+      },
+      {
+        "bucket": "1.0+",
+        "count": 32,
+        "pct": 21.33
+      }
+    ],
+    "statistics": {
+      "n": 150,
+      "min": -36.1470,
+      "max": 3.3354,
+      "avg": -6.7219,
+      "stddev": 9.4234,
+      "p50": -4.2603,
+      "p75": 0.0000
+    },
+    "proportion_above_thresholds": {
+      "total_n": 150,
+      "> 0": {
+        "count": 32,
+        "pct": 21.33
+      },
+      "> 0.5": {
+        "count": 32,
+        "pct": 21.33
+      },
+      "> 1.0": {
+        "count": 32,
+        "pct": 21.33
+      }
+    }
+  },
+  "phase_b": {
+    "description": "Diagnosis of possible scenarios",
+    "diagnosis": "SCENARIO_3 - Exploration problem, not threshold problem",
+    "reasoning": {
+      "key_findings": [
+        "64% of experiments have deflated_sharpe < -1 (deeply negative)",
+        "21.3% of experiments have deflated_sharpe > 1.0 (exceeding threshold)",
+        "Median is -4.26, p75 is 0.00 - polarized distribution",
+        "No experiments in '0 to 0.5' bucket - gap in distribution"
+      ],
+      "scenario_analysis": {
+        "scenario_1": {
+          "name": "Alt er dypt negativt (< -1)",
+          "evidence": "64% av eksperimenter",
+          "conclusion": "RELEVANT - deler er betydelig andel av distribusjonen"
+        },
+        "scenario_2": {
+          "name": "Mange ligger mellom 0.5 og 1.0",
+          "evidence": "0 eksperimenter i dette intervallet",
+          "conclusion": "IKKE RELEVANT - ingen data i dette intervallet"
+        },
+        "scenario_3": {
+          "name": "Noen >1.0, men sjeldne",
+          "evidence": "32 eksperimenter (>1.0), 21.3% av totalen",
+          "conclusion": "RELEVANT - exploration-problem, ikke terskel-problem"
+        }
+      },
+      "final_diagnosis": {
+        "primary_issue": "Exploration problem, not threshold problem",
+        "details": "21.3% of experiments exceed threshold (1.0+) but this represents rare 'outliers' in a deeply negative distribution. The median (-4.26) and p75 (0.00) show a polarized distribution where some experiments are clearly superior while most are failing.",
+        "threshold_assessment": "1.0 threshold is NOT too aggressive. The problem is model quality, not gate strictness.",
+        "recommendation": "Ikke senk terskelen. Fokuser på å forstå hvorfor 21.3% klarer seg og hvorfor 64% er dypt negative."
+      }
+    }
+  }
+}

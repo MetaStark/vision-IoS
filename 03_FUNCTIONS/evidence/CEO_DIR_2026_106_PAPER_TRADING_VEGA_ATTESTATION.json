@@ -1,0 +1,332 @@
+{
+  "evidence_id": "VEGA-ATT-2026-106-PAPER-TRADING",
+  "directive_id": "CEO-DIR-2026-106",
+  "classification": "VEGA_ATTESTATION",
+  "attestation_type": "PAPER_TRADING_HISTORY_COMPLETE",
+  "generated_at": "2026-01-19T22:30:00Z",
+  "generated_by": "STIG",
+  "vega_attestation_status": "PENDING_VEGA_SIGNATURE",
+
+  "_CEO_MANDATE": "Hver handel i paper mode skal eksplisitt nevnes i daily report og det skal finnes komplett VEGA attestert historikk pa at tallene er korrekte.",
+
+  "executive_summary": {
+    "total_paper_positions": 10,
+    "all_positions_status": "CANCELLED",
+    "cancellation_reason": "P0_DIRECTION_LOGIC_FIX - Inverted direction bug detected and corrected",
+    "p0_fix_directive": "CEO-DIR-2026-106 P0",
+    "p0_fix_timestamp": "2026-01-19T21:10:00Z",
+    "alpaca_orders_cancelled": 30,
+    "db_positions_updated": 10,
+    "overlay_records_corrected": 39
+  },
+
+  "p0_bug_summary": {
+    "bug_title": "Inverted Direction Logic Error",
+    "severity": "CRITICAL",
+    "impact": "All 10 paper trades executed in WRONG direction (SHORT instead of LONG)",
+    "root_cause": {
+      "file": "03_FUNCTIONS/ios012b_shadow_signal_daemon.py",
+      "lines": "177-179",
+      "faulty_code": "source_direction = 'UP' if row['forecast_probability'] > 0.5 else 'DOWN'",
+      "explanation": "Code interpreted forecast_probability > 0.5 as 'UP' prediction. But forecast_probability is confidence for REGIME, not price direction. STRESS regime predicts DOWNSIDE regardless of probability value."
+    },
+    "fix_applied": {
+      "correct_logic": "if regime == 'STRESS': source_direction = 'DOWN', inverted_direction = 'UP'",
+      "fix_timestamp": "2026-01-19T21:10:00Z",
+      "evidence_file": "03_FUNCTIONS/evidence/CEO_DIR_2026_106_P0_DIRECTION_LOGIC_FIX.json"
+    }
+  },
+
+  "paper_positions_explicit_detail": [
+    {
+      "position_id": "d2b479fc-ba25-4195-8403-f946a76c1ff9",
+      "ticker": "PGR",
+      "entry_timestamp": "2026-01-19T20:03:03.507Z",
+      "entry_price": 202.37,
+      "shares": 12,
+      "position_size_usd": 2428.44,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "b0c32046-0bf2-4111-a88d-deca1e79efe5",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9999,
+      "overlay_evidence_hash": "sha256:9a116d2450c20d5c93b085fc84de1ccb"
+    },
+    {
+      "position_id": "db542b02-1dd4-4e69-9ed9-1c6e5bf907f1",
+      "ticker": "PGR",
+      "entry_timestamp": "2026-01-19T20:03:05.553Z",
+      "entry_price": 202.37,
+      "shares": 12,
+      "position_size_usd": 2428.44,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "8b797393-9ba0-4c66-b01b-f77e42c28967",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9999,
+      "overlay_evidence_hash": "sha256:00dce5e75a1c177d7ded8dfa216adfcc"
+    },
+    {
+      "position_id": "e2ecd8c8-8bba-43b3-afeb-5edbe2a102bc",
+      "ticker": "GIS",
+      "entry_timestamp": "2026-01-19T20:03:06.408Z",
+      "entry_price": 44.51,
+      "shares": 56,
+      "position_size_usd": 2492.56,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "285c45c1-a14c-48a0-8438-4e886afd0ee2",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9998,
+      "overlay_evidence_hash": "sha256:cf73033e0e804f71174243700cd43220"
+    },
+    {
+      "position_id": "94e6e13b-a47c-4c67-a23e-17466fd9dfa8",
+      "ticker": "GIS",
+      "entry_timestamp": "2026-01-19T20:03:07.374Z",
+      "entry_price": 44.51,
+      "shares": 56,
+      "position_size_usd": 2492.56,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "c2ef015e-8f6a-4773-8b54-d77525fa5c10",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9998,
+      "overlay_evidence_hash": "sha256:dd5059897f861a39be1235a13e04163e"
+    },
+    {
+      "position_id": "76b54f95-eab0-4342-b6c1-0950eb4351c5",
+      "ticker": "AIG",
+      "entry_timestamp": "2026-01-19T20:03:08.246Z",
+      "entry_price": 73.86,
+      "shares": 33,
+      "position_size_usd": 2437.38,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "f249b15d-6d35-44ef-8683-8aa3f0d1e1d0",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9998,
+      "overlay_evidence_hash": "sha256:f1f50b0f1d293dae9592d41b204f748c"
+    },
+    {
+      "position_id": "770d19c3-2241-4093-a502-6ad0e7cf7864",
+      "ticker": "ADSK",
+      "entry_timestamp": "2026-01-19T20:03:09.085Z",
+      "entry_price": 262.31,
+      "shares": 9,
+      "position_size_usd": 2360.79,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "f515eb8e-672b-431d-8ec1-16f744eccbb4",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9997,
+      "overlay_evidence_hash": "sha256:3c4a0848a5d2f1663eb9c8de90ce98ed"
+    },
+    {
+      "position_id": "143b9fe3-b496-4d68-8743-838231e0cbc3",
+      "ticker": "AIG",
+      "entry_timestamp": "2026-01-19T20:03:09.901Z",
+      "entry_price": 73.86,
+      "shares": 33,
+      "position_size_usd": 2437.38,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "abd5a3ba-b7ae-4ac4-91eb-63d56541fb52",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9997,
+      "overlay_evidence_hash": "sha256:99e2682384d697b744a192cc7d853de3"
+    },
+    {
+      "position_id": "8bd1c9a1-69d6-4718-8c43-41431ed24cfc",
+      "ticker": "GIS",
+      "entry_timestamp": "2026-01-19T20:03:10.736Z",
+      "entry_price": 44.51,
+      "shares": 56,
+      "position_size_usd": 2492.56,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "912a7997-7acb-424c-a1d2-bb8c9372dcf0",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9997,
+      "overlay_evidence_hash": "sha256:9494331df4d93fe9f935c70155dfbb9e"
+    },
+    {
+      "position_id": "85796f69-d4ed-4f0c-b4c5-04397a215a50",
+      "ticker": "ADSK",
+      "entry_timestamp": "2026-01-19T20:03:11.583Z",
+      "entry_price": 262.31,
+      "shares": 9,
+      "position_size_usd": 2360.79,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "3d6d68c7-79c3-4476-b1ea-4eb14bc782b5",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9997,
+      "overlay_evidence_hash": "sha256:aab070c8113fa5031d6ec0eaedf5de4e"
+    },
+    {
+      "position_id": "aad66e94-d420-46ee-a55c-fdb91abd910e",
+      "ticker": "AIG",
+      "entry_timestamp": "2026-01-19T20:03:12.581Z",
+      "entry_price": 73.86,
+      "shares": 33,
+      "position_size_usd": 2437.38,
+      "direction_original_wrong": "DOWN",
+      "direction_corrected": "UP",
+      "status": "CANCELLED",
+      "exit_reason": "P0_DIRECTION_LOGIC_FIX - Orders cancelled due to inverted direction bug",
+      "source_overlay_id": "b13b0979-94f8-4ffd-abb3-f2774c99a1d6",
+      "source_regime": "STRESS",
+      "source_confidence": 0.9997,
+      "overlay_evidence_hash": "sha256:d72588adb5501583681d521da339a02e"
+    }
+  ],
+
+  "overlay_shadow_signals_day19": {
+    "total_captured": 40,
+    "source_regime": "STRESS",
+    "confidence_range": {"min": 0.9936, "max": 0.9999},
+    "all_signals_corrected": true,
+    "direction_after_fix": {
+      "source_direction": "DOWN",
+      "inverted_direction": "UP"
+    },
+    "unique_tickers": ["ADBE", "ADSK", "AIG", "GIS", "HNR1.DE", "INTU", "NOW", "PGR"]
+  },
+
+  "signal_transformation_verification": {
+    "_ceo_request": "Bekreft at vi transformerer signalene korrekt iht. entry position, TP/SL og adaptiv TP/SL",
+
+    "entry_position_logic": {
+      "status": "VERIFIED_CORRECT",
+      "source": "ios012b_shadow_signal_daemon.py:208-225",
+      "method": "Latest close price from fhq_market.prices WHERE canonical_id = ticker",
+      "position_sizing": "2.5% of NAV per position",
+      "direction_logic": {
+        "STRESS_regime": "source_direction='DOWN' -> inverted_direction='UP' -> BUY order",
+        "other_regimes": "probability-based direction calculation"
+      }
+    },
+
+    "tp_sl_rules": {
+      "status": "DEFINED_BUT_OPTIONS_ORIENTED",
+      "source_table": "fhq_alpha.inversion_exit_rules",
+      "rules": [
+        {
+          "rule_name": "TAKE_PROFIT_50PCT",
+          "rule_type": "TAKE_PROFIT",
+          "trigger": "current_pnl >= 0.50 * max_profit",
+          "action": "CLOSE_POSITION",
+          "applicability": "SPOT_COMPATIBLE"
+        },
+        {
+          "rule_name": "STOP_LOSS_75PCT",
+          "rule_type": "STOP_LOSS",
+          "trigger": "current_value <= 0.25 * entry_premium",
+          "action": "CLOSE_POSITION",
+          "applicability": "OPTIONS_SPECIFIC - needs SPOT adaptation"
+        },
+        {
+          "rule_name": "TIME_DECAY_5DTE",
+          "rule_type": "TIME_DECAY",
+          "trigger": "days_to_expiration <= 5",
+          "action": "CLOSE_POSITION",
+          "applicability": "OPTIONS_ONLY - not applicable to SPOT"
+        },
+        {
+          "rule_name": "REGIME_EXIT",
+          "rule_type": "REGIME_CHANGE",
+          "trigger": "current_regime != STRESS",
+          "action": "CLOSE_POSITION",
+          "applicability": "SPOT_COMPATIBLE"
+        }
+      ],
+      "gap_identified": "Stop loss rule uses OPTIONS semantics (entry_premium). Needs SPOT adaptation."
+    },
+
+    "adaptive_tp_sl": {
+      "status": "NOT_IMPLEMENTED",
+      "gap": "No adaptive TP/SL logic exists for continued signal delivery over time",
+      "recommendation": "Implement signal accumulation logic that adjusts TP/SL based on repeated STRESS signals",
+      "proposed_implementation": {
+        "signal_accumulation": "Track consecutive STRESS signals per ticker",
+        "tp_adjustment": "Increase TP target by 5% per additional signal",
+        "sl_adjustment": "Tighten SL by 2% per additional signal (reduce downside risk)",
+        "max_accumulation": "5 signals (cap adjustments)"
+      }
+    }
+  },
+
+  "database_verification_queries": {
+    "paper_positions": {
+      "query": "SELECT position_id, ticker, direction, entry_price, shares, status, exit_reason FROM fhq_alpha.ios012b_paper_positions ORDER BY entry_timestamp",
+      "result_count": 10,
+      "all_cancelled": true,
+      "all_direction_up": true
+    },
+    "overlay_shadow": {
+      "query": "SELECT overlay_id, ticker, source_regime, source_direction, inverted_direction FROM fhq_alpha.inversion_overlay_shadow WHERE created_at::date = '2026-01-19'",
+      "result_count": 40,
+      "all_stress_regime": true,
+      "all_source_direction_down": true,
+      "all_inverted_direction_up": true
+    }
+  },
+
+  "governance_log_entry": {
+    "action_type": "P0_DIRECTION_LOGIC_FIX",
+    "action_target": "IoS-012-B",
+    "action_target_type": "SYNTHETIC_INVERSION_MODULE",
+    "initiated_by": "STIG",
+    "decision": "EMERGENCY_FIX_APPLIED",
+    "decision_rationale": "CEO-DIR-2026-106 P0: Fixed inverted direction logic. STRESS regime predicts DOWN, inverted should be UP (BUY). Fixed 39 overlay records and 10 paper positions."
+  },
+
+  "lessons_learned": [
+    "forecast_probability represents REGIME confidence, not PRICE direction",
+    "STRESS regime = DOWNSIDE prediction, regardless of probability value",
+    "Always validate signal semantics before executing trades",
+    "Paper trading caught this bug before live capital was at risk"
+  ],
+
+  "vega_attestation_request": {
+    "attestation_scope": [
+      "All 10 paper positions correctly cancelled",
+      "Direction logic fix correctly applied (STRESS -> DOWN -> UP)",
+      "All overlay shadow records corrected",
+      "Database state consistent with evidence file",
+      "Entry position transformation logic verified",
+      "TP/SL rules documented (with OPTIONS gap noted)",
+      "Adaptive TP/SL gap identified for future implementation"
+    ],
+    "attestation_method": "Database query verification + code review",
+    "attestation_deadline": "2026-01-20T12:00:00Z"
+  },
+
+  "evidence_chain": {
+    "p0_fix_evidence": "03_FUNCTIONS/evidence/CEO_DIR_2026_106_P0_DIRECTION_LOGIC_FIX.json",
+    "option_c_activation": "03_FUNCTIONS/evidence/CEO_DIR_2026_106_OPTION_C_PAPER_TRADING_ACTIVATION.json",
+    "emergency_fix_script": "03_FUNCTIONS/ios012b_emergency_direction_fix.py",
+    "daemon_fix": "03_FUNCTIONS/ios012b_shadow_signal_daemon.py (lines 177-187)"
+  },
+
+  "evidence_hash": "sha256:pending_vega_computation"
+}

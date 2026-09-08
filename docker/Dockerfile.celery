@@ -1,0 +1,39 @@
+# Celery Worker Dockerfile
+# CEO-DIR-2026-COGNITIVE-ENGINES-001
+# Date: 2026-01-04
+# Author: STIG (CTO)
+#
+# Purpose: Build container for Celery workers (fast + research queues)
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+COPY requirements-cognitive.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-cognitive.txt || true
+
+# Copy application code
+COPY 03_FUNCTIONS/ /app/03_FUNCTIONS/
+COPY celery_tasks/ /app/celery_tasks/
+
+# Set Python path
+ENV PYTHONPATH=/app:/app/03_FUNCTIONS
+
+# Create non-root user for security
+RUN useradd -m celeryworker
+USER celeryworker
+
+# Default command (overridden in docker-compose)
+CMD ["celery", "-A", "tasks", "worker", "--loglevel=info"]

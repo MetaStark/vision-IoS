@@ -1,0 +1,114 @@
+{
+  "directive_ref": "CEO-DIR-2026-011",
+  "goal_id": "META-GOAL-SUPPRESSION-REGRET-20260107",
+  "classification": "STRATEGIC-EPISTEMIC (CLASS A)",
+  "scope": "SHADOW/PAPER",
+  "signatory": "CEO",
+
+  "timestamp_issued_utc": "2026-01-07T03:20:00.000000Z",
+  "measurement_window_start_utc": "2026-01-07T02:02:27.054386Z",
+  "measurement_window_end_utc": "2026-01-07T08:02:27.054386Z",
+
+  "meta_goal": "Quantify the cost of hesitation",
+
+  "classification_schema": {
+    "WISDOM": "Hysteresis prevented a loss. Market moved AGAINST suppressed belief.",
+    "REGRET": "Hysteresis cost alpha. Market moved WITH suppressed belief.",
+    "NEUTRAL": "Market movement within noise band. No actionable signal.",
+    "INSUFFICIENT_MATURITY": "Cannot classify. Suppression duration too short or outcome data unavailable."
+  },
+
+  "outcome_rule": {
+    "selected": "OPTION_B_REGIME_OUTCOME",
+    "definition": "Compare suppressed belief regime vs realized regime from sovereign_regime_state_v4 at window end (T+6h).",
+    "logic": {
+      "REGRET": "realized_regime == suppressed_belief_regime AND policy_held_different_regime",
+      "WISDOM": "realized_regime == policy_regime AND suppressed_belief_was_wrong",
+      "NEUTRAL": "realized_regime unchanged from suppression_start OR confidence_delta < noise_band",
+      "INSUFFICIENT_MATURITY": "suppression_duration < 2 hours OR no realized_regime available"
+    },
+    "rationale": "Regime outcome aligns with system architecture. We track regime states, not raw returns. This ensures classification is verifiable against canonical data sources."
+  },
+
+  "noise_band_definition": {
+    "confidence_threshold": 0.10,
+    "definition": "A regime transition is considered 'signal' only if belief_confidence delta exceeds 10%. Movement below this threshold is classified NEUTRAL.",
+    "rationale": "10% confidence delta represents meaningful regime conviction change. Below this, fluctuations are indistinguishable from model noise based on historical calibration data."
+  },
+
+  "threshold_justification": {
+    "net_wisdom_thresholds": {
+      "maintain_hysteresis": "> 0.30",
+      "reduce_threshold": "< -0.30",
+      "insufficient_signal": "[-0.30, 0.30]"
+    },
+    "provisional_notice": "Thresholds are provisional for SHADOW observation and will be recalibrated after 30 days of reconciled outcomes.",
+    "calibration_method": "Post-window analysis will compute actual regret/wisdom ratio. If sample size < 20 classifiable events, thresholds remain provisional."
+  },
+
+  "assets_in_scope": {
+    "selection_rule": "All assets with is_suppressed = TRUE in fhq_perception.sovereign_policy_state during measurement window",
+    "initial_count": 117,
+    "high_confidence_subset": {
+      "rule": "belief_confidence > 0.80",
+      "count": 10,
+      "assets": [
+        "RNO.PA", "TRV", "SPY", "VTI", "RKT.L",
+        "IWM", "F", "SAP.DE", "PLD", "MKR-USD"
+      ]
+    }
+  },
+
+  "success_criteria": [
+    "Deliver suppression regret report at T+6h",
+    "All classifications backed by replayable evidence",
+    "Each classification linked to source belief_id and policy_id",
+    "Hash-chain integrity maintained throughout window",
+    "Zero policy changes during observation"
+  ],
+
+  "non_negotiables": [
+    "NO policy changes",
+    "NO hysteresis parameter tuning",
+    "NO adaptive feedback activation",
+    "NO manual intervention",
+    "NO forced classifications (INSUFFICIENT_MATURITY is valid)"
+  ],
+
+  "deliverable_at_window_end": {
+    "report_name": "SUPPRESSION_REGRET_REPORT_20260107",
+    "required_fields": [
+      "total_suppressions_observed",
+      "classified_wisdom_count",
+      "classified_regret_count",
+      "classified_neutral_count",
+      "classified_insufficient_maturity_count",
+      "estimated_alpha_foregone_usd",
+      "estimated_losses_avoided_usd",
+      "net_wisdom_score",
+      "recommendation",
+      "evidence_file_paths",
+      "verification_hash"
+    ]
+  },
+
+  "freedom_equation_impact": {
+    "if_regret_dominant": "Hysteresis too conservative → reduce confirmation threshold → capture more alpha → increase precision",
+    "if_wisdom_dominant": "Hysteresis protective → maintain current thresholds → trust the wait → preserve precision",
+    "time_to_autonomy": "This measurement directly informs whether confirmation count (currently 5) should be adjusted"
+  },
+
+  "audit_compliance": {
+    "replayable": true,
+    "hash_linked": true,
+    "court_proof": true,
+    "source_tables": [
+      "fhq_perception.model_belief_state",
+      "fhq_perception.sovereign_policy_state",
+      "fhq_perception.sovereign_regime_state_v4",
+      "fhq_governance.epistemic_suppression_ledger"
+    ]
+  },
+
+  "verification_hash": "pending_calculation_at_window_end"
+}

@@ -1,0 +1,78 @@
+{
+  "evidence_type": "P0P1_REGIME_ONTOLOGY_BASELINE",
+  "timestamp": "2026-01-15T19:30:00Z",
+  "directive": "CEO-DIR Regime Ontology Integrity Remediation",
+  "captured_by": "STIG",
+  "purpose": "Pre-migration baseline for P0/P1 STRESS Regime Repair",
+  "baseline_snapshots": {
+    "regime_scalar_config": {
+      "total_regimes": 11,
+      "note": "VOLATILE_NON_DIRECTIONAL missing, STRESS not in config",
+      "data": [
+        {"regime_label": "STRONG_BULL", "scalar_value": 1.0000},
+        {"regime_label": "BULL", "scalar_value": 0.8000},
+        {"regime_label": "RANGE_UP", "scalar_value": 0.6000},
+        {"regime_label": "NEUTRAL", "scalar_value": 0.5000},
+        {"regime_label": "MICRO_BULL", "scalar_value": 0.4000},
+        {"regime_label": "RANGE_DOWN", "scalar_value": 0.3000},
+        {"regime_label": "PARABOLIC", "scalar_value": 0.2500},
+        {"regime_label": "CHOPPY", "scalar_value": 0.2000},
+        {"regime_label": "BEAR", "scalar_value": 0.0000},
+        {"regime_label": "STRONG_BEAR", "scalar_value": 0.0000},
+        {"regime_label": "BROKEN", "scalar_value": 0.0000}
+      ]
+    },
+    "regime_v2_to_v4_mapping": {
+      "total_mappings": 9,
+      "stress_mappings": 2,
+      "note": "BROKEN and VOLATILE_NON_DIRECTIONAL incorrectly map to STRESS",
+      "data": [
+        {"v2_regime": "BEAR", "v4_regime": "BEAR", "mapping_confidence": 1.00},
+        {"v2_regime": "BROKEN", "v4_regime": "STRESS", "mapping_confidence": 0.70},
+        {"v2_regime": "BULL", "v4_regime": "BULL", "mapping_confidence": 1.00},
+        {"v2_regime": "COMPRESSION", "v4_regime": "NEUTRAL", "mapping_confidence": 0.80},
+        {"v2_regime": "NEUTRAL", "v4_regime": "NEUTRAL", "mapping_confidence": 1.00},
+        {"v2_regime": "STRONG_BEAR", "v4_regime": "BEAR", "mapping_confidence": 1.00},
+        {"v2_regime": "STRONG_BULL", "v4_regime": "BULL", "mapping_confidence": 1.00},
+        {"v2_regime": "UNTRUSTED", "v4_regime": "NEUTRAL", "mapping_confidence": 0.50},
+        {"v2_regime": "VOLATILE_NON_DIRECTIONAL", "v4_regime": "STRESS", "mapping_confidence": 0.90}
+      ]
+    },
+    "stress_calibration_gates": {
+      "total_gates": 0,
+      "note": "No STRESS gates exist - will be added by migration 249"
+    },
+    "brier_score_ledger_stress": {
+      "count": 75,
+      "avg_squared_error": 0.7848,
+      "avg_forecast_probability": 0.8721,
+      "note": "High error (0.7848) + High confidence (0.8721) = systematic overconfidence"
+    }
+  },
+  "problem_summary": {
+    "root_cause": "STRESS forecast uses fragility/VIX (macro), outcome uses vol_ratio (price)",
+    "symptom": "0% hit rate on 75 predictions despite 87% average confidence",
+    "affected_systems": ["calibration", "execution sizing", "golden needles"]
+  },
+  "remediation_plan": {
+    "P0": {
+      "migration": 249,
+      "changes": [
+        "Add STRESS calibration gates (REGIME + REGIME_CLASSIFICATION)",
+        "Add eligible_for_calibration column to brier_score_ledger",
+        "Mark existing STRESS as ineligible for calibration",
+        "Hardcode STRESS cap in ios003 (runtime enforcement)"
+      ]
+    },
+    "P1": {
+      "migration": 250,
+      "changes": [
+        "Extend regime_v2_to_v4_mapping with ontology columns",
+        "Update BROKEN to identity mapping",
+        "Update VOLATILE_NON_DIRECTIONAL to identity mapping",
+        "Add VOLATILE_NON_DIRECTIONAL to regime_scalar_config (0.25)",
+        "Populate definitions and downstream contracts"
+      ]
+    }
+  }
+}

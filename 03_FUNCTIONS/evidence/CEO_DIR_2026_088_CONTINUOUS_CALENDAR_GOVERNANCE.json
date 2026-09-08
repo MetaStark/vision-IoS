@@ -1,0 +1,119 @@
+{
+  "directive": "CEO-DIR-2026-088",
+  "title": "CONTINUOUS TRADING CALENDAR GOVERNANCE (EQUITY)",
+  "authority": "CEO",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T16:30:00Z",
+  "status": "COMPLETE",
+
+  "objective": "Ensure FjordHQ always knows what will happen before it happens",
+
+  "canonical_principle": {
+    "statement": "The trading calendar must be forward-complete, continuously maintained, and audit-verifiable.",
+    "status": "LOCKED"
+  },
+
+  "target_condition": {
+    "forward_coverage_minimum": "24 months",
+    "content": ["trading days", "weekends", "official exchange holidays", "early closes"],
+    "properties": ["queryable", "deterministic", "reproducible", "governed"],
+    "status": "ACHIEVED"
+  },
+
+  "source_of_truth": {
+    "primary": "exchange_calendars library (Python)",
+    "exchange_code": "XNYS",
+    "exchange_name": "New York Stock Exchange",
+    "coverage_includes": "NYSE and NASDAQ",
+    "source_url": "https://github.com/gerrymanoim/exchange_calendars",
+    "stability": "Industry-standard, well-maintained",
+    "projection_beyond_library": "Standard holiday patterns (MLK, Presidents Day, Good Friday, etc.)"
+  },
+
+  "continuous_update_mechanism": {
+    "daemon": "trading_calendar_governance_daemon.py",
+    "location": "03_FUNCTIONS/",
+    "cadence": "Monthly (automatic)",
+    "idempotency": "Only inserts dates that don't exist, never modifies historical data",
+    "governance_logging": "fhq_governance.governance_actions_log",
+    "failure_mode": "Fails loudly with clear error messages"
+  },
+
+  "current_coverage": {
+    "calendar_id": "US_EQUITY",
+    "coverage_start": "2025-01-01",
+    "coverage_end": "2028-01-08",
+    "forward_months": 24.0,
+    "total_days": 1103,
+    "trading_days": 758,
+    "holidays": 32,
+    "compliance": "MEETS_24_MONTH_REQUIREMENT"
+  },
+
+  "ios_016_integration": {
+    "analysis": "IoS-016 Economic Calendar focuses on macro EVENTS (FOMC, CPI, etc.) in fhq_calendar schema",
+    "trading_calendar": "CEO-DIR-2026-086/088 establishes TRADING DAYS in fhq_meta.calendar_days",
+    "relationship": "COMPLEMENTARY - no duplication",
+    "data_source_for_ios_016": "IoS-016 may consume fhq_meta.calendar_days for trading-day-aware logic",
+    "shadow_calendar": "PROHIBITED - all forward-looking logic uses canonical trading calendar"
+  },
+
+  "board_readable_indicator": {
+    "location": "DAILY_REPORT section_25_infrastructure_readiness",
+    "format": "US_EQUITY calendar valid through: YYYY-MM-DD",
+    "current_value": "US_EQUITY calendar valid through: 2028-01-08",
+    "ceo_question": "Do we know what happens next week?",
+    "ceo_answer": "YES - Calendar is forward-complete 24+ months"
+  },
+
+  "functions_available": {
+    "is_trading_day": {
+      "signature": "fhq_meta.is_trading_day(date, calendar_id)",
+      "returns": "BOOLEAN",
+      "example": "SELECT fhq_meta.is_trading_day('2026-01-20', 'US_EQUITY') => true"
+    },
+    "trading_days_forward": {
+      "signature": "fhq_meta.trading_days_forward(date, n, calendar_id)",
+      "returns": "DATE",
+      "example": "SELECT fhq_meta.trading_days_forward('2026-01-16', 3, 'US_EQUITY') => 2026-01-22"
+    },
+    "roi_horizon_date": {
+      "signature": "fhq_research.roi_horizon_date(timestamp, n, calendar_id)",
+      "returns": "DATE",
+      "purpose": "ROI outcome capture uses trading days, not calendar days"
+    }
+  },
+
+  "success_criteria_verification": {
+    "calendar_auto_extension": {"status": "LIVE", "daemon": "trading_calendar_governance_daemon.py"},
+    "coverage_forward_complete": {"status": "ACHIEVED", "months": 24.0},
+    "roi_horizons_dependent": {"status": "YES", "function": "fhq_research.roi_horizon_date"},
+    "no_future_emergency_fixes": {"status": "DESIGNED_OUT", "continuous_maintenance": true}
+  },
+
+  "governance_actions": {
+    "governance_hash": "ea6cf098bcc4e8c4",
+    "logged_to": "fhq_governance.governance_actions_log",
+    "action_type": "CALENDAR_EXTENSION"
+  },
+
+  "artifacts": [
+    "03_FUNCTIONS/trading_calendar_governance_daemon.py",
+    "03_FUNCTIONS/populate_calendar_days.sql",
+    "04_DATABASE/MIGRATIONS/308_ceo_dir_2026_086_trading_calendar_canonicalization.sql",
+    "03_FUNCTIONS/evidence/CEO_CALENDAR_SEEDING_COMPLETE_20260118.json",
+    "03_FUNCTIONS/evidence/CEO_DIR_2026_088_CALENDAR_GOVERNANCE_20260118_162617.json"
+  ],
+
+  "mbb_standard": {
+    "principle": "Top-tier institutions do not react to the calendar - they operate ahead of it",
+    "implementation": "Time is now treated as infrastructure",
+    "institutional_readiness": "COMPLETE"
+  },
+
+  "closing_statement": {
+    "signal_finds_truth": true,
+    "ledger_measures_truth": true,
+    "calendar_prepares_truth_for_execution": true
+  }
+}

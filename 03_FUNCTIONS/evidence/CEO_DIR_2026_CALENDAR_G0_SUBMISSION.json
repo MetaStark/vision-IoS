@@ -1,0 +1,196 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_G0_SUBMISSION",
+  "timestamp": "2026-01-16T21:00:00Z",
+  "directive": "CEO Directive 2026-01-16C: Global Economic Calendar Integration G0 Submission",
+  "document_version": "3.0 MBB++",
+  "classification": "GOVERNANCE-CRITICAL",
+  "executed_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "status": "G0_SUBMITTED",
+
+  "ceo_approval": {
+    "phase": "Phase 1 Foundation",
+    "status": "APPROVED",
+    "approval_date": "2026-01-16"
+  },
+
+  "mbb_refinements_incorporated": {
+    "total_refinements": 9,
+    "sharpening_points": 3,
+    "refinements": [
+      {"id": 1, "description": "ROI as ex-ante estimates with validation plan + stop-loss", "status": "INCORPORATED"},
+      {"id": 2, "description": "ADR-008 status clarified (CLOSED for UMA, OPEN for calendar pipeline)", "status": "INCORPORATED"},
+      {"id": 3, "description": "Licensing/TOS evidencing for all providers", "status": "INCORPORATED"},
+      {"id": 4, "description": "consensus_estimate/actual_value optional per event-type", "status": "INCORPORATED"},
+      {"id": 5, "description": "time_semantics + time_precision fields added", "status": "INCORPORATED"},
+      {"id": 6, "description": "Leakage detection windows governed by impact_rank", "status": "INCORPORATED"},
+      {"id": 7, "description": "Ghost event triage (coverage_gap, timestamp_defect, mapping_defect)", "status": "INCORPORATED"},
+      {"id": 8, "description": "Source reliability per domain (macro/equity/crypto/cross-asset)", "status": "INCORPORATED"},
+      {"id": 9, "description": "Scope firewall: Phase 1 ships minimal calendar in 14 days", "status": "INCORPORATED"}
+    ],
+    "sharpening": [
+      {"id": "S1", "description": "Surprise-score normalization per data type (bps for rates, % for CPI)", "status": "INCORPORATED"},
+      {"id": "S2", "description": "CFAO 48h Shadow Mode pre-validation before production", "status": "INCORPORATED"},
+      {"id": "S3", "description": "Persistent asset-specific Brier degradation alerts (AMBER/RED/CRITICAL)", "status": "INCORPORATED"}
+    ]
+  },
+
+  "adr_compliance_summary": {
+    "total_adrs_verified": 16,
+    "status_by_adr": [
+      {"adr": "ADR-001", "title": "System Charter", "status": "AMENDMENT_NEEDED", "note": "CEIO/LINE ownership, CEO universe expansion"},
+      {"adr": "ADR-002", "title": "Audit Charter", "status": "IMPLEMENTATION_REQUIRED", "note": "Hash-chain logging, TOS/license evidencing"},
+      {"adr": "ADR-003", "title": "Institutional Standards", "status": "SCHEMA_DESIGN", "note": "BCBS-239, ISO-8000, metadata schema"},
+      {"adr": "ADR-004", "title": "Change Gates G0-G4", "status": "PROCESS_REQUIRED", "note": "Full gate cycle mandatory"},
+      {"adr": "ADR-006", "title": "VEGA Governance", "status": "VEGA_SCRIPTS_REQUIRED", "note": "Daily/weekly integrity checks"},
+      {"adr": "ADR-007", "title": "Orchestrator Architecture", "status": "INTEGRATION_NEEDED", "note": "API binding, LLM-tier routing"},
+      {"adr": "ADR-008", "title": "Key Management", "status": "PARTIAL", "note": "CLOSED for UMA, OPEN for calendar pipeline records"},
+      {"adr": "ADR-010", "title": "Reconciliation", "status": "RECONCILIATION_NEEDED", "note": "Discrepancy scoring < 0.10"},
+      {"adr": "ADR-011", "title": "Fortress Tests", "status": "TEST_SUITE_REQUIRED", "note": ">=80% coverage, QG-F1 through QG-F6"},
+      {"adr": "ADR-012", "title": "Economic Safety", "status": "LICENSING_NEEDED", "note": "API waterfall, TOS compliance"},
+      {"adr": "ADR-013", "title": "One-True-Source", "status": "CRITICAL_IMPLEMENTATION", "note": "Single canonical table, multi-vendor reconciliation"},
+      {"adr": "ADR-014", "title": "Sub-Executive Governance", "status": "ALIGNED", "note": "CEIO as operator"},
+      {"adr": "ADR-016", "title": "DEFCON", "status": "INHERENT", "note": "Calendar respects circuit breaker states"},
+      {"adr": "ADR-020", "title": "ACI", "status": "ALIGNED", "note": "Calendar feeds learning acceleration"}
+    ]
+  },
+
+  "ios_integration_matrix": [
+    {"ios": "IoS-001", "title": "Canonical Asset Registry", "relationship": "EXTENDS", "note": "Calendar metadata source"},
+    {"ios": "IoS-003", "title": "Regime Engine", "relationship": "CONSUMER", "note": "Event-aware regime tagging"},
+    {"ios": "IoS-005", "title": "Forecast Calibration", "relationship": "CONSUMER", "note": "Event-adjacent Brier analysis"},
+    {"ios": "IoS-010", "title": "Prediction Ledger", "relationship": "CONSUMER", "note": "Event tagging on forecasts"},
+    {"ios": "IoS-016", "title": "Economic Calendar (NEW)", "relationship": "PRIMARY", "note": "New institutional standard"}
+  ],
+
+  "ec_ownership": {
+    "LINE_EC005": {"role": "TEMPORAL_GOVERNANCE", "scope": "System clock, scheduling"},
+    "CDMO_EC007": {"role": "DATA_STEWARD", "scope": "Calendar metadata definitions"},
+    "CEIO_EC009": {"role": "OPERATOR", "scope": "External calendar ingestion"},
+    "STIG_EC003": {"role": "INFRASTRUCTURE", "scope": "Schema enforcement"},
+    "VEGA_EC001": {"role": "AUDITOR", "scope": "Lineage verification"}
+  },
+
+  "critical_path_decisions": {
+    "schema_location": {
+      "decision": "fhq_calendar",
+      "rationale": "New dedicated schema following fhq_macro pattern"
+    },
+    "ownership_model": {
+      "owner": "LINE",
+      "operator": "CEIO",
+      "rationale": "LINE owns temporal governance, CEIO operates ingestion"
+    },
+    "ios_registration": {
+      "decision": "IoS-016",
+      "rationale": "Clean separation, explicit authority"
+    }
+  },
+
+  "roi_projections_hypothesis": {
+    "disclaimer": "ALL ROI PROJECTIONS ARE EX-ANTE ESTIMATES (HYPOTHESES), NOT VALIDATED FACTS",
+    "validation_deadline": "Day 28 (14 days after Phase 1 deployment)",
+    "metrics": [
+      {"metric": "False-negative learning", "current": "20%", "hypothesis": "5%", "expected_roi": "75% reduction"},
+      {"metric": "Brier score accuracy", "current": "0.48", "hypothesis": "<=0.42", "expected_roi": "~15% improvement"},
+      {"metric": "Learning velocity (LVI)", "current": "Unknown", "hypothesis": "Measurable", "expected_roi": "New capability"},
+      {"metric": "Model drift detection", "current": "Days", "hypothesis": "Hours", "expected_roi": "Order of magnitude"},
+      {"metric": "Information leakage", "current": "Undetected", "hypothesis": "Flagged", "expected_roi": "Alpha protection"}
+    ],
+    "stop_loss_rules": [
+      {"condition": "Brier degradation Day 23 > Day 9 + 0.03", "action": "HALT Phase 2, investigate"},
+      {"condition": "LVI_adjusted computation errors > 5%", "action": "HALT UMA integration, fix formula"},
+      {"condition": "Ghost event false-positive rate > 30%", "action": "Disable ghost detection, recalibrate"},
+      {"condition": "Shadow Mode fails determinism test", "action": "DO NOT promote to production"},
+      {"condition": "Any stop-loss triggered", "action": "CEO review required before resumption"}
+    ]
+  },
+
+  "governance_gate_timeline": {
+    "scope_firewall": "Phase 1 must ship minimal calendar in 14 days",
+    "gates": [
+      {"gate": "G0", "days": "Day 1 (TODAY)", "status": "SUBMITTING", "deliverables": ["IoS-016 document", "Calendar schema proposal", "Ownership model documentation", "TOS/license compliance checklist"]},
+      {"gate": "G1", "days": "Days 2-5", "status": "PENDING", "deliverables": ["Schema DDL validated", "Timezone logic tested", "Source reconciliation logic reviewed", "Test coverage plan approved", "Leakage detection config seeded"]},
+      {"gate": "G2", "days": "Days 6-8", "status": "PENDING", "deliverables": ["VEGA reviews lineage model", "ADR compliance verified", "EC authority boundaries confirmed", "Strategic alignment validated by LARS", "TOS archive for all providers"]},
+      {"gate": "G3", "days": "Days 9-12", "status": "PENDING", "deliverables": ["QG-F1 through QG-F5 passed", "VEGA Ed25519 attestation", "Evidence bundle complete", "24h operational test (QG-F6)"]},
+      {"gate": "G3.5", "days": "Days 12-14", "status": "PENDING", "deliverables": ["CFAO 48h Shadow Mode", "Determinism verified", "CEO briefed on shadow results"]},
+      {"gate": "G4", "days": "Day 14", "status": "PENDING", "deliverables": ["CEO reviews evidence bundle", "Shadow Mode determinism confirmed", "Final approval signed", "Calendar activated in production"]}
+    ]
+  },
+
+  "schema_design": {
+    "schema_name": "fhq_calendar",
+    "tables": [
+      {"name": "event_type_registry", "purpose": "Canonical event types with impact_rank (1-5)"},
+      {"name": "calendar_events", "purpose": "Event instances with surprise_score"},
+      {"name": "event_asset_mapping", "purpose": "Event-to-asset relationships"},
+      {"name": "staging_events", "purpose": "Raw provider data"},
+      {"name": "calendar_provider_state", "purpose": "Provider reliability + quotas + licensing"},
+      {"name": "source_conflict_log", "purpose": "ADR-013 conflict resolution"},
+      {"name": "unexplained_volatility_flags", "purpose": "Ghost event detection with triage"},
+      {"name": "ingestion_batches", "purpose": "ADR-002 audit trail"},
+      {"name": "provider_tos_archive", "purpose": "TOS/License evidence storage"},
+      {"name": "leakage_detection_config", "purpose": "Governed leakage windows by impact_rank"},
+      {"name": "asset_brier_alerts", "purpose": "Asset-specific Brier degradation alerts (AMBER/RED/CRITICAL)"}
+    ],
+    "functions": [
+      {"name": "tag_event_proximity()", "purpose": "Automatic forecast tagging"},
+      {"name": "compute_lvi_adjusted()", "purpose": "CEO-visible learning metric"},
+      {"name": "classify_brier_degradation()", "purpose": "UMA learning classification"},
+      {"name": "detect_pre_event_drift()", "purpose": "Information leakage detection"},
+      {"name": "resolve_source_conflict()", "purpose": "ADR-013 highest-reliability-wins"},
+      {"name": "normalize_surprise_score()", "purpose": "Per data-type normalization"},
+      {"name": "triage_ghost_event()", "purpose": "Classify unexplained volatility cause"},
+      {"name": "verify_provider_tos()", "purpose": "Check TOS compliance before ingestion"},
+      {"name": "monitor_asset_brier_persistence()", "purpose": "Daily asset-specific Brier monitoring"}
+    ]
+  },
+
+  "lvi_formula": {
+    "formula": "LVI_adjusted = SUM(Forecast_success * (1 - Event_proximity * Impact_rank)) / T_total",
+    "components": {
+      "Forecast_success": "1 if forecast within confidence interval, 0 otherwise",
+      "Event_proximity": "0 (EVENT_NEUTRAL), 0.5 (POST_EVENT), 1.0 (EVENT_ADJACENT)",
+      "Impact_rank": "0.2 to 1.0 (normalized from 1-5)",
+      "T_total": "Total time period"
+    },
+    "purpose": "Give CEO a realistic view of learning velocity without noise from scheduled events"
+  },
+
+  "leakage_detection_defaults": {
+    "impact_rank_5": {"pre_event_hours": 4, "post_event_hours": 24, "examples": "FOMC, NFP"},
+    "impact_rank_4": {"pre_event_hours": 3, "post_event_hours": 12, "examples": "CPI, GDP"},
+    "impact_rank_3": {"pre_event_hours": 2, "post_event_hours": 6, "examples": "Earnings, PMI"},
+    "impact_rank_2": {"pre_event_hours": 1, "post_event_hours": 3, "examples": "Minor releases"},
+    "impact_rank_1": {"pre_event_hours": 0.5, "post_event_hours": 1, "examples": "Scheduled maintenance"}
+  },
+
+  "asset_brier_alert_thresholds": {
+    "AMBER": {"condition": "Asset Brier > Portfolio Brier + 0.10 for 3+ consecutive cycles", "action": "Flag for UMA review"},
+    "RED": {"condition": "Asset Brier > 0.60 for 5+ consecutive cycles", "action": "CEO alert + model quarantine"},
+    "CRITICAL": {"condition": "Asset Brier degradation correlates with EVENT_NEUTRAL windows", "action": "STRONG SIGNAL - investigate model edge"}
+  },
+
+  "files_to_create": {
+    "migrations": [
+      "04_DATABASE/MIGRATIONS/260_economic_calendar_foundation.sql"
+    ],
+    "ios_document": "02_IOS/IoS-016_Economic_Calendar_and_Temporal_Governance.md",
+    "evidence": "03_FUNCTIONS/evidence/CEO_DIR_2026_CALENDAR_G0_SUBMISSION.json"
+  },
+
+  "g0_submission_checklist": {
+    "ios_016_document": "CREATING",
+    "calendar_schema_proposal": "CREATING",
+    "ownership_model_documentation": "INCLUDED_IN_EVIDENCE",
+    "tos_license_compliance_checklist": "DEFERRED_TO_G1"
+  },
+
+  "closing_principle": "A system that learns without knowing what mattered, how much it mattered, and whether it surprised the world will never converge to edge.",
+
+  "audit_trail": {
+    "submitted_by": "STIG",
+    "submission_timestamp": "2026-01-16T21:00:00Z",
+    "next_gate": "G1 Technical Validation (Days 2-5)"
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "evidence_type": "CODE_CHANGE_VERIFICATION",
+  "directive": "CEO-DIR-2026-047",
+  "gap_id": "GAP-004",
+  "title": "CNRP Latency Instrumentation Fix",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-13T12:00:00Z",
+  "status": "COMPLETED",
+
+  "problem_statement": {
+    "description": "All CNRP daemons reported 0ms latency in cnrp_execution_log",
+    "root_cause": "The log_cnrp_execution() function only set completed_at to NOW() without capturing started_at timestamp before execution began",
+    "impact": "Unable to calculate p50/p95/p99 latency metrics for SLA verification",
+    "affected_daemons": [
+      "ceio_evidence_refresh_daemon.py (R1)",
+      "crio_alpha_graph_rebuild.py (R2)",
+      "cdmo_data_hygiene_attestation.py (R3)",
+      "vega_epistemic_integrity_monitor.py (R4)"
+    ]
+  },
+
+  "solution_implemented": {
+    "approach": "Capture execution_started_at timestamp BEFORE execution begins, pass to log_cnrp_execution() with new started_at parameter",
+    "changes": [
+      {
+        "file": "03_FUNCTIONS/ceio_evidence_refresh_daemon.py",
+        "function_modified": "log_cnrp_execution()",
+        "changes": [
+          "Added started_at parameter to function signature",
+          "Added completed_at = datetime.now(timezone.utc) at function start",
+          "Added latency_ms calculation: (completed_at - started_at).total_seconds() * 1000",
+          "Added latency_instrumented flag to metadata",
+          "Updated INSERT to include both started_at and completed_at columns"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/ceio_evidence_refresh_daemon.py",
+        "function_modified": "run_evidence_refresh()",
+        "changes": [
+          "Added execution_started_at = datetime.now(timezone.utc) at function start",
+          "Updated cycle_id to use execution_started_at",
+          "Updated call to log_cnrp_execution() to pass started_at=execution_started_at"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/crio_alpha_graph_rebuild.py",
+        "function_modified": "log_cnrp_execution()",
+        "changes": [
+          "Same pattern as R1 daemon"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/crio_alpha_graph_rebuild.py",
+        "function_modified": "run_graph_rebuild()",
+        "changes": [
+          "Same pattern as R1 daemon"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/cdmo_data_hygiene_attestation.py",
+        "function_modified": "log_cnrp_execution()",
+        "changes": [
+          "Same pattern as R1 daemon"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/cdmo_data_hygiene_attestation.py",
+        "function_modified": "run_hygiene_attestation()",
+        "changes": [
+          "Same pattern as R1 daemon"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/vega_epistemic_integrity_monitor.py",
+        "function_modified": "log_cnrp_execution()",
+        "changes": [
+          "Added started_at parameter to function signature",
+          "Added completed_at = datetime.now(timezone.utc) at function start",
+          "Added latency_ms calculation: (completed_at - started_at).total_seconds() * 1000",
+          "Added latency_instrumented flag to metadata",
+          "Updated INSERT to include both started_at and completed_at columns"
+        ]
+      },
+      {
+        "file": "03_FUNCTIONS/vega_epistemic_integrity_monitor.py",
+        "function_modified": "run_integrity_monitor()",
+        "changes": [
+          "Added execution_started_at = datetime.now(timezone.utc) at function start",
+          "Updated cycle_id to use execution_started_at",
+          "Updated call to log_cnrp_execution() to pass started_at=execution_started_at"
+        ]
+      }
+    ]
+  },
+
+  "metrics_enabled": {
+    "latency_ms": "Actual execution duration in milliseconds",
+    "latency_instrumented": "Boolean flag indicating proper instrumentation",
+    "started_at": "Timestamp captured BEFORE execution begins",
+    "completed_at": "Timestamp captured AFTER execution completes"
+  },
+
+  "pending_items": [],
+  "completion_status": {
+    "R1_ceio_evidence_refresh_daemon": "COMPLETE",
+    "R2_crio_alpha_graph_rebuild": "COMPLETE",
+    "R3_cdmo_data_hygiene_attestation": "COMPLETE",
+    "R4_vega_epistemic_integrity_monitor": "COMPLETE"
+  },
+
+  "verification_query": "SELECT cycle_id, phase, daemon_name, started_at, completed_at, EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000 as latency_ms, metadata->>'latency_instrumented' as instrumented FROM fhq_governance.cnrp_execution_log WHERE started_at IS NOT NULL ORDER BY completed_at DESC LIMIT 10;",
+
+  "attestation": {
+    "prepared_by": "STIG",
+    "prepared_at": "2026-01-13",
+    "constitutional_reference": "CEO-DIR-2026-047 Section 4.4",
+    "compliance_impact": "Enables SLA verification via p50/p95/p99 latency metrics"
+  }
+}

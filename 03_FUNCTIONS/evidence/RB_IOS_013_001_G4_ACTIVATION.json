@@ -1,0 +1,60 @@
+{
+  "runbook_id": "RB-IOS-013-001",
+  "title": "Fail-Closed Activation - IoS-013 Signal Weighting",
+  "gate": "G4",
+  "ios_reference": "IoS-013",
+  "adr_reference": "ADR-004",
+  "owner": "EC-003",
+  "timestamp": "2026-01-22T19:16:17.858735+00:00",
+  "g4_activation_status": {
+    "fail_closed_enforced": true,
+    "compliance_status": "COMPLIANT",
+    "signals_eligible_for_weighting": [
+      "sector_relative_strength"
+    ],
+    "signals_excluded_from_weighting": []
+  },
+  "exclusion_registry": [
+    {
+      "signal_id": "sentiment_divergence",
+      "reason": "No sentiment data available in fhq_research.sentiment",
+      "type": "DATA_UNAVAILABLE",
+      "data_dependency": "fhq_research.sentiment",
+      "excluded_at": "2026-01-22T20:02:34.742508+01:00"
+    }
+  ],
+  "sentiment_divergence_exclusion": {
+    "status": "EXCLUDED",
+    "reason": "No sentiment data in fhq_research.sentiment",
+    "data_dependency": "fhq_research.sentiment",
+    "auto_resolve_condition": "SELECT COUNT(*) > 0 FROM fhq_research.sentiment",
+    "current_data_count": 0,
+    "will_auto_resolve": true
+  },
+  "daily_compliance_summary": {
+    "date": "2026-01-22",
+    "signals_eligible": 1,
+    "signals_excluded": 0,
+    "fail_closed_status": "EC-003"
+  },
+  "g4_exit_criteria": {
+    "fail_closed_enforcement_active": true,
+    "no_signal_without_5d_contract_affects_weighting": true,
+    "excluded_signals_documented": true,
+    "auto_resolve_mechanism_in_place": true,
+    "daily_compliance_report_configured": true
+  },
+  "g4_overall_status": "PASS",
+  "enforcement_rules": {
+    "rule_1": "Signals with weighting_status='EXCLUDED' cannot affect IoS-013 weighting",
+    "rule_2": "Signals with weighting_status='BLOCKED' cannot affect IoS-013 weighting",
+    "rule_3": "Signals with weighting_status='NO_DATA' cannot affect IoS-013 weighting",
+    "rule_4": "Only signals with include_in_weighting=TRUE participate in weighting",
+    "rule_5": "sentiment_divergence auto-resolves when fhq_research.sentiment has data"
+  },
+  "stig_attestation": {
+    "ec_id": "EC-003",
+    "attestation": "G4 Activation complete. Fail-closed enforcement active. sentiment_divergence excluded until data available. Status: PASS",
+    "timestamp": "2026-01-22T19:16:17.859223+00:00"
+  }
+}

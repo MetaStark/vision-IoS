@@ -1,0 +1,59 @@
+{
+  "directive_id": "CEO-DIR-2026-LEARNING-CHAIN-REPAIR-001",
+  "agent_id": "STIG",
+  "timestamp": "2026-02-12T12:10:00Z",
+  "state_snapshot_hash": "MIGRATION_SEED",
+  "migration_summary": {
+    "phase_1_memory": {
+      "mtm_store": "CREATED",
+      "stm_reaper": "CREATED",
+      "triggers": "CREATED (freeze only)",
+      "status": "PARTIAL - promotion_block_trigger skipped due to SQL parsing issues",
+      "note": "MTM table structure complete with 72h freeze trigger. Promotion blocking trigger could not be created due to repeated escaping issues with psql."
+    },
+    "phase_2_invariants": {
+      "invariant_drivers": "CREATED",
+      "invariant_id_fk": "CREATED",
+      "causal_node_id_added": "CREATED (alpha_graph_nodes, promotion_gate_audit, g5_promotion_ledger)",
+      "causal_node_backfill": "COMPLETED (21967 rows backfilled with gen_random_uuid() - deterministic UUIDv5 not available)",
+      "asrp_columns_pga": "CREATED (state_snapshot_hash, agent_id)",
+      "status": "COMPLETE"
+    },
+    "phase_3_unified_gate": {
+      "admission_gate_state": "CREATED",
+      "gate_id_fk": "CREATED (g5_promotion_ledger, promotion_gate_audit)",
+      "status": "COMPLETE"
+    },
+    "phase_3b_bss_baseline": {
+      "bss_baseline_snapshot": "CREATED",
+      "bss_seed": "COMPLETED (4 regimes seeded with climatology-derived references)",
+      "bss_data": {
+        "BEAR": {"bss_value": -0.555762, "bs_reference": 0.249065, "base_rate": 0.530582, "sample_size": 5379},
+        "BULL": {"bss_value": -1.649181, "bs_reference": 0.218871, "base_rate": 0.323566, "sample_size": 3208},
+        "NEUTRAL": {"bss_value": -1.769028, "bs_reference": 0.199320, "base_rate": 0.274879, "sample_size": 3296},
+        "STRESS": {"bss_value": -999.0, "bs_reference": 0.0, "base_rate": 0.0, "sample_size": 2458, "is_degenerate": true}
+      },
+      "note": "STRESS regime is degenerate (base_rate=0), BSS undefined (-999). Non-degenerate regimes all have BSS < 0. Requires >= 2 passing regimes for promotion gate."
+    },
+    "phase_4_cognitive_engines": {
+      "cognitive_engines": "CREATED",
+      "cognitive_engine_config": "CREATED",
+      "ec_020_status": "REGISTERED (with hardcoded contract hash placeholder)",
+      "note": "EC-020 registered. EC-021 (FINN) and EC-022 (VEGA) NOT registered due to repeated SQL parsing issues with psql escaping. Parent IDs resolved from fhq_org.org_agents. Follow-up directive required to complete registration and compute proper SHA256 hashes from contract files."
+    },
+    "known_limitations": [
+      "Promotion blocking trigger for MTM store could not be created due to psql escaping issues with complex TRIGGER SQL",
+      "EC-021/EC-022 engines not registered due to psql parsing issues with encode() function syntax",
+      "causal_node_id backfill used gen_random_uuid() instead of uuid_generate_v5() because UUIDv5 functions not available",
+      "contract_sha256 uses hardcoded placeholder - must be computed from EC contract files in follow-up"
+    ],
+    "defcon_level_at_execution": "ORANGE",
+    "next_steps": [
+      "Follow-up directive: Register EC-021 (FINN) and EC-022 (VEGA) with proper contract_sha256",
+      "Follow-up directive: Create promotion blocking trigger for MTM store",
+      "Follow-up directive: Verify STM reaper scheduling via Windows Task Scheduler",
+      "Follow-up directive: Create enforcement trigger for post-migration writes (gate_id + causal_node_id required)",
+      "Follow-up directive: Compute actual SHA256 hashes from EC contract files and update cognitive_engines"
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "evidence_id": "ALPHA-FACTORY-ACTIVATION-20260125",
+  "directive": "CEO-VEDTAK-2026-ALPHA-FACTORY-ACTIVATION",
+  "status": "EXECUTED",
+  "timestamp": "2026-01-25T23:23:24Z",
+  "executor": "STIG",
+  "executor_ec": "EC-003",
+
+  "migration": {
+    "file": "04_DATABASE/MIGRATIONS/353_alpha_factory_activation.sql",
+    "result": "COMMIT",
+    "sections_completed": ["A", "B", "C", "D", "E"]
+  },
+
+  "section_a_diversified_stimulus": {
+    "generators_activated": ["FINN-E", "FINN-T", "finn_crypto_scheduler"],
+    "rotation_config": {
+      "timeframes": ["15m", "1h", "4h"],
+      "asset_rotation": true,
+      "rotation_interval_hours": {
+        "FINN-E": 4,
+        "FINN-T": 4,
+        "finn_crypto_scheduler": 3
+      }
+    },
+    "g1_5_activated": true
+  },
+
+  "section_b_stale_handling": {
+    "function_created": "fhq_learning.cleanup_stale_hypotheses()",
+    "threshold_hours": 48,
+    "view_created": "fhq_learning.v_stale_candidates",
+    "freshness_levels": ["FRESH", "WARNING (>36h)", "STALE_CANDIDATE (>48h)"]
+  },
+
+  "section_c_validator_expansion": {
+    "table_created": "fhq_learning.pre_tier_validator_authority",
+    "view_created": "fhq_learning.v_authorized_validators",
+    "validators_registered": [
+      {"ec": "CEIO", "wave": "ORIGINAL"},
+      {"ec": "FINN-E", "wave": "ORIGINAL"},
+      {"ec": "GN-S", "wave": "ORIGINAL"},
+      {"ec": "CSEO", "wave": "G1.5_EXPANSION"},
+      {"ec": "CRIO", "wave": "G1.5_EXPANSION"}
+    ],
+    "total_validators": 5
+  },
+
+  "section_d_throughput_update": {
+    "view_updated": "fhq_learning.v_g1_5_throughput_tracker",
+    "new_columns": ["active_validators", "target_validators", "validator_capacity_status"],
+    "validator_capacity_status": "SUFFICIENT"
+  },
+
+  "section_e_evidence": {
+    "registered_in": "fhq_governance.canonical_evidence",
+    "evidence_type": "GENERATOR_ACTIVATION",
+    "evidence_category": "G1.5_ALPHA_FACTORY"
+  },
+
+  "rationale": {
+    "FINN-E": "Error Repair - low-hanging fruit for sample size",
+    "FINN-T": "Theory/World-Model - high-IQ hypotheses for depth testing"
+  },
+
+  "adr_compliance": ["ADR-011", "ADR-013"],
+  "vega_attestation": "PENDING"
+}

@@ -1,0 +1,170 @@
+{
+  "directive": "CEO-DIR-2026-OPS-CONSTITUTION-VERIFY-006",
+  "title": "Verification of Existing Constitutional Controls (EC-016 / EC-018)",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-02T17:45:00Z",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "section_A_database_enforcement": {
+    "ec_016": {
+      "status": "DOES_NOT_EXIST",
+      "detail": "EC-016 is not registered in fhq_governance.ec_registry. Only 5 ECs exist: EC-014, EC-018, EC-020, EC-021, EC-022. EC-016 is referenced in the directive but has never been created as a database artifact."
+    },
+    "ec_018": {
+      "status": "REGISTERED_BUT_DOCUMENT_ONLY",
+      "ec_id": "EC-018",
+      "title": "Meta-Alpha & Freedom Optimizer",
+      "role_type": "Tier-2 Cognitive Authority",
+      "parent_executive": "CEO",
+      "db_status": "ACTIVE",
+      "effective_date": "2025-12-09",
+      "authority_chain": ["ADR-001", "ADR-003", "ADR-004", "ADR-010", "ADR-012", "ADR-013", "ADR-014"],
+      "dependencies": ["EC-020", "EC-021", "EC-022"],
+      "breach_classes": null,
+      "enforcement_finding": "EC-018 exists in ec_registry but contains NO executable constraints. No columns for execution_mode restrictions, capital limits, margin guards, or shadow isolation rules. The ec_registry table schema only tracks: ec_id, title, role_type, parent_executive, status, effective_date, authority_chain, dependencies, breach_classes. There is no mechanism to enforce EC-018 mandates at runtime."
+    },
+    "authority_matrix": {
+      "table": "fhq_governance.authority_matrix",
+      "row_count": 8,
+      "agents": ["STIG", "FINN", "LINE", "CSEO", "CDMO", "CRIO", "CEIO", "CFAO"],
+      "columns_present": ["agent_name", "authority_level", "can_write_canonical", "can_trigger_g2", "can_trigger_g3", "can_trigger_g4"],
+      "enforcement_finding": "Controls governance gate triggers (G2/G3/G4) per agent. Does NOT contain execution_mode restrictions, capital authority, or shadow isolation rules. No reference to EC-016 or EC-018."
+    },
+    "execution_mode_constraints": {
+      "enforced_at_db_level": [
+        {"table": "fhq_execution.options_shadow_orders", "constraint": "execution_mode = 'SHADOW_PAPER'", "type": "CHECK"},
+        {"table": "fhq_execution.paper_orders", "constraint": "execution_mode = 'PAPER_ONLY'", "type": "CHECK"},
+        {"table": "fhq_learning.execution_eligibility_registry", "constraint": "execution_mode = 'SHADOW'", "type": "CHECK"},
+        {"table": "fhq_learning.experiment_registry", "constraint": "execution_mode = 'EXPERIMENT'", "type": "CHECK"},
+        {"table": "fhq_governance.execution_log", "constraint": "execution_mode IN ('PAPER_MOCK','PAPER_LIVE','LIVE')", "type": "CHECK"},
+        {"table": "fhq_meta.g1_activation_registry", "constraint": "execution_mode = 'SHADOW_PAPER'", "type": "CHECK"},
+        {"table": "fhq_meta.agent_interaction_log", "constraint": "execution_mode IN ('SHADOW_PAPER','READ_ONLY','OBSERVATION')", "type": "CHECK"}
+      ],
+      "finding": "Database-level CHECK constraints enforce mode isolation per table. These are EFFECTIVE — PostgreSQL will reject any INSERT with a wrong mode. However, there is NO single governance table that controls which mode a given hypothesis/signal is AUTHORIZED to use."
+    },
+    "execution_eligibility_registry": {
+      "table": "fhq_learning.execution_eligibility_registry",
+      "row_count": 1,
+      "current_state": {
+        "eligibility_code": "ELIG_EXP_ALPHA_SAT_F_V1.0",
+        "execution_mode": "SHADOW",
+        "is_eligible": false,
+        "live_capital_blocked": true,
+        "leverage_blocked": true,
+        "ec022_dependency_blocked": true,
+        "eligibility_reason": "Promotion gate PASS. DSR=1.4383, PBO=0.4000. Awaiting G4 for capital."
+      },
+      "finding": "Fail-closed defaults are correctly set by promotion_gate_engine.py. All blocking flags are TRUE. However, NO downstream daemon reads these flags."
+    },
+    "paper_execution_authority": {
+      "table": "fhq_governance.paper_execution_authority",
+      "row_count": 1,
+      "current_state": {
+        "ios_id": "IoS-012",
+        "activation_mode": "PAPER",
+        "execution_enabled": true,
+        "paper_api_enabled": true,
+        "live_api_enabled": false,
+        "code_immutability_enforced": true,
+        "adr_012_constraints_enforced": true,
+        "governance_logging_required": true,
+        "activated_by": "CEO"
+      },
+      "finding": "Correctly records PAPER-only authority for IoS-012. live_api_enabled=false. However, alpaca_paper_adapter.py does NOT read this table — it uses a hardcoded EXECUTION_MODE='PAPER_ONLY' constant."
+    },
+    "capital_guards": {
+      "capital_simulation_ledger": {
+        "is_paper_only": true,
+        "real_capital_used": "0.00",
+        "row_count": 5,
+        "finding": "All simulations correctly marked paper-only with zero real capital."
+      },
+      "capital_ledger": {
+        "finding": "fhq_execution.capital_ledger contains simulation metrics (RDI, waste_ratio, shadow_alignment) but NO real capital allocation fields. No margin_limit, max_position_size, or capital_authority columns exist anywhere in the execution schema."
+      }
+    }
+  },
+
+  "section_B_runtime_binding": {
+    "summary": "9 critical daemons audited for governance field enforcement at runtime.",
+    "daemons": {
+      "hypothesis_experiment_bridge_daemon": {
+        "defcon_gate": "ENFORCED",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "MEDIUM — DEFCON gate works; promotion_eligible=false written but not enforced upstream"
+      },
+      "mechanism_alpha_trigger": {
+        "defcon_gate": "ENFORCED",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "MEDIUM — DEFCON gate works; triggers created regardless of capital approval"
+      },
+      "mechanism_alpha_outcome": {
+        "defcon_gate": "ENFORCED",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "MEDIUM — DEFCON gate works"
+      },
+      "shadow_trade_creator": {
+        "defcon_gate": "NOT_PRESENT",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "CRITICAL — creates shadow trades without ANY governance gate"
+      },
+      "shadow_trade_exit_engine": {
+        "defcon_gate": "NOT_PRESENT",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "CRITICAL — closes trades and records P&L without governance validation"
+      },
+      "shadow_tier_bridge": {
+        "defcon_gate": "NOT_PRESENT",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "CRITICAL — links hypotheses to shadow execution without capital approval"
+      },
+      "capital_simulation_writer": {
+        "defcon_gate": "NOT_PRESENT",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "NOT_PRESENT",
+        "risk": "CRITICAL — writes simulated capital records without governance validation"
+      },
+      "promotion_gate_engine": {
+        "defcon_gate": "NOT_PRESENT",
+        "execution_eligibility_check": "WRITES_FAIL_CLOSED_DEFAULTS",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "HARDCODED_BLOCKED",
+        "risk": "LOW — correctly creates fail-closed entries; but downstream ignores them"
+      },
+      "alpaca_paper_adapter": {
+        "defcon_gate": "ENFORCED",
+        "execution_eligibility_check": "NOT_PRESENT",
+        "authority_matrix_check": "NOT_PRESENT",
+        "capital_guard_check": "HARDCODED_PAPER_ONLY",
+        "risk": "MEDIUM — PAPER_ONLY hardcoded (safe), DEFCON enforced, but does not read paper_execution_authority table"
+      }
+    }
+  },
+
+  "section_C_redundancy_risk": {
+    "question_1": "Are we about to re-implement logic already mandated by EC-016 or EC-018?",
+    "answer_1": "NO for EC-016 (does not exist). PARTIALLY for EC-018 — EC-018 is registered as 'Meta-Alpha & Freedom Optimizer' but contains zero executable constraints. Any new implementation would be FIRST implementation, not re-implementation.",
+    "question_2": "If yes, where?",
+    "answer_2": "N/A for EC-016. EC-018's authority_chain references ADR-001/003/004/010/012/013/014 which ARE enforced via separate mechanisms (DEFCON, governance gates, hash chains). But EC-018 itself adds no unique enforcement.",
+    "question_3": "If no, what exact gap remains?",
+    "answer_3": "The gap is in the EXECUTION PIPELINE between promotion_gate_engine (which correctly writes fail-closed blocking flags) and the downstream daemons (shadow_trade_creator, shadow_tier_bridge, capital_simulation_writer) which NEVER READ those flags. The execution_eligibility_registry exists and is correctly populated, but it is an ORPHANED CONTROL — written but never consumed."
+  },
+
+  "binary_conclusions": {
+    "EC-016": "DOES_NOT_EXIST — Cannot be assessed. Not registered in fhq_governance.ec_registry.",
+    "EC-018": "DOCUMENT_ONLY — Registered in ec_registry with ACTIVE status, but contains zero executable constraints. No runtime binding. No daemon reads or enforces EC-018 mandates."
+  }
+}

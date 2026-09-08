@@ -1,0 +1,294 @@
+{
+  "evidence_id": "CEO_DIR_2026_043_OBSERVABILITY_ACTIVATION",
+  "directive": "CEO-DIR-2026-043",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T10:31:40.258539+00:00",
+  "status": "COMPLETE",
+  "objective_1_monitoring": {
+    "status": "COMPLETE",
+    "table": "fhq_monitoring.daemon_health",
+    "records_populated": 5,
+    "daemon_status": [
+      {
+        "daemon_name": "g2c_continuous_forecast_engine",
+        "description": "STRAT_* forecast generation",
+        "status": "HEALTHY",
+        "last_activity": "2026-01-13T11:28:19.722804+01:00",
+        "staleness_minutes": -56.7,
+        "threshold_minutes": 30,
+        "recent_count": 24
+      },
+      {
+        "daemon_name": "ios010_learning_loop",
+        "description": "Forecast-outcome reconciliation",
+        "status": "HEALTHY",
+        "last_activity": "2026-01-13T10:09:02.455516+01:00",
+        "staleness_minutes": 22.6,
+        "threshold_minutes": 120,
+        "recent_count": 3
+      },
+      {
+        "daemon_name": "cnrp_orchestrator",
+        "description": "R1-R4 chain execution",
+        "status": "HEALTHY",
+        "last_activity": "2026-01-13T11:23:16.342616+01:00",
+        "staleness_minutes": -51.6,
+        "threshold_minutes": 300,
+        "recent_count": 86
+      },
+      {
+        "daemon_name": "ios003_regime_update",
+        "description": "Sovereign regime computation",
+        "status": "HEALTHY",
+        "last_activity": "2026-01-13T10:20:30.299506+01:00",
+        "staleness_minutes": 11.2,
+        "threshold_minutes": 240,
+        "recent_count": 22
+      },
+      {
+        "daemon_name": "price_freshness_heartbeat",
+        "description": "Data quality monitoring",
+        "status": "STOPPED",
+        "last_activity": null,
+        "staleness_minutes": null,
+        "threshold_minutes": 60,
+        "recent_count": 0
+      }
+    ]
+  },
+  "objective_2_agent_heartbeats": {
+    "status": "COMPLETE",
+    "table": "fhq_governance.agent_heartbeats",
+    "records_populated": 8,
+    "agent_status": [
+      {
+        "agent_id": "LARS",
+        "component": "ORCHESTRATOR",
+        "description": "Logic, Analytics & Research Strategy",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "actions_24h": 27,
+        "last_action": "2026-01-13T10:39:00.887888+01:00",
+        "staleness_hours": 0.9
+      },
+      {
+        "agent_id": "STIG",
+        "component": "INFRASTRUCTURE",
+        "description": "System for Technical Implementation & Governance",
+        "status": "ALIVE",
+        "health_score": 0.8,
+        "actions_24h": 178,
+        "last_action": "2026-01-13T10:20:31.309560+01:00",
+        "staleness_hours": 1.2
+      },
+      {
+        "agent_id": "FINN",
+        "component": "RESEARCH",
+        "description": "Financial Investments Neural Network",
+        "status": "UNKNOWN",
+        "health_score": 0.0,
+        "actions_24h": 0,
+        "last_action": null,
+        "staleness_hours": null
+      },
+      {
+        "agent_id": "VEGA",
+        "component": "GOVERNANCE",
+        "description": "Verification & Governance Authority",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "actions_24h": 236,
+        "last_action": "2026-01-13T11:23:16.342616+01:00",
+        "staleness_hours": 0.1
+      },
+      {
+        "agent_id": "LINE",
+        "component": "EXECUTION",
+        "description": "Local Infrastructure, Network & Execution",
+        "status": "UNKNOWN",
+        "health_score": 0.0,
+        "actions_24h": 0,
+        "last_action": null,
+        "staleness_hours": null
+      },
+      {
+        "agent_id": "CEIO",
+        "component": "EVIDENCE",
+        "description": "Chief Evidence & Intelligence Officer",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "actions_24h": 33,
+        "last_action": "2026-01-13T10:48:39.927083+01:00",
+        "staleness_hours": 0.7
+      },
+      {
+        "agent_id": "CRIO",
+        "component": "GRAPH",
+        "description": "Chief Research & Intelligence Officer",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "actions_24h": 33,
+        "last_action": "2026-01-13T10:53:40.378920+01:00",
+        "staleness_hours": 0.6
+      },
+      {
+        "agent_id": "CDMO",
+        "component": "DATA",
+        "description": "Chief Data Management Officer",
+        "status": "ALIVE",
+        "health_score": 1.0,
+        "actions_24h": 33,
+        "last_action": "2026-01-13T10:55:40.868575+01:00",
+        "staleness_hours": 0.6
+      }
+    ]
+  },
+  "objective_3_telegram_trace": {
+    "status": "COMPLETE",
+    "trace": {
+      "truth_source": {
+        "primary_table": "fhq_governance.system_heartbeats",
+        "component_filter": "component_name = 'PRICE_FRESHNESS'",
+        "writer_script": "03_FUNCTIONS/price_freshness_heartbeat.py",
+        "writer_function": "log_heartbeat()",
+        "write_frequency": "Every orchestrator cycle (~1 hour)",
+        "upsert_behavior": "ON CONFLICT (component_name) DO UPDATE"
+      },
+      "timestamp_semantics": {
+        "column": "last_heartbeat",
+        "type": "TIMESTAMP WITH TIME ZONE",
+        "meaning": "Time of most recent heartbeat write",
+        "freshness_calculation": "NOW() - last_heartbeat"
+      },
+      "staleness_behavior": {
+        "healthy_threshold": "60 minutes",
+        "warning_threshold": "120 minutes",
+        "critical_threshold": "240 minutes",
+        "source": "Implicit in orchestrator cycle timing"
+      },
+      "telegram_integration": {
+        "bot_token_env": "TELEGRAM_BOT_TOKEN",
+        "chat_id_env": "CEO_TELEGRAM_CHAT_ID",
+        "enabled_flag": "CEO_GATEWAY_ENABLED",
+        "send_function": "send_telegram_alert()",
+        "trigger": "On status change to WARNING/CRITICAL/BLACKOUT"
+      },
+      "current_state": {
+        "component_name": "PRICE_FRESHNESS",
+        "heartbeat_type": "DATA_QUALITY",
+        "last_heartbeat": "2026-01-13T10:03:55.674469+01:00",
+        "status": "HEALTHY",
+        "metadata": {
+          "assets": [
+            {
+              "type": "CRYPTO",
+              "latest": "2026-01-13T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "BTC-USD",
+              "staleness_hours": 9.07
+            },
+            {
+              "type": "CRYPTO",
+              "latest": "2026-01-13T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "ETH-USD",
+              "staleness_hours": 9.07
+            },
+            {
+              "type": "CRYPTO",
+              "latest": "2026-01-13T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "SOL-USD",
+              "staleness_hours": 9.07
+            },
+            {
+              "type": "EQUITY",
+              "latest": "2026-01-12T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "SPY",
+              "staleness_hours": 33.07
+            },
+            {
+              "type": "EQUITY",
+              "latest": "2026-01-12T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "QQQ",
+              "staleness_hours": 33.07
+            },
+            {
+              "type": "FX",
+              "latest": "2026-01-12T00:00:00+00:00",
+              "status": "HEALTHY",
+              "asset_id": "EURUSD=X",
+              "staleness_hours": 33.07
+            }
+          ],
+          "summary": {
+            "healthy": 6,
+            "warning": 0,
+            "blackout": 0,
+            "critical": 0
+          },
+          "timestamp": "2026-01-13T09:03:55.747647+00:00"
+        }
+      }
+    }
+  },
+  "objective_4_defcon_semantics": {
+    "status": "COMPLETE",
+    "semantics": {
+      "current_state": {
+        "defcon_level": "GREEN",
+        "triggered_at": "2025-12-11T16:28:46.437557+01:00",
+        "triggered_by": "STIG",
+        "trigger_reason": "G4 Activation Order - Sovereign Autonomy Release. Precondition met: discrepancy 0.0318 < 0.05. SAFE_TO_LIFT validated.",
+        "is_current": true
+      },
+      "truth_source": {
+        "table": "fhq_governance.defcon_state",
+        "current_filter": "is_current = true",
+        "levels": [
+          "GREEN",
+          "YELLOW",
+          "ORANGE",
+          "RED",
+          "BLACK"
+        ],
+        "default_level": "GREEN"
+      },
+      "why_static": {
+        "reason": "No automated DEFCON reevaluation process is currently running",
+        "last_change": "2025-12-11T16:28:46.437557+01:00",
+        "changed_by": "STIG",
+        "trigger_reason": "G4 Activation Order - Sovereign Autonomy Release. Precondition met: discrepancy 0.0318 < 0.05. SAFE_TO_LIFT validated."
+      },
+      "reevaluation_triggers": {
+        "manual": "CEO directive or VEGA governance action",
+        "automated_candidates": [
+          "Consecutive forecast failures (Brier > threshold)",
+          "Data blackout detection (price staleness)",
+          "Execution anomaly (if execution were enabled)",
+          "Learning loop degradation",
+          "Agent heartbeat cascade failure"
+        ],
+        "current_automation": "NONE - static since initialization"
+      },
+      "escalation_semantics": {
+        "GREEN": "Normal operations, all gates open",
+        "YELLOW": "Caution - increased monitoring, conservative thresholds",
+        "ORANGE": "Warning - reduced activity, tightened gates",
+        "RED": "Critical - minimal operations, human oversight required",
+        "BLACK": "System halt - no autonomous activity permitted"
+      }
+    }
+  },
+  "compliance": {
+    "execution_impact": "NONE",
+    "capital_exposure": "ZERO",
+    "agency_change": "NONE",
+    "tables_modified": [
+      "fhq_monitoring.daemon_health",
+      "fhq_governance.agent_heartbeats"
+    ]
+  }
+}

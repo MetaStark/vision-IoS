@@ -1,0 +1,131 @@
+{
+  "directive": "CEO-DIR-2026-AGENT-CONTRACT-ALIGNMENT-002",
+  "phase": "IV-B",
+  "phase_name": "Authority Population",
+  "executed_by": "STIG",
+  "completed_at": "2026-01-23T19:56:23.010Z",
+
+  "pre_state": {
+    "write_mandates": 6,
+    "authority_matrix_rows": 5
+  },
+
+  "post_state": {
+    "write_mandates": 8,
+    "authority_matrix_rows": 8
+  },
+
+  "populated_write_mandates": [
+    {
+      "agent": "VEGA",
+      "ec_id": "EC-001",
+      "content_hash": "72736f88a2cc1608931d81396468166be5e3cebba87677f8e195639ef2d12fb4",
+      "action": "ATTESTATION_RECORDING",
+      "targets": ["fhq_governance.vega_attestation_log", "fhq_governance.authority_gates", "fhq_governance.veto_halt_registry"],
+      "schemas": ["fhq_governance"],
+      "contract_basis": "EC-001 Section 4 - Attestation and compliance audit authority",
+      "excluded": ["Signal generation", "Decision origination", "Execution"],
+      "directive": "CEO-DIR-2026-AGENT-CONTRACT-ALIGNMENT-002-IV-B"
+    },
+    {
+      "agent": "LARS",
+      "ec_id": "EC-002",
+      "content_hash": "26924179c415cc5ae17a1cfe342e58cc6f7979a48566825d9accc80367651d6b",
+      "action": "STRATEGIC_DEFINITION",
+      "targets": ["fhq_governance.strategy_descriptors", "fhq_governance.architecture_intents", "fhq_governance.meta_directives"],
+      "schemas": ["fhq_governance"],
+      "contract_basis": "EC-002 Section 3 - Strategic architecture authority",
+      "excluded": ["Direct signal emission", "Trade decisions", "Execution"],
+      "directive": "CEO-DIR-2026-AGENT-CONTRACT-ALIGNMENT-002-IV-B"
+    }
+  ],
+
+  "populated_authority_matrix": [
+    {
+      "agent": "STIG",
+      "ec_id": "EC-003",
+      "content_hash": "24174dbea317fd549c0e55fe929f000ca0ff2025e5940c8e2053001394ad57d2",
+      "authority_level": 1,
+      "can_write_canonical": true,
+      "can_trigger_g2": true,
+      "can_trigger_g3": true,
+      "can_trigger_g4": false,
+      "contract_basis": "EC-003 Section 3 - Infrastructure and schema authority",
+      "excluded": ["Strategy authority", "Signal weighting"]
+    },
+    {
+      "agent": "FINN",
+      "ec_id": "EC-004",
+      "content_hash": "ae40ade907d8644b17a997aaf80b696ea6894d27b7fa34313dc756563a973362",
+      "authority_level": 1,
+      "can_write_canonical": true,
+      "can_trigger_g2": true,
+      "can_trigger_g3": true,
+      "can_trigger_g4": false,
+      "contract_basis": "EC-004 Section 3 - Methodological ownership authority",
+      "excluded": ["Execution triggers", "Capital deployment"]
+    },
+    {
+      "agent": "LINE",
+      "ec_id": "EC-005",
+      "content_hash": "6761ec8b1213daf5de19267b0448f8b7b919dd831e1c50e82c23ed3eb7edaeba",
+      "authority_level": 1,
+      "can_write_canonical": false,
+      "can_trigger_g2": false,
+      "can_trigger_g3": true,
+      "can_trigger_g4": false,
+      "contract_basis": "EC-005 Section 3 - Execution authority",
+      "excluded": ["Strategy definition", "Signal creation"]
+    }
+  ],
+
+  "reconciliation_checks": {
+    "CHECK_1_AUTHORITY_TO_CONTRACT": {
+      "description": "All populated authority rows map to valid contracts",
+      "status": "PASS",
+      "results": [
+        {"agent": "STIG", "ec_id": "EC-003", "status": "VALID"},
+        {"agent": "FINN", "ec_id": "EC-004", "status": "VALID"},
+        {"agent": "LINE", "ec_id": "EC-005", "status": "VALID"}
+      ]
+    },
+    "CHECK_2_WRITE_MANDATE_TO_CONTRACT": {
+      "description": "All write mandates map to valid contracts",
+      "status": "PASS",
+      "results": [
+        {"agent": "VEGA", "ec_id": "EC-001", "status": "VALID"},
+        {"agent": "LARS", "ec_id": "EC-002", "status": "VALID"}
+      ]
+    },
+    "CHECK_3_ORPHAN_AUTHORITY": {
+      "description": "No authority exists without contract backing",
+      "orphan_count": 0,
+      "status": "PASS"
+    },
+    "CHECK_4_EXECUTION_MODE": {
+      "description": "Runtime behavior unchanged - shadow/paper enforced",
+      "mode_name": "SHADOW_PAPER",
+      "is_current": true,
+      "status": "PASS"
+    }
+  },
+
+  "reconciliation_gate": {
+    "gate_name": "PHASE_IV_B_RECONCILIATION_GATE",
+    "total_write_mandates": 8,
+    "total_authority_matrix": 8,
+    "phase_ivb_write_mandates": 2,
+    "phase_ivb_authority_matrix": 3,
+    "gate_status": "PASS"
+  },
+
+  "runtime_behavior_changed": false,
+  "shadow_paper_mode_enforced": true,
+
+  "migration_file": "04_DATABASE/MIGRATION_PHASE_IV_B_AUTHORITY_POPULATION.sql",
+
+  "signatures": {
+    "STIG": "Phase IV-B Authority Population executed with contract-backed justification",
+    "timestamp": "2026-01-23T19:56:23.010Z"
+  }
+}

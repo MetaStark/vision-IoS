@@ -1,0 +1,85 @@
+{
+  "evidence_id": "CEO_DIR_2026_DAY6_VERIFICATION_REPORT",
+  "evidence_type": "DAY_GOAL_VERIFICATION",
+  "directive": "CEO-DIR-2026-DAY6-GOAL-REALIGNMENT",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T02:30:00Z",
+  "day_number": 6,
+  "phase_name": "WEEK_1_FOUNDATION",
+  "calendar_date": "2026-01-13",
+  "gate_decision": "STICK",
+
+  "verification_results": {
+    "goals_verified": 3,
+    "goals_passed": 2,
+    "goals_failed": 1,
+    "overall_status": "PARTIAL_FAILURE"
+  },
+
+  "goal_1": {
+    "goal_id": "5933ecb2-a8bd-4833-a8e9-74e29129844e",
+    "goal_title": "Forecast volume stable",
+    "goal_description": "Verify forecasts > 1000 for day (stability check)",
+    "condition": "forecast_count >= 1000",
+    "actual_value": 716,
+    "threshold": 1000,
+    "delta": -284,
+    "delta_percent": -28.4,
+    "status": "FAIL",
+    "sql_query": "SELECT COUNT(*) FROM fhq_research.forecast_ledger WHERE DATE(created_at AT TIME ZONE 'UTC') = '2026-01-13'",
+    "no_smoothing": true,
+    "verbatim_result": {
+      "forecast_date": "2026-01-13",
+      "forecast_count": 716
+    }
+  },
+
+  "goal_2": {
+    "goal_id": "3bde3ed0-8162-4f5e-b572-719470e9a72e",
+    "goal_title": "Resolution rate > 75%",
+    "goal_description": "Verify forecast-outcome resolution rate exceeds 75%",
+    "condition": "resolution_rate >= 0.75",
+    "actual_value": 0.7812,
+    "threshold": 0.75,
+    "delta": 0.0312,
+    "delta_percent": 4.16,
+    "status": "PASS",
+    "sql_query": "SELECT COUNT(*) FROM fhq_research.forecast_outcome_pairs / COUNT(*) FROM fhq_research.forecast_ledger",
+    "verbatim_result": {
+      "matched_pairs": 16823,
+      "total_forecasts": 21536,
+      "resolution_rate_pct": 78.12
+    }
+  },
+
+  "goal_3": {
+    "goal_id": "0239f1db-390c-4dad-966e-65391278b5de",
+    "goal_title": "No forbidden writes detected",
+    "goal_description": "Verify IOS-003-B has not written to fhq_governance or other forbidden schemas",
+    "condition": "no_forbidden_writes",
+    "status": "PASS",
+    "evidence": {
+      "ios003b_in_governance_log": false,
+      "ios003b_writes_to_perception": 981,
+      "forbidden_schema_writes": 0
+    },
+    "sql_query": "SELECT DISTINCT initiated_by FROM fhq_governance.governance_actions_log WHERE initiated_at >= '2026-01-12'"
+  },
+
+  "failure_analysis": {
+    "failed_goal": "Forecast volume stable",
+    "root_cause_category": "PIPELINE_VOLUME",
+    "is_cognitive_failure": false,
+    "is_governance_failure": false,
+    "is_infrastructure_failure": true,
+    "remediation_required": true,
+    "recommended_action": "Investigate forecast generation pipeline throughput"
+  },
+
+  "discipline_attestation": {
+    "smoothing_applied": false,
+    "failure_reported_verbatim": true,
+    "ceo_directive_honored": true,
+    "classification": "Discipline under capability - failure acknowledged"
+  }
+}

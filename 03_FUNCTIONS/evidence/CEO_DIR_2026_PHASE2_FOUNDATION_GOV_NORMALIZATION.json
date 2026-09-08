@@ -1,0 +1,96 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_GOVERNANCE_NORMALIZATION",
+  "directive": "PHASE2_FOUNDATION_GOVERNANCE_NORMALIZATION",
+  "timestamp": "2026-01-28T21:34:00Z",
+  "timezone": "Europe/Oslo",
+  "created_by": "STIG",
+  "predecessor_evidence": "CEO_DIR_2026_PHASE2_MIGRATIONS_EXECUTED.json",
+
+  "reclassification": {
+    "original_classification": "PHASE2_PREPARATION_HYPOTHESIS_SWARM_V1.1",
+    "new_classification": "PHASE2_FOUNDATION_MIGRATIONS",
+    "rationale": "Structural-only migrations with zero behavioral impact. Provides time advantage without risk."
+  },
+
+  "governance_attestations": {
+    "no_runtime_execution_enabled": {
+      "statement": "No runtime execution was enabled.",
+      "evidence": "DB triggers trg_phase2_gate_trigger_events and trg_phase2_gate_outcome_ledger block all inserts",
+      "verified": true
+    },
+    "no_phase1_cohort_isolation_affected": {
+      "statement": "No Phase 1 cohort isolation was affected.",
+      "evidence": "New tables fhq_learning.trigger_events and fhq_learning.outcome_ledger are independent structures with no FK to Phase 1 tables",
+      "verified": true
+    },
+    "tables_empty_and_inert": {
+      "statement": "Tables are empty and inert.",
+      "evidence": {
+        "fhq_learning.trigger_events": 0,
+        "fhq_learning.outcome_ledger": 0
+      },
+      "verified": true
+    },
+    "phase2_generators_hard_gated": {
+      "statement": "All Phase 2 generators remain hard-gated until Gate 2.",
+      "evidence": {
+        "generator_status": "PAUSED",
+        "gate_status": "BLOCKED",
+        "db_triggers": ["trg_phase2_gate_trigger_events", "trg_phase2_gate_outcome_ledger"]
+      },
+      "verified": true
+    }
+  },
+
+  "safety_mechanisms": {
+    "db_level_gate": {
+      "gate_id": "PHASE2_HYPOTHESIS_SWARM_V1.1",
+      "gate_status": "BLOCKED",
+      "gate_type": "EXECUTION_GATE",
+      "location": "fhq_meta.gate_status"
+    },
+    "db_triggers": {
+      "trigger_events_blocker": {
+        "trigger_name": "trg_phase2_gate_trigger_events",
+        "table": "fhq_learning.trigger_events",
+        "function": "fhq_learning.check_phase2_gate()",
+        "enabled": true
+      },
+      "outcome_ledger_blocker": {
+        "trigger_name": "trg_phase2_gate_outcome_ledger",
+        "table": "fhq_learning.outcome_ledger",
+        "function": "fhq_learning.check_phase2_gate()",
+        "enabled": true
+      }
+    },
+    "generator_status": {
+      "generator_id": "STIG-ALPHA-SAT",
+      "status": "PAUSED",
+      "location": "fhq_learning.generator_registry"
+    }
+  },
+
+  "gate_test_evidence": {
+    "test_timestamp": "2026-01-28T21:34:00Z",
+    "test_query": "INSERT INTO fhq_learning.trigger_events (...) VALUES (...)",
+    "result": "BLOCKED",
+    "error_message": "PHASE2_GATE_BLOCKED: Insert into trigger_events rejected. Gate PHASE2_HYPOTHESIS_SWARM_V1.1 is not OPEN. CEO Gate 2 signature required."
+  },
+
+  "unlocking_requirements": {
+    "gate_2_signature": {
+      "required": true,
+      "current_status": "NOT_SIGNED"
+    },
+    "indicator_backfill_complete": {
+      "required": true,
+      "current_status": "PENDING"
+    },
+    "unlock_procedure": [
+      "1. CEO signs Gate 2",
+      "2. Verify indicator backfill completion report PASS",
+      "3. UPDATE fhq_meta.gate_status SET status = 'OPEN' WHERE gate_id = 'PHASE2_HYPOTHESIS_SWARM_V1.1'",
+      "4. UPDATE fhq_learning.generator_registry SET status = 'ACTIVE' WHERE generator_id = 'STIG-ALPHA-SAT'"
+    ]
+  }
+}

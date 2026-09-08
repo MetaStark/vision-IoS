@@ -27,7 +27,7 @@ logger = logging.getLogger('HOLIDAY_GATE')
 # HOLIDAY EXECUTION POLICY (CEO DIRECTIVE 2025-12-19)
 # =============================================================================
 
-HOLIDAY_MODE_ENABLED = True  # Set to False to resume normal operations
+HOLIDAY_MODE_ENABLED = False  # CEO 2026-01-05: Normal operations resumed
 
 # Approved crypto assets during holiday period
 # CEO Directive Update: All Alpaca-supported crypto approved

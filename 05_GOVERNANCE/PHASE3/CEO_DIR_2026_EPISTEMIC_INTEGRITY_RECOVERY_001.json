@@ -1,0 +1,165 @@
+{
+  "directive_id": "CEO-DIR-2026-EPISTEMIC-INTEGRITY-RECOVERY-001",
+  "directive_type": "EPISTEMIC_RECOVERY",
+  "title": "Epistemic Integrity Recovery - Amended with STIG Findings",
+  "status": "ACTIVE",
+  "effective_timestamp": "2026-01-06T19:45:00Z",
+  "issued_by": "CEO",
+  "technical_lead": "STIG",
+  "governance_authority": "VEGA",
+  "amendment_status": "STIG_FINDINGS_INCORPORATED",
+
+  "severity_statement": {
+    "original_claim": "174h crypto staleness, 0 Qdrant vectors",
+    "corrected_reality": {
+      "crypto_staleness_range": "259h to 740h (11-31 days)",
+      "qdrant_sync_log": "EMPTY (0 records)",
+      "evidence_nodes_with_point_id": 1019,
+      "task_registry_enabled": 1,
+      "task_registry_executions": 0
+    },
+    "interpretation": "GraphRAG appears wired but is epistemically undefined. Orphaned point IDs create false confidence. This is WORSE than empty.",
+    "audit_truthfulness_required": true
+  },
+
+  "priority_classification": {
+    "P0_CRITICAL": [
+      "Qdrant reachability verification (pre-execution gate)",
+      "Qdrant actual vector count verification at API level",
+      "Evidence node to collection mapping consistency check",
+      "Crypto data catchup (CoinGecko priority source)"
+    ],
+    "P1_HIGH": [
+      "Task registry normalization (all critical daemons)",
+      "Qdrant full resync if orphaned state confirmed",
+      "DEFCON escalation path verification"
+    ]
+  },
+
+  "pre_execution_diagnostics_gate": {
+    "description": "MANDATORY checks before any sync action",
+    "checks": [
+      {
+        "check_id": "QDRANT_REACHABLE",
+        "method": "HTTP GET to Qdrant health endpoint",
+        "endpoint": "http://localhost:6333/health",
+        "success_criteria": "HTTP 200"
+      },
+      {
+        "check_id": "QDRANT_COLLECTION_EXISTS",
+        "method": "HTTP GET to collections endpoint",
+        "endpoint": "http://localhost:6333/collections",
+        "success_criteria": "At least 1 collection present"
+      },
+      {
+        "check_id": "QDRANT_VECTOR_COUNT",
+        "method": "HTTP GET to collection info",
+        "endpoint": "http://localhost:6333/collections/{collection}/points/count",
+        "success_criteria": "points_count > 0 OR acknowledged as rebuild required"
+      },
+      {
+        "check_id": "EVIDENCE_NODE_INTEGRITY",
+        "method": "SQL query",
+        "query": "SELECT COUNT(*) as total, COUNT(qdrant_point_id) as with_id, COUNT(DISTINCT qdrant_collection) as collections FROM fhq_canonical.evidence_nodes",
+        "success_criteria": "Mapping documented"
+      }
+    ],
+    "failure_action": "Document state, proceed with rebuild if Qdrant reachable"
+  },
+
+  "measurable_success_criteria": {
+    "description": "Recovery is verified by metrics, not assertion",
+    "gates": [
+      {
+        "metric": "crypto_staleness_hours",
+        "threshold": "< 24",
+        "measurement": "MAX(NOW() - timestamp) for BTC-USD, ETH-USD, SOL-USD"
+      },
+      {
+        "metric": "qdrant_collections_with_vectors",
+        "threshold": ">= 1 collection with > 0 points",
+        "measurement": "Qdrant API collection stats"
+      },
+      {
+        "metric": "crio_query_functional",
+        "threshold": "Returns non-empty result",
+        "measurement": "Test query to GraphRAG retrieval"
+      },
+      {
+        "metric": "critical_daemons_registered",
+        "threshold": ">= 5",
+        "measurement": "COUNT(*) FROM fhq_execution.task_registry WHERE enabled = true"
+      }
+    ]
+  },
+
+  "defcon_escalation_logic": {
+    "trigger_condition": "crypto_staleness > 48h after remediation attempt",
+    "escalation_level": "DEFCON YELLOW",
+    "escalation_actions": [
+      "Block signal generation (not just execution)",
+      "Alert CEO/VEGA",
+      "Log to governance_actions_log with severity CRITICAL"
+    ],
+    "rationale": "Protects epistemic integrity upstream of execution layer"
+  },
+
+  "qdrant_point_id_treatment": {
+    "principle": "Presence of qdrant_point_id does not imply validity",
+    "current_state": "qdrant_sync_log empty = auditability void",
+    "treatment": "All existing point IDs are NON-AUTHORITATIVE until reconciled and re-logged",
+    "constitutional_basis": ["ADR-013 (One-True-Source)", "ADR-011 (Replay Determinism)"]
+  },
+
+  "execution_sequence": [
+    {
+      "phase": 0,
+      "action": "Pre-execution diagnostics gate",
+      "owner": "STIG",
+      "blocking": true
+    },
+    {
+      "phase": 1,
+      "action": "CoinGecko crypto catchup",
+      "owner": "STIG",
+      "blocking": true
+    },
+    {
+      "phase": 2,
+      "action": "Task registry normalization",
+      "owner": "STIG",
+      "blocking": false
+    },
+    {
+      "phase": 3,
+      "action": "Qdrant reconciliation and resync",
+      "owner": "STIG",
+      "blocking": true
+    },
+    {
+      "phase": 4,
+      "action": "CRIO verification query",
+      "owner": "STIG",
+      "blocking": true
+    },
+    {
+      "phase": 5,
+      "action": "Success criteria verification",
+      "owner": "VEGA",
+      "blocking": true
+    }
+  ],
+
+  "prohibitions_until_restored": {
+    "no_new_trades": true,
+    "no_parameter_tuning": true,
+    "no_signal_generation_if_defcon_yellow": true,
+    "rationale": "Epistemic substrate must be functional before autonomous operation"
+  },
+
+  "attestation": {
+    "ceo_approval": "CEO_APPROVED_WITH_AMENDMENTS",
+    "stig_analysis": "INCORPORATED_VERBATIM",
+    "timestamp": "2026-01-06T19:45:00Z"
+  }
+}

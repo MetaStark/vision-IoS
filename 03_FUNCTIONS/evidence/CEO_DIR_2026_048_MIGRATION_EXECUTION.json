@@ -1,0 +1,93 @@
+{
+  "evidence_type": "MIGRATION_EXECUTION_VERIFICATION",
+  "directive": "CEO-DIR-2026-048",
+  "title": "G4 Blocker Remediation Migration Execution",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-14",
+  "migration_file": "04_DATABASE/MIGRATIONS/CEO_DIR_2026_047_GAP_REMEDIATION.sql",
+  "status": "SUCCESS",
+
+  "gap_results": {
+    "GAP-001": {
+      "description": "Sub-Executive Contract Registration",
+      "status": "CANONICAL",
+      "operations": "5 INSERT statements",
+      "verification_query": "SELECT target_agent, source_agent as parent, metadata->>'contract_status' as status, metadata->>'heartbeat_verified' as heartbeat_ok FROM fhq_governance.agent_contracts WHERE target_agent IN ('CSEO', 'CDMO', 'CRIO', 'CEIO', 'CFAO')",
+      "results": [
+        {"agent": "CDMO", "parent": "STIG", "status": "ACTIVE", "heartbeat": "true"},
+        {"agent": "CEIO", "parent": "STIG", "status": "ACTIVE", "heartbeat": "true"},
+        {"agent": "CRIO", "parent": "FINN", "status": "ACTIVE", "heartbeat": "true"},
+        {"agent": "CSEO", "parent": "LARS", "status": "PENDING_HEARTBEAT", "heartbeat": "false"},
+        {"agent": "CFAO", "parent": "LARS", "status": "PENDING_HEARTBEAT", "heartbeat": "false"}
+      ]
+    },
+    "GAP-002": {
+      "description": "Privilege Scope Enforcement",
+      "status": "CANONICAL",
+      "operations": "5 UPDATE statements",
+      "verification_query": "SELECT agent_name, mandate_document->'privilege_scope'->>'canonical_write' as canonical_write, mandate_document->'privilege_scope'->>'global_write' as global_write, mandate_document->'privilege_scope'->'schema_access' as schema_access FROM fhq_governance.agent_mandates WHERE agent_name IN ('CSEO', 'CDMO', 'CRIO', 'CEIO', 'CFAO')",
+      "results": [
+        {"agent": "CDMO", "canonical_write": "false", "global_write": "false", "schema_access": ["fhq_data", "fhq_market"]},
+        {"agent": "CEIO", "canonical_write": "false", "global_write": "false", "schema_access": ["vision_verification", "fhq_governance"]},
+        {"agent": "CRIO", "canonical_write": "false", "global_write": "false", "schema_access": ["fhq_graph", "fhq_alpha"]},
+        {"agent": "CSEO", "canonical_write": "false", "global_write": "false", "schema_access": ["fhq_governance"]},
+        {"agent": "CFAO", "canonical_write": "false", "global_write": "false", "schema_access": ["fhq_research", "fhq_finn"]}
+      ],
+      "adr_compliance": {
+        "ADR-013": "CANONICAL_WRITE = FALSE for all agents",
+        "ADR-014": "Schema-scoped access only, no global write"
+      }
+    },
+    "GAP-003": {
+      "description": "Graph Lineage Population",
+      "status": "CANONICAL",
+      "operations": "2 UPDATE statements (nodes + edges)",
+      "verification_query": "SELECT 'fhq_graph.nodes' as table_name, COUNT(*) as total, COUNT(CASE WHEN lineage_hash IS NOT NULL THEN 1 END) as with_lineage, ROUND(100.0 * COUNT(CASE WHEN lineage_hash IS NOT NULL THEN 1 END) / NULLIF(COUNT(*), 0), 1) as coverage_pct FROM fhq_graph.nodes UNION ALL SELECT 'fhq_graph.edges', COUNT(*), COUNT(CASE WHEN lineage_hash IS NOT NULL THEN 1 END), ROUND(100.0 * COUNT(CASE WHEN lineage_hash IS NOT NULL THEN 1 END) / NULLIF(COUNT(*), 0), 1) FROM fhq_graph.edges",
+      "results": [
+        {"table": "fhq_graph.nodes", "total": 196, "with_lineage": 196, "coverage_pct": 100.0},
+        {"table": "fhq_graph.edges", "total": 18, "with_lineage": 18, "coverage_pct": 100.0}
+      ],
+      "bcbs239_compliance": {
+        "hash_algorithm": "SHA256",
+        "chain_format": "BCBS239_CHAIN",
+        "coverage": "100%",
+        "deterministic": true
+      }
+    },
+    "GAP-004": {
+      "description": "CNRP Latency Instrumentation",
+      "status": "CLOSED",
+      "note": "Code changes committed in f79058a, tracking record inserted"
+    }
+  },
+
+  "transaction_summary": {
+    "begin": "SUCCESS",
+    "gap_001_inserts": 5,
+    "gap_002_updates": 5,
+    "gap_003_node_updates": 196,
+    "gap_003_edge_updates": 18,
+    "gap_004_tracking_insert": 1,
+    "commit": "SUCCESS"
+  },
+
+  "ghost_agent_assessment": {
+    "agents_with_heartbeat": ["CDMO", "CEIO", "CRIO"],
+    "agents_pending_heartbeat": ["CSEO", "CFAO"],
+    "ghost_agents": [],
+    "note": "CSEO and CFAO have contracts marked PENDING_HEARTBEAT, not ACTIVE. They are not Ghost Agents per CEO-DIR-2026-048 Section 3.2.1 because their contracts explicitly acknowledge missing heartbeat."
+  },
+
+  "next_step": {
+    "action": "VEGA G3 Zero-Trust Attestation",
+    "owner": "VEGA",
+    "status": "READY"
+  },
+
+  "attestation": {
+    "prepared_by": "STIG",
+    "prepared_at": "2026-01-14",
+    "constitutional_reference": "CEO-DIR-2026-048",
+    "ceo_principle_satisfied": "Nothing is real until it is persisted."
+  }
+}

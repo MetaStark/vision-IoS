@@ -1,0 +1,87 @@
+{
+  "evidence_id": "CEO_DIR_2026_DBV_002_TPSL_FORENSICS",
+  "directive": "CEO-DIR-2026-DBV-002",
+  "section": "2.2 TP/SL Transmission Failure",
+  "classification": "EXECUTION_PIPELINE_GAP",
+  "created_at": "2026-01-20T19:55:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "anomaly_description": {
+    "reported_issue": "All 4 filled trades (ADBE, INTU, GIS, NOW) missing SL/TP at Alpaca despite EC-side calculation",
+    "severity": "HIGH",
+    "capital_risk": "Zero (LIVE-PAPER mode)",
+    "learning_risk": "HIGH - Exit discipline cannot be verified"
+  },
+
+  "forensic_trace": {
+    "file": "03_FUNCTIONS/alpaca_paper_adapter.py",
+    "method": "_submit_to_alpaca",
+    "lines": "456-476",
+    "finding": "Order requests use MarketOrderRequest/LimitOrderRequest without bracket order parameters"
+  },
+
+  "root_cause": {
+    "classification": "MISSING_IMPLEMENTATION",
+    "detail": "Alpaca SDK supports bracket orders via order_class='bracket' with take_profit and stop_loss dict parameters, but alpaca_paper_adapter.py does not implement this feature.",
+    "evidence_code": "request = LimitOrderRequest(symbol=..., qty=..., side=..., time_in_force=TimeInForce.DAY, limit_price=...) -- NO take_profit/stop_loss"
+  },
+
+  "alpaca_bracket_order_spec": {
+    "documentation": "https://docs.alpaca.markets/docs/bracket-orders",
+    "required_parameters": {
+      "order_class": "bracket",
+      "take_profit": {"limit_price": "float"},
+      "stop_loss": {"stop_price": "float", "limit_price": "float (optional for stop-limit)"}
+    },
+    "example": "LimitOrderRequest(symbol='AAPL', qty=10, side=OrderSide.BUY, time_in_force=TimeInForce.GTC, limit_price=150.00, order_class=OrderClass.BRACKET, take_profit={'limit_price': 160.00}, stop_loss={'stop_price': 145.00})"
+  },
+
+  "data_model_check": {
+    "paper_orders_table": {
+      "has_take_profit_column": false,
+      "has_stop_loss_column": false,
+      "note": "TP/SL calculated by decision engine but not stored in paper_orders schema"
+    },
+    "daily_report_orders": {
+      "has_take_profit": true,
+      "has_stop_loss": true,
+      "note": "CEO-specified checkpoint orders have TP/SL but stored in JSON, not transmitted"
+    }
+  },
+
+  "recommended_fix": {
+    "priority": "P0",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Add take_profit and stop_loss columns to fhq_execution.paper_orders",
+        "sql": "ALTER TABLE fhq_execution.paper_orders ADD COLUMN take_profit NUMERIC, ADD COLUMN stop_loss NUMERIC;"
+      },
+      {
+        "step": 2,
+        "action": "Update PaperOrder dataclass to include take_profit and stop_loss fields",
+        "file": "alpaca_paper_adapter.py:127-140"
+      },
+      {
+        "step": 3,
+        "action": "Update _submit_to_alpaca to use bracket orders when TP/SL present",
+        "code_pattern": "if order.take_profit and order.stop_loss: use OrderClass.BRACKET"
+      },
+      {
+        "step": 4,
+        "action": "Update _log_order to persist TP/SL to database",
+        "file": "alpaca_paper_adapter.py:493-533"
+      }
+    ],
+    "owner": "STIG",
+    "ios_reference": "IoS-012"
+  },
+
+  "interim_mitigation": {
+    "description": "Until bracket orders are implemented, EXIT MANAGEMENT must be handled by separate monitoring daemon",
+    "current_state": "ios012b_exit_sentinel_daemon.py exists but may not be actively monitoring",
+    "recommendation": "Verify exit sentinel is running and monitoring TP/SL conditions from daily report"
+  },
+
+  "hash": "b4c2e8f1a9d7c3b5e6f0a2d4c8b1e7f3"
+}

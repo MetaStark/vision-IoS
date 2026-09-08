@@ -1,0 +1,143 @@
+{
+  "mode": "OPERATIONAL",
+  "interval_minutes": 120,
+  "consecutive_green": 0,
+  "incident_runs": 0,
+  "incident_id": null,
+  "escalation_reason": "LVI = 0.039 (Grade F, coverage_rate bottleneck at 0.067)",
+  "last_updated": "2026-02-01T17:52:00+01:00",
+  "day": 32,
+  "system_status": "OPERATIONAL_SHADOW_MODE",
+  "migrations_executed": ["332_fhq_ops_control_room.sql", "333_ios016_experiment_ledgers.sql", "340_fix_tag_event_proximity_field_names.sql", "350_options_trading_infrastructure.sql", "351_options_defcon_killswitch.sql", "352_volatility_observer_infrastructure.sql", "353_micro_regime_infrastructure.sql"],
+  "critical_gaps": [
+    "LVI = 0.039 (Grade F, coverage_rate = 0.067 is bottleneck)",
+    "shadow_roi_calculator heartbeat stale (>22h)"
+  ],
+  "resolved_gaps": [
+    "pg_stat statistics refreshed via ANALYZE (DAY32)",
+    "hypothesis_ledger populated (8 hypotheses, 100% forward coverage)",
+    "tag_event_proximity() schema error FIXED (Migration 340)",
+    "P0 financial tracking gap CLOSED (DAY31)",
+    "Options architecture IoS-012-C delivered (G1 Technical Validation)",
+    "Volatility Observer IoS-009 activated (G2 Observational, 24 observations)",
+    "Micro-Regime Taxonomy IoS-003B delivered (G2 Observational, MR_SELECTIVE classified)"
+  ],
+  "active_alerts": {
+    "critical": 0,
+    "warning": 2,
+    "total": 2
+  },
+  "control_room_status": "DEPLOYED",
+  "lvi_status": {
+    "score": 0.039,
+    "grade": "F",
+    "bottleneck": "coverage_rate",
+    "integrity_rate": 1.0,
+    "coverage_rate": 0.067,
+    "time_factor": 0.778,
+    "brier_component": 0.375,
+    "forward_coverage": 1.0,
+    "last_computed": "2026-01-23T19:17:23Z"
+  },
+  "database_verification": {
+    "timestamp": "2026-02-01T17:35:06+01:00",
+    "schemas": 42,
+    "tables": 1315,
+    "rows": 35218240,
+    "size_gb": 13,
+    "analyze_executed": true,
+    "options_tables_created": 14,
+    "micro_regime_tables_created": 1,
+    "micro_regime_views_created": 1,
+    "micro_regime_columns_added": 2
+  },
+  "daemon_health_status": {
+    "total": 21,
+    "healthy": 12,
+    "stale": 1,
+    "stopped": 8,
+    "stale_daemon": "shadow_roi_calculator"
+  },
+  "pipeline_status": {
+    "steps_operational": 9,
+    "steps_total": 9,
+    "mode": "SHADOW",
+    "hypotheses": 1024,
+    "active": 127,
+    "falsified": 897,
+    "promoted": 1,
+    "experiments_running": 1
+  },
+  "quality_gates": {
+    "total": 6,
+    "passed": 6,
+    "adr": "ADR-011"
+  },
+  "run_ledger_today": {
+    "runs": 18,
+    "success": 18,
+    "success_rate": 1.0
+  },
+  "board_summary_generated": true,
+  "evidence_file": "CEO_DIR_2026_OPS_MICROREGIME_003_EVIDENCE.json",
+  "options_infrastructure": {
+    "directive": "CEO-DIR-2026-OPS-AUTONOMY-001",
+    "gate": "G1",
+    "status": "DELIVERED",
+    "execution_mode": "SHADOW_PAPER",
+    "tables_created": 10,
+    "migrations": ["350", "351"],
+    "modules": ["options_greeks_calculator.py", "options_defcon_killswitch.py", "options_shadow_adapter.py"],
+    "gateway_version": "1.1.0",
+    "verification_pass": 7,
+    "verification_total": 7,
+    "next_gate": "G2"
+  },
+  "volatility_observer": {
+    "directive": "CEO-DIR-2026-OPS-ALPHA-002A",
+    "gate": "G2",
+    "status": "OPERATIONAL",
+    "execution_authority": "NONE",
+    "capital_authority": "ZERO",
+    "tables_created": 4,
+    "views_created": 1,
+    "columns_added": 10,
+    "migration": "352",
+    "module": "volatility_observer.py",
+    "first_scan": {
+      "symbols_scanned": 27,
+      "observations_created": 24,
+      "envelope_compliant": 0,
+      "envelope_non_compliant": 24,
+      "zero_leakage": true
+    },
+    "acceptance_criteria": {
+      "prediction_log_target": 100,
+      "prediction_log_current": 24,
+      "zero_leakage_verdict": "PASS"
+    }
+  },
+  "micro_regime": {
+    "directive": "CEO-DIR-2026-OPS-MICROREGIME-003",
+    "gate": "G2",
+    "status": "OPERATIONAL",
+    "execution_authority": "NONE",
+    "capital_authority": "ZERO",
+    "taxonomy_document": "IoS-003B_MICRO_REGIME_TAXONOMY.md",
+    "migration": "353",
+    "module": "micro_regime_classifier.py",
+    "module_version": "1.0.0",
+    "self_test": "8/8 PASSED",
+    "micro_regimes_defined": 4,
+    "current_classification": {
+      "macro_regime": "CRISIS",
+      "micro_regime": "MR_SELECTIVE",
+      "avg_stress_prob": 0.4408,
+      "assets_evaluated": 55,
+      "stress_assets": 13,
+      "bear_assets": 36,
+      "momentum": "STABLE",
+      "policy_divergent": true
+    }
+  }
+}

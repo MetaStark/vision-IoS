@@ -1,0 +1,148 @@
+{
+  "directive_id": "CEO-DIR-2026-123",
+  "title": "Operation Velocity: Etablering av Epistemisk Sandkasse",
+  "issued_at": "2026-01-22T22:45:00+01:00",
+  "issued_by": "CEO / FjordHQ Executive Office",
+  "technical_authority": "STIG (EC-003)",
+  "classification": "STRATEGIC_DIRECTIVE",
+
+  "executive_summary": {
+    "problem": "FjordHQ har bygget et institutt for evig sannhet, men glemt laboratoriet for hurtig læring",
+    "solution": "Arkitektonisk separasjon mellom Canonical Truth og Epistemic Learning",
+    "key_innovation": "fhq_learning schema som epistemisk sandkasse med Canonical Firewall",
+    "end_goal": "Handle på innsikt før markedet korrigerer seg"
+  },
+
+  "macro_context": {
+    "source": "World Bank January 2026 Report",
+    "global_growth_2026": "2.4%",
+    "primary_risks": ["Tariff escalation", "Trade tensions", "High real rates"],
+    "implication": "Low-growth environment requires rapid regime change detection"
+  },
+
+  "architecture": {
+    "canonical_truth_layer": {
+      "schemas": ["fhq_governance", "fhq_meta", "fhq_alpha", "fhq_canonical"],
+      "characteristics": ["ADR-013 compliant", "PnL decisions", "IoS-006 validated"],
+      "protection_level": "MAXIMUM"
+    },
+    "epistemic_learning_layer": {
+      "schema": "fhq_learning",
+      "characteristics": ["Errors permitted", "Brier-measured", "Reversible", "Experimental"],
+      "protection_level": "FIREWALLED"
+    },
+    "canonical_firewall": {
+      "rule": "Data i fhq_learning er per definisjon epistemisk og kan aldri, direkte eller indirekte, promotere seg selv til canonical truth uten eksplisitt IoS-006 validering.",
+      "ios_006_validation_required": true,
+      "auto_promotion_blocked": true
+    }
+  },
+
+  "mandates": {
+    "mandate_1_fhq_learning_schema": {
+      "description": "Establish fhq_learning schema as epistemic sandbox",
+      "tables_created": [
+        "fhq_learning.canonical_firewall",
+        "fhq_learning.experiment_registry",
+        "fhq_learning.puu_decision_log",
+        "fhq_learning.puu_config",
+        "fhq_learning.brier_permission_thresholds",
+        "fhq_learning.hindsight_comparison_log",
+        "fhq_learning.hindsight_processor_config",
+        "fhq_learning.knowledge_velocity_log",
+        "fhq_learning.audit_log"
+      ],
+      "status": "MIGRATION_READY"
+    },
+    "mandate_2_puu_flag": {
+      "description": "Proceed-under-Uncertainty flag for G1-G2 decisions",
+      "max_gate_level": "G2",
+      "allowed_actions": ["SHADOW", "PAPER"],
+      "canonical_action_blocked": true,
+      "config_parameters": {
+        "puu_enabled": true,
+        "puu_min_confidence_for_shadow": 0.60,
+        "puu_min_confidence_for_paper": 0.75,
+        "puu_require_disagreement_log": true,
+        "puu_escalate_threshold": 3
+      },
+      "status": "MIGRATION_READY"
+    },
+    "mandate_3_brier_permission_layer": {
+      "description": "Brier score as permission layer with stability requirements",
+      "strategic_threshold": 0.15,
+      "min_observations": 30,
+      "tail_stability_required": true,
+      "stability_window_days": 14,
+      "permission_tiers": [
+        {"name": "EXCELLENT_CALIBRATION", "brier_lt": 0.10, "min_n": 50, "permission": "LIVE_ELIGIBLE", "multiplier": 2.00},
+        {"name": "STRATEGIC_SIGNIFICANCE", "brier_lt": 0.15, "min_n": 30, "permission": "PAPER_TRADING", "multiplier": 1.50},
+        {"name": "GOOD_CALIBRATION", "brier_lt": 0.20, "min_n": 25, "permission": "SHADOW_TRADING", "multiplier": 1.25},
+        {"name": "ACCEPTABLE_CALIBRATION", "brier_lt": 0.30, "min_n": 20, "permission": "OBSERVE_ONLY", "multiplier": 1.00},
+        {"name": "POOR_CALIBRATION", "brier_lt": 0.50, "min_n": 10, "permission": "OBSERVE_ONLY", "multiplier": 0.50}
+      ],
+      "status": "MIGRATION_READY"
+    },
+    "mandate_4_hindsight_processor": {
+      "description": "24h comparison of learning results with actual market outcomes",
+      "processing_interval_hours": 24,
+      "feed_to_finn": true,
+      "feed_to_experiment_registry": true,
+      "min_observations_for_feedback": 5,
+      "status": "MIGRATION_READY"
+    }
+  },
+
+  "risk_mitigations": [
+    {
+      "risk": "Epistemic data leaks to canonical",
+      "mitigation": "Canonical Firewall with mandatory IoS-006 validation",
+      "implementation": "fhq_learning.canonical_firewall table"
+    },
+    {
+      "risk": "False confidence bursts in short regime windows",
+      "mitigation": "Minimum N=30 observations + tail stability requirement",
+      "implementation": "brier_permission_thresholds.min_observations"
+    },
+    {
+      "risk": "Agent confusion between learning and canonical",
+      "mitigation": "Clear schema separation + comprehensive audit logging",
+      "implementation": "fhq_learning.audit_log with triggers"
+    },
+    {
+      "risk": "Over-exposure during learning experiments",
+      "mitigation": "Maximum exposure multiplier caps per Brier tier",
+      "implementation": "brier_permission_thresholds.max_exposure_multiplier"
+    }
+  ],
+
+  "implementation_artifacts": {
+    "migration_file": "03_FUNCTIONS/migrations/CEO_DIR_2026_123_OPERATION_VELOCITY.sql",
+    "governance_document": "05_GOVERNANCE/CEO_DIR_2026_123_OPERATION_VELOCITY.md",
+    "evidence_file": "03_FUNCTIONS/evidence/CEO_DIR_2026_123_OPERATION_VELOCITY.json"
+  },
+
+  "verification_checklist": [
+    {"item": "fhq_learning schema created", "status": "PENDING_EXECUTION"},
+    {"item": "canonical_firewall contains sacred rule", "status": "PENDING_EXECUTION"},
+    {"item": "brier_permission_thresholds has 5 tiers", "status": "PENDING_EXECUTION"},
+    {"item": "puu_config has all keys", "status": "PENDING_EXECUTION"},
+    {"item": "audit triggers active", "status": "PENDING_EXECUTION"},
+    {"item": "hindsight processor config exists", "status": "PENDING_EXECUTION"}
+  ],
+
+  "philosophical_foundation": {
+    "core_insight": "Vi gjør feilene billige, slik at lærdommen kan bli uvurderlig",
+    "paradigm_shift": "Ansvar for perfeksjon flyttes fra handling til loggføring",
+    "protection_model": "Learning is now explicitly non-threatening to Canonical Truth"
+  },
+
+  "stig_attestation": {
+    "directive_received": true,
+    "mandate_understood": true,
+    "migration_prepared": true,
+    "canonical_firewall_implemented": true,
+    "awaiting_execution": true,
+    "timestamp": "2026-01-22T22:45:00+01:00"
+  }
+}

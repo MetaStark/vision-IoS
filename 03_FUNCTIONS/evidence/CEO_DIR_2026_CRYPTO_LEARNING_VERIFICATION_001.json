@@ -1,0 +1,80 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-CRYPTO-LEARNING-VERIFICATION-001",
+  "title": "Canonical Verification of Continuous Crypto Learning on CEO Dashboard",
+  "timestamp": "2026-01-25T19:20:00Z",
+  "executor": "STIG (EC-003)",
+  "status": "COMPLETE",
+  "classification": "GOVERNANCE-CRITICAL · CEO-VISIBILITY · AUDIT-GRADE",
+
+  "root_cause_analysis": {
+    "symptom": "Dashboard showed Born Today = 0, Killed Today = 0 despite 2 hypotheses created",
+    "root_cause": "v_lvg_daily_status view queried learning_velocity_metrics (derived table) instead of hypothesis_canon (canonical source)",
+    "derived_table_state": {
+      "table": "fhq_learning.learning_velocity_metrics",
+      "rows_for_today": 0
+    },
+    "canonical_table_state": {
+      "table": "fhq_learning.hypothesis_canon",
+      "hypotheses_created_today": 2,
+      "hypotheses_falsified_today": 0
+    }
+  },
+
+  "remediation": {
+    "migration": "349_canonical_lvg_counters.sql",
+    "changes": [
+      "Replaced v_lvg_daily_status to query hypothesis_canon directly",
+      "Born Today = COUNT(*) FROM hypothesis_canon WHERE created_at::date = CURRENT_DATE",
+      "Killed Today = COUNT(*) WHERE status = 'FALSIFIED' AND falsified_at::date = CURRENT_DATE",
+      "Created v_lvg_reconciliation view for continuous verification"
+    ]
+  },
+
+  "verification_queries": {
+    "lvg_daily_status": "SELECT * FROM fhq_calendar.v_lvg_daily_status",
+    "reconciliation": "SELECT * FROM fhq_calendar.v_lvg_reconciliation",
+    "canonical_count": "SELECT COUNT(*) FROM fhq_learning.hypothesis_canon WHERE created_at::date = CURRENT_DATE"
+  },
+
+  "verification_results": {
+    "v_lvg_daily_status": {
+      "hypotheses_born_today": 2,
+      "hypotheses_killed_today": 0,
+      "governor_action": "NORMAL"
+    },
+    "v_lvg_reconciliation": {
+      "canonical_born_today": 2,
+      "dashboard_born_today": 2,
+      "born_today_status": "RECONCILED",
+      "crypto_born_today": 2,
+      "finn_e_born_today": 0,
+      "finn_t_born_today": 0,
+      "gn_s_born_today": 0
+    }
+  },
+
+  "objectives_completed": {
+    "objective_a_single_canonical_source": {
+      "status": "COMPLETE",
+      "proof": "v_lvg_daily_status now queries hypothesis_canon directly"
+    },
+    "objective_b_explicit_crypto_inclusion": {
+      "status": "COMPLETE",
+      "proof": "Query includes all asset classes, no market open/closed gates"
+    },
+    "objective_c_counter_reconciliation": {
+      "status": "COMPLETE",
+      "proof": "v_lvg_reconciliation view shows born_today_status = RECONCILED"
+    }
+  },
+
+  "acceptance_criteria": {
+    "non_contradictory_numbers": true,
+    "born_today_reflects_reality": true,
+    "learning_visibility_calendar_agree": true,
+    "ceo_can_answer_in_10_seconds": true
+  },
+
+  "ceo_status_sentence": "Crypto learning is ACTIVE. 2 hypotheses generated today from finn_crypto_scheduler. 0% death rate indicates new hypotheses awaiting Tier-1 evaluation, not inactivity."
+}

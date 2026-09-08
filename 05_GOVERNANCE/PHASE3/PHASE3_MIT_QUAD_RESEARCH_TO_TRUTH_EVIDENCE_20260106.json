@@ -1,0 +1,139 @@
+{
+  "evidence_id": "PHASE3-MIT-QUAD-2026-0106-001",
+  "phase": "PHASE_3_RESEARCH_TO_TRUTH_PORT",
+  "directive_reference": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "timestamp": "2026-01-06T20:25:00Z",
+  "executed_by": "STIG",
+
+  "mit_quad_protocol": {
+    "reference": "ADR-017",
+    "pillars": {
+      "LIDS": "Inference & Truth - P(truth) > 0.85 required",
+      "ACL": "Coordination & Synchronization - CBBA task allocation",
+      "DSL": "Optimization & Execution Logic - CVaR constraints",
+      "RISL": "Immunity & Systemic Resilience - DEFCON integration"
+    },
+    "hierarchy": "RISL > ACL > LIDS > DSL"
+  },
+
+  "canonical_registries_verified": {
+    "ec_registry": {
+      "table": "fhq_governance.ec_registry",
+      "aci_triangle": {
+        "EC-020": {"title": "SitC - Search-in-the-Chain", "role": "Reasoning", "parent": "LARS", "status": "ACTIVE"},
+        "EC-021": {"title": "InForage - Information Economist", "role": "Search", "parent": "FINN", "status": "ACTIVE"},
+        "EC-022": {"title": "IKEA - Knowledge Boundary Officer", "role": "Hallucination Firewall", "parent": "VEGA", "status": "ACTIVE"}
+      },
+      "meta_alpha": {
+        "EC-018": {"title": "Meta-Alpha & Freedom Optimizer", "depends_on": ["EC-020", "EC-021", "EC-022"], "status": "ACTIVE"}
+      }
+    },
+    "ios_registry": {
+      "table": "fhq_meta.ios_registry",
+      "entries": {
+        "IoS-002": {"title": "Indicator Engine", "owner": "STIG", "canonical": true, "status": "ACTIVE"},
+        "IoS-003": {"title": "Meta-Perception", "owner": "FINN", "canonical": true, "status": "ACTIVE", "governs": ["ADR-003", "ADR-017"]},
+        "IoS-004": {"title": "Allocation", "owner": "FINN", "canonical": true, "status": "ACTIVE", "governs": ["ADR-012", "ADR-017"]},
+        "IoS-006": {"title": "Global Macro & Factor Integration Engine", "owner": "FINN", "canonical": true, "status": "ACTIVE", "governs": ["ADR-013"]}
+      }
+    }
+  },
+
+  "research_to_truth_pipeline": {
+    "stage_1_ceio_ingest": {
+      "table": "fhq_macro.raw_staging",
+      "total_staged": 138808,
+      "unique_features": 22,
+      "latest_ingest": "2026-01-06T15:30:04Z",
+      "status": "OPERATIONAL"
+    },
+    "stage_2_crio_research": {
+      "table": "fhq_research.nightly_insights",
+      "latest_insight": {
+        "insight_id": "58cba7e7-6b19-44fb-8b63-85ec4fa23fba",
+        "research_date": "2026-01-05",
+        "fragility_score": 0.35,
+        "dominant_driver": "SENTIMENT",
+        "confidence": 0.98,
+        "lids_verified": true,
+        "risl_verified": true,
+        "quad_hash": "f7e9d9232d3ca663"
+      },
+      "status": "OPERATIONAL"
+    },
+    "stage_3_ios006_validation": {
+      "table": "fhq_macro.canonical_features",
+      "total_features": 0,
+      "note": "Feature promotion through nightly_insights path, not direct canonical_features",
+      "status": "ALTERNATIVE_PATH"
+    },
+    "stage_4_mit_quad_sovereignty": {
+      "table": "fhq_execution.sovereign_checkpoints",
+      "total_checkpoints": 381,
+      "approved": 378,
+      "blocked": 3,
+      "latest_checkpoint": "2026-01-06T18:03:01Z",
+      "latest_decision": "APPROVED",
+      "latest_position_scalar": 1.0,
+      "status": "OPERATIONAL"
+    }
+  },
+
+  "validation_functions_present": {
+    "validate_mit_quad_sovereignty": true,
+    "validate_quad_compliance": true,
+    "validate_execution_route": true,
+    "validate_canonical_access": true
+  },
+
+  "mit_quad_validator_status": {
+    "script": "03_FUNCTIONS/ios012_mit_quad_validator.py",
+    "class": "MITQuadValidator",
+    "risl_thresholds": {
+      "block_fragility": 0.80,
+      "reduce_fragility": 0.70,
+      "neutral_fragility": 0.40
+    },
+    "current_fragility": 0.35,
+    "current_scalar": 1.0,
+    "execution_status": "FULL_SIZING_ALLOWED"
+  },
+
+  "success_criteria_evaluation": {
+    "canonical_registries_populated": {
+      "threshold": "EC and IoS registries have active entries",
+      "actual": "EC-018/020/021/022 and IoS-002/003/004/006 all ACTIVE",
+      "status": "PASS"
+    },
+    "crio_insights_lids_verified": {
+      "threshold": "At least one LIDS-verified insight",
+      "actual": "5+ LIDS-verified insights, latest 2026-01-05",
+      "status": "PASS"
+    },
+    "sovereign_checkpoints_active": {
+      "threshold": "> 0 checkpoints logged",
+      "actual": "381 checkpoints (99.2% approval rate)",
+      "status": "PASS"
+    },
+    "fragility_below_block": {
+      "threshold": "< 0.80",
+      "actual": "0.35",
+      "status": "PASS"
+    }
+  },
+
+  "verdict": "PHASE_3_COMPLETE",
+  "safe_to_proceed": true,
+
+  "notes": [
+    "MIT Quad uses nightly_insights path rather than canonical_features for research-to-truth flow",
+    "ACI Triangle (EC-020/021/022) fully registered and ACTIVE",
+    "Current fragility 0.35 allows full position sizing (1.0 scalar)",
+    "381 sovereignty checkpoints demonstrate sustained MIT Quad operation"
+  ],
+
+  "attestation": {
+    "stig_signature": "STIG_PHASE3_VERIFIED",
+    "timestamp": "2026-01-06T20:25:00Z"
+  }
+}

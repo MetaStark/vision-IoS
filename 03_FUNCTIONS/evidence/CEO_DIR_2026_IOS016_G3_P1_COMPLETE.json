@@ -1,0 +1,141 @@
+{
+  "evidence_type": "G3_P1_COMPLETION",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_P1",
+  "requirements": ["G3-REQ-006", "G3-REQ-005", "G3-REQ-004"],
+  "titles": [
+    "Scope Firewall - Control Before Interpretation",
+    "Ghost Events Non-Exculpatory - Remove Escape Hatches",
+    "Granular Conflict Resolution - Refinement Not Safety"
+  ],
+  "classification": "GOVERNANCE-CRITICAL",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T23:15:00Z",
+
+  "executive_summary": {
+    "status": "P1_COMPLETE",
+    "mechanical_enforcement": true,
+    "escape_hatches_removed": true,
+    "audit_semantics_preserved": true,
+    "ceo_sequence_followed": ["REQ-006", "REQ-005", "REQ-004"]
+  },
+
+  "g3_req_006_scope_firewall": {
+    "ceo_rationale": "Control before interpretation",
+    "migration": "269_g3_scope_firewall.sql",
+    "status": "MECHANICALLY_ENFORCED",
+    "implementation": {
+      "firewall_window": "14 days future, 14 days past",
+      "enforcement_point": "BEFORE INSERT trigger on staging_events",
+      "rejection_logging": true,
+      "rejection_hash": "SHA-256 for audit trail",
+      "backfill_approval": "CEO approval required"
+    },
+    "tables_created": [
+      "firewall_rejection_log",
+      "firewall_config"
+    ],
+    "functions_created": [
+      "enforce_scope_firewall()",
+      "staging_firewall_trigger()",
+      "approve_backfill_window()"
+    ],
+    "views_created": [
+      "firewall_status"
+    ],
+    "test_result": "PASS - all firewall tests passed"
+  },
+
+  "g3_req_005_ghost_non_exculpatory": {
+    "ceo_rationale": "Remove escape hatches",
+    "migration": "270_g3_ghost_non_exculpatory.sql",
+    "status": "MECHANICALLY_ENFORCED",
+    "implementation": {
+      "default_state": "NON-EXCULPATORY",
+      "exculpatory_eligible_causes": ["COVERAGE_GAP", "TIMESTAMP_DEFECT"],
+      "non_exculpatory_causes": ["MAPPING_DEFECT", "TRUE_GHOST"],
+      "evidence_required": "SHA-256 hash (min 64 chars)",
+      "constraint": "ghost_exculpatory_requires_evidence"
+    },
+    "columns_added": [
+      "exculpatory_eligible",
+      "resolution_evidence_hash",
+      "exculpatory_reason",
+      "exculpatory_approved_by",
+      "exculpatory_approved_at"
+    ],
+    "tables_created": [
+      "ghost_exculpatory_audit"
+    ],
+    "functions_created": [
+      "resolve_ghost_with_evidence()",
+      "check_ghost_exculpatory()"
+    ],
+    "views_created": [
+      "ghost_accountability_status"
+    ],
+    "test_result": "PASS - all non-exculpatory tests passed"
+  },
+
+  "g3_req_004_granular_conflict_resolution": {
+    "ceo_rationale": "Refinement, not safety",
+    "migration": "271_g3_granular_conflict_resolution.sql",
+    "status": "MECHANICALLY_ENFORCED",
+    "implementation": {
+      "granularity": "Provider x Domain x Event Type Category",
+      "reliability_dimensions": {
+        "domain": ["MACRO", "EQUITY", "CRYPTO", "CROSS_ASSET"],
+        "event_type_category": "Per event type code"
+      },
+      "resolution_algorithm": "Highest granular reliability wins",
+      "audit_trail": "conflict_id references logged"
+    },
+    "tables_created": [
+      "provider_event_type_reliability"
+    ],
+    "functions_created": [
+      "resolve_source_conflict_granular()",
+      "get_granular_reliability()"
+    ],
+    "views_created": [
+      "provider_reliability_matrix"
+    ],
+    "seed_data": {
+      "FRED": {"macro_rate": 0.95, "macro_employment": 0.92, "macro_inflation": 0.90},
+      "YAHOO_FINANCE": {"equity_earnings": 0.88, "macro_rate": 0.70}
+    },
+    "test_result": "PASS - granular reliability seeded correctly"
+  },
+
+  "g3_audit_caveats_enforcement": {
+    "caveat_a_staging_isolation": {
+      "status": "VERIFIED",
+      "mechanism": "No FK references TO staging_events from other tables",
+      "verified_by": "Migration 266 verification function"
+    },
+    "caveat_b_ghost_before_learning": {
+      "status": "ENFORCED",
+      "mechanism": "Ghost flags classified before Brier calculation",
+      "non_exculpatory_default": true
+    },
+    "caveat_c_determinism": {
+      "status": "AVAILABLE",
+      "mechanism": "Same inputs produce same outputs",
+      "explicit_failure_modes": true
+    }
+  },
+
+  "governance_logging": {
+    "governance_actions_log": "All 3 P1 requirements logged",
+    "ios_audit_log": "All 3 P1 requirements logged",
+    "gate_level": "G3"
+  },
+
+  "stig_attestation": {
+    "p1_complete": true,
+    "mechanical_enforcement": true,
+    "escape_hatches_removed": true,
+    "audit_semantics_sequential": true,
+    "ready_for_g3_shadow_mode": true,
+    "statement": "G3 P1 COMPLETE. All three requirements mechanically enforced: Scope firewall controls ingestion boundary, ghost events are non-exculpatory by default, conflict resolution uses granular provider reliability. System can now refuse to operate incorrectly and prove why something did not happen."
+  }
+}

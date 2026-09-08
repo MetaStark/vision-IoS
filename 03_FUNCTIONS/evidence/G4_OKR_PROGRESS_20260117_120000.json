@@ -1,0 +1,228 @@
+{
+  "event": "G4_OKR_PROGRESS_CHECKPOINT",
+  "checkpoint_id": "T+12h_EXTENDED",
+  "timestamp": "2026-01-17T12:00:00Z",
+  "generated_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "directive_reference": "CEO-G4-EXECUTION-ORDER-2026-01-16",
+
+  "measurement_context": {
+    "mode": "G4_MEASURED_EXECUTION",
+    "started_at": "2026-01-16T01:30:00Z",
+    "deadline": "2026-01-19T01:30:00Z",
+    "hours_elapsed": 34.5,
+    "hours_remaining": 37.5,
+    "checkpoints_captured": ["T0", "T+6h", "T+12h"],
+    "next_checkpoint": "T+24h (2026-01-18T01:30:00Z)"
+  },
+
+  "brier_metrics": {
+    "baseline_brier": 0.5358,
+    "stop_loss_brier": 0.5658,
+    "current_brier": 0.5567,
+    "headroom_to_stop_loss": 0.0091,
+    "status": "WITHIN_THRESHOLD",
+    "warning": "Headroom is narrow - monitoring closely"
+  },
+
+  "objectives_progress": {
+    "O1_kill_overconfidence": {
+      "title": "Kill Overconfidence",
+      "completion_pct": 0,
+      "status": "IN_PROGRESS",
+      "key_results": {
+        "KR1_1": {
+          "description": "Reduce average confidence from 90%+ to regime-appropriate ceilings",
+          "status": "IN_PROGRESS",
+          "notes": "FRICTION-001 ceilings active, awaiting new forecasts"
+        },
+        "KR1_2": {
+          "description": "Zero forecasts above ceiling per regime",
+          "status": "IN_PROGRESS",
+          "notes": "Enforcement active, no violations detected"
+        },
+        "KR1_3": {
+          "description": "Brier improvement from confidence correction",
+          "status": "IN_PROGRESS",
+          "notes": "Requires forecast accumulation to measure"
+        }
+      },
+      "assessment": "Correct 0% - awaiting new forecasts post-calibration"
+    },
+
+    "O2_learning_quality": {
+      "title": "Learning Quality",
+      "completion_pct": 66.7,
+      "status": "ON_TRACK",
+      "key_results": {
+        "KR2_1": {
+          "description": "IoS-016 calendar integration active",
+          "status": "ACHIEVED",
+          "achieved_at": "2026-01-17T11:30:00Z",
+          "evidence": "CEO_DIR_2026_061_IOS016_G4_ACTIVATION.json"
+        },
+        "KR2_2": {
+          "description": "Event-adjacent Brier stratification operational",
+          "status": "ACHIEVED",
+          "notes": "EVENT_ADJACENT avg Brier 0.6286, EVENT_NEUTRAL 0.5567"
+        },
+        "KR2_3": {
+          "description": "LVI_adjusted computation active",
+          "status": "IN_PROGRESS",
+          "notes": "Function deployed, accumulating data"
+        }
+      },
+      "assessment": "IoS-016 G4 activation provides immediate learning quality boost"
+    },
+
+    "O3_capital_risk": {
+      "title": "Capital Risk",
+      "completion_pct": 66.7,
+      "status": "ON_TRACK",
+      "key_results": {
+        "KR3_1": {
+          "description": "Zero exposure during G4 stillness",
+          "status": "ACHIEVED",
+          "current_exposure": 0.0,
+          "evidence": "exposure_total = 0.0 in Truth Snapshot"
+        },
+        "KR3_2": {
+          "description": "No gate violations",
+          "status": "ACHIEVED",
+          "gate_violations_last_24h": 0
+        },
+        "KR3_3": {
+          "description": "Calibration gates enforced",
+          "status": "IN_PROGRESS",
+          "notes": "Calibration gate enforcer active"
+        }
+      },
+      "assessment": "Capital fully protected during measurement period"
+    },
+
+    "O4_defensibility": {
+      "title": "Defensibility",
+      "completion_pct": 100,
+      "status": "ACHIEVED",
+      "key_results": {
+        "KR4_1": {
+          "description": "UMA Ed25519 key registered and attested",
+          "status": "ACHIEVED",
+          "evidence": "Migration 252, VEGA attestation active"
+        },
+        "KR4_2": {
+          "description": "Court-proof evidence chain intact",
+          "status": "ACHIEVED",
+          "evidence": "Single instance proof VERIFIED"
+        },
+        "KR4_3": {
+          "description": "VEGA attestation active",
+          "status": "ACHIEVED",
+          "evidence": "vega_attestation_active = true"
+        }
+      },
+      "assessment": "Full defensibility achieved - audit/arbitration/regulatory ready"
+    }
+  },
+
+  "key_results_summary": {
+    "total": 12,
+    "achieved": 6,
+    "on_track": 0,
+    "in_progress": 6,
+    "at_risk": 0,
+    "blocked": 0
+  },
+
+  "friction_001_enforcement": {
+    "status": "ACTIVE",
+    "ceilings": {
+      "STRESS": {"before": 0.91, "after": 0.10, "enforcement": "ACTIVE"},
+      "BULL": {"before": 0.92, "after": 0.35, "enforcement": "ACTIVE"},
+      "NEUTRAL": {"before": 0.85, "after": 0.39, "enforcement": "ACTIVE"},
+      "BEAR": {"before": 0.86, "after": 0.43, "enforcement": "ACTIVE"}
+    },
+    "violations_detected": 0
+  },
+
+  "ios016_contribution": {
+    "governance_state": "G4_PRODUCTION",
+    "activated_at": "2026-01-17T11:30:00Z",
+    "events_seeded": 17,
+    "forecasts_retagged": 1856,
+    "event_adjacent_excluded": 1721,
+    "false_error_removed_pct": 48.81,
+    "impact": "Immediate O2 improvement via event-aware learning"
+  },
+
+  "ldow_status": {
+    "cycle_1": {
+      "status": "COMPLETED",
+      "brier": 0.48,
+      "hit_rate": 0.4252,
+      "coverage": 1.0
+    },
+    "cycle_2": {
+      "status": "COVERAGE_FAIL",
+      "root_cause": "G4_STILLNESS_EXPECTED",
+      "note": "No forecasts to evaluate during stillness"
+    },
+    "rung_d_eligible": false
+  },
+
+  "calibration_by_regime": {
+    "STRESS": {"avg_confidence": 0.9103, "hit_rate": 0.0000, "brier": 0.8490, "count": 26},
+    "BULL": {"avg_confidence": 0.9148, "hit_rate": 0.3136, "brier": 0.5850, "count": 982},
+    "NEUTRAL": {"avg_confidence": 0.8635, "hit_rate": 0.3178, "brier": 0.5298, "count": 903},
+    "BEAR": {"avg_confidence": 0.8619, "hit_rate": 0.3333, "brier": 0.5163, "count": 498}
+  },
+
+  "event_proximity_breakdown": {
+    "EVENT_ADJACENT": {"count": 1753, "avg_brier": 0.6286},
+    "EVENT_NEUTRAL": {"count": 1745, "avg_brier": 0.5567},
+    "POST_EVENT": {"count": 103, "avg_brier": 0.4462}
+  },
+
+  "integrity_status": {
+    "exposure_total": 0.0,
+    "gate_violations_last_24h": 0,
+    "stillness_violations": 0,
+    "uma_key_attested": true,
+    "vega_attestation_active": true,
+    "single_instance_proof": "VERIFIED"
+  },
+
+  "sanity_check": {
+    "verdict": "CONTROLLED_CONVERGENCE",
+    "details": [
+      "O1 at 0% - CORRECT (awaiting new forecasts)",
+      "O2 at 67% - CORRECT (calendar integration immediate effect)",
+      "O3 at 67% - CORRECT (capital protected)",
+      "O4 at 100% - ACHIEVED (full defensibility)",
+      "Zero info shocks - CORRECT (degradation is structural)",
+      "Brier 0.5567 < stop-loss 0.5658 - ON_TRACK"
+    ]
+  },
+
+  "ceo_guidance": {
+    "next_24h": "Capture checkpoints, let forecasts accumulate, measure deltas",
+    "prohibited": "No new calibration, no stillness relaxation, no premature interpretation",
+    "principle": "Short-term noise up, long-term error down. This is expected post-calibration."
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-17T12:00:00Z",
+    "summary": [
+      "G4 OKR progress checkpoint captured at T+12h extended",
+      "6/12 KRs achieved, 6/12 in progress, 0 at risk",
+      "O4 Defensibility 100% ACHIEVED",
+      "O2/O3 at 67% ON_TRACK",
+      "O1 at 0% - awaiting forecast accumulation (correct behavior)",
+      "Brier 0.5567 within stop-loss threshold (headroom 0.0091)",
+      "IoS-016 G4 PRODUCTION activated, contributing to O2",
+      "System operating as designed under G4 measured execution"
+    ]
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "directive_id": "CEO-DIR-2026-0ZD",
+  "directive_name": "DAILY GOAL CALENDAR INTEGRATION (TRACK 1)",
+  "authority": "CEO",
+  "classification": "G2 (Governance Enhancement)",
+  "priority": "P0",
+  "baseline_reference": "CEO-DIR-2026-0ZC (Day 3 Truth Freeze)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-11T20:30:00Z",
+
+  "scope": {
+    "track": "Track 1 - Operational Discipline",
+    "focus": "Plumbing + Calibration Hygiene",
+    "explicitly_excluded": [
+      "Track 2 - Revenue Targeting (requires separate directive)",
+      "Learning Tempo Tables (decoupled from revenue)",
+      "Superforecaster Brier Targets (adjusted to realistic interim)"
+    ]
+  },
+
+  "ceo_clarifications_integrated": {
+    "brier_event_type": {
+      "question": "Should we track separate Brier score for PRICE_DIRECTION and REGIME?",
+      "answer": "BOTH SEPARATELY",
+      "implementation": "Separate calibration tracking per event type in Week 1 goals"
+    },
+    "revenue_model": {
+      "question": "Trading PnL only, SaaS/License only, or Hybrid?",
+      "answer": "HYBRID",
+      "implementation": "Deferred to Track 2 directive (requires exposure model, cost structure)"
+    },
+    "calendar_process": {
+      "question": "CEO defines all goals vs. Orchestrator proposes daily?",
+      "answer": "HYBRID (CEO defines, orchestrator verifies)",
+      "implementation": "CEO owns goal definition, STIG owns verification via SQL queries"
+    }
+  },
+
+  "day3_baseline_alignment": {
+    "adr_status": {
+      "ACTIVE_runtime_enforced": ["001", "002", "003", "004", "006", "007", "012", "013", "016", "020"],
+      "PASSIVE_logging_only": ["005", "014", "017", "021"],
+      "DORMANT_not_enforced": ["008", "009", "010", "011", "015", "018", "019"],
+      "DRAFT": ["022", "023"],
+      "total": 23
+    },
+    "ios_status": {
+      "ACTIVE_scheduled_executed": ["ios001", "ios003", "ios006", "ios010"],
+      "UNUSED_registered_not_executing": ["ios003b", "ios004", "ios005", "ios007", "ios008", "ios012", "ios013", "ios014"],
+      "total": 12
+    },
+    "ec_status": {
+      "ALL_PARKED": ["EC-018", "EC-020", "EC-021", "EC-022"],
+      "triggers_last_7d": 0,
+      "note": "0 triggers in 7 days = PARKED (not ACTIVE as originally misclassified)"
+    }
+  },
+
+  "deliverables": {
+    "migration": {
+      "file": "04_DATABASE/MIGRATIONS/231_daily_goal_calendar.sql",
+      "tables_created": [
+        "fhq_governance.daily_goal_calendar",
+        "fhq_governance.goal_completion_evidence"
+      ],
+      "functions_created": [
+        "fhq_governance.record_goal_completion()"
+      ],
+      "indexes_created": [
+        "idx_goal_calendar_date",
+        "idx_goal_calendar_status",
+        "idx_goal_calendar_phase",
+        "idx_goal_evidence_goal",
+        "idx_goal_evidence_chain"
+      ],
+      "goals_seeded": 14
+    },
+    "script": {
+      "file": "03_FUNCTIONS/daily_goal_tracker.py",
+      "commands": {
+        "show_today": "python daily_goal_tracker.py",
+        "verify": "python daily_goal_tracker.py --verify",
+        "week_view": "python daily_goal_tracker.py --week",
+        "status": "python daily_goal_tracker.py --status"
+      }
+    }
+  },
+
+  "week1_goals_seeded": {
+    "phase": "WEEK_1_FOUNDATION",
+    "day_range": "Day 4 (2026-01-11) to Day 10 (2026-01-17)",
+    "goal_types": {
+      "INFRASTRUCTURE": 2,
+      "CALIBRATION": 6,
+      "GOVERNANCE": 6
+    },
+    "priority_distribution": {
+      "P0": 7,
+      "P1": 7,
+      "P2": 0
+    },
+    "agent_assignments": {
+      "STIG": 10,
+      "FINN": 2,
+      "VEGA": 2
+    },
+    "goals_summary": [
+      {"day": 4, "date": "2026-01-11", "goals": ["Confirm Day 3 baseline frozen", "Heartbeat thresholds verified"]},
+      {"day": 5, "date": "2026-01-12", "goals": ["ios001 split tasks execute", "Regime sync verified"]},
+      {"day": 6, "date": "2026-01-13", "goals": ["Forecast volume stable", "Resolution rate > 75%"]},
+      {"day": 7, "date": "2026-01-14", "goals": ["Brier tracking operational", "Calibration gates reviewed"]},
+      {"day": 8, "date": "2026-01-15", "goals": ["Regret/wisdom metrics stable", "No DORMANT activation"]},
+      {"day": 9, "date": "2026-01-16", "goals": ["Week 1 learning summary", "Phase 0 stability confirmed"]},
+      {"day": 10, "date": "2026-01-17", "goals": ["Week 1 evidence bundle", "Phase 1 activation readiness"]}
+    ]
+  },
+
+  "phased_activation_plan": {
+    "phase_0": {
+      "name": "Stable Drift + Measurement",
+      "status": "NOW (Week 1)",
+      "actions": [
+        "Do NOT activate new components",
+        "Verify existing 4 ACTIVE IoS are stable",
+        "Confirm calibration measurement system works"
+      ]
+    },
+    "phase_1": {
+      "name": "Observability Enhancement",
+      "target": "Week 1-2",
+      "candidate": "IOS-003-B (intraday regime-delta)",
+      "requirements": ["VEGA attestation before activation"]
+    },
+    "phase_2": {
+      "name": "Governance Safety",
+      "target": "Week 2-4",
+      "candidates": ["ADR-009 (suspension)", "ADR-018 (ASRP)"],
+      "requirements": ["Phase 1 stability demonstrated"]
+    },
+    "phase_3": {
+      "name": "Extended IoS",
+      "target": "After stable skill measurement",
+      "candidates": ["ios004", "ios005", "ios007"],
+      "requirements": ["Upstream chain stable", "Testsuite/rollback capability"]
+    }
+  },
+
+  "brier_score_specification": {
+    "PRICE_DIRECTION": {
+      "event_type": "BINARY",
+      "definition": "price_close(t+H) > price_close(t)",
+      "horizon": "24h (daily bar)",
+      "base_rate": "~50% (efficient market)",
+      "target_brier": "< 0.25 (better than random)"
+    },
+    "REGIME": {
+      "event_type": "3-CLASS",
+      "definition": "BULL / BEAR / NEUTRAL per sovereign_regime_state_v4",
+      "current_brier": {"BULL": 0.77, "NEUTRAL": 0.54},
+      "target_brier": "< 0.30 (meaningful skill)",
+      "note": "Brier < 0.15 is extremely aggressive; using realistic interim targets"
+    }
+  },
+
+  "corrections_from_original_draft": [
+    {
+      "issue": "Material inconsistency with Day 3 truth",
+      "original_claim": "ALL ACTIVE since 2025-12-08 for ECs, 14 of 15 IoS ACTIVE",
+      "correction": "ECs have 0 triggers in 7d (PARKED), only 4 IoS ACTIVE, 7 ADRs DORMANT"
+    },
+    {
+      "issue": "Brier target too aggressive",
+      "original_claim": "Brier < 0.15",
+      "correction": "Adjusted to < 0.25 (PRICE_DIRECTION) and < 0.30 (REGIME)"
+    },
+    {
+      "issue": "Learning tempo = Revenue tempo",
+      "original_claim": "Linked directly to 10M revenue",
+      "correction": "Decoupled - Track 2 requires separate directive with exposure model"
+    }
+  ],
+
+  "governance_compliance": {
+    "adr_002": "All goal completions logged to governance_actions_log",
+    "adr_004": "G0-G4 workflow respected (this is G2 enhancement)",
+    "adr_013": "STIG owns infrastructure, tables in fhq_governance schema",
+    "ceo_court_proof": "Evidence files with SHA-256 hash chain in goal_completion_evidence"
+  },
+
+  "dependencies": {
+    "upstream": [
+      "CEO-DIR-2026-0ZC (Day 3 baseline)",
+      "CEO-DIR-2026-0YC (Heartbeat policy alignment)",
+      "CEO-DIR-2026-0XZ (ios001 asset-class split)",
+      "ACI_TOOLING_REALITY_AUDIT_DAY3.json"
+    ],
+    "downstream": [
+      "Track 2 directive (revenue targeting - pending CEO issuance)",
+      "Phase 1 activation (IOS-003-B review)"
+    ]
+  },
+
+  "success_criteria": {
+    "migration_applied": "PENDING (requires psql execution)",
+    "goals_visible": "Verify via: python daily_goal_tracker.py",
+    "verification_working": "Verify via: python daily_goal_tracker.py --verify",
+    "evidence_chain": "Check fhq_governance.goal_completion_evidence after first verification"
+  },
+
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-11T20:30:00Z"
+}

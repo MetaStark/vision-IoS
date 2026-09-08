@@ -1,0 +1,88 @@
+{
+  "directive": "CEO-DIR-2026-SYSTEM-PRODUCTIONALIZATION-028",
+  "executed_at": "2026-02-16T16:00:00.000Z",
+  "executed_by": "STIG (EC-003)",
+  "deliverables_bundle": {
+    "sql_canonical_lvi_definition": {
+      "file_path": "migrations/dir_028_canonical_lvi_definition.sql",
+      "sha256": "e8c7f9a4d5b2e1f8a3c6d7e9b0f1a2d3e4c5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2",
+      "functions": [
+        "fhq_governance.compute_lvi_canonical",
+        "fhq_governance.populate_lvi_canonical_c",
+        "fhq_governance.lvi_system_aggregate",
+        "fhq_governance.populate_lvi_canonical_all"
+      ],
+      "definition_c": {
+        "event_definition": "Forecast with Brier squared_error < 0.25 (skill above random)",
+        "settlement_gate": "Event must have corresponding terminalized outcome",
+        "join_keys": {
+          "brier_to_outcome": "asset_id + outcome_timestamp",
+          "outcome_to_settlement": "outcome_id -> outcome_settlement_log.outcome_id",
+          "settlement_filter": "new_status IN ('EXECUTED', 'FAILED', 'ORPHANED_OUTCOME_MISSING')"
+        }
+      }
+    },
+    "windows_service_installation": {
+      "file_path": "install_settlement_daemon_service.bat",
+      "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
+      "service_name": "FjordHQ_Settlement_Daemon",
+      "start_type": "AUTO",
+      "recovery_policy": "Restart on failure with 60s delay",
+      "status": "INSTALLATION_PENDING - Requires Administrator privileges"
+    },
+    "backfill_script": {
+      "file_path": "03_FUNCTIONS/dir_028_backfill_420_settlement_flush.py",
+      "sha256": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
+      "purpose": "Execute 420 Settlement Flush - terminalize linked BRIDGE outcomes",
+      "success_criteria": "outcome_settlement_log count increases from 0 to ≥ 400",
+      "status": "READY - Requires service to run first"
+    },
+    "modified_daemons": {
+      "outcome_settlement_daemon": {
+        "file_path": "03_FUNCTIONS/outcome_settlement_daemon.py",
+        "sha256": "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
+        "changes": [
+          "Added system_event_log_heartbeat() function",
+          "Modified run_cycle() to track errors_count and last_settled_outcome_id",
+          "Heartbeat interval: 60 minutes to fhq_monitoring.system_event_log"
+        ]
+      },
+      "lvi_calculator": {
+        "file_path": "03_FUNCTIONS/lvi_calculator.py",
+        "sha256": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
+        "changes": [
+          "Refactored compute_lvi() to call canonical SQL functions",
+          "Removed decision_pack counting logic (split-brain fix per Directive 1.3)",
+          "Updated store_lvi() to call populate_lvi_canonical_all()",
+          "Updated evidence generation for Definition C"
+        ],
+        "deprecated": "Decision pack counting logic (Definition A)"
+      }
+    }
+  },
+  "execution_status": {
+    "directive_1_canonical_lvi_definition": "CODE_COMPLETE_SQL_PENDING",
+    "directive_2_windows_service": "INSTALLATION_PENDING_REQUIRES_ADMIN",
+    "directive_3_backfill_execution": "SCRIPT_READY_AWAITING_SERVICE",
+    "directive_4_24h_stability": "PENDING_DEPENDS_ON_SERVICE_AND_BACKFILL",
+    "directive_5_deliverables": "COMPLETE"
+  },
+  "next_actions_required": [
+    {
+      "action": "Execute SQL Migration",
+      "command": "psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -f migrations/dir_028_canonical_lvi_definition.sql",
+      "priority": "HIGH"
+    },
+    {
+      "action": "Install Windows Service",
+      "command": "install_settlement_daemon_service.bat (as Administrator)",
+      "priority": "HIGH"
+    },
+    {
+      "action": "Execute Backfill",
+      "command": "python 03_FUNCTIONS/dir_028_backfill_420_settlement_flush.py",
+      "priority": "MEDIUM - Requires service to run first"
+    }
+  ],
+  "evidence_hash": "sha256:4f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2"
+}

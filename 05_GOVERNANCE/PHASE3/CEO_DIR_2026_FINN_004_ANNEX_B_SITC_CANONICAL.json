@@ -1,0 +1,203 @@
+{
+  "annex_id": "CEO-DIR-2026-FINN-004-ANNEX-B",
+  "title": "SitC Metric Canonical Definition",
+  "parent_directive": "CEO-DIR-2026-FINN-004",
+  "classification": "NORMATIVE METRIC SPECIFICATION",
+  "status": "DRAFT",
+  "date_drafted": "2025-12-30T22:35:00Z",
+  "authority": ["EC-020", "VEGA G3-2025-002", "ADR-013"],
+  "supersedes": ["All prior SitC interpretations"],
+
+  "purpose": {
+    "statement": "This annex establishes the canonical, legally binding definition of the Search-in-the-Chain (SitC) metrics to prevent future ambiguity or silent redefinition.",
+    "historical_context": "FINN-TRUTH-QDRANT-001 revealed denominator ambiguity in the original SitC formula. VEGA G3-2025-002 resolved this by bifurcating into two distinct metrics.",
+    "governance_principle": "These definitions are FROZEN and may only be modified via a new VEGA G3 resolution."
+  },
+
+  "metric_definitions": {
+    "sitc_chain_integrity": {
+      "metric_id": "SITC-CHAIN-INT-v1.0",
+      "canonical_name": "SitC-Chain Integrity",
+      "status": "CANONICAL (FROZEN)",
+      "effective_date": "2025-12-30T21:42:00Z",
+      "governance_resolution": "VEGA G3-2025-002",
+
+      "formula": {
+        "mathematical": "SitC_Chain = verified_items_used / total_items_used",
+        "pseudocode": "sitc_chain_integrity = len([i for i in items_used if i.has_verification]) / len(items_used)",
+        "sql": "SELECT COUNT(*) FILTER (WHERE verified = TRUE) / NULLIF(COUNT(*), 0)::NUMERIC FROM reasoning_chain_items"
+      },
+
+      "term_definitions": {
+        "verified_items_used": {
+          "definition": "Count of items that (a) entered the reasoning chain AND (b) have cryptographic verification",
+          "verification_criteria": [
+            "Node has content_hash in fhq_canonical.evidence_nodes",
+            "Edge has edge_id in fhq_graph.edges",
+            "Hash chain is intact (hash_prev links valid)"
+          ]
+        },
+        "total_items_used": {
+          "definition": "Count of ALL items that materially entered the reasoning chain",
+          "includes": [
+            "Top-K Qdrant nodes actually consumed in reasoning",
+            "Graph edges traversed and used in causal inference",
+            "Any intermediate synthesis nodes created"
+          ],
+          "excludes": [
+            "Retrieved but unused candidates",
+            "Pruned or rejected nodes",
+            "Nodes below relevance threshold"
+          ]
+        }
+      },
+
+      "threshold": {
+        "value": 0.80,
+        "interpretation": "80% of items used in reasoning must be cryptographically verified",
+        "governance_status": "FROZEN per VEGA G3-2025-002"
+      },
+
+      "gating_behavior": {
+        "type": "HARD_BLOCK",
+        "below_threshold_action": "G0 proposal REJECTED",
+        "automatic_progression_requirement": 1.00,
+        "escalation_path": "VEGA suspension request if cannot achieve threshold"
+      },
+
+      "audit_question": "Did the system verify everything it used in its reasoning?",
+
+      "failure_mode": {
+        "name": "Hallucinated Reasoning",
+        "description": "Claims based on unverified or fabricated sources",
+        "risk_level": "CRITICAL",
+        "legal_exposure": "Regulatory liability if decisions made on unverified claims"
+      }
+    },
+
+    "sitc_retrieval_discipline": {
+      "metric_id": "SITC-RET-DISC-v1.0",
+      "canonical_name": "SitC-Retrieval Discipline",
+      "status": "PILOT (OBSERVATIONAL)",
+      "effective_date": "2025-12-30T21:42:00Z",
+      "governance_resolution": "VEGA G3-2025-002",
+
+      "formula": {
+        "mathematical": "SitC_Retrieval = verified_items_used / total_items_retrieved",
+        "pseudocode": "sitc_retrieval_discipline = len([i for i in items_used if i.has_verification]) / len(items_retrieved)",
+        "sql": "SELECT COUNT(*) FILTER (WHERE used_in_chain = TRUE AND verified = TRUE) / NULLIF(COUNT(*), 0)::NUMERIC FROM retrieval_candidates"
+      },
+
+      "term_definitions": {
+        "verified_items_used": {
+          "definition": "Same as SitC-Chain Integrity definition",
+          "reference": "See sitc_chain_integrity.term_definitions.verified_items_used"
+        },
+        "total_items_retrieved": {
+          "definition": "Count of ALL items returned by retrieval layers",
+          "includes": [
+            "All Qdrant semantic search results",
+            "All graph edges discovered in traversal",
+            "All candidate nodes regardless of final usage"
+          ]
+        }
+      },
+
+      "threshold": {
+        "value": null,
+        "interpretation": "No threshold in 2026 - metric is observational",
+        "governance_status": "PILOT - subject to calibration"
+      },
+
+      "gating_behavior": {
+        "type": "LOG_ONLY",
+        "primary_purpose": "Efficiency tracking and anti-cherry-picking detection",
+        "escalation_trigger": {
+          "condition": "< 0.50 for 3 consecutive executions",
+          "action": "HUMAN_REVIEW_REQUIRED flag set",
+          "governance_reference": "CEO-DIR-2026-FINN-004 Section 2.3"
+        }
+      },
+
+      "audit_question": "Did the system consider all available evidence, or cherry-pick?",
+
+      "failure_mode": {
+        "name": "Cherry-Picking Bias",
+        "description": "Selecting only convenient evidence while ignoring contradicting data",
+        "risk_level": "MEDIUM",
+        "detection_method": "Low retrieval discipline score indicates potential bias"
+      },
+
+      "pilot_parameters": {
+        "calibration_window": "30 days from activation",
+        "data_collection": "All retrieval discipline scores logged to fhq_research.sitc_pilot_data",
+        "threshold_proposal_criteria": "After 30 days, STIG proposes threshold based on distribution analysis",
+        "promotion_authority": "VEGA G3 approval required to convert to gating metric"
+      }
+    }
+  },
+
+  "explicit_rejections": {
+    "statement": "The following interpretations are EXPLICITLY REJECTED and SHALL NOT be used:",
+    "rejected_interpretations": [
+      {
+        "interpretation": "Conservative (Legacy)",
+        "formula": "verified_nodes / total_retrieved",
+        "reason": "Conflates chain integrity with retrieval efficiency",
+        "status": "DEPRECATED as of G3-2025-002"
+      },
+      {
+        "interpretation": "Optimistic",
+        "formula": "any_verified / any_used",
+        "reason": "Too permissive, allows unverified items in chain",
+        "status": "NEVER ADOPTED"
+      },
+      {
+        "interpretation": "Merged/Averaged",
+        "formula": "(chain_integrity + retrieval_discipline) / 2",
+        "reason": "Obscures distinct audit purposes",
+        "status": "PROHIBITED"
+      }
+    ]
+  },
+
+  "metric_boundary_clarification": {
+    "statement": "SitC-Chain Integrity and SitC-Retrieval Discipline are DISTINCT metrics that SHALL NOT be merged, averaged, or substituted for each other.",
+    "chain_integrity_scope": "Reasoning trace auditability - what was used",
+    "retrieval_discipline_scope": "Retrieval efficiency - what was retrieved vs used",
+    "violation_consequence": "Any system that merges these metrics SHALL be flagged as non-compliant"
+  },
+
+  "2026_governance_rules": {
+    "chain_integrity": {
+      "threshold": 0.80,
+      "behavior": "HARD_BLOCK",
+      "auto_progression": "Requires 1.00",
+      "modifiable": false,
+      "change_authority": "VEGA G3 resolution required"
+    },
+    "retrieval_discipline": {
+      "threshold": null,
+      "behavior": "LOG_ONLY",
+      "escalation": "< 0.50 for 3 runs triggers HUMAN_REVIEW",
+      "modifiable": true,
+      "change_authority": "VEGA G3 resolution required for threshold promotion"
+    }
+  },
+
+  "implementation_binding": {
+    "python_function": "calculate_sitc_bifurcated()",
+    "location": "03_FUNCTIONS/finn_truth_engine.py",
+    "reference_implementation": "03_FUNCTIONS/finn_truth_qdrant_001_rerun.py",
+    "test_coverage_requirement": "100% for SitC calculation paths"
+  },
+
+  "attestation": {
+    "drafted_by": "STIG (CTO)",
+    "canonical_source": "VEGA G3-2025-002",
+    "reviewed_by": "VEGA (Governance Authority)",
+    "status": "DRAFT - PENDING RATIFICATION",
+    "ratification_deadline": "7 days from parent directive signature",
+    "immutability_notice": "Once ratified, these definitions are FROZEN and constitute the single source of truth for SitC metrics in FjordHQ."
+  }
+}

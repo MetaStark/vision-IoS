@@ -1,0 +1,253 @@
+{
+  "directive_id": "CEO-DIR-2026-093",
+  "title": "AUTONOMOUS SHADOW LEARNING - IoS-003C CRYPTO REGIME ENGINE",
+  "authority": "CEO",
+  "classification": "RESEARCH_GOVERNANCE",
+  "effective": "2026-01-18T20:00:00Z",
+  "registered_by": "STIG (EC-003)",
+
+  "section_1_executive_summary": {
+    "purpose": "Establish a closed, autonomous 30-day measurement program in Shadow Mode",
+    "objectives": [
+      "Verify whether crypto regimes have real predictive value",
+      "Identify which signals actually carry causal information",
+      "Produce a decision basis for Gate 3 (Go / Kill / Iterate)"
+    ],
+    "duration": "30 days",
+    "gate3_decision_date": "2026-02-17",
+    "trading_authority": "NONE - Shadow Mode only"
+  },
+
+  "section_2_infrastructure_created": {
+    "migration": "311_ceo_dir_2026_093_shadow_learning.sql",
+    "migration_status": "EXECUTED",
+    "tables": [
+      {
+        "name": "fhq_research.crypto_regime_shadow_ledger",
+        "purpose": "Append-only ledger of regime predictions",
+        "columns": ["epoch_date", "ticker", "instrument_type", "predicted_regime", "confidence", "price_at_signal"]
+      },
+      {
+        "name": "fhq_research.crypto_regime_outcomes",
+        "purpose": "Captured outcomes for each prediction",
+        "columns": ["ledger_id", "price_t0_plus_1d/3d/5d", "return_1d/3d/5d", "correct_direction_1d/3d/5d", "brier_score"]
+      },
+      {
+        "name": "fhq_research.crypto_regime_quality_metrics",
+        "purpose": "Daily/weekly quality metrics",
+        "columns": ["avg_brier", "hit_rate_1d/3d/5d", "bootstrap_p_value", "regime_persistence_mean", "identity_drift_pct"]
+      },
+      {
+        "name": "fhq_research.crypto_regime_stop_conditions",
+        "purpose": "Automatic experiment termination conditions",
+        "columns": ["condition_id", "threshold_value", "is_triggered"]
+      },
+      {
+        "name": "fhq_research.crypto_regime_experiment",
+        "purpose": "Experiment registry and status tracking",
+        "columns": ["experiment_id", "status", "stop_condition_id", "gate3_decision"]
+      }
+    ],
+    "functions": [
+      "fhq_research.append_crypto_shadow_entry()",
+      "fhq_research.capture_crypto_outcome()",
+      "fhq_research.check_crypto_stop_conditions()"
+    ],
+    "views": [
+      "fhq_research.crypto_shadow_daily_summary",
+      "fhq_research.crypto_shadow_rolling_30d"
+    ]
+  },
+
+  "section_3_scheduled_tasks": {
+    "epoch_snapshot": {
+      "schedule": "Daily @ 00:05 UTC",
+      "task_name": "ios003c_epoch_snapshot",
+      "purpose": "Capture epoch snapshot, append to shadow ledger",
+      "script": "run_ios003c_snapshot.bat"
+    },
+    "outcome_computation": {
+      "schedule": "Daily @ 04:00 UTC",
+      "task_name": "ios003c_outcome_computation",
+      "purpose": "Compute outcomes for 1D/3D/5D horizons, update quality metrics",
+      "script": "run_ios003c_outcomes.bat"
+    },
+    "weekly_analysis": {
+      "schedule": "Weekly Sunday @ 00:00 UTC",
+      "task_name": "ios003c_weekly_analysis",
+      "purpose": "Bootstrap significance test, regime persistence analysis, VEGA attestation",
+      "script": "run_ios003c_weekly.bat"
+    },
+    "gate3_check": {
+      "schedule": "Daily @ 04:30 UTC (after day 29)",
+      "task_name": "ios003c_gate3_check",
+      "purpose": "Check Day 30 eligibility, auto-generate Gate 3 decision packet"
+    }
+  },
+
+  "section_4_stop_conditions": {
+    "automatic_termination": true,
+    "conditions": [
+      {
+        "id": "BRIER_CONSECUTIVE",
+        "name": "Brier > 0.35 for 7 consecutive days",
+        "type": "DURATION",
+        "threshold": 0.35,
+        "duration_days": 7
+      },
+      {
+        "id": "HIT_RATE_FLOOR",
+        "name": "Hit rate < 45% over 30 samples",
+        "type": "THRESHOLD",
+        "threshold": 0.45
+      },
+      {
+        "id": "BOOTSTRAP_P_VALUE",
+        "name": "Bootstrap p-value > 0.05",
+        "type": "STATISTICAL",
+        "threshold": 0.05
+      },
+      {
+        "id": "REGIME_PERSISTENCE",
+        "name": "Regime persistence < 1.5 days mean",
+        "type": "THRESHOLD",
+        "threshold": 1.5
+      },
+      {
+        "id": "IDENTITY_DRIFT",
+        "name": "instrument_type NULL > 5%",
+        "type": "THRESHOLD",
+        "threshold": 0.05,
+        "note": "Per CEO improvement - linked to CEO-DIR-2026-090 instrument identity"
+      }
+    ]
+  },
+
+  "section_5_ceo_improvements_incorporated": {
+    "identity_drift_stop_condition": {
+      "implemented": true,
+      "description": "Identity Drift stop condition linked to instrument_type (>5% missing = stop)",
+      "rationale": "Ensures data quality from CEO-DIR-2026-090 schema expansion"
+    },
+    "crio_integration": {
+      "implemented": true,
+      "description": "CRIO causal map inclusion in Gate 3 packet",
+      "status": "PENDING - awaiting Lane C population",
+      "dependency": "CEO-DIR-2026-092 CEIO deadline"
+    },
+    "vega_attestation": {
+      "implemented": true,
+      "description": "VEGA weekly integrity check of shadow ledger",
+      "schedule": "Weekly with ios003c_weekly_analysis task"
+    },
+    "class_a_violation": {
+      "implemented": true,
+      "description": "Coupling IoS-003C to trading before Day 30 is Class A violation",
+      "enforcement": "ACTIVE"
+    }
+  },
+
+  "section_6_gate3_decision_packet": {
+    "auto_generation": "Day 30 (2026-02-17)",
+    "decision_options": {
+      "GO": "Proceed to paper trading (requires additional CEO directive)",
+      "KILL": "Terminate IoS-003C research, archive learnings",
+      "ITERATE": "Continue shadow mode with specified modifications"
+    },
+    "required_contents": [
+      "30-day cumulative metrics",
+      "Bootstrap significance test results",
+      "Regime persistence analysis",
+      "Stop condition status",
+      "CRIO causal map (if available)",
+      "VEGA attestation summary",
+      "Recommendation with confidence level"
+    ]
+  },
+
+  "section_7_daily_report_integration": {
+    "section_name": "section_31_ios003c_shadow_learning",
+    "mandatory": true,
+    "persists_until": "Experiment concludes (Day 30 or stop condition)",
+    "fields": [
+      "experiment status",
+      "days elapsed/remaining",
+      "rolling 30d metrics",
+      "weekly significance",
+      "stop condition status",
+      "class A violation notice"
+    ]
+  },
+
+  "section_8_governance_actions": {
+    "directive_registration": {
+      "action_type": "CEO_DIRECTIVE_EXECUTION",
+      "decision": "EXECUTING",
+      "initiated_by": "STIG"
+    },
+    "experiment_activation": {
+      "experiment_id": "auto-generated",
+      "status": "ACTIVE",
+      "start_date": "2026-01-18"
+    }
+  },
+
+  "section_9_ceo_final_locks": {
+    "_locked_at": "2026-01-18T20:00:00Z",
+    "_locked_by": "CEO",
+
+    "lock_a_gate3_template": {
+      "status": "LOCKED",
+      "file": "05_GOVERNANCE/PHASE3/GATE3_IOS003C_EVIDENCE_BUNDLE_TEMPLATE.json",
+      "decision_logic": "BINARY - No discretion allowed",
+      "primary_kpis": {
+        "hit_rate_1d": ">= 0.55",
+        "brier_score": "<= 0.25",
+        "bootstrap_p_value": "< 0.05"
+      },
+      "outcomes": ["GO", "KILL", "ITERATE"],
+      "narrative_allowed": false
+    },
+
+    "lock_b_vega_termination": {
+      "status": "GRANTED",
+      "authority": "VEGA_IOS003C_TERMINATION",
+      "action_id": "4d1470ae-0170-46c0-9214-0aa462cd08cf",
+      "trigger": "ANY stop_condition triggered",
+      "human_confirmation_required": false,
+      "function": "fhq_research.vega_terminate_ios003c()",
+      "discretion_eliminated": true
+    },
+
+    "lock_c_crio_causality": {
+      "status": "IMPLEMENTED",
+      "check_location": "Weekly analysis (_crio_causality_check)",
+      "metrics": ["trending_accuracy", "ranging_accuracy"],
+      "spurious_risk_levels": ["LOW", "MEDIUM", "HIGH"],
+      "purpose": "Ensure performance is not just trend-riding"
+    },
+
+    "identity_drift_deferred": {
+      "status": "DEFERRED",
+      "reason": "Migration 309 pending CDMO approval per CEO-DIR-2026-092",
+      "reactivation": "Upon Migration 309 execution",
+      "cdmo_deadline": "2026-01-22 12:00 UTC"
+    }
+  },
+
+  "verification": {
+    "migration_executed": true,
+    "tables_created": true,
+    "functions_created": true,
+    "views_created": true,
+    "daemon_created": true,
+    "batch_files_created": true,
+    "daemon_registry_updated": true,
+    "daily_report_updated": true,
+    "gate3_template_locked": true,
+    "vega_termination_granted": true,
+    "crio_causality_implemented": true
+  },
+
+  "principle": "The finish line was defined before the race started. No moving goalposts."
+}

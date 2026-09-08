@@ -71,6 +71,47 @@ BUDGET_CAP_USD = 20.00  # HARD STOP at $20
 DEFCON_GREEN = 5  # Only GREEN allows operation
 FINN_MODEL_VERSION = "WAVE15-DEEPSEEK-2025-12"  # For rejection ledger
 
+# Database config for heartbeat
+DB_CONFIG = {
+    'host': os.getenv('PGHOST', '127.0.0.1'),
+    'port': int(os.getenv('PGPORT', '54322')),
+    'database': os.getenv('PGDATABASE', 'postgres'),
+    'user': os.getenv('PGUSER', 'postgres'),
+    'password': os.getenv('PGPASSWORD', 'postgres')
+}
+
+
+def update_daemon_heartbeat(hunts_completed: int = 0, needles_found: int = 0,
+                            total_cost: float = 0.0, mode: str = 'UNKNOWN'):
+    """
+    Update Wave15 heartbeat in daemon_health table.
+    CEO-DIR-2026-WAVE15-DAEMON-WATCHDOG-001
+    """
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        metadata = {
+            'hunts_completed': hunts_completed,
+            'needles_found': needles_found,
+            'total_cost_usd': round(total_cost, 6),
+            'mode': mode,
+            'cadence': '4h (THROTTLED) / 1h (PRE-HEAT) / 30min (FULL)'
+        }
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO fhq_monitoring.daemon_health
+                    (daemon_name, status, last_heartbeat, metadata, expected_interval_minutes)
+                VALUES ('wave15_autonomous_hunter', 'HEALTHY', NOW(), %s, 250)
+                ON CONFLICT (daemon_name) DO UPDATE SET
+                    status = 'HEALTHY',
+                    last_heartbeat = NOW(),
+                    metadata = %s,
+                    updated_at = NOW()
+            """, (Json(metadata), Json(metadata)))
+            conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to update Wave15 heartbeat: {e}")
+
 # =============================================================================
 # EQS THRESHOLD GOVERNANCE (CEO-DIR-2025-EQS-001)
 # =============================================================================
@@ -1495,6 +1536,15 @@ OUTPUT FORMAT (JSON array):
                 sleep_interval = max(interval, min_interval_seconds)
                 if sleep_interval > 60:
                     logger.info(f"Next hunt in {sleep_interval // 3600}h {(sleep_interval % 3600) // 60}m (mode: {mode})")
+
+                # CEO-DIR-2026-WAVE15-DAEMON-WATCHDOG-001: Update heartbeat after each hunt
+                update_daemon_heartbeat(
+                    hunts_completed=self.hunts_completed,
+                    needles_found=self.needles_found,
+                    total_cost=self.total_cost,
+                    mode=mode
+                )
+
                 time.sleep(sleep_interval)
 
             except KeyboardInterrupt:

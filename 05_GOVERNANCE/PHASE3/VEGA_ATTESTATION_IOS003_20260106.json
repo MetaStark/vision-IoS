@@ -1,0 +1,292 @@
+{
+  "attestation_id": "VEGA-ATT-IOS003-20260106",
+  "attestation_type": "G3_INTEGRATION_COMPLIANCE",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "directive": "CEO-DIR-2026-004",
+  "timestamp": "2026-01-06T23:30:00Z",
+  "issuing_authority": "VEGA",
+  "subject": "IoS-003 Epistemic Belief Store Integration",
+
+  "section_1_directive_compliance": {
+    "directive_id": "CEO-DIR-2026-004",
+    "directive_title": "IoS-003 Integration with Epistemic Belief Store",
+    "compliance_status": "COMPLIANT",
+
+    "required_deliverables": {
+      "D1_writepath_map": {
+        "file": "IOS003_EPISTEMIC_WRITEPATH_MAP.json",
+        "status": "DELIVERED",
+        "summary": "Complete mapping of belief determination points (B1-B5), policy application points (P1-P3), and write targets (W1-W4)"
+      },
+      "D2_field_contract": {
+        "file": "IOS003_BELIEF_POLICY_FIELD_CONTRACT.json",
+        "status": "DELIVERED",
+        "summary": "Authoritative field contract aligning IoS-003 variables with model_belief_state and sovereign_policy_state tables"
+      },
+      "D3_immutability_test": {
+        "file": "VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql",
+        "status": "DELIVERED",
+        "summary": "6-test suite verifying INSERT allowed, UPDATE blocked, DELETE blocked, FK chain intact, suppression ledger functional"
+      },
+      "D4_code_modification": {
+        "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+        "status": "DELIVERED",
+        "summary": "~180 lines added implementing epistemic write pattern: belief first, then policy, then suppression"
+      }
+    }
+  },
+
+  "section_2_test_results": {
+    "test_suite": "VEGA_TEST_IOS003_IMMUTABILITY_COMPAT.sql",
+    "execution_timestamp": "2026-01-06T23:00:00Z",
+    "overall_status": "ALL_PASSED",
+
+    "tests": [
+      {
+        "test_id": "TEST_1",
+        "name": "IOS003 Belief INSERT Pattern",
+        "expected": "INSERT succeeds with belief_id returned",
+        "actual": "PASSED - belief_id generated",
+        "status": "PASSED"
+      },
+      {
+        "test_id": "TEST_2",
+        "name": "IOS003 Cannot UPDATE Beliefs",
+        "expected": "UPDATE blocked by immutability trigger",
+        "actual": "PASSED - UPDATE blocked with IMMUTABILITY_VIOLATION",
+        "status": "PASSED"
+      },
+      {
+        "test_id": "TEST_3",
+        "name": "IOS003 Cannot DELETE Beliefs",
+        "expected": "DELETE blocked by immutability trigger",
+        "actual": "PASSED - DELETE blocked with IMMUTABILITY_VIOLATION",
+        "status": "PASSED"
+      },
+      {
+        "test_id": "TEST_4",
+        "name": "Policy References Belief (FK Chain)",
+        "expected": "sovereign_policy_state.belief_id references model_belief_state.belief_id",
+        "actual": "PASSED - FK chain intact",
+        "status": "PASSED"
+      },
+      {
+        "test_id": "TEST_5",
+        "name": "Suppression Ledger on Divergence",
+        "expected": "epistemic_suppression_ledger entry created when policy != belief",
+        "actual": "PASSED - suppression_id generated with correct linkage",
+        "status": "PASSED"
+      },
+      {
+        "test_id": "TEST_6",
+        "name": "Canonical Views Exist",
+        "expected": "v_canonical_belief, v_canonical_policy, v_suppression_summary exist",
+        "actual": "PASSED - All views present",
+        "status": "PASSED"
+      }
+    ]
+  },
+
+  "section_3_attestation_statements": {
+    "statement_1": {
+      "claim": "IoS-003 writes belief first, then policy",
+      "evidence": "ios003_daily_regime_update_v4.py lines 505-560: INSERT into model_belief_state occurs BEFORE INSERT into sovereign_policy_state",
+      "verification_method": "Code inspection + VEGA test execution",
+      "status": "VERIFIED"
+    },
+    "statement_2": {
+      "claim": "Belief is immutable and append-only in live execution",
+      "evidence": "Migration 209 immutability triggers (trg_model_belief_state_immutable) block UPDATE and DELETE operations",
+      "verification_method": "VEGA TEST 2 and TEST 3 - both blocked with IMMUTABILITY_VIOLATION",
+      "status": "VERIFIED"
+    },
+    "statement_3": {
+      "claim": "Divergence is explicit and explainable",
+      "evidence": "When sovereign_regime != technical_regime, IoS-003 writes to epistemic_suppression_ledger with: suppression_category, suppression_reason, constraint_type, constraint_value, constraint_threshold",
+      "verification_method": "VEGA TEST 5 + code inspection at ios003_daily_regime_update_v4.py lines 585-645",
+      "status": "VERIFIED"
+    }
+  },
+
+  "section_4_write_path_verification": {
+    "canonical_write_order": [
+      {
+        "step": 1,
+        "target": "fhq_perception.model_belief_state",
+        "operation": "INSERT",
+        "returns": "belief_id (UUID)",
+        "immutable": true,
+        "code_location": "ios003_daily_regime_update_v4.py:505-540"
+      },
+      {
+        "step": 2,
+        "target": "fhq_perception.sovereign_policy_state",
+        "operation": "INSERT",
+        "requires": "belief_id from Step 1",
+        "returns": "policy_id (UUID)",
+        "code_location": "ios003_daily_regime_update_v4.py:545-585"
+      },
+      {
+        "step": 3,
+        "target": "fhq_governance.epistemic_suppression_ledger",
+        "operation": "INSERT (conditional)",
+        "condition": "is_suppressed = TRUE (policy_regime != belief_regime)",
+        "requires": "belief_id, policy_id from Steps 1-2",
+        "code_location": "ios003_daily_regime_update_v4.py:590-645"
+      },
+      {
+        "step": 4,
+        "target": "fhq_perception.regime_daily (backward compat)",
+        "operation": "INSERT ON CONFLICT UPDATE",
+        "code_location": "ios003_daily_regime_update_v4.py:650+"
+      }
+    ],
+    "order_enforcement": "belief_id MUST be obtained before policy INSERT; policy_id MUST be obtained before suppression INSERT",
+    "status": "ORDER_VERIFIED"
+  },
+
+  "section_5_suppression_taxonomy_compliance": {
+    "categories_implemented": [
+      {
+        "category": "HYSTERESIS",
+        "trigger": "consecutive_confirms < hysteresis_days AND belief_regime != prior_policy_regime",
+        "implemented": true,
+        "code_location": "ios003_daily_regime_update_v4.py:600-610"
+      },
+      {
+        "category": "RISK_LIMIT",
+        "trigger": "CRIO fragility_score > 0.80",
+        "implemented": true,
+        "code_location": "apply_crio_modifier_v4() Rule 1"
+      },
+      {
+        "category": "DEFCON",
+        "trigger": "VIX_SPIKE + fragility > 0.50",
+        "implemented": true,
+        "code_location": "apply_crio_modifier_v4() Rule 2"
+      },
+      {
+        "category": "LIQUIDITY",
+        "trigger": "LIQUIDITY_CONTRACTION + fragility > 0.60",
+        "implemented": true,
+        "code_location": "apply_crio_modifier_v4() Rule 3"
+      },
+      {
+        "category": "OTHER",
+        "trigger": "Unclassified suppression",
+        "implemented": true,
+        "code_location": "ios003_daily_regime_update_v4.py:625 (fallback)"
+      }
+    ],
+    "status": "TAXONOMY_COMPLETE"
+  },
+
+  "section_6_backward_compatibility": {
+    "assessment": "MAINTAINED",
+    "preserved_tables": [
+      {
+        "table": "fhq_perception.regime_daily",
+        "status": "Still written (backward compatibility)",
+        "consumers": ["IoS-004", "IoS-008", "Legacy dashboards"]
+      },
+      {
+        "table": "fhq_perception.sovereign_regime_state_v4",
+        "status": "Still written (backward compatibility)",
+        "consumers": ["Existing dashboards", "Signal executor"]
+      },
+      {
+        "table": "fhq_perception.bocd_changepoint_log",
+        "status": "Still written (unchanged)",
+        "consumers": ["Changepoint analysis"]
+      }
+    ],
+    "new_canonical_tables": [
+      "fhq_perception.model_belief_state (PRIMARY for beliefs)",
+      "fhq_perception.sovereign_policy_state (PRIMARY for policy)",
+      "fhq_governance.epistemic_suppression_ledger (PRIMARY for divergence)"
+    ]
+  },
+
+  "section_7_governance_gates": {
+    "G2_technical_review": {
+      "status": "PASSED",
+      "reviewer": "STIG",
+      "findings": "Write-path evidence complete, field contract semantically correct, code modification follows pattern"
+    },
+    "G3_governance_audit": {
+      "status": "PASSED",
+      "reviewer": "VEGA",
+      "findings": "All 6 immutability tests passed, belief-first write order verified, suppression taxonomy complete"
+    }
+  },
+
+  "section_8_acceptance_criteria": {
+    "criteria": [
+      {
+        "id": "AC1",
+        "requirement": "IoS-003 writes raw belief to model_belief_state BEFORE any policy filtering",
+        "status": "MET",
+        "evidence": "Code inspection confirms belief INSERT at line 505-540, before policy at 545-585"
+      },
+      {
+        "id": "AC2",
+        "requirement": "Policy state explicitly references source belief_id",
+        "status": "MET",
+        "evidence": "sovereign_policy_state INSERT includes belief_id FK, verified in VEGA TEST 4"
+      },
+      {
+        "id": "AC3",
+        "requirement": "Suppression events logged with category + constraint values",
+        "status": "MET",
+        "evidence": "epistemic_suppression_ledger INSERT includes suppression_category, constraint_type, constraint_value, constraint_threshold"
+      },
+      {
+        "id": "AC4",
+        "requirement": "Existing regime_daily/sovereign_regime_state_v4 continue to work",
+        "status": "MET",
+        "evidence": "Backward compatibility preserved - original writes unchanged at lines 650+"
+      },
+      {
+        "id": "AC5",
+        "requirement": "Lineage hash chain maintained",
+        "status": "MET",
+        "evidence": "lineage_hash computed via fhq_perception.compute_lineage_hash() in belief INSERT"
+      }
+    ],
+    "overall": "ALL_ACCEPTANCE_CRITERIA_MET"
+  },
+
+  "section_9_recommendations": {
+    "immediate": [],
+    "future_consideration": [
+      {
+        "id": "R1",
+        "recommendation": "Add unit tests for epistemic write path in CI/CD",
+        "priority": "HIGH",
+        "rationale": "Prevent regression of belief-first pattern"
+      },
+      {
+        "id": "R2",
+        "recommendation": "Create dashboard view showing belief-policy divergence rate",
+        "priority": "MEDIUM",
+        "rationale": "Enable learning from suppression patterns"
+      },
+      {
+        "id": "R3",
+        "recommendation": "Implement automatic opportunity cost calculation for suppressions",
+        "priority": "MEDIUM",
+        "rationale": "Quantify cost of policy divergence from belief"
+      }
+    ]
+  },
+
+  "attestation": {
+    "issuing_agent": "VEGA",
+    "role": "Verification & Governance Authority",
+    "timestamp": "2026-01-06T23:30:00Z",
+    "attestation_hash": "VEGA-IOS003-20260106-G3-COMPLIANT",
+    "status": "ATTESTATION_ISSUED",
+    "expiry": null,
+    "statement": "VEGA hereby attests that IoS-003 integration with the epistemic belief store is COMPLIANT with CEO-DIR-2026-004. All three attestation statements are VERIFIED: (1) belief written first, (2) belief immutable, (3) divergence explicit. All 5 acceptance criteria MET. G2/G3 gates PASSED."
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "evidence_id": "CEO_DIR_2026_013_U1_EXECUTION_COMPLETE",
+  "directive_id": "CEO-DIR-2026-013-U1",
+  "directive_title": "IoS-013 Database-Verified Signal Catalog + Context Contract",
+  "classification": "GOVERNANCE-CRITICAL / COURT-DEFENSIBLE",
+  "plan_version": "2.1.0",
+  "executed_at": "2026-01-22T17:20:00Z",
+  "executed_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "pre_migration_state": {
+    "state_hash": "99d9f610568e1e9cbf3e848ad157a2d8",
+    "row_count": 1,
+    "snapshot_timestamp": "2026-01-22T17:20:08.352Z",
+    "backup_file": "backups/backup_signal_context_20260122.sql",
+    "backup_lines": 198
+  },
+
+  "phase_0_pre_migration": {
+    "status": "COMPLETE",
+    "steps": [
+      {
+        "step_id": "0.1",
+        "action": "Register EC-015",
+        "result": "ALREADY_EXISTS",
+        "finding": "EC-015 assigned to CPTO (Chief Portfolio Trading Officer)",
+        "authority_breach_confirmed": true,
+        "view_affected": "fhq_alpha.v_signal_class_definitions"
+      },
+      {
+        "step_id": "0.2",
+        "action": "Create evidence snapshot",
+        "result": "COMPLETE",
+        "hash": "99d9f610568e1e9cbf3e848ad157a2d8"
+      },
+      {
+        "step_id": "0.3",
+        "action": "Backup schema",
+        "result": "COMPLETE",
+        "file": "backup_signal_context_20260122.sql"
+      }
+    ]
+  },
+
+  "phase_1_schema_preparation": {
+    "status": "COMPLETE",
+    "steps": [
+      {
+        "step_id": "1.1",
+        "action": "Create fhq_signals schema and ENUMs",
+        "result": "COMPLETE",
+        "enums_created": [
+          "fhq_signals.entity_scope_level",
+          "fhq_signals.signal_direction",
+          "fhq_signals.normalization_method",
+          "fhq_signals.calibration_status",
+          "fhq_signals.backfill_status"
+        ]
+      },
+      {
+        "step_id": "1.2",
+        "action": "Create source_surface_registry",
+        "result": "COMPLETE",
+        "table": "fhq_signals.source_surface_registry"
+      },
+      {
+        "step_id": "1.3",
+        "action": "Seed source_surface_registry",
+        "result": "COMPLETE",
+        "producers_seeded": 16,
+        "consumers_seeded": 11,
+        "total_surfaces": 27
+      }
+    ]
+  },
+
+  "phase_2_column_additions": {
+    "status": "COMPLETE",
+    "target_table": "fhq_signal_context.weighted_signal_plan",
+    "columns_before": 15,
+    "columns_after": 39,
+    "columns_added": 24,
+    "column_groups": {
+      "entity_scope": ["entity_scope_level", "canonical_id_b", "sector_id", "taxonomy_version", "market_id", "universe_id", "universe_snapshot_date"],
+      "time_scope": ["signal_timestamp", "effective_from", "valid_until", "horizon", "ttl_seconds"],
+      "meaning_scope": ["direction", "value_unit", "normalization", "calibration_status", "calibration_date"],
+      "provenance": ["data_cutoff_time", "model_version", "feature_set_version", "source_surface_ids", "evidence_id"],
+      "aggregation": ["aggregation_method"],
+      "backfill_tracking": ["backfill_status"]
+    }
+  },
+
+  "phase_3_backfill": {
+    "status": "COMPLETE",
+    "rows_processed": 1,
+    "placeholder_before": 1,
+    "placeholder_after": 0,
+    "backfilled_count": 1,
+    "backfilled_rows_ineligible": true,
+    "d5_doctrine_enforced": true
+  },
+
+  "phase_4_constraints": {
+    "status": "COMPLETE",
+    "constraints_added": 7,
+    "constraints": [
+      "chk_time_validity",
+      "chk_asset_scope",
+      "chk_pair_scope",
+      "chk_sector_scope",
+      "chk_market_scope",
+      "chk_aggregation_method",
+      "chk_universe_lock"
+    ],
+    "existing_constraints": ["weighted_signal_plan_confidence_score_check"],
+    "total_check_constraints": 8
+  },
+
+  "phase_5_views_and_registry": {
+    "status": "COMPLETE",
+    "views_created": [
+      {
+        "view": "fhq_signal_context.v_signal_context_summary",
+        "purpose": "Signal context with decision eligibility gate",
+        "fail_closed": true
+      },
+      {
+        "view": "fhq_signal_context.v_eligible_signals",
+        "purpose": "Only ELIGIBLE signals (fail-closed gate)",
+        "fail_closed": true
+      }
+    ],
+    "registry_updated": {
+      "ios_id": "IoS-013",
+      "title": "IoS-013 Signal Aggregation & Context Contract Engine",
+      "governance_state": "G0_UPGRADE_PENDING",
+      "dependencies_count": 8,
+      "governing_adrs_count": 10
+    }
+  },
+
+  "post_migration_verification": {
+    "columns_added": 24,
+    "backfill_status_distribution": {
+      "BACKFILLED": 1,
+      "PLACEHOLDER": 0,
+      "VALIDATED": 0,
+      "NATIVE": 0
+    },
+    "eligible_signals_count": 0,
+    "source_surfaces_count": 27,
+    "fail_closed_working": true
+  },
+
+  "g1_blockers": [
+    "EC-015_AUTHORITY_BREACH: v_signal_class_definitions hardcodes EC-015 (CPTO contract) as processing_contract",
+    "PHANTOM_EC_SCAN: Must audit all views for phantom EC references",
+    "VEGA_A2_ATTESTATION: A2 design artifact requires VEGA review",
+    "AXES_2_3_DISCOVERY: Module and dependency graph sweeps not yet executed"
+  ],
+
+  "approved_to_proceed": [
+    "ARTIFACT_SEPARATION: A1/A2/A3 structure implemented",
+    "HEURISTIC_DISCOVERY_LABELING: Discovery pass labeled as incomplete",
+    "EC015_INCIDENT_CLASSIFICATION: Correctly classified as AUTHORITY BREACH",
+    "BACKFILL_STATUS_GATE: D5 doctrine enforced - BACKFILLED = INELIGIBLE"
+  ],
+
+  "hash_verification": {
+    "pre_migration_hash": "99d9f610568e1e9cbf3e848ad157a2d8",
+    "backup_exists": true,
+    "rollback_possible": true
+  },
+
+  "adr_compliance": {
+    "ADR-004": "Artifact separation enforced",
+    "ADR-013": "Database as single source of truth",
+    "ADR-018": "Fail-closed gate implemented"
+  }
+}

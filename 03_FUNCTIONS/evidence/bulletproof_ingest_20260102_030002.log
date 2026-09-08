@@ -1,0 +1,68 @@
+2026-01-02 03:00:02,824 | INFO | ======================================================================
+2026-01-02 03:00:02,825 | INFO | IoS-001 BULLETPROOF DAILY PRICE INGEST
+2026-01-02 03:00:02,825 | INFO | ======================================================================
+2026-01-02 03:00:02,825 | INFO | CEO Directive: CD-IOS-001-DAILY-INGEST-BULLETPROOF-001
+2026-01-02 03:00:02,825 | INFO | Executor: STIG (EC-003)
+2026-01-02 03:00:02,825 | INFO | Time: 2026-01-02T02:00:02.824844+00:00
+2026-01-02 03:00:02,825 | INFO | Asset Class Filter: CRYPTO
+2026-01-02 03:00:02,825 | INFO | Dry Run: False
+2026-01-02 03:00:02,826 | INFO | Canonical Source: fhq_market.prices (ONLY)
+2026-01-02 03:00:02,826 | INFO | ======================================================================
+2026-01-02 03:00:03,018 | INFO | Found 46 canonical assets
+2026-01-02 03:00:03,650 | INFO | ============================================================
+2026-01-02 03:00:03,650 | INFO | ATTEMPTING ALPACA INGEST (Primary Provider)
+2026-01-02 03:00:03,650 | INFO | Assets: 46, Rate limit: 200/min
+2026-01-02 03:00:03,650 | INFO | ============================================================
+2026-01-02 03:00:04,496 | WARNING |   VOLUME SANITY REJECT: GRT-USD 2026-01-02 00:00:00 volume=0.00 < threshold=1000 (source=ALPACA)
+2026-01-02 03:00:04,496 | WARNING |   [GRT-USD] ALL 1 rows REJECTED by volume sanity check (source=ALPACA)
+2026-01-02 03:00:05,204 | WARNING |   VOLUME SANITY REJECT: UNI-USD 2025-12-31 00:00:00 volume=84.47 < threshold=1000 (source=ALPACA)
+2026-01-02 03:00:05,204 | WARNING |   VOLUME SANITY REJECT: UNI-USD 2026-01-01 00:00:00 volume=651.97 < threshold=1000 (source=ALPACA)
+2026-01-02 03:00:05,214 | WARNING |   VOLUME SANITY REJECT: UNI-USD 2026-01-02 00:00:00 volume=143.83 < threshold=1000 (source=ALPACA)
+2026-01-02 03:00:05,214 | WARNING |   [UNI-USD] ALL 3 rows REJECTED by volume sanity check (source=ALPACA)
+2026-01-02 03:00:05,740 | INFO | Alpaca: Updated 0 assets, 0 remaining
+2026-01-02 03:00:05,740 | INFO | 
+============================================================
+2026-01-02 03:00:05,749 | INFO | VERIFICATION: Checking Data Freshness
+2026-01-02 03:00:05,749 | INFO | ============================================================
+2026-01-02 03:00:06,439 | WARNING | VERIFICATION FAILED: 79 assets are stale
+2026-01-02 03:00:06,439 | WARNING |   - BT.A.L: 18 days stale (last: 2025-12-15)
+2026-01-02 03:00:06,439 | WARNING |   - 1COV.DE: 10 days stale (last: 2025-12-23)
+2026-01-02 03:00:06,439 | WARNING |   - MRK.DE: 4 days stale (last: 2025-12-29)
+2026-01-02 03:00:06,439 | WARNING |   - AKER.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,439 | WARNING |   - AKRBP.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,439 | WARNING |   - AKSO.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,439 | WARNING |   - AKVA.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,439 | WARNING |   - ALV.DE: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,439 | WARNING |   - AUSS.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,444 | WARNING |   - AUTO.OL: 3 days stale (last: 2025-12-30)
+2026-01-02 03:00:06,444 | WARNING |   ... and 69 more
+2026-01-02 03:00:06,824 | CRITICAL | ALERT [CRITICAL]: DATA VERIFICATION FAILED: 79 assets still stale after ingest! Updated: 0, Rows: 0
+2026-01-02 03:00:06,827 | WARNING | Governance logging failed: column "action_timestamp" of relation "governance_actions_log" does not exist
+LINE 3:                     action_type, action_timestamp, action_by...
+                                         ^
+
+2026-01-02 03:00:06,827 | CRITICAL | ALERT [CRITICAL]: ALL INGEST METHODS FAILED - No assets were updated! Manual intervention required.
+2026-01-02 03:00:06,828 | WARNING | Heartbeat recording failed: relation "fhq_monitoring.system_heartbeats" does not exist
+LINE 2:                 INSERT INTO fhq_monitoring.system_heartbeats...
+                                    ^
+
+2026-01-02 03:00:06,829 | WARNING | Governance logging failed: current transaction is aborted, commands ignored until end of transaction block
+
+2026-01-02 03:00:06,830 | INFO | 
+======================================================================
+2026-01-02 03:00:06,830 | INFO | BULLETPROOF INGEST COMPLETE
+2026-01-02 03:00:06,830 | INFO | ======================================================================
+2026-01-02 03:00:06,830 | INFO | Status: FAILED
+2026-01-02 03:00:06,830 | INFO | Assets Updated: 0
+2026-01-02 03:00:06,831 | INFO | Rows Inserted: 0
+2026-01-02 03:00:06,831 | INFO | Providers Used: ALPACA
+2026-01-02 03:00:06,831 | INFO | Verification: FAILED (79 stale)
+2026-01-02 03:00:06,831 | INFO | Elapsed: 4.0s
+2026-01-02 03:00:06,831 | INFO | 
+Freshness by Asset Class:
+2026-01-02 03:00:06,831 | INFO |   CRYPTO: 45/50 fresh (90.0%)
+2026-01-02 03:00:06,831 | INFO |   EQUITY: 343/422 fresh (81.3%)
+2026-01-02 03:00:06,831 | INFO |   FX: 24/25 fresh (96.0%)
+2026-01-02 03:00:06,831 | INFO | 
+Evidence: C:\fhq-market-system\vision-ios\03_FUNCTIONS\evidence\BULLETPROOF_INGEST_c8d4f3b9_20260102_030006.json
+2026-01-02 03:00:06,831 | INFO | ======================================================================

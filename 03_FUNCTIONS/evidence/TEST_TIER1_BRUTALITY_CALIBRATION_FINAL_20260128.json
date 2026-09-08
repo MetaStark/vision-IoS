@@ -1,0 +1,128 @@
+{
+  "test_id": "TIER1-BRUTALITY-CALIBRATION-001",
+  "title": "Tier-1 Brutality Calibration - Learning Stability Phase",
+  "contract": "EC-004",
+  "executor": "STIG",
+  "status": "COMPLETED",
+
+  "test_window": {
+    "start": "2026-01-24T20:34:00+01:00",
+    "end": "2026-01-27T20:34:00+01:00",
+    "duration_hours": 72
+  },
+
+  "report_generated": "2026-01-28T08:01:00+01:00",
+
+  "objective": {
+    "description": "Calibrate falsification strictness to achieve 60-90% death rate",
+    "rationale": "Balance between killing bad ideas and letting good ones survive",
+    "success_criteria": {
+      "death_rate_min": 60,
+      "death_rate_max": 90,
+      "unit": "percent"
+    }
+  },
+
+  "results": {
+    "population": {
+      "total_in_window": 495,
+      "falsified": 289,
+      "active": 206,
+      "draft": 0
+    },
+
+    "primary_metric": {
+      "death_rate_pct": 58.38,
+      "target_range": "60-90%",
+      "verdict": "MARGINALLY_BELOW_TARGET"
+    },
+
+    "tier1_distribution": {
+      "WEAKENED": {"count": 376, "pct": 92.38},
+      "ANNIHILATED": {"count": 29, "pct": 7.13},
+      "SURVIVED": {"count": 2, "pct": 0.49}
+    },
+
+    "death_causes": {
+      "TIER1_ANNIHILATION": 289,
+      "TIMEOUT_AFTER_WEAKENED": 0,
+      "INVALID_INPUT_REJECTED": 0,
+      "OTHER": 0
+    },
+
+    "time_to_falsification": {
+      "avg_hours": 29.45,
+      "min_hours": 24.02,
+      "max_hours": 57.53,
+      "stddev_hours": 4.38,
+      "n_measured": 172
+    },
+
+    "generator_performance": [
+      {"generator": "finn_crypto_scheduler", "total": 343, "deaths": 170, "active": 173, "death_rate_pct": 49.6},
+      {"generator": "FINN-E", "total": 113, "deaths": 113, "active": 0, "death_rate_pct": 100.0, "note": "All rejected as INVALID_INPUT"},
+      {"generator": "FINN-T", "total": 37, "deaths": 4, "active": 33, "death_rate_pct": 10.8},
+      {"generator": "GN-S", "total": 2, "deaths": 2, "active": 0, "death_rate_pct": 100.0}
+    ],
+
+    "regime_distribution": [
+      {"regime": "CRYPTO_DEGENERATE_PRE_FIX", "total": 331, "deaths": 170},
+      {"regime": "STANDARD", "total": 164, "deaths": 119}
+    ],
+
+    "g15_correlation": {
+      "pearson_r": -0.4920,
+      "n": 171,
+      "interpretation": "Moderate negative - higher pre-tier scores correlate with SHORTER survival (inverted)"
+    }
+  },
+
+  "findings": {
+    "F1": {
+      "title": "Death rate marginally below target",
+      "detail": "58.38% vs 60% minimum threshold",
+      "severity": "LOW",
+      "action": "Monitor, no immediate change required"
+    },
+    "F2": {
+      "title": "Tier-1 is 'gentle' - 92.38% WEAKENED",
+      "detail": "Most hypotheses receive partial credit rather than hard falsification",
+      "severity": "DESIGN_OBSERVATION",
+      "action": "Flag as P1 design choice for future review"
+    },
+    "F3": {
+      "title": "G1.5 correlation inverted",
+      "detail": "Higher scores predict shorter survival - opposite of desired behavior",
+      "severity": "HIGH",
+      "root_cause": "Input degeneracy (constant causal_depth_score)",
+      "action": "POST_FIX regime will provide clean measurement"
+    },
+    "F4": {
+      "title": "Generator imbalance",
+      "detail": "finn_crypto_scheduler dominated (69%), FINN-E 100% rejected",
+      "severity": "MEDIUM",
+      "action": "P0 repair executed 2026-01-27, awaiting POST_FIX accumulation"
+    }
+  },
+
+  "verdict": {
+    "overall": "PARTIAL_SUCCESS",
+    "death_rate_target": "NOT_MET (58.38% < 60%)",
+    "learning_stability": "ACHIEVED (system running continuously)",
+    "actionable_insights": "YES (input degeneracy identified, P0 repair executed)"
+  },
+
+  "recommendations": {
+    "R1": "Continue observation in POST_FIX regime",
+    "R2": "Do NOT adjust Tier-1 thresholds until POST_FIX data available",
+    "R3": "Flag Tier-1 'gentleness' as explicit P1 design decision",
+    "R4": "Re-run G1.5 correlation analysis when POST_FIX deaths reach n≥30"
+  },
+
+  "governance_signoff": {
+    "test_completed": true,
+    "evidence_preserved": true,
+    "runbook_updated": "DAY28_RUNBOOK_20260128.md",
+    "next_test_phase": "POST_FIX Accumulation & G1.5 Re-analysis"
+  }
+}

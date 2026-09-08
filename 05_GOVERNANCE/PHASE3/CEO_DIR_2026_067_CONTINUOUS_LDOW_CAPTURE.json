@@ -1,0 +1,140 @@
+{
+  "directive": "CEO-DIR-2026-067",
+  "title": "Continuous LDOW Capture & Rolling Learning Metrics",
+  "subtitle": "Observation-Only, No Autonomy",
+  "directive_type": "OPERATIONAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T03:30:00Z",
+  "applies_to": ["STIG", "FINN", "VEGA"],
+  "status": "EXECUTION_AUTHORIZED",
+  "system_mode": "LEARNING_MODE",
+  "effective": "IMMEDIATE",
+
+  "ldow_reference": {
+    "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
+    "status": "ACTIVE",
+    "intervention_freeze": "ENABLED"
+  },
+
+  "purpose": {
+    "context": "CEO-DIR-2026-066 established correct one-time persistence of LDOW Cycle 0",
+    "extension": "Continuous, deterministic collection - making LDOW a running measurement stream, not a point observation",
+    "goal": "Observe learning delta over time with full discipline"
+  },
+
+  "decision": {
+    "authorization": "Continuous persistence and aggregation of all LDOW-relevant forecasts and evaluation metrics",
+    "conditions": [
+      "LDOW = ACTIVE",
+      "Intervention Freeze = ENABLED"
+    ],
+    "classification": "OBSERVATION_NOT_CHANGE"
+  },
+
+  "continuous_capture_scope": {
+    "binding": true,
+
+    "section_3_1_forecast_level_capture": {
+      "frequency": "Every cycle",
+      "required_fields": [
+        "raw_confidence",
+        "damped_confidence",
+        "dampening_delta",
+        "ceiling_applied",
+        "damper_version_hash (must be unchanged)",
+        "directive_ref = CEO-DIR-2026-063R",
+        "LDOW ID"
+      ],
+      "requirements": {
+        "lineage_coverage": "100%",
+        "contract": "Same as Cycle 0"
+      }
+    },
+
+    "section_3_2_rolling_evaluation_metrics": {
+      "metrics": [
+        "Calibration Error",
+        "Brier Score",
+        "ΔFSS (IoS-005)",
+        "p95 latency (IoS-008)"
+      ],
+      "aggregation_dimensions": [
+        "per cycle",
+        "per regime",
+        "per strategy",
+        "overall"
+      ],
+      "interpretation": "NO_INTERPRETATION_ONLY_NUMBERS"
+    }
+  },
+
+  "explicit_non_actions": {
+    "binding": true,
+    "reaffirmed": true,
+    "this_directive_does_NOT": [
+      "Activate AEL",
+      "Give orchestrator write-access",
+      "Allow damper changes",
+      "Allow regime_sanity_gate",
+      "Allow adaptive thresholds"
+    ],
+    "principle": "All logic is locked. Only data flows."
+  },
+
+  "governance_and_integrity": {
+    "section_5_1_ldow_lock_enforcement": {
+      "if_ldow_invalidated": "Continuous capture stops automatically",
+      "if_damper_hash_changes": "Capture is invalidated and flagged"
+    },
+    "section_5_2_vega_oversight": {
+      "attestation_scope": [
+        "This is pure observation",
+        "No intervention has crept in",
+        "Data is valid for learning delta assessment"
+      ]
+    }
+  },
+
+  "ceo_visibility": {
+    "deliverable": "Rolling LDOW Dashboard (read-only)",
+    "contents": [
+      "Cycle index",
+      "Calibration trend",
+      "Brier delta vs previous cycle",
+      "ΔFSS trend",
+      "Latency stability"
+    ],
+    "nature": "STATUS_NOT_RECOMMENDATION"
+  },
+
+  "exit_condition": {
+    "unchanged_from": "CEO-DIR-2026-065",
+    "autonomy_requirements": [
+      "At least 2 LDOW cycles completed",
+      "Negative learning delta observed",
+      "VEGA attestation",
+      "CEO decision"
+    ]
+  },
+
+  "final_declaration": {
+    "system_state": "Continuous observation with full discipline",
+    "principles": [
+      "System learns quietly",
+      "We count precisely",
+      "We conclude only when numbers force us"
+    ]
+  },
+
+  "execution_assignment": {
+    "STIG": "Continuous capture & rolling metrics",
+    "FINN": "Ensure freeze integrity",
+    "VEGA": "Attest observation-only mode"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T03:30:00Z",
+    "status": "EXECUTION_AUTHORIZED"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "evidence_type": "P0P1_REGIME_ONTOLOGY_COMPLETE",
+  "timestamp": "2026-01-15T19:45:00Z",
+  "directive": "CEO-DIR Regime Ontology Integrity Remediation",
+  "executed_by": "STIG",
+  "status": "COMPLETE",
+  "migrations_applied": [
+    {
+      "number": 249,
+      "name": "249_p0_stress_calibration_freeze.sql",
+      "priority": "P0",
+      "result": "SUCCESS",
+      "changes": [
+        "2 STRESS calibration gates created (REGIME_CLASSIFICATION, REGIME)",
+        "eligible_for_calibration column added to brier_score_ledger",
+        "75 STRESS entries marked as ineligible for calibration"
+      ]
+    },
+    {
+      "number": 250,
+      "name": "250_p1_regime_ontology_alignment.sql",
+      "priority": "P1",
+      "result": "SUCCESS",
+      "changes": [
+        "8 new columns added to regime_v2_to_v4_mapping",
+        "BROKEN remapped from STRESS to identity",
+        "VOLATILE_NON_DIRECTIONAL remapped from STRESS to identity",
+        "9 regime definitions populated",
+        "VOLATILE_NON_DIRECTIONAL scalar (0.25) added to regime_scalar_config"
+      ]
+    }
+  ],
+  "code_changes": [
+    {
+      "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+      "line": 511,
+      "change": "P0 STRESS FREEZE - hardcoded confidence cap at 0.50"
+    },
+    {
+      "file": "03_FUNCTIONS/ios003_daily_regime_update_v4.py",
+      "lines": "183-188",
+      "change": "P1 V2_TO_V4_MAPPING - BROKEN and VOLATILE_NON_DIRECTIONAL identity mappings"
+    }
+  ],
+  "post_migration_verification": {
+    "p0": {
+      "stress_calibration_gates": {
+        "count": 2,
+        "confidence_ceiling": 0.50,
+        "forecast_types": ["REGIME_CLASSIFICATION", "REGIME"]
+      },
+      "brier_score_ledger_stress": {
+        "count": 75,
+        "eligible_for_calibration": false
+      }
+    },
+    "p1": {
+      "regime_mappings": {
+        "total": 9,
+        "with_definitions": 9,
+        "stress_mappings": 0
+      },
+      "identity_mappings": [
+        {"v2": "BROKEN", "v4": "BROKEN", "definition_equivalent": true},
+        {"v2": "VOLATILE_NON_DIRECTIONAL", "v4": "VOLATILE_NON_DIRECTIONAL", "definition_equivalent": true}
+      ],
+      "unproven_regimes": ["BULL", "BEAR", "NEUTRAL", "STRONG_BULL", "STRONG_BEAR", "COMPRESSION", "UNTRUSTED"],
+      "volatile_non_directional_scalar": 0.25
+    }
+  },
+  "acceptance_criteria": {
+    "p0_stress_freeze": {
+      "calibration_gates_exist": true,
+      "eligible_for_calibration_marked": true,
+      "runtime_cap_in_code": true,
+      "status": "PASS"
+    },
+    "p1_ontology_alignment": {
+      "all_definitions_populated": true,
+      "stress_proven_nonequivalent": true,
+      "unproven_regimes_null": true,
+      "identity_mappings_resolved": true,
+      "downstream_contracts_specified": true,
+      "vnd_scalar_added": true,
+      "python_dict_synced": true,
+      "status": "PASS"
+    }
+  },
+  "remaining_work": {
+    "description": "STRESS regime still exists as a label but is now frozen. Future P2 work may rename or remove entirely.",
+    "runtime_verification_pending": "First STRESS forecast after deploy must show confidence <= 0.50"
+  }
+}

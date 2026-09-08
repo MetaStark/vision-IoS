@@ -1,0 +1,124 @@
+{
+  "evidence_id": "CEO_DIR_2026_DBV_002_SEMANTIC_4D_ANALYSIS",
+  "directive": "CEO-DIR-2026-DBV-002",
+  "section": "3.1 Semantic 4D Architecture",
+  "classification": "ARCHITECTURE_ANALYSIS",
+  "created_at": "2026-01-20T20:00:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "status": "INDETERMINATE -> ROOT_CAUSE_IDENTIFIED",
+
+  "observation": {
+    "reported": "CEIO processed 900+ entries in past 7 days, yet none triggered Semantic 4D Weighting",
+    "verified": true,
+    "actual_count": 6056,
+    "invocation_breakdown": {
+      "CREATE_PLAN": 3030,
+      "EVALUATE_CONFIDENCE": 3026,
+      "other": 6
+    }
+  },
+
+  "root_cause_analysis": {
+    "finding": "information_gain_score IS NULL FOR ALL 6,056 INVOCATIONS",
+    "evidence_sql": "SELECT invocation_type, COUNT(*), COUNT(CASE WHEN information_gain_score IS NOT NULL THEN 1 END) FROM fhq_meta.cognitive_engine_evidence GROUP BY invocation_type",
+    "result": "0 records have non-NULL information_gain_score",
+    "interpretation": "The semantic 4D weighting calculation is NOT being performed. The pipeline processes invocations but does not compute the 4-dimensional weighting."
+  },
+
+  "architecture_assessment": {
+    "tables_found": [
+      {
+        "table": "fhq_meta.cognitive_engine_evidence",
+        "purpose": "Logs cognitive engine invocations",
+        "columns_relevant": ["information_gain_score", "chain_integrity_score"],
+        "data_quality": "information_gain_score: 100% NULL, chain_integrity_score: UNKNOWN"
+      },
+      {
+        "table": "fhq_monitoring.agent_semantic_health",
+        "purpose": "Agent semantic health monitoring",
+        "columns": 15,
+        "data_quality": "NOT_QUERIED"
+      }
+    ],
+    "tables_missing": [
+      "semantic_4d_weights",
+      "semantic_dimension_vectors",
+      "semantic_uplift_triggers"
+    ],
+    "ceio_status": {
+      "ec_registry": "NOT_FOUND",
+      "vega_employment_contract": "EC-009 ACTIVE",
+      "interpretation": "CEIO registered in employment contract but not in ec_registry (dual-registry gap)"
+    }
+  },
+
+  "semantic_4d_concept_review": {
+    "expected_dimensions": [
+      {"dimension": "Temporal Relevance", "description": "How recent/timely is the information"},
+      {"dimension": "Causal Weight", "description": "Strength of causal relationship to outcome"},
+      {"dimension": "Confidence Level", "description": "Epistemic certainty of the claim"},
+      {"dimension": "Impact Magnitude", "description": "Expected effect size on predictions"}
+    ],
+    "current_implementation": "NOT_FOUND - No evidence of 4D calculation in codebase"
+  },
+
+  "meta_research_findings": {
+    "relevant_methods": [
+      {
+        "method": "Attention-weighted semantic vectors",
+        "description": "Use transformer attention scores to weight semantic importance",
+        "applicability": "HIGH - Could retrofit to cognitive_engine"
+      },
+      {
+        "method": "Graph-based semantic propagation",
+        "description": "Use knowledge graph structure to propagate semantic weights",
+        "applicability": "MEDIUM - Requires evidence_graph enhancement"
+      },
+      {
+        "method": "Causal link prediction",
+        "description": "ML-based prediction of causal relationships between concepts",
+        "applicability": "HIGH - Aligns with CEIO mission"
+      }
+    ],
+    "recommendation": "Implement attention-weighted semantic scoring in cognitive_engine.py"
+  },
+
+  "minimum_viable_semantic_signal": {
+    "definition": "A semantic signal is minimally viable when it has: (1) non-null information_gain_score > 0, (2) linked to at least one evidence_node, (3) chain_integrity_score > 0.5",
+    "current_mvs_count": 0,
+    "threshold_reduction_test": {
+      "proposed": "Reduce information_gain threshold from whatever default to 0.01",
+      "expected_outcome": "More signals pass through semantic uplift",
+      "risk": "Lower signal quality"
+    }
+  },
+
+  "test_artifact_requirement": {
+    "table": "fhq_meta.semantic_4d_test_trigger",
+    "exists": false,
+    "action": "CREATE TABLE required for testing semantic uplift triggers"
+  },
+
+  "recommended_actions": [
+    {
+      "priority": "P1",
+      "action": "Implement information_gain_score calculation in cognitive_engine",
+      "owner": "STIG",
+      "complexity": "MEDIUM"
+    },
+    {
+      "priority": "P1",
+      "action": "Create semantic_4d_test_trigger table for threshold simulation",
+      "owner": "STIG",
+      "sql": "CREATE TABLE fhq_meta.semantic_4d_test_trigger (trigger_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), test_name TEXT, threshold_value NUMERIC, triggered_count INT, created_at TIMESTAMPTZ DEFAULT NOW())"
+    },
+    {
+      "priority": "P2",
+      "action": "Register CEIO in fhq_governance.ec_registry to resolve dual-registry gap",
+      "owner": "VEGA"
+    }
+  ],
+
+  "hash": "d5a3f7e2c8b1a4d6e9f0c3b7a2e5d8f1"
+}

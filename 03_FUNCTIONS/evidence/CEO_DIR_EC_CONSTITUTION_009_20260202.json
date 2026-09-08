@@ -1,0 +1,90 @@
+{
+  "directive": "CEO-DIR-2026-EC-CONSTITUTION-RESOLUTION-009",
+  "timestamp": "2026-02-02T18:16:14.862890+00:00",
+  "gate": "G4_CONSTITUTIONAL",
+  "status": "STIG_EVIDENCE_PREPARED",
+  "dual_source_audit": {
+    "vega_employment_contract_total": 21,
+    "ec_registry_total": 5,
+    "discrepancy_count": 16,
+    "in_both": [
+      "EC-014",
+      "EC-018",
+      "EC-020",
+      "EC-021",
+      "EC-022"
+    ],
+    "in_vec_only": [
+      "EC-001",
+      "EC-002",
+      "EC-003",
+      "EC-004",
+      "EC-005",
+      "EC-006",
+      "EC-007",
+      "EC-008",
+      "EC-009",
+      "EC-010",
+      "EC-011",
+      "EC-012",
+      "EC-013",
+      "EC-015",
+      "EC-016",
+      "EC-019"
+    ],
+    "finding": "16 of 21 employment contracts (including all core executives: VEGA, LARS, STIG, FINN, LINE, CODE) have NO entry in ec_registry. Only cognitive authority tier (EC-014/018/020-022) is registered. EC-016 (VALKYRIE) is one of 16 missing, not uniquely orphaned."
+  },
+  "runtime_enforcement_audit": {
+    "check_constraints_found": 32,
+    "key_constraints": {
+      "options_shadow_orders": "execution_mode = SHADOW_PAPER (hard)",
+      "paper_orders": "execution_mode = PAPER_ONLY (hard)",
+      "capital_simulation_ledger": "is_paper_only = true AND real_capital_used = 0 (hard)",
+      "execution_eligibility_registry": "execution_mode = SHADOW (hard)",
+      "experiment_registry": "execution_mode = EXPERIMENT (hard)",
+      "execution_mode_table": "mode_name IN (LOCAL_DEV, PAPER_PROD, LIVE_PROD, SHADOW_PAPER)"
+    },
+    "execution_eligibility_state": {
+      "code": "ELIG_EXP_ALPHA_SAT_F_V1.0",
+      "tier_status": "SHADOW_CANDIDATE",
+      "live_capital_blocked": true,
+      "leverage_blocked": true,
+      "ec022_dependency_blocked": true,
+      "created_by": "STIG_PROMOTION_GATE_ENGINE",
+      "consumer": "NONE - orphaned control, written but never read"
+    },
+    "paper_execution_authority": {
+      "ios": "IoS-012",
+      "activation_mode": "PAPER",
+      "live_api_enabled": false,
+      "paper_api_enabled": true,
+      "activated_by": "CEO",
+      "vega_cert": "VEGA-IOS012-G4-CERT-20251201"
+    }
+  },
+  "constitutional_mapping_draft": {
+    "actual_controls_preventing_live": [
+      "PostgreSQL CHECK constraints (per-table mode locks)",
+      "Hardcoded PAPER_ONLY in alpaca_paper_adapter.py",
+      "DEFCON gate in 5 of 9 daemons",
+      "paper_execution_authority.live_api_enabled = false"
+    ],
+    "not_constitutionally_anchored": true,
+    "ec_binding": "NONE of the 4 controls reference an EC contract"
+  },
+  "option_1_canonicalize": {
+    "action": "INSERT EC-001 through EC-016, EC-019 into ec_registry with full metadata",
+    "scope": "All 16 missing contracts",
+    "risk": "High effort. Must define breach_classes, authority_chains, dependencies for each.",
+    "recommendation": "Phased: Core executives (EC-001 to EC-006) first, then sub-executives"
+  },
+  "option_2_reclassify": {
+    "action": "Define ec_registry as cognitive-authority-only registry. Rename or document that vega_employment_contract is the canonical source for core executives.",
+    "scope": "Documentation + single-source-of-truth designation",
+    "risk": "Lower effort but leaves two registries with different scopes",
+    "recommendation": "Add a reconciliation view or constraint to prevent future drift"
+  },
+  "prepared_by": "STIG",
+  "ec": "EC-003",
+  "evidence_hash": "a3f29894b8bb28f80854988c89a0f72372939d05cbe98be0de5c855c8693803b"
+}

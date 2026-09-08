@@ -1,0 +1,77 @@
+{
+  "document_id": "OPTIONS_COMPATIBILITY_REQUIREMENTS_v1",
+  "directive_ref": "CEO-DIR-2026-084",
+  "created_at": "2026-01-18T02:29:32.840959+00:00",
+  "created_by": "STIG (EC-003)",
+  "NON_NEGOTIABLE_PRINCIPLE": {
+    "statement": "The signal proves truth. The instrument exploits truth. Never reverse.",
+    "implication": "Options selection NEVER influences signal thresholds"
+  },
+  "SIGNAL_PROPERTIES_TO_PRESERVE": {
+    "1_directional_intent": {
+      "property": "UP/DOWN",
+      "current_signal": "STRESS@99%+ implies DOWN (inverted)",
+      "requirement": "Options structure must express DOWN without ambiguity"
+    },
+    "2_time_horizon": {
+      "property": "t0 -> t+N",
+      "current_horizons": [
+        "t+1d",
+        "t+3d",
+        "t+5d"
+      ],
+      "requirement": "Options expiry must accommodate these horizons without theta decay destroying edge"
+    },
+    "3_event_sparsity": {
+      "property": "Edge per activation",
+      "observation": "Signals are rare (~31 in 10 days)",
+      "requirement": "Each signal activation must have meaningful payoff potential"
+    },
+    "4_shadow_observability": {
+      "property": "Non-executing observation",
+      "current_mode": "SHADOW",
+      "requirement": "Must be able to observe theoretical payoff without execution"
+    }
+  },
+  "LEDGER_INTEGRITY_CONSTRAINTS": {
+    "table": "fhq_research.roi_direction_ledger_equity",
+    "MUST_REMAIN_FREE_OF": [
+      "Greeks (delta, gamma, theta, vega, rho)",
+      "Implied Volatility (IV)",
+      "PnL calculations",
+      "Spreads metadata",
+      "Options contract details"
+    ],
+    "rationale": "Direction-Only ROI is the ONLY admissible proof of alpha. Options are downstream."
+  },
+  "COMPATIBILITY_TEST": {
+    "question": "Can this options structure express the signal without breaking the above?",
+    "if_no": "Structure is unsuitable, regardless of theoretical payoff"
+  },
+  "CANDIDATE_STRUCTURES_FOR_ANALYSIS": {
+    "potentially_compatible": [
+      "ATM Puts (single leg)",
+      "Slightly OTM Puts (single leg)",
+      "Put spreads (requires analysis)"
+    ],
+    "likely_incompatible": [
+      "Complex multi-leg strategies",
+      "Calendar spreads (timing mismatch)",
+      "Iron condors (non-directional)",
+      "Straddles/strangles (non-directional)"
+    ],
+    "note": "LINE must validate these classifications"
+  },
+  "ALPACA_SPECIFIC_REQUIREMENTS": {
+    "api_documentation": "https://alpaca.markets/docs/trading/options/",
+    "items_to_document": [
+      "Available option classes for our tickers",
+      "Strike granularity",
+      "Expiration dates available",
+      "Liquidity characteristics",
+      "Order types supported",
+      "Exercise/assignment mechanics",
+      "Margin requirements (observation only)"
+    ]
+  }
+}

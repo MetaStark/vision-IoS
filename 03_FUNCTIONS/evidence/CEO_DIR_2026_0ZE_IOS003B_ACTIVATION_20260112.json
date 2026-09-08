@@ -1,0 +1,187 @@
+{
+  "directive_id": "CEO-DIR-2026-0ZE-A-v2",
+  "directive_name": "Phase 1 Activation - IOS-003-B Observability-Only",
+  "authority": "CEO",
+  "classification": "G1 (Non-breaking governance enhancement)",
+  "priority": "P0",
+  "baseline_references": [
+    "CEO-DIR-2026-0ZC (Day 3 Truth Freeze)",
+    "CEO-DIR-2026-0ZD (Track 1 Operational Discipline)"
+  ],
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-12T01:00:00Z",
+
+  "executive_summary": {
+    "key_decision": "Activate IOS-003-B observability-only mode to answer: Does intraday regime data add epistemic value?",
+    "rationale": "ACI sees daily regimes but misses intra-day shifts. IOS-003-B increases resolution without execution risk.",
+    "constraint": "SEEING upgrade only. No execution hooks, no learning feedback, no downstream activation.",
+    "risk": "LOW. Observability-only = zero execution exposure. Constraint breaches auto-suspend."
+  },
+
+  "activation_mode": {
+    "mode": "OBSERVABILITY_ONLY",
+    "detection_engine": "ACTIVE (15-min cycles)",
+    "delta_logging": "ALLOWED (writes to fhq_operational.delta_log)",
+    "flash_context_emission": "BLOCKED (gate enforced)",
+    "signal_executor_consumption": "BLOCKED (no consumption of flash_context)",
+    "canonical_regime_read": "READ-ONLY (fhq_perception.sovereign_regime_state_v4)"
+  },
+
+  "approved_write_targets": {
+    "tables": [
+      {"name": "fhq_operational.delta_log", "purpose": "Audit trail", "ttl": "Permanent"},
+      {"name": "fhq_operational.regime_delta", "purpose": "Core detections", "ttl": "4h max"},
+      {"name": "fhq_operational.intraday_bars_h1", "purpose": "OHLCV cache", "ttl": "7 days"},
+      {"name": "fhq_operational.intraday_bars_h4", "purpose": "OHLCV cache", "ttl": "7 days"}
+    ],
+    "blocked": [
+      {"name": "fhq_operational.flash_context", "reason": "CEO-DIR-2026-0ZE-A v2 observability mode"},
+      {"name": "fhq_governance.*", "reason": "ADR-013 guard clause (runtime forbidden)"},
+      {"name": "fhq_perception.regime_daily", "reason": "Canonical source (read-only)"},
+      {"name": "fhq_meta.ios_registry", "reason": "Infrastructure sovereignty"}
+    ]
+  },
+
+  "deliverables_completed": {
+    "migration_232": {
+      "file": "04_DATABASE/MIGRATIONS/232_ios003b_observability_mode.sql",
+      "status": "CREATED",
+      "contents": [
+        "fhq_governance.ios_execution_gates table",
+        "IOS-003-B FLASH_CONTEXT_EMISSION gate (BLOCKED)",
+        "Governance logging entry"
+      ]
+    },
+    "migration_233": {
+      "file": "04_DATABASE/MIGRATIONS/233_phase1_ios003b_goals.sql",
+      "status": "CREATED",
+      "contents": [
+        "8 Phase 1 goals (Day 4-11)",
+        "Verification queries for each goal",
+        "Governance logging entry"
+      ]
+    },
+    "script_modification": {
+      "file": "03_FUNCTIONS/ios003b_intraday_regime_delta.py",
+      "status": "MODIFIED",
+      "changes": [
+        "Added OBSERVABILITY_ONLY_MODE environment variable check",
+        "Added _log_hypothetical_context() method",
+        "Modified emit_flash_context() to respect gate"
+      ]
+    }
+  },
+
+  "phase1_goals": {
+    "window": "Day 4 (2026-01-11) to Day 11 (2026-01-18)",
+    "duration": "7 days",
+    "goals": [
+      {"day": 4, "date": "2026-01-11", "goal": "IOS-003-B observability mode activated", "agent": "STIG"},
+      {"day": 5, "date": "2026-01-12", "goal": "First 24h of delta production verified", "agent": "STIG"},
+      {"day": 6, "date": "2026-01-13", "goal": "No forbidden writes detected", "agent": "VEGA"},
+      {"day": 7, "date": "2026-01-14", "goal": "Delta distribution non-degenerate", "agent": "STIG"},
+      {"day": 8, "date": "2026-01-15", "goal": "72h verification complete", "agent": "STIG"},
+      {"day": 9, "date": "2026-01-16", "goal": "Intraday vs daily correlation analyzed", "agent": "FINN"},
+      {"day": 10, "date": "2026-01-17", "goal": "Phase 1 success/null determined", "agent": "VEGA"},
+      {"day": 11, "date": "2026-01-18", "goal": "Phase 1 evidence bundle complete", "agent": "STIG"}
+    ]
+  },
+
+  "success_criteria": {
+    "hypothesis_1_divergence": {
+      "test": "CORR(intraday_delta, daily_regime) < 0.7",
+      "interpretation": "Intraday adds epistemic value",
+      "action_if_true": "Consider Phase 2 activation"
+    },
+    "hypothesis_2_null": {
+      "test": "CORR(intraday_delta, daily_regime) >= 0.9",
+      "interpretation": "Daily is sufficient",
+      "action_if_true": "Deprioritize IOS-003-B"
+    },
+    "hypothesis_3_inconclusive": {
+      "test": "0.7 <= CORR < 0.9",
+      "interpretation": "Need more data",
+      "action_if_true": "Extend observation to Week 3"
+    },
+    "mandatory_rule": "Hypothesis 1 OR 2 confirmed. Indecision is not acceptable."
+  },
+
+  "metric_governance_addendum": {
+    "status": "VEGA SIGNED",
+    "timestamp": "2026-01-12T00:45:00Z",
+    "components": {
+      "A9_scorecard_trio": {
+        "description": "Brier is not alone decision basis",
+        "required_metrics": ["Brier Global", "ECE + reliability diagram", "AUC", "Log Loss"]
+      },
+      "A10_horizon_stratification": {
+        "description": "Skill metrics reported separately per horizon",
+        "horizons": {"H0_H1": "Intraday (secondary)", "D1": "Daily (PRIMARY)", "W1": "Weekly (secondary)"}
+      },
+      "A11_probability_clipping": {
+        "description": "Numerical stability for log loss",
+        "epsilon": 0.001,
+        "max_log_loss_per_sample": 6.9
+      }
+    }
+  },
+
+  "a3_gate_status": {
+    "metric": "Regret Rate",
+    "current_value": 0.246,
+    "threshold": 0.15,
+    "status": "BLOCKED",
+    "classification": {
+      "execution_autonomy": "HARD GATE (blocked at 24.6%)",
+      "observability_activation": "DIAGNOSTIC (not blocking this directive)",
+      "threshold_setting": "POLICY CHOICE (CEO adjustable)"
+    },
+    "implication": "IOS-003-B observability activation proceeds. Execution phase blocked until Regret Rate < 15%."
+  },
+
+  "verification_status": {
+    "d1_claim_to_evidence_ledger": "COMPLETE",
+    "d2_mbb_verification_memo": "COMPLETE",
+    "d3_redline_list": "COMPLETE (8/8 applied)",
+    "vega_20pct_sample_check": "PASSED",
+    "vega_signature": "SIGNED (2026-01-12T00:15:00Z)",
+    "vega_addendum_signature": "SIGNED (2026-01-12T00:45:00Z)"
+  },
+
+  "corrected_baselines": {
+    "brier_score": {"plan": 0.3171, "actual": 0.3147, "status": "PASS"},
+    "hit_rate": {"plan": "40.7%", "actual": "51.78%", "status": "CORRECTED"},
+    "coverage": {"plan": "77.2%", "actual": "93.9%", "status": "CORRECTED"},
+    "regret_rate": {"target": "<15%", "actual": "24.6%", "status": "GATE BLOCKED"},
+    "mbb_compliance": {"claimed": "97%", "actual": "81%", "status": "CORRECTED"}
+  },
+
+  "next_steps": {
+    "immediate": [
+      "Apply Migration 232 to database",
+      "Apply Migration 233 to database",
+      "Start IOS-003-B daemon with IOS003B_OBSERVABILITY_ONLY=true"
+    ],
+    "t_plus_72h": [
+      "Execute 72h verification queries",
+      "Generate 72h checkpoint evidence"
+    ],
+    "day_10": [
+      "Phase 1 evaluation using scorecard-trio (A9)",
+      "Horizon-stratified Brier reporting (A10)",
+      "VEGA verdict: Divergence OR Null"
+    ]
+  },
+
+  "governance_compliance": {
+    "adr_002": "All actions logged to governance_actions_log",
+    "adr_004": "G1 approval (non-breaking governance enhancement)",
+    "adr_013": "STIG migrations allowed, IOS-003-B runtime forbidden from fhq_governance.*",
+    "ceo_court_proof": "Evidence file with directive chain and verification status"
+  },
+
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-12T01:00:00Z",
+  "vega_verified": true,
+  "vega_signature_timestamp": "2026-01-12T00:45:00Z"
+}

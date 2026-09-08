@@ -1,0 +1,124 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-118",
+  "title": "EMERGENCY SIGNAL PURIFICATION & GRAPH IGNITION",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-05T21:58:00Z",
+
+  "steg_1_signal_cleaning": {
+    "status": "COMPLETE",
+
+    "generator_blacklist": {
+      "generator_id": "STIG_CEO_DIR_2026_024",
+      "reason": "Brier 0.699 (879 samples). BULL-regime Brier 0.836 (450 samples). Aktivt destruktiv for FSS.",
+      "evidence": {
+        "avg_brier": 0.699,
+        "samples": 879,
+        "bull_regime": {"brier": 0.836, "samples": 450},
+        "bear_regime": {"brier": 0.531, "samples": 153},
+        "worst_assets": ["ATOM-USD", "NOW", "XRP-USD", "V"]
+      },
+      "table": "fhq_governance.generator_blacklist"
+    },
+
+    "regime_filter": {
+      "regime": "STRESS",
+      "allocation_scalar": 0.0,
+      "reason": "Brier 0.695 - nesten tilfeldig. Ingen kapital i STRESS-regime.",
+      "table": "fhq_governance.regime_allocation_filter"
+    },
+
+    "asset_blackout": {
+      "assets_blacklisted": 7,
+      "criteria": "Brier > 0.75 med 10+ samples",
+      "assets": [
+        {"asset_id": "AIG", "brier": 0.968, "samples": 13},
+        {"asset_id": "NZDUSD=X", "brier": 0.940, "samples": 22},
+        {"asset_id": "V", "brier": 0.906, "samples": 14},
+        {"asset_id": "MORG.OL", "brier": 0.917, "samples": 11},
+        {"asset_id": "ADSK", "brier": 0.895, "samples": 13},
+        {"asset_id": "UNH", "brier": 0.882, "samples": 15},
+        {"asset_id": "INTU", "brier": 0.874, "samples": 10}
+      ],
+      "table": "fhq_governance.asset_forecast_blackout"
+    }
+  },
+
+  "steg_2_alpha_graph_ignition": {
+    "status": "COMPLETE",
+
+    "causal_edges_activated": {
+      "total_edges_in_db": 56723,
+      "edges_activated": 3563,
+      "activation_criteria": {
+        "REGIME_CAUSAL": "edge_weight >= 0.75",
+        "MACRO_CAUSAL": "all",
+        "MICRO_CAUSAL": "all"
+      },
+      "breakdown": {
+        "REGIME_CAUSAL": 3560,
+        "MACRO_CAUSAL": 2,
+        "MICRO_CAUSAL": 1
+      }
+    },
+
+    "vision_signals_populated": {
+      "alpha_graph_nodes": 525,
+      "alpha_graph_edges": 414,
+      "node_types": {
+        "CRYPTO": "assets ending in -USD",
+        "FX": "assets ending in =X",
+        "EQUITY": "other assets",
+        "CLUSTER": "macro clusters"
+      }
+    },
+
+    "snapshot_id": "HC-IOS-007-2026-SNAPSHOT-001"
+  },
+
+  "steg_4_golden_path": {
+    "status": "COMPLETE",
+
+    "primary_asset": {
+      "asset_id": "LTC-USD",
+      "bear_brier": 0.128,
+      "bear_samples": 162,
+      "overall_brier": 0.179,
+      "overall_samples": 191,
+      "rationale": "Statistisk signifikant skill i BEAR-regime"
+    },
+
+    "secondary_assets": [
+      {"asset_id": "HLT", "overall_brier": 0.149, "samples": 10},
+      {"asset_id": "SPY", "overall_brier": 0.207, "samples": 16},
+      {"asset_id": "LYFT", "overall_brier": 0.222, "samples": 11},
+      {"asset_id": "USDHKD=X", "overall_brier": 0.235, "samples": 21},
+      {"asset_id": "XOM", "overall_brier": 0.243, "samples": 13}
+    ],
+
+    "bear_specialists": [
+      {"asset_id": "RUNE-USD", "bear_brier": 0.060, "samples": 5},
+      {"asset_id": "THETA-USD", "bear_brier": 0.080, "samples": 6},
+      {"asset_id": "GRT-USD", "bear_brier": 0.199, "samples": 84}
+    ],
+
+    "table": "fhq_governance.golden_path_assets"
+  },
+
+  "expected_impact": {
+    "brier_improvement": "Removing STIG_CEO_DIR_2026_024 (879 samples @ 0.699) and STRESS regime forecasts should reduce aggregate Brier by ~0.05-0.10",
+    "fss_unlock": "Focusing on Golden Path assets with proven skill should enable positive FSS computation",
+    "capital_deployment": "First allocation expected when BEAR regime detected on LTC-USD or secondary assets"
+  },
+
+  "governance": {
+    "new_tables_created": [
+      "fhq_governance.generator_blacklist",
+      "fhq_governance.regime_allocation_filter",
+      "fhq_governance.asset_forecast_blackout",
+      "fhq_governance.alpha_graph_ignition_log",
+      "fhq_governance.golden_path_assets"
+    ],
+    "vega_verification_deadline": "2026-02-06T03:58:00Z"
+  }
+}

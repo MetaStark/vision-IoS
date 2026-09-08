@@ -83,6 +83,8 @@ interface ACITriangleTelemetry {
     lastEvaluatedAt: string | null
     currentBalance?: number
     toppedUpBalance?: number
+    initialBalance?: number
+    monthlySpent?: number
   }
   ikea: {
     totalEvaluated: number

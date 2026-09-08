@@ -1,0 +1,255 @@
+{
+  "directive": "CEO-DIR-2026-111",
+  "version": "1.1",
+  "title": "Canonical Signal Pipeline Activation with Guarded Learning Acceleration (SHADOW-PROD)",
+  "classification": "MANDATORY – IMMEDIATE EXECUTION",
+  "executed_at": "2026-01-20T01:15:00.000Z",
+  "completed_at": "2026-01-20T01:10:00.000Z",
+  "implementor": "STIG",
+  "status": "COMPLETE",
+
+  "executive_summary": {
+    "objective": "Transition from Verified Ignorance to Operational Learning without sacrificing epistemic discipline",
+    "achievements": [
+      "FINN Cognitive Gateway activated to SHADOW mode",
+      "Canonical signal path enforced (IoS-007 → IoS-008 → g2 → CPTO)",
+      "CPTO configured for shadow consumption (no orders)",
+      "Broker truth precondition enforced",
+      "Learning loop closure implemented"
+    ],
+    "constraints_preserved": [
+      "TTL enforcement active",
+      "DEFCON gating active",
+      "Audit purity maintained",
+      "No synthetic data",
+      "No bypass paths",
+      "No silent heuristics"
+    ]
+  },
+
+  "root_cause_addressed": {
+    "issue": "FINN_COGNITIVE_GATEWAY remaining in mode = OFF",
+    "consequence": "Zero propagation into fhq_finn.ensemble_signals, ios007, ios008, g2_decision_plans",
+    "resolution": "Mode changed from OFF to SHADOW with 48-hour observation window",
+    "classification": "Configuration failure, not model failure"
+  },
+
+  "phase_1_cognitive_gateway_activation": {
+    "status": "COMPLETE",
+    "migration": "323_ceo_dir_2026_111_finn_gateway_shadow_activation.sql",
+    "task_name": "FINN_COGNITIVE_GATEWAY",
+    "previous_mode": "OFF",
+    "current_mode": "SHADOW",
+    "shadow_generated_flag": true,
+    "observation_window_hours": 48,
+    "observation_ends": "2026-01-22T01:01:16.636Z",
+    "constraints": [
+      "SHADOW mode only",
+      "No execution side effects",
+      "All outputs tagged shadow_generated = true"
+    ]
+  },
+
+  "phase_2_canonical_signal_enforcement": {
+    "status": "COMPLETE",
+    "migration": "324_ceo_dir_2026_111_canonical_signal_enforcement.sql",
+    "canonical_path": "IoS-007 → IoS-008 → fhq_alpha.g2_decision_plans → EC-015 (CPTO)",
+    "forbidden_paths": [
+      "Direct execution from IOS012B_INVERSION"
+    ],
+    "ios012b_config": {
+      "routing_mode": "CANONICAL",
+      "direct_execution_allowed": false,
+      "required_signal_class": "LOW_CONFIDENCE_INVERSION_CANDIDATE",
+      "canonical_path_enforced": true
+    },
+    "tables_created": [
+      "fhq_alpha.signal_routing_config",
+      "fhq_alpha.canonical_signal_handoff"
+    ]
+  },
+
+  "phase_3_cpto_shadow_consumption": {
+    "status": "COMPLETE",
+    "migration": "325_ceo_dir_2026_111_cpto_shadow_configuration.sql",
+    "cpto_state": {
+      "mode": "SHADOW",
+      "can_place_orders": false,
+      "submit_to_line": false
+    },
+    "cpto_responsibilities": [
+      "Precision entry calculation",
+      "ATR-based SL / R-based TP",
+      "Slippage-saved attribution (bps)",
+      "TTL enforcement",
+      "DEFCON-aware refusal logic",
+      "Friction monitoring"
+    ],
+    "outcome": "TradePackets generated, never executed, fully logged",
+    "tables_created": [
+      "fhq_alpha.cpto_operational_state",
+      "fhq_alpha.cpto_shadow_trade_packets"
+    ]
+  },
+
+  "phase_4_broker_truth_precondition": {
+    "status": "COMPLETE",
+    "migration": "326_ceo_dir_2026_111_broker_truth_precondition.sql",
+    "mandate": "broker_truth_capture.py must execute before every paper-trading loop",
+    "failure_condition": "If broker snapshot is stale → entire loop aborts",
+    "configuration": {
+      "max_staleness_seconds": 300,
+      "enforcement_enabled": true,
+      "abort_on_stale": true,
+      "affected_loops": ["paper_trading", "shadow_trading", "signal_execution", "cpto_shadow"]
+    },
+    "error_class_eliminated": "CD-EXEC-ALPACA-SOT-001",
+    "principle": "belief == reality at all times"
+  },
+
+  "phase_5_learning_loop_closure": {
+    "status": "COMPLETE",
+    "migration": "327_ceo_dir_2026_111_learning_loop_closure.sql",
+    "requirement": "Every CPTO-evaluated signal recorded in fhq_research.evaluations",
+    "data_captured": [
+      "Decision rationale",
+      "Slippage saved (bps)",
+      "Refusal reason (TTL / Liquidity / DEFCON)",
+      "Regime snapshot with hash",
+      "Parameter version hash",
+      "Inversion metadata"
+    ],
+    "purpose": "Feed Brier decomposition and Learning Velocity Index (LVI) with live-regime data",
+    "tables_created": ["fhq_research.evaluations"],
+    "views_created": ["v_cpto_learning_metrics", "v_lvi_contribution"]
+  },
+
+  "guardrails_enforced": {
+    "defcon_orange_plus": {
+      "behavior": "CPTO enters CONSERVATIVE mode",
+      "low_confidence_signals": "Auto-blocked"
+    },
+    "ttl_violation": {
+      "behavior": "Absolute rejection",
+      "logged": true
+    },
+    "synthetic_test_data": {
+      "status": "FORBIDDEN",
+      "exception": "End-to-end pre-cleared, must be fully purged post-test"
+    }
+  },
+
+  "success_criteria_status": {
+    "finn_ensemble_signals_today_dated": {
+      "status": "PARTIAL",
+      "note": "FINN gateway ran in SHADOW mode, returned NO_SIGNAL due to NEUTRAL regime"
+    },
+    "g2_decision_plans_median_age_under_5min": {
+      "status": "PARTIAL",
+      "note": "No new plans generated - awaiting directional conviction"
+    },
+    "cpto_trade_packet_in_shadow": {
+      "status": "VERIFIED",
+      "packet_id": "cb357924-402e-4041-b977-0331711376fc",
+      "instrument": "ADBE",
+      "direction": "LONG",
+      "entry_price": 521.33,
+      "stop_loss": 496.33,
+      "take_profit": 552.58,
+      "slippage_saved_bps": 70.00,
+      "verified_at": "2026-01-20T02:22:27Z"
+    },
+    "zero_line_submissions": {
+      "status": "VERIFIED",
+      "evidence": "submit_to_line = false enforced, orders_placed = false"
+    },
+    "no_bypass_paths": {
+      "status": "VERIFIED",
+      "evidence": "IOS012B_INVERSION direct_execution_allowed = false"
+    },
+    "broker_truth_precondition": {
+      "status": "VERIFIED",
+      "evidence": "Correctly blocked stale snapshot (635s > 300s), passed after refresh (10s)"
+    },
+    "learning_loop_closure": {
+      "status": "VERIFIED",
+      "evaluation_id": "9b666252-3c89-4264-8a85-c736d1346f07",
+      "decision": "ACCEPTED",
+      "evidence": "Full evaluation logged to fhq_research.evaluations"
+    }
+  },
+
+  "operational_verification": {
+    "canonical_pipeline_test": {
+      "executed_at": "2026-01-20T02:22:27Z",
+      "source_module": "IOS012B_INVERSION",
+      "signal_class": "LOW_CONFIDENCE_INVERSION_CANDIDATE",
+      "handoff_id": "26a2179b-3af4-453d-a710-28ab3e7b18b5",
+      "handoff_status": "CPTO_ACCEPTED",
+      "pipeline_result": "SUCCESS",
+      "checks_passed": [
+        "Broker truth freshness (10s < 300s)",
+        "TTL validity (86136s remaining)",
+        "CPTO SHADOW mode enforced",
+        "Regime-adaptive entry calculation",
+        "ATR-based canonical exits",
+        "Slippage saved attribution",
+        "Learning loop evaluation logged"
+      ]
+    },
+    "cpto_compliance": {
+      "mode": "SHADOW",
+      "shadow_violations": 0,
+      "trade_packets_generated": 1,
+      "compliance_status": "COMPLIANT",
+      "shadow_ends_at": "2026-01-22T02:04:46Z"
+    }
+  },
+
+  "migrations_executed": [
+    {
+      "file": "323_ceo_dir_2026_111_finn_gateway_shadow_activation.sql",
+      "phase": 1,
+      "status": "EXECUTED"
+    },
+    {
+      "file": "324_ceo_dir_2026_111_canonical_signal_enforcement.sql",
+      "phase": 2,
+      "status": "EXECUTED"
+    },
+    {
+      "file": "325_ceo_dir_2026_111_cpto_shadow_configuration.sql",
+      "phase": 3,
+      "status": "EXECUTED"
+    },
+    {
+      "file": "326_ceo_dir_2026_111_broker_truth_precondition.sql",
+      "phase": 4,
+      "status": "EXECUTED"
+    },
+    {
+      "file": "327_ceo_dir_2026_111_learning_loop_closure.sql",
+      "phase": 5,
+      "status": "EXECUTED"
+    }
+  ],
+
+  "verification_state": {
+    "finn_gateway_mode": "SHADOW",
+    "cpto_mode": "SHADOW",
+    "cpto_can_place_orders": false,
+    "cpto_submit_to_line": false,
+    "ios012b_direct_allowed": false,
+    "broker_abort_on_stale": true,
+    "evaluations_table_ready": true
+  },
+
+  "ceo_strategic_note": {
+    "principle": "We are not chasing fills. We are harvesting information asymmetry.",
+    "insight": "STRESS regimes lie. TTL tells the truth. CPTO arbitrages the difference.",
+    "outcome": "This directive converts market chaos into structured learning fuel."
+  },
+
+  "evidence_hash": "f8a3c7e2d1b49605",
+  "overall_status": "COMPLETE"
+}

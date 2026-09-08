@@ -1,0 +1,121 @@
+{
+  "evidence_type": "LDOW_EVALUATION_FACTS",
+  "evidence_id": "LDOW-EVAL-20260114-001",
+  "generated_at": "2026-01-14T13:15:00Z",
+  "generated_by": "STIG",
+  "classification": "READ_ONLY_APPEND_ONLY",
+
+  "ldow_reference": {
+    "ldow_id": "30930951-2886-4ee8-a482-5b50f044e72b",
+    "damper_version_hash": "da311f0ebb875122",
+    "status_at_evaluation": "ACTIVE"
+  },
+
+  "baseline_reference": {
+    "source": "fhq_governance.holdout_evaluation_results",
+    "holdout_id": "5415edc1-16b0-41cf-813f-7e6ea7f72f53",
+    "holdout_name": "M1_BOOTSTRAP_HOLDOUT",
+    "brier_score_baseline": 0.5158,
+    "calibration_error_baseline": 0.5411
+  },
+
+  "observed_metrics": {
+    "brier_score_damped": 0.2509,
+    "brier_score_raw": 0.3846,
+    "calibration_error_ece": 0.1117,
+    "avg_damped_confidence": 0.5019,
+    "avg_raw_confidence": 0.7402,
+    "actual_hit_rate": 0.3902
+  },
+
+  "delta_vs_baseline": {
+    "brier_delta": -0.2649,
+    "calibration_delta": -0.4294,
+    "note": "Negative delta indicates improvement (lower is better)"
+  },
+
+  "sample_characteristics": {
+    "n_forecasts_reconciled": 82,
+    "n_forecasts_total_ldow": 565,
+    "coverage_pct": 14.5,
+    "assets_evaluated": ["BTC-USD", "ETH-USD"],
+    "horizon_hours": 1,
+    "direction_types": ["LONG"]
+  },
+
+  "asset_breakdown": [
+    {
+      "asset_id": "BTC-USD",
+      "n_forecasts": 41,
+      "brier_damped": 0.2580,
+      "brier_raw": 0.3370,
+      "avg_damped_conf": 0.5104,
+      "hit_rate": 0.4390
+    },
+    {
+      "asset_id": "ETH-USD",
+      "n_forecasts": 41,
+      "brier_damped": 0.2439,
+      "brier_raw": 0.4321,
+      "avg_damped_conf": 0.4935,
+      "hit_rate": 0.3415
+    }
+  ],
+
+  "calibration_buckets": [
+    {
+      "bucket": "40-50%",
+      "n_forecasts": 26,
+      "avg_predicted": 0.4312,
+      "avg_actual": 0.3462,
+      "bucket_error": 0.0850
+    },
+    {
+      "bucket": "50-60%",
+      "n_forecasts": 56,
+      "avg_predicted": 0.5348,
+      "avg_actual": 0.4107,
+      "bucket_error": 0.1241
+    }
+  ],
+
+  "methodology": {
+    "forecast_source": "fhq_governance.ldow_forecast_captures",
+    "outcome_source": "fhq_core.market_prices_live",
+    "matching_logic": "Price at forecast time vs price at +1 hour, within 1-minute tolerance window",
+    "brier_formula": "AVG((damped_confidence - outcome)^2) where outcome in {0, 1}",
+    "calibration_formula": "ECE = weighted average of |avg_predicted - avg_actual| per confidence bucket",
+    "outcome_definition": "outcome=1 if price moved in predicted direction, outcome=0 otherwise",
+    "reconciliation_sql": "WITH ldow_crypto_forecasts AS (SELECT ... FROM ldow_forecast_captures WHERE ldow_id='30930951-2886-4ee8-a482-5b50f044e72b' AND asset_id IN ('BTC-USD','ETH-USD') AND captured_at < NOW() - INTERVAL '1 hour'), forecast_with_prices AS (SELECT f.*, price_at_forecast, price_at_horizon FROM ...) SELECT brier_score, calibration_error FROM aggregation"
+  },
+
+  "limitations": {
+    "coverage": "Crypto subset only (82/565 = 14.5% of LDOW forecasts)",
+    "us_equities_excluded": "SPY, QQQ, IWM, AAPL, MSFT, NVDA, GOOGL, AMZN not reconciled - market closed, no weekend data available",
+    "single_horizon": "Only 1-hour horizon evaluated; other horizons not assessed",
+    "direction_bias": "All forecasts evaluated were LONG direction",
+    "temporal_window": "Overnight unattended execution period only"
+  },
+
+  "constraints_verified": {
+    "post_damper": true,
+    "within_ldow": true,
+    "without_intervention": true,
+    "no_parameter_changes": true,
+    "no_fmcl_activation": true,
+    "no_interpretation": true
+  },
+
+  "governance_reference": {
+    "directives": ["CEO-DIR-2026-065", "CEO-DIR-2026-066", "CEO-DIR-2026-067"],
+    "evaluation_type": "OBSERVATION_ONLY",
+    "state_changes": "NONE",
+    "escalation": "NONE"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "attestation_type": "FACTS_ONLY",
+    "timestamp": "2026-01-14T13:15:00Z"
+  }
+}

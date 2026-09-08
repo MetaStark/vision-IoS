@@ -1,0 +1,56 @@
+{
+  "evidence_id": "PHASE3_SCHEMA_VERIFICATION_RESULTS",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "task": "3.1",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T01:35:00Z",
+
+  "verification_query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'fhq_canonical' AND table_name IN ('g5_paper_trades', 'g5_signal_state')",
+
+  "g5_paper_trades_verification": {
+    "exit_trigger": {"exists": true, "data_type": "text", "code_uses": "exit_trigger", "status": "ALIGNED"},
+    "exit_price": {"exists": true, "data_type": "numeric", "code_uses": "exit_price", "status": "ALIGNED"},
+    "realized_pnl": {"exists": true, "data_type": "numeric", "code_uses": "realized_pnl", "status": "ALIGNED"},
+    "exit_context": {"exists": true, "data_type": "jsonb", "code_uses": "exit_context", "status": "ALIGNED"},
+    "exit_reason": {"exists": false, "code_previously_used": "exit_reason", "status": "REMOVED_FROM_CODE"}
+  },
+
+  "g5_signal_state_verification": {
+    "current_state": {"exists": true, "data_type": "text", "code_uses": "'EXPIRED'", "status": "ALIGNED"},
+    "executing_at": {"exists": true, "data_type": "timestamp with time zone", "code_uses": "executing_at", "status": "ALIGNED"},
+    "exit_price": {"exists": true, "data_type": "numeric", "code_uses": "exit_price", "status": "ALIGNED"},
+    "exit_pnl": {"exists": true, "data_type": "numeric", "code_uses": "exit_pnl", "status": "ALIGNED"},
+    "executed_at": {"exists": false, "code_previously_used": "executed_at", "status": "REMOVED_FROM_CODE"},
+    "position_exit_price": {"exists": false, "code_previously_used": "position_exit_price", "status": "REMOVED_FROM_CODE"},
+    "realized_pnl": {"exists": false, "code_previously_used": "realized_pnl", "status": "REMOVED_FROM_CODE"}
+  },
+
+  "check_constraint_verification": {
+    "constraint_name": "g5_signal_state_current_state_check",
+    "valid_values": ["DORMANT", "PRIMED", "EXECUTING", "POSITION", "COOLING", "EXPIRED", "DUPLICATE_PRUNED"],
+    "code_uses": "EXPIRED",
+    "status": "ALIGNED"
+  },
+
+  "negative_tests": {
+    "invalid_columns_in_code": 0,
+    "invalid_states_in_code": 0,
+    "schema_errors_on_last_run": 0,
+    "constraint_errors_on_last_run": 0
+  },
+
+  "verification_summary": {
+    "total_columns_verified": 8,
+    "aligned": 8,
+    "misaligned": 0,
+    "status": "FULLY_ALIGNED"
+  },
+
+  "task_3_1_acceptance": {
+    "schema_aligned_with_daemon": true,
+    "no_partial_writes_possible": true,
+    "fails_noisily_on_error": true,
+    "governance_logging_active": true,
+    "status": "COMPLETE"
+  }
+}

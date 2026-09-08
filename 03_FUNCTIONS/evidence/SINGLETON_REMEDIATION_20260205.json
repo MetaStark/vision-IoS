@@ -1,0 +1,65 @@
+{
+  "evidence_type": "SINGLETON_REMEDIATION",
+  "directive": "CEO-P0-SILENT-OPS",
+  "generated_by": "STIG",
+  "generated_at": "2026-02-05T19:01:00Z",
+  "phase_a": {
+    "action": "Kill duplicate and zombie processes",
+    "duplicates_killed": {
+      "PID_23424": {"daemon": "finn_brain_scheduler", "started": "2026-02-02T07:35:51Z", "status": "KILLED"},
+      "PID_19088": {"daemon": "finn_e_scheduler", "started": "2026-02-02T07:38:30Z", "status": "KILLED"},
+      "PID_20012": {"daemon": "finn_t_scheduler", "started": "2026-02-02T07:38:36Z", "status": "KILLED"},
+      "PID_14400": {"daemon": "finn_crypto_scheduler", "started": "2026-02-02T07:38:38Z", "status": "KILLED"},
+      "PID_24460": {"daemon": "mechanism_alpha_trigger", "started": "2026-02-04T22:24:28Z", "status": "KILLED"}
+    },
+    "zombies": {
+      "PID_6968": {"started": "2026-02-01T14:18:53Z", "status": "ACCESS_DENIED_REQUIRES_ADMIN"},
+      "PID_6984": {"started": "2026-02-01T14:18:53Z", "status": "ACCESS_DENIED_REQUIRES_ADMIN"}
+    },
+    "after_state": {
+      "finn_brain_scheduler": 1,
+      "finn_e_scheduler": 1,
+      "finn_t_scheduler": 1,
+      "finn_crypto_scheduler": 1,
+      "mechanism_alpha_trigger": 1
+    }
+  },
+  "phase_b": {
+    "action": "Add -WindowStyle Hidden to 9 Task Scheduler PS1 tasks",
+    "tasks_updated": [
+      "FHQ_BROKER_STATE_RECONCILIATION",
+      "FHQ_MECHANISM_ALPHA_TRIGGER",
+      "FHQ_SHADOW_TRADE_CREATOR",
+      "FHQ_SHADOW_TRADE_EXIT_ENGINE",
+      "FHQ_CAPITAL_SIMULATION_WRITER",
+      "FHQ_DECISION_PACK_GENERATOR",
+      "FHQ_MECHANISM_ALPHA_OUTCOME",
+      "FHQ_PROMOTION_GATE_PULSE",
+      "FHQ_SHADOW_TIER_BRIDGE"
+    ],
+    "all_pass": true
+  },
+  "phase_c": {
+    "action": "Restore single-writer discipline",
+    "c1_task_scheduler": {
+      "setting": "MultipleInstances=IgnoreNew",
+      "applied_to": "27/27 FHQ tasks"
+    },
+    "c2_pid_lock": {
+      "utility": "03_FUNCTIONS/daemon_lock.py",
+      "mechanism": "PID lock file in 03_FUNCTIONS/.locks/",
+      "daemons_guarded": [
+        "finn_brain_scheduler",
+        "finn_e_scheduler",
+        "finn_t_scheduler",
+        "finn_crypto_scheduler",
+        "mechanism_alpha_trigger"
+      ],
+      "test_result": "PASS (acquire=True, duplicate=False, release+reacquire=True)"
+    },
+    "db_write_safety": {
+      "query": "SELECT daemon_name, COUNT(*) FROM fhq_monitoring.daemon_health WHERE daemon_name IN (...) GROUP BY daemon_name",
+      "result": "All 5 daemons: exactly 1 row each. Single-writer confirmed."
+    }
+  }
+}

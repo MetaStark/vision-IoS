@@ -1,0 +1,93 @@
+{
+  "evidence_type": "G3_LOCK_READINESS",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_LOCK",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T23:35:00Z",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "executive_summary": {
+    "status": "READY_FOR_VEGA_CEREMONY",
+    "mechanical_enforcement": "100%",
+    "remaining_action": "VEGA Ed25519 signature on content hash"
+  },
+
+  "g3_prerequisites": {
+    "ceio_signature_mechanical": {
+      "status": "OK",
+      "mechanism": "CHECK constraint: calendar_events_signature_required",
+      "verification": "No canonical event can exist without CEIO signature"
+    },
+    "tos_gate_mechanical": {
+      "status": "OK",
+      "mechanism": "Function: verify_provider_tos_complete()",
+      "verification": "Ingestion blocked for providers without valid TOS"
+    },
+    "ghost_non_exculpatory": {
+      "status": "OK",
+      "mechanism": "CHECK constraint: ghost_exculpatory_requires_evidence",
+      "verification": "Ghost events cannot excuse performance by default"
+    },
+    "scope_firewall_mechanical": {
+      "status": "OK",
+      "mechanism": "BEFORE INSERT trigger: trg_staging_firewall",
+      "verification": "Events outside 14-day window rejected at staging"
+    },
+    "granular_conflict_resolution": {
+      "status": "OK",
+      "mechanism": "Function: resolve_source_conflict_granular()",
+      "verification": "Provider x Domain x Event Type Category reliability"
+    },
+    "vega_signed_bundle": {
+      "status": "PENDING_CEREMONY",
+      "bundle_id": "1b76aed9-08b1-413e-a7ab-073814877e35",
+      "content_hash": "27fa53428a77ac01f655f029f14bff8ceee617f0a46dc9d4bf2cfac89c7c1290",
+      "vega_public_key": "7c71b6356827f270200cc3b870b8c8d33b72eca77d5b87145c377812705515c9"
+    }
+  },
+
+  "operational_test_result": {
+    "test_run_id": "ef8580ca-df27-4710-822b-f02933276503",
+    "overall_status": "PARTIAL",
+    "dimensions_passed": 4,
+    "dimensions_failed": 1,
+    "results": {
+      "DETERMINISM": {"status": "PASS", "value": 1.0},
+      "TIME_INTEGRITY": {"status": "PASS", "value": 0},
+      "COST_SAFETY": {"status": "PASS", "value": 0.000},
+      "OBSERVABILITY": {"status": "PASS", "value": 1.00},
+      "COMPLETENESS": {"status": "FAIL", "value": 0.00, "note": "No production events yet - expected in development"}
+    },
+    "interpretation": "All mechanical dimensions pass. COMPLETENESS fails due to no production data."
+  },
+
+  "vega_ceremony_instructions": {
+    "step_1": "Retrieve VEGA Ed25519 private key from secure storage",
+    "step_2": "Sign content_hash: 27fa53428a77ac01f655f029f14bff8ceee617f0a46dc9d4bf2cfac89c7c1290",
+    "step_3": "Encode signature as hex (128 chars)",
+    "step_4": "Update vega_signature in vega_attestation_bundles where attestation_id = '1b76aed9-08b1-413e-a7ab-073814877e35'",
+    "step_5": "Verify with verify_attestation_bundle(attestation_id)"
+  },
+
+  "ceo_decision_point": {
+    "question": "Accept G3 lock with pending VEGA ceremony, or require completed signature first?",
+    "option_a": {
+      "decision": "LOCK_G3_NOW",
+      "rationale": "All mechanical enforcement in place. Signature is ceremonial, not safety-critical.",
+      "risk": "Audit trail incomplete until VEGA signs"
+    },
+    "option_b": {
+      "decision": "AWAIT_VEGA_SIGNATURE",
+      "rationale": "Full audit-defensibility requires signed bundle.",
+      "risk": "Delays G4 activation"
+    }
+  },
+
+  "stig_attestation": {
+    "mechanical_enforcement_complete": true,
+    "escape_hatches_removed": true,
+    "system_can_refuse_incorrect_operation": true,
+    "system_can_prove_why_not": true,
+    "vega_signature_pending": true,
+    "statement": "G3 is mechanically locked. All escape hatches removed. System can refuse to operate incorrectly and prove why. Only ceremonial VEGA signature remains."
+  }
+}

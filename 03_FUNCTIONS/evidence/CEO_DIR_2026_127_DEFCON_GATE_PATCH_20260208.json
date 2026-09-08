@@ -1,0 +1,60 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "evidence_id": "CEO-DIR-2026-127",
+  "directive_title": "DEFCON ORANGE Learning Loop Restoration",
+  "classification": "Governance Correction - No Capital Risk",
+  "timestamp_utc": "2026-02-08T12:15:00.000Z",
+  "timestamp_cet": "2026-02-08T13:15:00.000+01:00",
+  "executor": "STIG",
+  "executor_contract": "EC-003",
+  "problem_identified": {
+    "description": "Control deadlock in learning loop",
+    "symptoms": [
+      "System in DEFCON ORANGE due to degraded learning loop",
+      "hypothesis_death_daemon blocks execution when DEFCON == ORANGE",
+      "Learning cannot restore itself - blocked by state it must correct"
+    ],
+    "root_cause": "Current implementation incorrectly treats learning daemons as execution-capital daemons"
+  },
+  "finding": {
+    "governance_issue": "DEFCON ORANGE should restrict capital movement, not learning/falsification",
+    "adr_reference": "ADR-016",
+    "intended_semantics": "ORANGE = paper-only execution allowed; Learning is not execution"
+  },
+  "patch_applied": {
+    "file": "03_FUNCTIONS/hypothesis_death_daemon.py",
+    "function": "defcon_gate_check()",
+    "change": {
+      "before": "ORANGE blocks all cycles",
+      "after": "ORANGE permits learning loop (CEO-DIR-2026-127 exemption)"
+    },
+    "lines_modified": "101-107"
+  },
+  "scope_limitation": {
+    "applies_to": [
+      "hypothesis lifecycle",
+      "learning / falsification",
+      "non-capital state mutation"
+    ],
+    "does_not_apply_to": [
+      "execution daemons",
+      "allocation daemons",
+      "capital-affecting daemons"
+    ]
+  },
+  "capital_risk": "None",
+  "governance_risk": "Reduced",
+  "system_integrity": "Improved",
+  "learning_velocity": "Restored",
+  "exit_criteria": {
+    "hypothesis_death_daemon_executes_at_orange": "PENDING_VERIFICATION",
+    "learning_loop_resumes": "PENDING_VERIFICATION",
+    "no_execution_behavior_change": true,
+    "defcon_remains_orange": true
+  },
+  "vega_attestation_required": true,
+  "vega_attestation_status": "PENDING",
+  "explicit_statement": "No capital movement enabled by this patch",
+  "hash": null,
+  "signature": null
+}

@@ -1,0 +1,309 @@
+{
+  "directive_id": "CEO-DIR-2026-FINN-006",
+  "title": "Adaptive Epistemic Learning Loop",
+  "version": "FINAL",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "status": "MANDATORY_EXECUTION",
+  "effective": "IMMEDIATE_UPON_SIGNATURE",
+  "scope": "Epistemic Black Box Program - Runs 1-100 (of 1,000)",
+  "date_issued": "2025-12-30T23:30:00Z",
+
+  "authority_references": {
+    "adrs": ["ADR-001", "ADR-002", "ADR-004", "ADR-006", "ADR-011", "ADR-012", "ADR-013", "ADR-014", "ADR-016", "ADR-020"],
+    "ios": ["IoS-001", "IoS-003", "IoS-005", "IoS-007", "IoS-010", "IoS-012", "IoS-015"],
+    "cognitive_contracts": ["EC-020", "EC-021", "EC-022"],
+    "parent_directives": ["CEO-DIR-2026-FINN-004", "CEO-DIR-2026-FINN-005"],
+    "annexes": ["Annex C - HOW Charter", "Annex D - Epistemic Guardrails"]
+  },
+
+  "owners": {
+    "strategic": "LARS",
+    "technical": "STIG",
+    "governance": "VEGA",
+    "operations": "FINN / CRIO",
+    "human_review_authority": "CEO + Delegated CEIO"
+  },
+
+  "section_1_executive_intent": {
+    "mandate": "FjordHQ will execute the first 1,000 epistemic runs as a controlled learning program designed to convert noise into signal under constitutional constraints.",
+    "reward_principle": {
+      "NOT_rewarded_for": "Being correct",
+      "IS_rewarded_for": "Learning how to reach correctness with less noise, less cost, and less time"
+    },
+    "constraints": [
+      "All learning must occur through auditable telemetry",
+      "Bounded actuation only",
+      "Human-delegated authority"
+    ]
+  },
+
+  "section_2_non_negotiable_guardrails": {
+    "section_2_1_append_only_integrity": {
+      "rule": "All learning and telemetry tables are INSERT-ONLY",
+      "prohibition": "No updates, deletes, or backfills are permitted under any circumstances",
+      "affected_tables": [
+        "fhq_research.retrieval_efficiency_log",
+        "fhq_research.signal_yield_tracking",
+        "fhq_research.surprise_resampling_quota",
+        "fhq_research.ikea_feedback_log",
+        "fhq_research.ec020_constraint_feedback"
+      ],
+      "rationale": "Historical noise is preserved as forensic evidence",
+      "enforcement": "CONSTITUTIONAL"
+    },
+
+    "section_2_2_learning_firewall": {
+      "principle": "Strict separation between Telemetry and Actuation",
+      "telemetry": {
+        "purpose": "Records what happened",
+        "modification_allowed": false
+      },
+      "actuation": {
+        "purpose": "May change behavior",
+        "constraint": "Only within pre-signed Safe-Bounds"
+      },
+      "out_of_bounds_behavior": {
+        "action": "Log as ADVISORY_PENDING_VEGA",
+        "live_behavior_impact": "NONE - must not affect live behavior"
+      },
+      "status": "CONSTITUTIONAL_NON_BYPASSABLE"
+    },
+
+    "section_2_3_zero_execution_authority": {
+      "acronym": "ZEA",
+      "scope": "FINN outputs are epistemic only",
+      "forbidden_verbs": ["BUY", "SELL", "TRADE", "EXECUTE"],
+      "forbidden_content": ["Allocation targets", "Writes to canonical or execution-adjacent domains"],
+      "permitted_verb": "PROPOSE",
+      "enforcement": "HARD_BLOCK"
+    }
+  },
+
+  "section_3_learning_control_model": {
+    "section_3_1_governance_elasticity_safe_bounds": {
+      "version": "v1.0",
+      "description": "Auto-applied constraints permitted only within pre-signed limits",
+      "ec020_sitc_query_decomposition": {
+        "permitted_action": "Ontology path down-weighting",
+        "limit": "Up to 40% based on measured yield"
+      },
+      "ec021_inforage_retrieval": {
+        "permitted_action": "Source tier re-ranking",
+        "limit": "Up to 2 priority levels",
+        "prohibition": "No tier may be fully disabled by automation"
+      },
+      "exploration_firewall": {
+        "requirement": "5% Surprise Re-sampling Quota is MANDATORY",
+        "purpose": "Prevent confirmation bias"
+      },
+      "cap_breach_handling": {
+        "trigger": "Any proposal exceeding Safe-Bounds",
+        "action": "Log as ADVISORY_PENDING_VEGA",
+        "live_impact": "No live behavior change without VEGA signature"
+      }
+    },
+
+    "section_3_2_sitc_metrics_canonical": {
+      "status": "LOCKED",
+      "sitc_chain_integrity": {
+        "type": "GATING",
+        "definition": "verified_items_used / total_items_used",
+        "requirement": "1.00 for any auto-progression"
+      },
+      "sitc_retrieval_discipline": {
+        "type": "LEARNING_SIGNAL",
+        "definition": "verified_items_used / total_items_retrieved",
+        "purpose": ["Learning control", "Escalation", "Noise reduction"],
+        "note": "NOT a truth-validity metric"
+      },
+      "legacy_rejection": "Legacy interpretations are explicitly rejected"
+    }
+  },
+
+  "section_4_mandatory_run_artifacts": {
+    "requirement": "Each run must generate MPS and link all telemetry via single session_id",
+    "artifacts": {
+      "retrieval_efficiency_log": {
+        "owner": "EC-020",
+        "contents": ["Retrieved vs used items", "Unused IDs", "Ontology paths", "regime_id"]
+      },
+      "signal_yield_tracking": {
+        "owner": "EC-021",
+        "contents": ["Source tier yield"]
+      },
+      "surprise_resampling_quota": {
+        "owner": "EC-021",
+        "contents": ["Proof of exploration execution"]
+      },
+      "ikea_feedback_log": {
+        "owner": "EC-022",
+        "contents": ["IKEA classification", "Triggers"]
+      },
+      "ec020_constraint_feedback": {
+        "owner": "EC-022",
+        "contents": ["Applied constraints"]
+      },
+      "inforage_cost_lineage": {
+        "reference": "Migration 176",
+        "contents": ["Explicit source_tier", "reason_for_cost (including $0.00 LAKE)"]
+      }
+    },
+    "validation_rule": "Runs missing any artifact are INVALID by definition"
+  },
+
+  "section_5_hard_gates_and_escalations": {
+    "section_5_1_hard_stop_conditions": {
+      "integrity_failure": {
+        "trigger": "SitC-Chain Integrity < 1.00",
+        "action": "Run halts and is marked NOISE"
+      },
+      "reasoning_roi_stop_loss": {
+        "trigger": "High-entropy reasoning",
+        "action": "Halts run to preserve cognitive capital"
+      }
+    },
+
+    "section_5_2_retrieval_discipline_escalation": {
+      "acronym": "RDE",
+      "trigger": "SitC-Retrieval Discipline < 0.50 for 3 consecutive runs",
+      "consequence": {
+        "batch_status": "HUMAN_REVIEW_REQUIRED",
+        "output_blocking": "Blocked from Phase-3 or downstream execution"
+      },
+      "review_authority": "CEO or delegated CEIO under HOW Charter"
+    },
+
+    "section_5_3_over_efficiency_risk": {
+      "name": "Tunnel Vision Detection",
+      "trigger": "detect_efficiency_anomaly() > 0.90",
+      "actions": [
+        "Flag VEGA_RISK",
+        "Next run is paused pending review by CEO or delegated CEIO"
+      ],
+      "principle": "Extreme efficiency is treated as a RISK SIGNAL, not a success signal"
+    }
+  },
+
+  "section_6_checkpoint_cadence": {
+    "every_run": {
+      "type": "Telemetry",
+      "artifacts": [
+        "Session metadata",
+        "Cost lineage",
+        "SitC metrics",
+        "IKEA classification"
+      ]
+    },
+    "every_100_runs": {
+      "type": "Governance",
+      "producer": "VEGA",
+      "artifact": "Signed Meta-Snapshot",
+      "contents": [
+        "IKEA distribution",
+        "SitC-Discipline trendline (baseline -> target)",
+        "Ontology noise hotspots",
+        "Surprise re-sampling effectiveness",
+        "Escalated patterns (WATCH / NARROW / STRICT)"
+      ],
+      "context_addendum": {
+        "mandatory": true,
+        "fields": ["regime_id (IoS-003)", "Regime-Sentiment Delta"],
+        "rationale": "Learning must never generalize blindly across regime shifts"
+      }
+    }
+  },
+
+  "section_7_cognitive_contract_activation": {
+    "status": "FORMALLY_ACTIVATED",
+    "ec020": {
+      "role": "Learning Brain",
+      "function": "Query discipline"
+    },
+    "ec021": {
+      "role": "Cost-Aware Gatekeeper",
+      "function": "Signal yield"
+    },
+    "ec022": {
+      "role": "Uncertainty Regulator",
+      "function": "Pattern escalation"
+    },
+    "system_type": "Closed-loop learning system under human authority"
+  },
+
+  "section_8_acceptance_criteria": {
+    "name": "Batch Flight Readiness",
+    "criteria": [
+      "Every run produces a complete MPS",
+      "SitC-Chain Integrity remains at 1.00 or halts",
+      "RDE and anomaly pauses demonstrably trigger",
+      "VEGA signs each 100-run checkpoint",
+      "No evidence of silent metric drift exists"
+    ]
+  },
+
+  "section_9_signatures": {
+    "strategic_authority": {
+      "agent": "LARS",
+      "status": "APPROVED",
+      "date": "2025-12-30"
+    },
+    "technical_authority": {
+      "agent": "STIG",
+      "status": "VERIFIED",
+      "date": "2025-12-30"
+    },
+    "governance_authority": {
+      "agent": "VEGA",
+      "status": "ATTESTED",
+      "date": "2025-12-30"
+    },
+    "final_authority": {
+      "agent": "CEO",
+      "status": "SIGNED",
+      "date": "2025-12-30"
+    }
+  },
+
+  "execution_order": {
+    "step_1": "Commit CEO-DIR-2026-FINN-006 (FINAL) to 05_GOVERNANCE/PHASE3/",
+    "step_2": "Tag release: epistemic-black-box-v1.0",
+    "step_3": "Trigger Epistemic Black Box Program - Batch 1 (Runs 1-100)",
+    "step_4": "Enable VEGA checkpoint at Run 100",
+    "step_5": "Proceed under continuous human-delegated oversight (CEO / CEIO)"
+  },
+
+  "closing_statement": {
+    "declaration": "This is not experimentation. This is constitutional learning under audit.",
+    "authorization": "You are cleared to proceed."
+  },
+
+  "implementation_requirements": {
+    "migrations_executed": [
+      "177_finn006_retrieval_efficiency_log.sql",
+      "178_finn006_signal_yield_tracking.sql",
+      "179_finn006_ikea_feedback_log.sql",
+      "180_finn006_adaptive_learning_functions.sql"
+    ],
+    "migrations_required": [
+      "181_finn006_append_only_enforcement.sql"
+    ],
+    "tables_created": [
+      "fhq_research.retrieval_efficiency_log",
+      "fhq_research.signal_yield_tracking",
+      "fhq_research.surprise_resampling_quota",
+      "fhq_research.ikea_feedback_log",
+      "fhq_research.ikea_pattern_registry",
+      "fhq_research.ec020_constraint_feedback"
+    ],
+    "functions_created": [
+      "calculate_regime_aware_weights()",
+      "apply_surprise_resampling()",
+      "detect_efficiency_anomaly()",
+      "get_learning_progress()",
+      "log_learning_checkpoint()",
+      "get_adjusted_priority()",
+      "update_pattern_escalation()",
+      "get_active_constraints()"
+    ]
+  }
+}

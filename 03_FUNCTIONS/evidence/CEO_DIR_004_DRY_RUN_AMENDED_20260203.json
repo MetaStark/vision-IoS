@@ -1,0 +1,99 @@
+{
+  "directive": "CEO-DIRECTIVE-2026-004",
+  "type": "DRY_RUN_EVIDENCE_BUNDLE_AMENDED",
+  "amendment_reason": "fhq_governance.ec_registry is write-locked by trigger block_ec_registry_writes() per CEO-DIR-2026-109. Canonical EC register is fhq_meta.vega_employment_contract (22 rows). Transaction revised to target correct table.",
+  "executor": "STIG",
+  "timestamp_oslo": "2026-02-03T11:50+01:00",
+  "canonical_commit": "c6f52f6902b9d97318c6393eb8f439fe890307e9",
+  "preconditions": {
+    "A_commit_lock": {"git_head": "c6f52f6902b9d97318c6393eb8f439fe890307e9", "anchor_sha": "c6f52f6902b9d97318c6393eb8f439fe890307e9", "match": true, "verdict": "PASS"},
+    "B_evidence_bundle": "THIS_FILE",
+    "C_fail_closed_transaction": "All writes in single BEGIN/COMMIT block"
+  },
+  "infrastructure_discovery": {
+    "ec_registry_deprecated": {
+      "table": "fhq_governance.ec_registry",
+      "status": "READ_ONLY",
+      "blocking_triggers": ["trg_block_ec_registry_insert", "trg_block_ec_registry_update", "trg_block_ec_registry_delete", "trg_block_ec_registry_truncate"],
+      "directive": "CEO-DIR-2026-109",
+      "rows": 5,
+      "note": "Frozen legacy table. 5 rows (EC-014, EC-018, EC-020, EC-021, EC-022). No longer writable."
+    },
+    "canonical_ec_register": {
+      "table": "fhq_meta.vega_employment_contract",
+      "status": "ACTIVE",
+      "blocking_triggers": [],
+      "rows": 22,
+      "unique_constraint": "contract_number",
+      "note": "Actual canonical EC register. 22 rows covering EC-001 through EC-022 plus EC-016 (VALKYRIE)."
+    }
+  },
+  "operations": {
+    "adr_ghost_purge": {
+      "table": "fhq_meta.adr_registry",
+      "action": "DELETE",
+      "target": {"adr_id": "MIG-200", "title": "COGNITIVE ENGINES FOUNDATION"},
+      "classification": "CONFIRMED_GHOST",
+      "reason": "No ADR file named MIG-200 in 00_CONSTITUTION/. Migration artifact.",
+      "pre_state_count": 26,
+      "post_state_count": 25,
+      "blocking_triggers": false
+    },
+    "ios_ghost_purge": {
+      "table": "fhq_meta.ios_registry",
+      "action": "DELETE",
+      "targets": [
+        {"ios_id": "ALPHA-GRAPH-001", "title": "Alpha Graph Research Artifact", "classification": "CONFIRMED_GHOST"},
+        {"ios_id": "G4.2", "title": "Contextual Alpha Orchestration", "classification": "CONFIRMED_GHOST"},
+        {"ios_id": "G5", "title": "Silent Sniper Paper Execution", "classification": "CONFIRMED_GHOST"}
+      ],
+      "pre_state_count": 20,
+      "post_state_count": 17,
+      "blocking_triggers": false
+    },
+    "ec_reconciliation": {
+      "table": "fhq_meta.vega_employment_contract",
+      "action": "INSERT + UPDATE",
+      "insertion": {
+        "contract_number": "EC-007-CDMO",
+        "employee": "CDMO",
+        "reason": "File EC-007_2026_PRODUCTION_CDMO.md exists on disk. Disambiguated from EC-007 (CFAO) which is already registered.",
+        "note": "total_duties/constraints/rights set to 0 pending full file parse."
+      },
+      "field_updates": [
+        {"contract_number": "EC-005", "field": "reports_to", "old": "LARS", "new": "STIG", "reason": "Canonical file says reports to STIG"},
+        {"contract_number": "EC-009", "field": "reports_to", "old": "LARS", "new": "STIG", "reason": "Canonical file says reports to STIG"},
+        {"contract_number": "EC-012", "field": "reports_to", "old": "STIG", "new": "LARS", "reason": "Canonical file primary supervisor is LARS"},
+        {"contract_number": "EC-018", "field": "status", "old": "ACTIVE", "new": "READY_FOR_REGISTRATION", "reason": "Canonical file says READY FOR REGISTRATION"},
+        {"contract_number": "EC-019", "field": "status", "old": "ACTIVE", "new": "READY_FOR_REGISTRATION", "reason": "Canonical file says READY FOR REGISTRATION"}
+      ],
+      "pre_state_count": 22,
+      "post_state_count": 23,
+      "ghost_detected_not_authorized": {
+        "contract_number": "EC-016",
+        "employee": "VALKYRIE",
+        "status": "ACTIVE",
+        "reason": "No file EC-016_*.md exists in 10_EMPLOYMENT CONTRACTS/. Ghost in canonical register.",
+        "action": "REPORTED_ONLY — not on authorized deletion whitelist"
+      }
+    },
+    "branch_ratification": {
+      "table": "fhq_governance.canonical_truth_anchor",
+      "action": "UPDATE",
+      "field": "canonical_branch",
+      "current_value": "master",
+      "new_value": "master",
+      "note": "Idempotent ratification per Section 3C."
+    }
+  },
+  "expected_post_state": {
+    "adr_registry": {"count": 25, "disk_count": 25, "verdict": "MATCH"},
+    "ec_canonical_register": {"count": 23, "disk_count": 21, "verdict": "DEVIATION", "reason": "EC-016 VALKYRIE ghost (no file, not authorized for deletion). EC-007-CDMO added. Net: 23 DB vs 21 files."},
+    "ios_registry": {"count": 17, "disk_count": 17, "verdict": "MATCH"}
+  },
+  "unresolved_items": [
+    {"type": "GHOST", "table": "fhq_meta.vega_employment_contract", "id": "EC-016", "employee": "VALKYRIE", "action_required": "CEO authorization to delete or confirm legitimate"},
+    {"type": "DEPRECATED_TABLE", "table": "fhq_governance.ec_registry", "rows": 5, "action_required": "CEO decision: drop table or maintain as frozen archive"},
+    {"type": "EC_007_COLLISION", "note": "Two files share EC-007. CFAO retains EC-007. CDMO disambiguated as EC-007-CDMO. Permanent resolution needed."}
+  ]
+}

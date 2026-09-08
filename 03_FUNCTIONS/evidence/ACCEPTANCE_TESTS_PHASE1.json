@@ -1,0 +1,144 @@
+{
+  "evidence_id": "ACCEPTANCE_TESTS_PHASE1",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "phase": "PHASE1_TASK_1_6",
+  "executed_by": "STIG",
+  "executed_at": "2026-01-13T00:00:00Z",
+
+  "test_results": {
+    "test_1_multi_asset_coverage": {
+      "status": "PASS",
+      "description": "All 6 required assets have regime data in canonical source",
+      "assets_tested": [
+        {"asset_id": "BTC-USD", "regime_count": 383, "latest_regime": "2026-01-11"},
+        {"asset_id": "ETH-USD", "regime_count": 383, "latest_regime": "2026-01-11"},
+        {"asset_id": "SOL-USD", "regime_count": 383, "latest_regime": "2026-01-11"},
+        {"asset_id": "SPY", "regime_count": 262, "latest_regime": "2026-01-11"},
+        {"asset_id": "QQQ", "regime_count": 262, "latest_regime": "2026-01-11"},
+        {"asset_id": "EURUSD=X", "regime_count": 275, "latest_regime": "2026-01-11"}
+      ],
+      "evidence_query": "SELECT asset_id, COUNT(*), MAX(timestamp) FROM fhq_perception.sovereign_regime_state_v4 WHERE asset_id IN (...) GROUP BY asset_id"
+    },
+
+    "test_2_seven_regime_dates_traceable": {
+      "status": "PASS",
+      "description": "7 consecutive regime dates traceable for BTC-USD with full audit trail",
+      "regimes": [
+        {"date": "2026-01-11", "sovereign": "NEUTRAL", "technical": "NEUTRAL", "driver": "CREDIT", "confidence": 0.961},
+        {"date": "2026-01-10", "sovereign": "NEUTRAL", "technical": "NEUTRAL", "driver": "LIQUIDITY", "confidence": 0.991},
+        {"date": "2026-01-09", "sovereign": "NEUTRAL", "technical": "NEUTRAL", "driver": "CREDIT", "confidence": 0.983},
+        {"date": "2026-01-08", "sovereign": "NEUTRAL", "technical": "NEUTRAL", "driver": "CREDIT", "confidence": 0.950},
+        {"date": "2026-01-07", "sovereign": "BULL", "technical": "NEUTRAL", "driver": "LIQUIDITY", "confidence": 0.755},
+        {"date": "2026-01-06", "sovereign": "STRESS", "technical": "BULL", "driver": "SENTIMENT", "confidence": 0.901},
+        {"date": "2026-01-05", "sovereign": "NEUTRAL", "technical": "STRESS", "driver": "UNKNOWN", "confidence": 0.850}
+      ],
+      "evidence_query": "SELECT timestamp, sovereign_regime, technical_regime, crio_dominant_driver FROM fhq_perception.sovereign_regime_state_v4 WHERE asset_id = 'BTC-USD' ORDER BY timestamp DESC LIMIT 7"
+    },
+
+    "test_3_negative_tests": {
+      "status": "PASS",
+      "description": "Negative test cases all pass",
+      "sub_tests": [
+        {
+          "test": "Unknown asset returns no rows",
+          "input": "UNKNOWN-ASSET",
+          "expected": "0 rows",
+          "actual": "0 rows",
+          "result": "PASS"
+        },
+        {
+          "test": "Future date returns no rows",
+          "input": "timestamp > CURRENT_DATE",
+          "expected": "0 rows",
+          "actual": "0 rows",
+          "result": "PASS"
+        },
+        {
+          "test": "listing_id normalization - LST_BTC_XCRYPTO",
+          "input": "LST_BTC_XCRYPTO",
+          "expected": "BTC-USD",
+          "actual": "BTC-USD",
+          "result": "PASS"
+        },
+        {
+          "test": "listing_id normalization - LST_SPY_XNAS",
+          "input": "LST_SPY_XNAS",
+          "expected": "SPY",
+          "actual": "SPY",
+          "result": "PASS"
+        },
+        {
+          "test": "listing_id normalization - direct asset_id",
+          "input": "BTC-USD",
+          "expected": "BTC-USD",
+          "actual": "BTC-USD",
+          "result": "PASS"
+        }
+      ]
+    },
+
+    "test_4_freshness_validation": {
+      "status": "PASS",
+      "description": "All 6 assets have LIVE regime data (within 48-hour threshold)",
+      "freshness_results": [
+        {"asset_id": "BTC-USD", "days_old": 1, "status": "LIVE"},
+        {"asset_id": "ETH-USD", "days_old": 1, "status": "LIVE"},
+        {"asset_id": "SOL-USD", "days_old": 1, "status": "LIVE"},
+        {"asset_id": "SPY", "days_old": 1, "status": "LIVE"},
+        {"asset_id": "QQQ", "days_old": 1, "status": "LIVE"},
+        {"asset_id": "EURUSD=X", "days_old": 1, "status": "LIVE"}
+      ],
+      "freshness_thresholds": {
+        "LIVE": "< 48 hours",
+        "STALE": "48 hours - 7 days",
+        "EXPIRED": "> 7 days"
+      }
+    },
+
+    "test_5_hash_of_truth_attestation": {
+      "status": "PASS",
+      "description": "Hash-of-Truth attestation system operational",
+      "attestation_tested": {
+        "attestation_id": "56aa8cc7-5e1c-4b15-8ef5-ae3509b86141",
+        "route_path": "/api/finn/meta-signal",
+        "listing_id": "BTC-USD",
+        "regime_label": "NEUTRAL",
+        "regime_date": "2026-01-12",
+        "truth_hash": "2f79b94a06b25f6b424f2280c1e978ff52b2a53e27468c10aeb79b34b390c927"
+      }
+    },
+
+    "test_6_attestation_verification": {
+      "status": "PASS",
+      "description": "Attestation hash verification passes",
+      "verification_result": {
+        "is_valid": true,
+        "computed_hash": "2f79b94a06b25f6b424f2280c1e978ff52b2a53e27468c10aeb79b34b390c927",
+        "stored_hash": "2f79b94a06b25f6b424f2280c1e978ff52b2a53e27468c10aeb79b34b390c927",
+        "mismatch_reason": null
+      }
+    }
+  },
+
+  "summary": {
+    "total_tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "overall_status": "PASS",
+    "ceo_gate_recommendation": "Phase 1 acceptance criteria MET - ready for CEO gate review"
+  },
+
+  "canonical_source_verification": {
+    "source_table": "fhq_perception.sovereign_regime_state_v4",
+    "total_rows": 1713,
+    "assets_covered": 6,
+    "freshness_status": "LIVE",
+    "data_quality": "VERIFIED"
+  },
+
+  "compliance_attestation": {
+    "adr_019_dumb_glass": "Compliant - all computations server-side",
+    "ceo_dir_2026_truth_sync_p1": "Compliant - canonical source bound, Hash-of-Truth implemented",
+    "hash_of_truth_contract": "Operational - SHA-256 attestation working"
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "evidence_id": "CEO_DIR_2026_TRUTH_SYNC_P1_CONNECTION_EVIDENCE",
+  "evidence_type": "PHASE1_COMPLETION_ATTESTATION",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P1",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T00:00:00Z",
+
+  "executive_summary": {
+    "status": "PHASE1_COMPLETE",
+    "headline": "Truth Sync Phase 1 successfully completed - Dashboard now reads from canonical regime source",
+    "key_achievements": [
+      "Re-wired /api/finn/meta-signal from stale fhq_hmm.regime_predictions to live fhq_perception.sovereign_regime_state_v4",
+      "Implemented Hash-of-Truth attestation for cryptographic verification (ADR-019 Dumb Glass compliance)",
+      "Created verification endpoint for attestation validation",
+      "All multi-asset acceptance tests passed (6/6 assets, LIVE status)",
+      "7 consecutive regime dates traceable with full audit trail"
+    ],
+    "remaining_stale_components": [
+      "fhq_ace.meta_allocations - ACE pipeline inactive (allocation_pct still stale)",
+      "fhq_ace.family_consensus - ACE pipeline inactive (family signals stale)",
+      "Signal executor daemon - Crashed 2025-12-22, requires Phase 2 restart"
+    ]
+  },
+
+  "task_completion_matrix": {
+    "task_1_1_route_inventory": {
+      "status": "COMPLETED",
+      "deliverable": "FINN_ROUTE_INVENTORY.json",
+      "summary": "Mapped 5 /finn API routes to their database sources, identified stale tables"
+    },
+    "task_1_2_canonical_binding": {
+      "status": "COMPLETED",
+      "deliverable": "CANONICAL_REGIME_BINDING.json",
+      "summary": "Defined field mapping from fhq_hmm to fhq_perception.sovereign_regime_state_v4"
+    },
+    "task_1_3_attestation_migration": {
+      "status": "COMPLETED",
+      "deliverable": "CHANGE_RECORD_234_HASH_OF_TRUTH.json",
+      "migration": "234_hash_of_truth_attestation.sql",
+      "objects_created": [
+        "vision_verification.dashboard_truth_attestation (table)",
+        "fhq_governance.split_brain_events (table)",
+        "vision_verification.compute_truth_hash() (function)",
+        "vision_verification.create_truth_attestation() (function)",
+        "vision_verification.verify_truth_attestation() (function)"
+      ]
+    },
+    "task_1_4_rewire_meta_signal": {
+      "status": "COMPLETED",
+      "deliverable": "CHANGE_RECORD_META_SIGNAL_REWIRE.json",
+      "file_modified": "dashboard-2026/app/api/finn/meta-signal/route.ts",
+      "changes": [
+        "regime_context CTE re-wired to fhq_perception.sovereign_regime_state_v4",
+        "listing_id to asset_id normalization implemented",
+        "New fields exposed: technical_regime, crio_dominant_driver, regime_date",
+        "Integrity status updated to reflect regime freshness"
+      ]
+    },
+    "task_1_5_hash_of_truth_api": {
+      "status": "COMPLETED",
+      "deliverable": "CHANGE_RECORD_HASH_OF_TRUTH_API.json",
+      "files_created": [
+        "dashboard-2026/app/api/finn/verify-attestation/route.ts"
+      ],
+      "api_enhancements": [
+        "_truth_attestation field added to meta-signal response",
+        "Verification endpoint created at /api/finn/verify-attestation"
+      ]
+    },
+    "task_1_6_acceptance_tests": {
+      "status": "COMPLETED",
+      "deliverable": "ACCEPTANCE_TESTS_PHASE1.json",
+      "tests_passed": 6,
+      "tests_failed": 0,
+      "coverage": {
+        "assets_tested": ["BTC-USD", "ETH-USD", "SOL-USD", "SPY", "QQQ", "EURUSD=X"],
+        "freshness_validation": "PASS - all LIVE",
+        "negative_tests": "PASS",
+        "hash_verification": "PASS"
+      }
+    },
+    "task_1_7_connection_evidence": {
+      "status": "COMPLETED",
+      "deliverable": "THIS DOCUMENT"
+    }
+  },
+
+  "truth_source_mapping": {
+    "before": {
+      "regime_source": "fhq_hmm.regime_predictions",
+      "row_count": 1,
+      "last_updated": "2025-11-17",
+      "status": "STALE (57 days old)"
+    },
+    "after": {
+      "regime_source": "fhq_perception.sovereign_regime_state_v4",
+      "row_count": 1713,
+      "last_updated": "2026-01-12T03:21:00Z",
+      "status": "LIVE (updated daily)"
+    },
+    "connection_verified": true
+  },
+
+  "hash_of_truth_contract": {
+    "algorithm": "SHA-256",
+    "canonical_json_rules": [
+      "Keys sorted alphabetically",
+      "No whitespace",
+      "UTC timestamps in ISO-8601 format",
+      "Numeric precision normalized to 2 decimal places"
+    ],
+    "fields_hashed": ["allocation_pct", "listing_id", "regime_date", "regime_label", "signal_strength"],
+    "sample_attestation": {
+      "attestation_id": "56aa8cc7-5e1c-4b15-8ef5-ae3509b86141",
+      "truth_hash": "2f79b94a06b25f6b424f2280c1e978ff52b2a53e27468c10aeb79b34b390c927",
+      "canonical_json": "{\"allocation_pct\":0.00,\"listing_id\":\"BTC-USD\",\"regime_date\":\"2026-01-12\",\"regime_label\":\"NEUTRAL\",\"signal_strength\":0.50}",
+      "verification_status": "VALID"
+    }
+  },
+
+  "compliance_attestation": {
+    "adr_019_dumb_glass": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "All hash computation performed by PostgreSQL functions (server-side)",
+        "Dashboard cannot forge or modify attestations",
+        "Verification available via independent endpoint"
+      ]
+    },
+    "adr_002_audit_logging": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "Migration logged to fhq_governance.governance_actions_log",
+        "Attestations stored in vision_verification.dashboard_truth_attestation",
+        "All changes documented in CHANGE_RECORD files"
+      ]
+    },
+    "ceo_directive_court_proof": {
+      "status": "COMPLIANT",
+      "evidence": [
+        "Raw SQL queries documented in all evidence files",
+        "Query results include hash verification",
+        "Traceability from summary to raw data established"
+      ]
+    }
+  },
+
+  "phase2_prerequisites": {
+    "phase1_gate_status": "READY_FOR_CEO_REVIEW",
+    "blocking_for_phase2": [
+      "CEO approval of Phase 1 completion",
+      "Signal executor daemon post-mortem (per CEO directive amendment)",
+      "Paper execution activation approval"
+    ],
+    "phase2_scope_preview": [
+      "Investigate signal_executor crash root cause",
+      "Restart paper execution with safety gates",
+      "Connect analytics pipeline"
+    ]
+  },
+
+  "change_records_index": [
+    {
+      "id": "CR-234-HASH-OF-TRUTH",
+      "type": "DATABASE_MIGRATION",
+      "file": "CHANGE_RECORD_234_HASH_OF_TRUTH.json",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "id": "CR-META-SIGNAL-REWIRE",
+      "type": "API_ROUTE_REWIRE",
+      "file": "CHANGE_RECORD_META_SIGNAL_REWIRE.json",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "id": "CR-HASH-OF-TRUTH-API",
+      "type": "API_ENHANCEMENT",
+      "file": "CHANGE_RECORD_HASH_OF_TRUTH_API.json",
+      "status": "EXECUTED_SUCCESS"
+    }
+  ],
+
+  "evidence_files_generated": [
+    "03_FUNCTIONS/evidence/FINN_ROUTE_INVENTORY.json",
+    "03_FUNCTIONS/evidence/CANONICAL_REGIME_BINDING.json",
+    "03_FUNCTIONS/evidence/CHANGE_RECORD_234_HASH_OF_TRUTH.json",
+    "03_FUNCTIONS/evidence/CHANGE_RECORD_META_SIGNAL_REWIRE.json",
+    "03_FUNCTIONS/evidence/CHANGE_RECORD_HASH_OF_TRUTH_API.json",
+    "03_FUNCTIONS/evidence/ACCEPTANCE_TESTS_PHASE1.json",
+    "03_FUNCTIONS/evidence/CEO_DIR_2026_TRUTH_SYNC_P1_CONNECTION_EVIDENCE.json"
+  ],
+
+  "database_objects_created": [
+    "vision_verification.dashboard_truth_attestation",
+    "fhq_governance.split_brain_events",
+    "vision_verification.compute_truth_hash()",
+    "vision_verification.create_truth_attestation()",
+    "vision_verification.verify_truth_attestation()",
+    "idx_attestation_route_listing_date",
+    "idx_attestation_created_at",
+    "idx_attestation_truth_hash",
+    "idx_split_brain_detected_at"
+  ],
+
+  "files_modified": [
+    "04_DATABASE/MIGRATIONS/234_hash_of_truth_attestation.sql",
+    "dashboard-2026/app/api/finn/meta-signal/route.ts"
+  ],
+
+  "files_created": [
+    "dashboard-2026/app/api/finn/verify-attestation/route.ts"
+  ],
+
+  "verification": {
+    "evidence_hash": "pending_computation",
+    "verified_by": "STIG",
+    "verification_date": "2026-01-13",
+    "ceo_gate_status": "AWAITING_APPROVAL"
+  }
+}

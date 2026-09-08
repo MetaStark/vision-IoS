@@ -1,0 +1,168 @@
+{
+  "indicators": {
+    "pass": true,
+    "sources": {
+      "price_series": {
+        "max_date": "2026-01-29",
+        "assets": 499,
+        "fresh": true
+      },
+      "volatility": {
+        "max_date": "2026-01-29",
+        "assets": 499,
+        "fresh": true
+      },
+      "momentum": {
+        "max_date": "2026-01-29",
+        "assets": 499,
+        "fresh": true
+      }
+    }
+  },
+  "outcomes": {
+    "pass": true,
+    "recent_outcomes_24h": 7,
+    "pending_evaluable": 0,
+    "daemon_status": "HEALTHY",
+    "daemon_age_hours": "0.3"
+  },
+  "zombies": {
+    "pass": true,
+    "zombies": [],
+    "total_daemons": 23,
+    "alive": 11,
+    "dead": 12
+  },
+  "pipeline": {
+    "pass": true,
+    "experiments": [
+      {
+        "code": "EXP_ALPHA_SAT_A_V1.1",
+        "status": "RUNNING",
+        "promoted": false,
+        "triggers": 15,
+        "outcomes": 3,
+        "wins": 0,
+        "win_rate": 0.0,
+        "min_sample": 30,
+        "progress_pct": 10.0,
+        "falsification_rule": null,
+        "causal_mechanism": "BBW < 10th percentile indicates compression. Energy release follows.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "LOW_VOL"
+        ],
+        "confidence": 0.65
+      },
+      {
+        "code": "EXP_ALPHA_SAT_B_V1.1",
+        "status": "RUNNING",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "trend_win_rate < mean_reversion_win_rate",
+        "causal_mechanism": "RSI > 70 in STRONG_BULL = trend following outperforms mean reversion",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "STRONG_BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_C_V1.1",
+        "status": "RUNNING",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 30,
+        "progress_pct": 0.0,
+        "falsification_rule": "mean_touch_rate < 0.55",
+        "causal_mechanism": "Price > 2 StdDev (BB Top) in NEUTRAL regime triggers reversion to 20 SMA",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "WEAK_BEAR",
+          "WEAK_BULL"
+        ],
+        "confidence": 0.65
+      },
+      {
+        "code": "EXP_ALPHA_SAT_D_V1.0",
+        "status": "RUNNING",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "breakout_continuation_rate < 0.50",
+        "causal_mechanism": "Close > bb_upper while BBW expanding (> p50) = momentum breakout. Expanding volatility confirms genuine move vs noise.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "BULL",
+          "NEUTRAL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_E_V1.0",
+        "status": "RUNNING",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 20,
+        "progress_pct": 0.0,
+        "falsification_rule": "pullback_recovery_rate < 0.55",
+        "causal_mechanism": "RSI < 35 in BULL = temporary oversold. Regime momentum reasserts within 72h.",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_F_V1.0",
+        "status": "RUNNING",
+        "promoted": true,
+        "triggers": 9,
+        "outcomes": 4,
+        "wins": 3,
+        "win_rate": 75.0,
+        "min_sample": 15,
+        "progress_pct": 27.0,
+        "falsification_rule": "bounce_rate < 0.45",
+        "causal_mechanism": "RSI < 20 + BEAR/STRESS = panic capitulation. Dead cat bounce within 24h is structural (short covering + dip buying).",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "BEAR",
+          "STRESS"
+        ],
+        "confidence": 0.55
+      }
+    ],
+    "total_triggers": 24,
+    "total_outcomes": 7,
+    "total_wins": 3,
+    "regime_counts": {
+      "BEAR": 33509,
+      "BULL": 31912,
+      "NEUTRAL": 59256,
+      "STRESS": 15655
+    },
+    "gate": "OPEN",
+    "defcon": "GREEN"
+  },
+  "overall": "PASS",
+  "timestamp": "2026-01-29T20:52:44.951069+00:00",
+  "telegram_sent": true
+}

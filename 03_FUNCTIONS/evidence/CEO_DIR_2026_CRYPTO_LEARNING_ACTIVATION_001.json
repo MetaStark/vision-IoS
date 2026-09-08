@@ -1,0 +1,147 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-CRYPTO-LEARNING-ACTIVATION-001",
+  "title": "Eliminate Weekend Blindness via MIC-Aware Continuous Learning",
+  "timestamp": "2026-01-25T11:30:00Z",
+  "last_updated": "2026-01-25T11:30:00Z",
+  "executor": "STIG",
+  "status": "PHASE_2_COMPLETE",
+  "governing_authorities": ["ADR-014", "ADR-011", "IoS-001", "IoS-005", "IoS-010"],
+  "classification": "STRATEGIC-CRITICAL",
+
+  "problem_statement": {
+    "weekend_blindness_pct": 28,
+    "crypto_data_flowing": true,
+    "crypto_learning": false,
+    "root_cause": "FINN scheduler tied to equity session state"
+  },
+
+  "section_1_1_daemon_health": {
+    "status": "PASSED",
+    "verified_at": "2026-01-25T11:29:44Z",
+    "acceptance_test": "SELECT COUNT(*) FROM daemon_health WHERE daemon_name IN ('price_freshness_heartbeat','cnrp_orchestrator') AND status = 'HEALTHY' -- returned 2",
+    "daemons": {
+      "price_freshness_heartbeat": {
+        "status": "HEALTHY",
+        "staleness_seconds": 65,
+        "source": "fhq_governance.system_heartbeats"
+      },
+      "cnrp_orchestrator": {
+        "status": "HEALTHY",
+        "staleness_seconds": 9,
+        "source": "fhq_research.forecast_ledger activity"
+      }
+    }
+  },
+
+  "phase_1_database_infrastructure": {
+    "status": "COMPLETE",
+    "migration": 347,
+    "changes": {
+      "exchanges_table_extended": {
+        "columns_added": ["is_continuous", "open_time", "close_time", "trading_days"],
+        "exchanges_configured": ["XCRYPTO", "BINANCE", "XFOREX", "XNYS", "XNAS", "XOSL"]
+      },
+      "functions_created": [
+        "fhq_meta.fn_is_market_open(mic, check_time)",
+        "fhq_learning.fn_get_learnable_asset_classes()"
+      ],
+      "views_created": [
+        "fhq_meta.v_asset_market_status"
+      ],
+      "daemons_registered": [
+        "finn_crypto_scheduler"
+      ]
+    }
+  },
+
+  "phase_2_mic_aware_scheduling": {
+    "status": "COMPLETE",
+    "verified_at": "2026-01-25T11:29:50Z",
+    "files_modified": ["context_injection_layer.py"],
+    "changes": [
+      "get_market_clock() now accepts asset_class parameter",
+      "Uses fn_is_market_open(mic) for session detection",
+      "Added get_learnable_asset_classes() method",
+      "Crypto always returns session=REGULAR (24/7)"
+    ],
+    "verification": {
+      "xcrypto_open": true,
+      "binance_open": true,
+      "xnys_open": false,
+      "xforex_open": false,
+      "crypto_is_learnable": true,
+      "equity_is_learnable": false,
+      "forex_is_learnable": false
+    }
+  },
+
+  "mic_configuration": {
+    "XCRYPTO": {
+      "is_continuous": true,
+      "trading_days": [1, 2, 3, 4, 5, 6, 7],
+      "is_open_now": true
+    },
+    "BINANCE": {
+      "is_continuous": true,
+      "trading_days": [1, 2, 3, 4, 5, 6, 7],
+      "is_open_now": true
+    },
+    "XFOREX": {
+      "is_continuous": true,
+      "trading_days": [1, 2, 3, 4, 5],
+      "is_open_now": false
+    },
+    "XNYS": {
+      "is_continuous": false,
+      "trading_days": [1, 2, 3, 4, 5],
+      "is_open_now": false
+    }
+  },
+
+  "learnable_asset_classes": {
+    "CRYPTO": {
+      "mic": "XCRYPTO",
+      "is_learnable": true,
+      "reason": "Crypto market is 24/7 - learning enabled"
+    },
+    "US_EQUITY": {
+      "mic": "XNYS",
+      "is_learnable": false,
+      "reason": "NYSE closed - equity learning paused"
+    },
+    "FOREX": {
+      "mic": "XFOREX",
+      "is_learnable": false,
+      "reason": "Forex market closed (weekend)"
+    }
+  },
+
+  "remaining_phases": {
+    "phase_3": {
+      "description": "FINN-T Crypto Theory Activation",
+      "status": "PENDING",
+      "requirements": [
+        "N-tier mechanism chains",
+        "Liquidity→Leverage→Volatility→Price",
+        "Tier-1 brutality: 60-90% death rate"
+      ]
+    },
+    "phase_4": {
+      "description": "Error→Hypothesis Conversion (>25%)",
+      "status": "PENDING",
+      "requirements": ["New error classification taxonomy for crypto-specific failure modes"]
+    },
+    "phase_5": {
+      "description": "GN-S Crypto Shadow Tier",
+      "status": "PENDING",
+      "constraints": ["Zero reward coupling", "Zero execution eligibility"]
+    },
+    "phase_6": {
+      "description": "Binance → IoS-007 Alpha Graph",
+      "status": "PENDING"
+    }
+  },
+
+  "ceo_summary": "Phases 1-2 COMPLETE. Database MIC-aware infrastructure deployed and verified. FINN scheduler modified to use fn_get_learnable_asset_classes(). Crypto shows as LEARNABLE 24/7 while equity/forex correctly show CLOSED. Daemon health restored (price_freshness_heartbeat, cnrp_orchestrator both HEALTHY). Ready for Phase 3: FINN-T Crypto Theory Activation."
+}

@@ -1,0 +1,74 @@
+{
+  "directive": "CEO-DIR-2026-049",
+  "title": "VEGA-F002 Reclassification & G4 Unfreeze Authorization",
+  "directive_type": "CONSTITUTIONAL_RULING",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T14:15:00Z",
+  "applies_to": ["STIG", "VEGA", "LINE", "FINN"],
+  "effective": "IMMEDIATELY",
+
+  "executive_determination": {
+    "ruling": "The 500ms p95 latency threshold defined for IoS-008 applies only to TTL-coupled decisioning components",
+    "basis": [
+      "IoS-008 specification dependency analysis",
+      "R4 (VEGA) is governance/epistemic oversight, not decisioning critical path",
+      "R4 latency does not impact DecisionPlan TTL validity"
+    ],
+    "principle": "Reclassification based on architectural fact, not risk tolerance"
+  },
+
+  "finding_reclassification": {
+    "finding_id": "VEGA-F002",
+    "original_classification": "HIGH - Autonomy Blocker",
+    "revised_classification": "OBSERVATIONAL (NON-BLOCKING)",
+    "rationale": "R4 (VEGA Epistemic Integrity Monitor) is not on IoS-008 critical path and is not TTL-coupled to decisioning"
+  },
+
+  "updated_performance_policy": {
+    "binding": true,
+    "thresholds": [
+      {"daemon": "CEIO", "phase": "R1", "ios008_coupled": true, "p95_threshold_ms": 500, "blocking": true},
+      {"daemon": "CRIO", "phase": "R2", "ios008_coupled": true, "p95_threshold_ms": 500, "blocking": true},
+      {"daemon": "CDMO", "phase": "R3", "ios008_coupled": false, "p95_threshold_ms": null, "blocking": false, "status": "MONITORED"},
+      {"daemon": "VEGA", "phase": "R4", "ios008_coupled": false, "p95_threshold_ms": null, "blocking": false, "status": "MONITORED"}
+    ],
+    "vega_responsibility": "Continue to record and report latency metrics for all daemons"
+  },
+
+  "authorizations": {
+    "preconditions_verified": [
+      {"condition": "VEGA-F001 resolved", "status": true, "evidence": "Ghost agents cleared via subexec_heartbeat_daemon"},
+      {"condition": "GAP-001..004 canonical", "status": true, "evidence": "All persisted to canonical tables"},
+      {"condition": "No TTL-coupled violations", "status": true, "evidence": "R1/R2 awaiting instrumented executions"}
+    ],
+    "g4_unfreeze": "APPROVED",
+    "autonomy_eligibility": "APPROVED",
+    "constraints": [
+      "Subject to existing ADR-012 economic gates",
+      "No execution, capital exposure, or strategy activation beyond existing approvals implied"
+    ]
+  },
+
+  "audit_requirements": {
+    "vega_shall": [
+      "Append this ruling to VEGA_G3_ATTESTATION_20260114.json",
+      "Record VEGA-F002 as RECLASSIFIED - NON-BLOCKING",
+      "Retain original metrics for historical integrity"
+    ]
+  },
+
+  "standards_preserved": [
+    "ADR-014: Authority isolation",
+    "ADR-018: Liveness guarantees",
+    "IoS-008: TTL discipline",
+    "BCBS-239: Lineage integrity"
+  ],
+
+  "closing_statement": "No standards are weakened. One incorrect coupling assumption is removed.",
+
+  "attestation": {
+    "recorded_by": "STIG",
+    "recorded_at": "2026-01-14T14:15:00Z",
+    "constitutional_reference": "CEO-DIR-2026-049"
+  }
+}

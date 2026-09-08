@@ -1,0 +1,63 @@
+{
+  "gap_id": "GAP-005",
+  "description": "canonical_outcomes nearly empty",
+  "closure_type": "SEMANTIC_ATTESTATION",
+  "semantic_boundary": {
+    "outcome_ledger": {
+      "schema": "fhq_research",
+      "purpose": "Forecast ground truth - learning loop reconciliation",
+      "expected_volume": "HIGH - continuous forecast evaluation",
+      "usage": "ACTIVE"
+    },
+    "canonical_outcomes": {
+      "schema": "fhq_canonical",
+      "purpose": "Execution ground truth - trade outcomes",
+      "expected_volume": "LOW until execution enabled",
+      "usage": "FUTURE - requires execution gate opening"
+    }
+  },
+  "current_state": {
+    "outcome_ledger_count": 21593,
+    "canonical_outcomes_count": 4
+  },
+  "sentinel_added": false,
+  "canonical_outcomes_schema": [
+    "outcome_id",
+    "needle_id",
+    "trade_id",
+    "trade_source",
+    "symbol",
+    "direction",
+    "entry_price",
+    "entry_timestamp",
+    "entry_regime",
+    "entry_defcon",
+    "exit_price",
+    "exit_timestamp",
+    "exit_reason",
+    "exit_regime",
+    "exit_defcon",
+    "pnl_absolute",
+    "pnl_percent",
+    "hold_duration_minutes",
+    "max_favorable_excursion",
+    "max_adverse_excursion",
+    "needle_eqs_score",
+    "needle_hypothesis_category",
+    "needle_target_asset",
+    "needle_sitc_confidence",
+    "captured_by",
+    "captured_at"
+  ],
+  "sentinel_error": "column \"outcome_type\" of relation \"canonical_outcomes\" does not exist\nLINE 3:                     outcome_id, outcome_type, outcome_domain...\n                                        ^\n",
+  "verification": {
+    "canonical_outcomes_count_after": 4
+  },
+  "attestation": {
+    "finding": "canonical_outcomes being nearly empty is EXPECTED behavior",
+    "reason": "Trade execution is intentionally gated (PAPER_MODE)",
+    "learning_loop_status": "HEALTHY - uses fhq_research.outcome_ledger (21K+ rows)",
+    "defect": false
+  },
+  "status": "ATTESTED"
+}

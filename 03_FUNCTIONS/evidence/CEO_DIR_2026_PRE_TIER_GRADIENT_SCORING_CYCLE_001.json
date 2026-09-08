@@ -1,0 +1,101 @@
+{
+  "evidence_id": "PRE-TIER-SCORING-CYCLE-001",
+  "directive": "CEO-DIR-2026-PRE-TIER-GRADIENT-001",
+  "cycle_type": "INITIAL_SCORING",
+  "status": "COMPLETE",
+  "timestamp": "2026-01-25T22:15:00Z",
+  "executor": "STIG",
+  "executor_ec": "EC-003",
+
+  "scoring_summary": {
+    "total_hypotheses": 12,
+    "scored": 12,
+    "fail_closed": 0,
+    "success_rate": "100%"
+  },
+
+  "score_distribution": {
+    "min": 52.15,
+    "max": 70.86,
+    "mean": 67.98,
+    "all_above_threshold": false,
+    "oxygen_eligible": 0
+  },
+
+  "anti_echo_compliance": {
+    "violations": 0,
+    "status": "100% COMPLIANT",
+    "proof": "No generator_id found in pre_tier_scored_by for any hypothesis"
+  },
+
+  "validators_used": {
+    "FINN-E": {
+      "hypotheses_validated": 2,
+      "generator_exclusions": ["GN-S"]
+    },
+    "CEIO": {
+      "hypotheses_validated": 12,
+      "generator_exclusions": ["GN-S", "finn_crypto_scheduler"]
+    },
+    "GN-S": {
+      "hypotheses_validated": 10,
+      "generator_exclusions": ["finn_crypto_scheduler"]
+    }
+  },
+
+  "cross_agent_independence": {
+    "min_validators_per_hypothesis": 2,
+    "actual_validators_per_hypothesis": 2,
+    "agreement_score_range": {
+      "min": 90.75,
+      "max": 96.38
+    },
+    "high_agreement_indicates": "Low inter-validator entropy = consistent assessment"
+  },
+
+  "defcon_state": {
+    "level": "GREEN",
+    "source": "fhq_governance.defcon_state WHERE is_current = true",
+    "oxygen_rule": "ACTIVE but 0 hypotheses meet threshold (score > 75)"
+  },
+
+  "birth_hash_integrity": {
+    "all_hashes_generated": true,
+    "all_hashes_verified": true,
+    "hash_vector_includes": [
+      "evidence_density_score",
+      "causal_depth_score",
+      "data_freshness_score",
+      "cross_agent_agreement_score",
+      "pre_tier_score_version",
+      "pre_tier_score_status",
+      "defcon_level",
+      "validator_scores_array"
+    ]
+  },
+
+  "deterministic_reproducibility": {
+    "formula_version": "1.0.0",
+    "formula": "CLAMP((E*0.3) + (C*0.4) + (F*0.2) + (A*0.1) - decay, 0, 100)",
+    "immutable": true,
+    "recomputable_via_sql": "SELECT fhq_learning.calculate_pre_tier_score(...)"
+  },
+
+  "scored_hypotheses": [
+    {"code": "CRYPTO-REGI-20260125201419", "score": 70.86, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-VOLA-20260125201420", "score": 70.50, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-REGI-20260125194415", "score": 70.42, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-VOLA-20260125194416", "score": 70.06, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-REGI-20260125191408", "score": 69.98, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-VOLA-20260125191408", "score": 69.62, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-REGI-20260125184404", "score": 69.55, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-VOLA-20260125184404", "score": 69.19, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-REGI-20260125181402", "score": 69.11, "validators": ["CEIO", "GN-S"]},
+    {"code": "CRYPTO-VOLA-20260125181402", "score": 68.75, "validators": ["CEIO", "GN-S"]},
+    {"code": "HYP-2026-0009", "score": 65.56, "validators": ["CEIO", "FINN-E"]},
+    {"code": "HYP-2026-0008", "score": 52.15, "validators": ["CEIO", "FINN-E"]}
+  ],
+
+  "adr_compliance": ["ADR-011", "ADR-013"],
+  "vega_attestation": "PENDING"
+}

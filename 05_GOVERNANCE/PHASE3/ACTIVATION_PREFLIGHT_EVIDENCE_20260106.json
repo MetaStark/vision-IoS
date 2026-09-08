@@ -1,0 +1,54 @@
+{
+  "evidence_id": "ACTIVATION-PREFLIGHT-20260106",
+  "directive": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "phase": "0",
+  "phase_name": "Preconditions (Hard Blockers)",
+  "timestamp": "2026-01-06T22:20:00Z",
+  "executed_by": "STIG",
+
+  "verification_results": {
+    "db_connectivity": {
+      "status": "PASS",
+      "target": "PostgreSQL localhost:54322",
+      "verified_at": "2026-01-06T22:19:46Z"
+    },
+    "canonical_schemas": {
+      "fhq_meta": "PASS",
+      "fhq_data": "PASS",
+      "fhq_perception": "PASS",
+      "fhq_governance": "PASS",
+      "fhq_execution": "PASS"
+    },
+    "qdrant_connectivity": {
+      "status": "PASS",
+      "target": "localhost:6333",
+      "collections": ["evidence_nodes", "finn_embeddings", "causal_claims"]
+    },
+    "orchestrator_config": {
+      "status": "PASS",
+      "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "daemon": "05_ORCHESTRATOR/orchestrator_daemon.py"
+    },
+    "defcon_status": {
+      "level": "GREEN",
+      "triggered_by": "STIG",
+      "trigger_reason": "G4 Activation Order - Sovereign Autonomy Release",
+      "activation_status": "PASS"
+    }
+  },
+
+  "phase_0_summary": {
+    "total_checks": 5,
+    "passed": 5,
+    "failed": 0,
+    "blocked": 0
+  },
+
+  "decision": "SAFE TO PROCEED TO PHASE 1",
+
+  "attestation": {
+    "actor": "STIG",
+    "timestamp": "2026-01-06T22:20:00Z",
+    "statement": "Phase 0 Preconditions verified. All hard blockers cleared. DB, schemas, Qdrant, orchestrator config present. DEFCON GREEN."
+  }
+}

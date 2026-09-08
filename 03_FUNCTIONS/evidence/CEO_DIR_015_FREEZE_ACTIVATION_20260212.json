@@ -1,0 +1,87 @@
+{
+  "directive": "CEO-DIR-2026-GENERATION-FREEZE-ACTIVATION-015",
+  "executed_at": "2026-02-12T21:52:10Z",
+  "executed_by": "STIG (EC-003)",
+  "status": "COMPLETE",
+  "summary": {
+    "freeze_activated": true,
+    "freeze_end_at": "2026-02-15T21:52:10Z",
+    "duration_hours": 72,
+    "exception_quota_pct": 0.05,
+    "controlled_exception_semantics": "BLOCK by default, only controlled_exception=true allowed within quota"
+  },
+  "directive_1_integration": {
+    "status": "COMPLETE",
+    "description": "Integrate guard into every writer (hard requirement)",
+    "files_patched": [
+      "03_FUNCTIONS/finn_t_scheduler.py",
+      "03_FUNCTIONS/finn_e_scheduler.py",
+      "03_FUNCTIONS/finn_crypto_scheduler.py",
+      "03_FUNCTIONS/gn_s_shadow_generator.py"
+    ],
+    "changes": [
+      "Added import: from guard_generation_freeze import guard_generation_freeze",
+      "Added guard call BEFORE INSERT with controlled_exception=False",
+      "Added controlled_exception column to INSERT statement",
+      "Added controlled_exception=%s to VALUES clause"
+    ]
+  },
+  "directive_2_semantics": {
+    "status": "COMPLETE",
+    "description": "Enforce controlled_exception semantics (no implicit defaults)",
+    "rule": "controlled_exception must be explicitly set. If missing/NULL -> treat as false -> BLOCK during freeze.",
+    "implementation": "All schedulers set controlled_exception=False explicitly (non-controlled generation)"
+  },
+  "directive_3_activation": {
+    "status": "COMPLETE",
+    "description": "Activate freeze (72h)",
+    "control_row": {
+      "freeze_enabled": true,
+      "freeze_end_at": "2026-02-15T21:52:10.897131+01",
+      "exception_quota_pct": 0.05,
+      "created_at": "2026-02-12T21:52:10.897131+01"
+    }
+  },
+  "quota_state_720h": {
+    "active_total": 1287,
+    "controlled_count": 0,
+    "exception_budget": 65,
+    "quota_remaining": 65,
+    "quota_pct_used": 0.0
+  },
+  "acceptance_tests": {
+    "status": "COMPLETE",
+    "results": {
+      "AT-1": "PASS - Guard allows INSERT when freeze_enabled=false",
+      "AT-2": "PASS - Guard blocks INSERT during freeze (non-controlled)",
+      "AT-3": "PASS - Guard allows controlled exception within quota",
+      "AT-4": "PASS - Guard returns quota metrics"
+    },
+    "total": "4/4 passed"
+  },
+  "stop_conditions_verified": {
+    "description": "Any hypothesis inserted while freeze_enabled=true with controlled_exception=false -> INCIDENT",
+    "enforcement": "Guard function blocks non-controlled with reason: 'GENERATION_FREEZE: Non-controlled insertion blocked during active freeze'",
+    "logging": "Blocks logged to fhq_learning.semantic_diversity_blocks with agent_id='STIG'"
+  },
+  "patches_committed": {
+    "guard_generation_freeze.py": "BLOCK by default during freeze (CEO-DIR-2026-015 correction)",
+    "finn_t_scheduler.py": "Integrated guard call + controlled_exception column",
+    "finn_e_scheduler.py": "Integrated guard call + controlled_exception column",
+    "finn_crypto_scheduler.py": "Integrated guard call + controlled_exception column",
+    "gn_s_shadow_generator.py": "Integrated guard call + controlled_exception column",
+    "dir_014b_acceptance_tests.py": "Updated to match new guard logic"
+  },
+  "kpi_queries": {
+    "total_inserts_last_60min": "SELECT COUNT(*) FROM fhq_learning.hypothesis_canon WHERE created_at >= NOW() - INTERVAL '60 minutes'",
+    "controlled_exception_inserts_last_60min": "SELECT COUNT(*) FROM fhq_learning.hypothesis_canon WHERE created_at >= NOW() - INTERVAL '60 minutes' AND controlled_exception = true",
+    "blocked_attempts": "SELECT COUNT(*) FROM fhq_learning.semantic_diversity_blocks WHERE blocked_reason LIKE '%GENERATION_FREEZE%' AND blocked_at >= NOW() - INTERVAL '60 minutes'",
+    "quota_remaining": "SELECT CEIL(COUNT(*) * 0.05)::INTEGER - SUM(CASE WHEN controlled_exception = true THEN 1 ELSE 0 END) AS quota_remaining FROM fhq_learning.hypothesis_canon WHERE created_at >= NOW() - INTERVAL '720 hours'"
+  },
+  "next_steps": [
+    "Monitor hourly KPIs to verify freeze enforcement",
+    "Log any blocked attempts for analysis",
+    "Evaluate freeze effectiveness after 72h",
+    "Consider extending freeze if evidence accumulation insufficient"
+  ]
+}

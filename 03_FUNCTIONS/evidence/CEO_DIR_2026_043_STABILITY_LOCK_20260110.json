@@ -1,0 +1,126 @@
+{
+  "directive_id": "CEO-DIR-2026-043",
+  "directive_name": "Orchestrator Stability & Regression Lock",
+  "authority": "CEO (Orjan Skjold)",
+  "executed_by": "STIG (CTO)",
+  "execution_timestamp": "2026-01-10T18:02:53Z",
+  "status": "IMPLEMENTED",
+  "intent": "Freeze the system in its verified operational configuration and make deviation detectable, attributable, and stoppable",
+  "controls_implemented": {
+    "section_2_1_cycle_sla_guard": {
+      "description": "If orchestrator_cycles = 0 over 2× interval → automatic DATA_BLACKOUT",
+      "implementation": {
+        "config": {
+          "CYCLE_SLA_MULTIPLIER": 2,
+          "CONTINUOUS_INTERVAL_SECONDS": 3600,
+          "max_gap_seconds": 7200
+        },
+        "methods_added": [
+          "OrchestratorDatabase.check_cycle_sla() - Returns (sla_met, cycles_found, max_gap)",
+          "OrchestratorDatabase.trigger_data_blackout() - Activates DATA_BLACKOUT state"
+        ],
+        "enforcement_location": "orchestrator_v1.py:run_cycle() - lines 1031-1044"
+      },
+      "behavior": "Checks for cycles in 2× interval, triggers DATA_BLACKOUT if none found"
+    },
+    "section_2_2_task_classification_invariant": {
+      "description": "CONTINUOUS_DAEMON_TASKS must never appear in scheduled execution logs",
+      "implementation": {
+        "daemon_tasks": [
+          "g2c_continuous_forecast_engine",
+          "ios003b_intraday_regime_delta",
+          "wave15_autonomous_hunter",
+          "wave17c_promotion_daemon"
+        ],
+        "methods_added": [
+          "OrchestratorDatabase.check_daemon_task_violations() - Scans logs for violations",
+          "OrchestratorDatabase.log_p0_incident() - Records P0 incidents"
+        ],
+        "enforcement_location": "orchestrator_v1.py:run_cycle() - lines 1046-1057"
+      },
+      "behavior": "Any daemon task execution = P0 incident logged automatically"
+    },
+    "section_2_3_price_reality_gate": {
+      "description": "Learning tasks (IoS-010) must hard-fail if any asset exceeds SLA",
+      "implementation": {
+        "files_modified": [
+          "ios010_forecast_reconciliation_daemon.py",
+          "ios010_skill_metrics_aggregator.py",
+          "ios010_lesson_extraction_engine.py"
+        ],
+        "functions_added": [
+          "check_price_reality_gate() - Returns (gate_passed, reason)",
+          "enforce_price_reality_gate() - Hard-fails if SLA violated"
+        ],
+        "enforcement": "Called at start of each run_*() function"
+      },
+      "behavior": "Hard-fail with exit code 1 if DATA_BLACKOUT active - no silent skips"
+    }
+  },
+  "ownership": {
+    "STIG": "Ensures orchestrator logic and task registry remain aligned",
+    "CEIO": "Owns ingestion freshness and SLA compliance",
+    "VEGA": "Sole authority to clear any future blackout or override"
+  },
+  "success_criteria": {
+    "24_hour_requirements": [
+      "Continuous orchestrator cycles",
+      "Zero SLA breaches",
+      "Zero task misclassification"
+    ],
+    "on_success": [
+      "Paper trading continues",
+      "FINN learning runs unconstrained by infrastructure risk"
+    ]
+  },
+  "files_modified": [
+    {
+      "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "changes": [
+        "Added Config.CYCLE_SLA_MULTIPLIER = 2 (line 87-88)",
+        "Added OrchestratorDatabase.check_cycle_sla() (lines 380-399)",
+        "Added OrchestratorDatabase.trigger_data_blackout() (lines 401-428)",
+        "Added OrchestratorDatabase.check_daemon_task_violations() (lines 430-458)",
+        "Added OrchestratorDatabase.log_p0_incident() (lines 460-485)",
+        "Added SLA Guard check in run_cycle() (lines 1031-1044)",
+        "Added Task Classification check in run_cycle() (lines 1046-1057)"
+      ]
+    },
+    {
+      "file": "03_FUNCTIONS/ios010_forecast_reconciliation_daemon.py",
+      "changes": [
+        "Added check_price_reality_gate() function (lines 84-114)",
+        "Added enforce_price_reality_gate() function (lines 117-127)",
+        "Added enforcement call in run_reconciliation() (line 385)"
+      ]
+    },
+    {
+      "file": "03_FUNCTIONS/ios010_skill_metrics_aggregator.py",
+      "changes": [
+        "Added check_price_reality_gate() function (lines 82-107)",
+        "Added enforce_price_reality_gate() function (lines 110-117)",
+        "Added enforcement call in run_skill_aggregation() (line 368)"
+      ]
+    },
+    {
+      "file": "03_FUNCTIONS/ios010_lesson_extraction_engine.py",
+      "changes": [
+        "Added check_price_reality_gate() function (lines 89-114)",
+        "Added enforce_price_reality_gate() function (lines 117-124)",
+        "Added enforcement call in run_lesson_extraction() (line 508)"
+      ]
+    }
+  ],
+  "verification": {
+    "dry_run_test": "PASSED - orchestrator dry run completes successfully",
+    "daemon_task_skip": "VERIFIED - all 4 daemon tasks properly skipped",
+    "sla_check_present": "VERIFIED - check added to run_cycle()"
+  },
+  "governance_compliance": {
+    "adr_004": "G0-G4 change gate workflow followed",
+    "adr_013": "STIG maintains infrastructure sovereignty",
+    "court_proof": "All changes documented with file paths and line numbers"
+  },
+  "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+  "attestation_timestamp": "2026-01-10T18:02:53Z"
+}

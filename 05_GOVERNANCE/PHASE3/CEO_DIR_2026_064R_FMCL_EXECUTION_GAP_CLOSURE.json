@@ -1,0 +1,137 @@
+{
+  "directive": "CEO-DIR-2026-064R",
+  "title": "FMCL Execution Gap Closure: Code-Level Enforcement, Lineage Integrity & Latency Control",
+  "directive_type": "EXECUTION",
+  "classification": "MISSION_CRITICAL",
+  "issued_by": "CEO",
+  "issued_at": "2026-01-14T02:00:00Z",
+  "applies_to": ["FINN", "STIG", "VEGA"],
+  "status": "EXECUTION_MANDATED",
+  "system_mode": "LEARNING_MODE",
+  "change_gate": "G1",
+  "effective": "IMMEDIATE",
+  "supersedes": "CEO-DIR-2026-064",
+
+  "context": {
+    "finding": "Bekreftet execution gap mellom governance-aktivering og operativ effekt",
+    "problem": "Systemet er i formell compliance, men i operativt falsk tilstand",
+    "resolution": "Dette direktivet lukker gapet entydig, irreversibelt og målbart"
+  },
+
+  "executive_order": {
+    "binding": true,
+    "statement": "FINN (CRIO) pålegges å fullføre operativ FMCL-aktivering i henhold til CEO-DIR-2026-063R",
+    "nature": "Fullføring av allerede autorisert aktivering, ikke ny funksjonalitet"
+  },
+
+  "mandatory_requirements": {
+    "section_3_1_code_injection": {
+      "title": "Code-Level Injection Point (Hard Enforcement)",
+      "target_file": "g2c_continuous_forecast_engine.py",
+      "target_line": "~245",
+      "replace": "random.uniform(0.7, 1.0)",
+      "with": "ForecastConfidenceDamper.damp_confidence()",
+      "placement": {
+        "after": "rå modellprediksjon",
+        "before": "skriving til forecast_ledger"
+      },
+      "constraint": "Ingen rå confidence > historisk ceiling skal kunne persisteres",
+      "statement": "Dette er direktivpålagt kode-injeksjonspunkt, ikke et designvalg"
+    },
+
+    "section_3_2_lineage_correction": {
+      "title": "Directive Lineage Correction (Registry Integrity)",
+      "action": "Erstatt alle referanser til CEO-DIR-2026-053 med CEO-DIR-2026-063R",
+      "scope": ["kode", "metadata", "kommentarer"],
+      "purpose": ["korrekt juridisk lineage", "entydig audit-spor", "eliminering av historisk inkonsistens"]
+    },
+
+    "section_3_3_schema_enforcement": {
+      "title": "Lineage Schema Enforcement (IoS-010)",
+      "owner": "STIG",
+      "prerequisite": "Må verifiseres FØR FINN committer kodeintegrasjonen",
+      "target_table": "fhq_research.forecast_outcome_pairs",
+      "required_columns": [
+        {"name": "parent_forecast_id", "type": "UUID"},
+        {"name": "damper_version_hash", "type": "TEXT"}
+      ],
+      "constraint": "Manglende felt = hard FAIL",
+      "purpose": ["deterministisk A/B-analyse", "bevisbar læringseffekt over tid"]
+    },
+
+    "section_3_4_cold_start": {
+      "title": "DINCO Cold-Start Verification (Data Safety)",
+      "owner": "FINN",
+      "condition": "Hvis ingen historisk accuracy finnes i DINCO for en gitt kategori",
+      "fallback": "global_ceiling = 0.40",
+      "nature": "Eksplisitt fallback-krav og sikkerhetsmekanisme, ikke heuristikk",
+      "purpose": ["forhindre udempet confidence", "forhindre runtime-feil", "sikre deterministisk oppførsel fra første kall"]
+    }
+  },
+
+  "verification_requirements": {
+    "owner": "STIG",
+    "deliverable": "Ett samlet evidence-bundle",
+
+    "section_4_1_functional_effect": {
+      "metrics": [
+        "faktisk reduksjon i avg/max confidence",
+        "ingen forecasts > ceiling uten damping"
+      ]
+    },
+
+    "section_4_2_metric_deltas": {
+      "calibration_error": {"requirement": "negativ delta vs 0.5411"},
+      "brier_score": {"requirement": "ikke-positiv delta vs 0.5158"},
+      "delta_fss": {"requirement": ">= 0", "ios_ref": "IoS-005"}
+    },
+
+    "section_4_3_latency_budgeting": {
+      "ios_ref": "IoS-008",
+      "max_added_latency": "50ms",
+      "total_p95_requirement": "<= 500ms",
+      "measurement_conditions": ["under realistisk last", "i faktisk execution-path"],
+      "violation": "hard FAIL"
+    }
+  },
+
+  "governance_consequences": {
+    "on_failure": [
+      "Task settes til enabled = false",
+      "Hendelse logges som FMCL_EXECUTION_FAILURE",
+      "VEGA initierer governance review",
+      "Videre FMCL-arbeid fryses"
+    ],
+    "statement": "Dette er systemintegritet, ikke sanksjon"
+  },
+
+  "sequencing_lock": {
+    "reaffirmed": true,
+    "regime_sanity_gate": {
+      "status": "pending",
+      "locked": true,
+      "activation": "eksplisitt forbudt"
+    },
+    "principle": "Kalibrering fullføres først. Alt annet venter."
+  },
+
+  "final_declaration": {
+    "no_interpretation_room": true,
+    "no_hidden_placeholder_logic": true,
+    "no_latency_surprises": true,
+    "no_audit_blind_spots": true,
+    "statement": "governance-aktivering = faktisk kognitiv effekt. Systemet skal nå beviselig redusere overkonfidens."
+  },
+
+  "execution_assignment": {
+    "FINN_CRIO": "Code + data completion",
+    "STIG": "Schema, latency & effect verification",
+    "VEGA": "Final governance attestation"
+  },
+
+  "attestation": {
+    "issued_by": "CEO",
+    "timestamp": "2026-01-14T02:00:00Z",
+    "status": "EXECUTION_MANDATED"
+  }
+}

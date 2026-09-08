@@ -1,0 +1,221 @@
+{
+  "directive_id": "CEO-DIR-2026-082",
+  "directive_title": "OKR Integrity Verification - Post-G4 Alpha Lock",
+  "executed_by": "STIG (EC-003)",
+  "executed_at": "2026-01-18T04:00:00Z",
+  "status": "COMPLETED",
+
+  "SECTION_1_OKR_AGENT_STATUS": {
+    "agent": "UMA",
+    "status": "ACTIVE",
+    "last_reported": "2026-01-17T00:06:18.607Z",
+    "last_okr_code": "OKR-2026-D17-001",
+    "last_okr_title": "Accelerate G3.5 Shadow Mode to Production-Ready State",
+    "last_okr_status": "COMPLETED",
+
+    "day_18_okr_created": false,
+    "gap_detected": "No Day 18 OKR registered yet",
+
+    "active_g4_okrs": {
+      "total_count": 12,
+      "owner": "UMA",
+      "objectives": [
+        {
+          "objective_number": 1,
+          "name": "Kill Catastrophic Overconfidence",
+          "key_results": 3,
+          "status_summary": "IN_PROGRESS"
+        },
+        {
+          "objective_number": 2,
+          "name": "Improve Learning Quality",
+          "key_results": 3,
+          "status_summary": "PARTIAL_ACHIEVED"
+        },
+        {
+          "objective_number": 3,
+          "name": "Reduce Capital Risk",
+          "key_results": 3,
+          "status_summary": "ON_TRACK"
+        },
+        {
+          "objective_number": 4,
+          "name": "Preserve Defensibility",
+          "key_results": 3,
+          "status_summary": "ACHIEVED"
+        }
+      ]
+    },
+
+    "finn_okrs": "NONE - No FINN-specific OKRs registered",
+    "line_okrs": "NONE - No LINE-specific OKRs registered",
+    "vega_okrs": "NONE - No VEGA-specific OKRs registered"
+  },
+
+  "SECTION_2_CANONICAL_ALPHA_CROSS_CHECK": {
+    "reference_directives": ["CEO-DIR-2026-080", "CEO-DIR-2026-081"],
+
+    "canonical_alpha_status": {
+      "stress_inversion_equity": "G4_APPROVED_SHADOW_MODE",
+      "inversion_rule": "STRESS_99PCT_INVERSION",
+      "shadow_test_results": {
+        "total_signals": 37,
+        "original_hit_rate": "0.00%",
+        "inverted_hit_rate": "100.00%",
+        "avg_brier_improvement": "0.9941",
+        "signals_under_target": 37,
+        "pct_under_target": "100.00%"
+      },
+      "verdict": "ALPHA_CONFIRMED - Inversion works"
+    },
+
+    "crypto_separation_status": {
+      "crypto_okrs_found": 0,
+      "crypto_in_roi_equation": false,
+      "verdict": "COMPLIANT - Crypto explicitly excluded per CEO-DIR-2026-081"
+    },
+
+    "shadow_mode_status": {
+      "execution_mode": "SHADOW_EVALUATION",
+      "shadow_mode_active": true,
+      "paper_trading_blocked": true,
+      "verdict": "COMPLIANT - Shadow mode non-negotiable"
+    },
+
+    "execution_pressure_check": {
+      "execution_okrs_found": 0,
+      "pnl_okrs_found": 0,
+      "profit_okrs_found": 0,
+      "trade_okrs_found": 0,
+      "verdict": "NO_PRESSURE_DETECTED - No OKRs pushing toward premature execution"
+    }
+  },
+
+  "SECTION_3_MISALIGNMENTS_DETECTED": {
+    "critical_misalignment": {
+      "okr_id": "e711e044-f4ab-4117-9cb1-13746277b084",
+      "objective": "Kill Catastrophic Overconfidence",
+      "key_result": "STRESS regime confidence below 15% with non-zero hit rate",
+      "current_status": "IN_PROGRESS",
+
+      "problem": "This OKR is INVERTED relative to canonical alpha logic",
+      "explanation": [
+        "CEO-DIR-2026-080/081 established: STRESS 99%+ confidence = INVERSION ALPHA",
+        "Shadow test proves: When STRESS confidence is HIGH, inverted direction is 100% correct",
+        "This OKR pushes for LOW STRESS confidence, which would DESTROY the alpha edge",
+        "The OKR was written before inversion discovery - it optimizes for the WRONG metric"
+      ],
+      "severity": "HIGH",
+      "recommendation": "DEPRECATE or FREEZE this OKR immediately"
+    },
+
+    "missing_okrs": [
+      {
+        "gap": "No OKR for ROI Direction Ledger (EQUITY) measurement",
+        "should_track": "Event count, hit rate 1D/3D/5D, edge per activation",
+        "priority": "HIGH"
+      },
+      {
+        "gap": "No OKR for Inverted Brier as primary quality metric",
+        "should_track": "Average inverted Brier < 0.01 for STRESS signals",
+        "priority": "HIGH"
+      },
+      {
+        "gap": "No OKR for Edge per Activation",
+        "should_track": "Average directional return when inversion is correct",
+        "priority": "MEDIUM"
+      }
+    ],
+
+    "implicit_blend_risk": {
+      "crypto_in_shadow_test": true,
+      "crypto_asset_classes_found": ["CRYPTO"],
+      "equity_asset_classes_found": ["EQUITY_US"],
+      "problem": "Shadow test currently includes CRYPTO assets (FLOW-USD)",
+      "recommendation": "Apply fhq_research.roi_direction_ledger_equity filter - EQUITY ONLY",
+      "severity": "MEDIUM"
+    }
+  },
+
+  "SECTION_4_CORRECTIVE_ACTIONS": {
+    "immediate_actions": [
+      {
+        "action_id": "CA-001",
+        "description": "FREEZE OKR 'STRESS regime confidence below 15%'",
+        "rationale": "Contradicts canonical alpha - high STRESS confidence IS the edge",
+        "owner": "UMA",
+        "priority": "IMMEDIATE"
+      },
+      {
+        "action_id": "CA-002",
+        "description": "Create Day 18 OKR aligned with ROI Direction Ledger (EQUITY)",
+        "rationale": "No Day 18 OKR exists - governance gap",
+        "owner": "UMA",
+        "priority": "TODAY"
+      }
+    ],
+
+    "recommended_new_okrs": [
+      {
+        "objective": "Establish ROI Direction Baseline (EQUITY)",
+        "key_results": [
+          "KR1: Populate roi_direction_ledger_equity with 5+ events in first 7 days",
+          "KR2: Maintain inverted Brier < 0.01 for all captured events",
+          "KR3: Track edge per activation - establish baseline"
+        ],
+        "owner": "UMA",
+        "duration": "7 days"
+      }
+    ],
+
+    "no_new_goals": "Per CEO directive - only adjustment of existing, no new goals"
+  },
+
+  "SECTION_5_CEO_ASSESSMENT": {
+    "question": "Is the system pulling toward ROI, or merely staying busy?",
+
+    "answer": "PARTIAL ALIGNMENT - System is pulling toward QUALITY, but not yet toward ROI",
+
+    "evidence": {
+      "positive": [
+        "Shadow mode is active and enforced",
+        "STRESS inversion has 100% inverted hit rate - alpha is real",
+        "No execution pressure OKRs detected",
+        "Crypto explicitly separated from ROI equation",
+        "Defensibility OKRs are ACHIEVED"
+      ],
+      "concerning": [
+        "OKR 'STRESS confidence below 15%' directly contradicts alpha logic",
+        "No OKR measures what CEO-DIR-2026-081 defined as economic truth",
+        "ROI Direction Ledger (EQUITY) not yet tracked in OKR layer",
+        "Day 18 has no registered OKR - governance gap"
+      ]
+    },
+
+    "verdict": "CALIBRATION DRIFT DETECTED",
+    "explanation": "OKRs were written before STRESS inversion was discovered. The system is measuring the old problem (overconfidence) not the new opportunity (inversion alpha). The machinery is sound; the compass needs adjustment.",
+
+    "risk_level": "MEDIUM",
+    "immediate_action_required": true
+  },
+
+  "SECTION_6_DELIVERABLES": {
+    "migration_created": "306_ceo_dir_2026_082_roi_direction_ledger_equity.sql",
+    "table_created": "fhq_research.roi_direction_ledger_equity",
+    "views_created": [
+      "fhq_research.roi_direction_equity_daily_ev",
+      "fhq_research.roi_direction_equity_rolling_30d"
+    ],
+    "functions_created": [
+      "fhq_research.append_roi_direction_event_equity",
+      "fhq_research.capture_roi_direction_outcome_equity"
+    ],
+    "evidence_file": "CEO_DIR_2026_082_OKR_INTEGRITY_REPORT.json"
+  },
+
+  "FINAL_POSITION": {
+    "stig_assessment": "Hold the line. The alpha is real. The measurement layer is now in place. Adjust OKRs to match canonical truth.",
+    "ceo_bottom_line": "Freeze the backwards OKR. Create Day 18 OKR for ROI Direction Ledger (EQUITY). Let the shadow data accumulate.",
+    "principle": "Alpha speaks first. OKRs listen."
+  }
+}

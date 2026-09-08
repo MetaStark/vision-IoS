@@ -1,0 +1,91 @@
+{
+  "directive": "CEO-DIR-2026-RUNTIME-BINDING-AND-CALIBRATION-010",
+  "workstream": "A2",
+  "deliverable": "Calibration Layer Restoration \u2014 damped_confidence non-NULL for new pairs",
+  "timestamp": "2026-02-02T18:52:16.539434+00:00",
+  "executed_by": "STIG",
+  "ec": "EC-003",
+  "root_cause": {
+    "file": "ios010_forecast_reconciliation_daemon.py",
+    "function": "create_reconciliation_pair()",
+    "issue": "INSERT into forecast_outcome_pairs omitted all 8 dampening columns",
+    "columns_missing": [
+      "raw_confidence",
+      "damped_confidence",
+      "dampening_delta",
+      "ceiling_applied",
+      "damper_version_hash",
+      "damped_at",
+      "parent_forecast_id",
+      "directive_ref"
+    ],
+    "existing_damper": "forecast_confidence_damper.py (417 lines, fully implemented, NEVER called)",
+    "existing_schema": "All 8 columns exist in fhq_research.forecast_outcome_pairs (migrations 226+239)",
+    "existing_gates": "15 active calibration gates in fhq_governance.confidence_calibration_gates"
+  },
+  "fix_applied": {
+    "import_added": "from forecast_confidence_damper import get_damper",
+    "dampening_call": "damper.damp_confidence(raw_conf, forecast_type, 'ALL')",
+    "insert_extended": "Added 8 columns to INSERT: raw_confidence, damped_confidence, dampening_delta, ceiling_applied, damper_version_hash, damped_at, parent_forecast_id, directive_ref",
+    "confidence_source": "forecast.forecast_confidence (falls back to forecast_probability)",
+    "directive_ref_value": "CEO-DIR-2026-063R"
+  },
+  "proof_of_non_null": {
+    "test_results": [
+      {
+        "input": "0.975 REGIME (typical BEAR prediction)",
+        "raw_confidence": 0.975,
+        "damped_confidence": 0.2464,
+        "dampening_delta": 0.7286,
+        "ceiling_applied": 0.2464,
+        "was_damped": true,
+        "non_null": true
+      },
+      {
+        "input": "0.982 REGIME (typical BULL prediction)",
+        "raw_confidence": 0.982,
+        "damped_confidence": 0.2464,
+        "dampening_delta": 0.7356,
+        "ceiling_applied": 0.2464,
+        "was_damped": true,
+        "non_null": true
+      },
+      {
+        "input": "0.50 REGIME (medium confidence)",
+        "raw_confidence": 0.5,
+        "damped_confidence": 0.3,
+        "dampening_delta": 0.2,
+        "ceiling_applied": 0.3,
+        "was_damped": true,
+        "non_null": true
+      },
+      {
+        "input": "0.30 PRICE_DIRECTION (low confidence)",
+        "raw_confidence": 0.3,
+        "damped_confidence": 0.3,
+        "dampening_delta": 0.0,
+        "ceiling_applied": 0.6112,
+        "was_damped": false,
+        "non_null": true
+      }
+    ],
+    "all_non_null": true
+  },
+  "backfill_policy": {
+    "existing_pairs": 17656,
+    "existing_damped_confidence": "ALL NULL (historical record preserved)",
+    "new_pairs": "Will have non-NULL damped_confidence from this fix forward",
+    "recommendation": "Do NOT backfill. NULL serves as a forensic marker of pre-calibration era. Future analysis can distinguish pre/post calibration pairs."
+  },
+  "blocking_note": {
+    "price_reality_gate": "DATA_BLACKOUT active (regime data 19.6h stale). Daemon correctly refuses to create pairs with stale data.",
+    "next_pairs_created": "When DATA_BLACKOUT lifts and regime data refreshes, new pairs will automatically include dampening."
+  },
+  "calibration_impact": {
+    "current_avg_brier": 0.3233,
+    "current_avg_hit_rate": 0.4101,
+    "expected_impact": "High-confidence regime predictions (0.97+) will be capped at 0.2464. This eliminates the systematic over-confidence that drives BEAR/NEUTRAL misclassification.",
+    "bear_misclass_reduction": "From 94.4% to target <40% (interim), as damped confidence prevents high-confidence BEAR calls from being trusted at face value."
+  },
+  "evidence_hash": "f06f64304f4e8081c737448160e522ac084faa3a990f2298ba11e30ff559abe7"
+}

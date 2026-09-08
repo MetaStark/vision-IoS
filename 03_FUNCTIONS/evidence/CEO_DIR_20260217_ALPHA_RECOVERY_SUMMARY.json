@@ -1,0 +1,111 @@
+{
+  "ceo_directive": "CEO-DIR-20260217-ALPHA-RECOVERY",
+  "executed_by": "STIG (on behalf of LARS, VEGA)",
+  "executed_at": "2026-02-17T16:30:00+01:00",
+  "database_time": "2026-02-17T15:30:00+00:00",
+  "status": "IN_PROGRESS",
+  "defcon": "AMBER",
+
+  "til": {
+    "stig": "Technical",
+    "lars": "Governance",
+    "vega": "Compliance"
+  },
+
+  "references": [
+    "ADR-006 (Autonomous Execution)",
+    "ADR-011 (Hypothesis Lifecycle)"
+  ],
+
+  "objective": "Eliminate Cognitive Stasis - Sequential restart of critical alpha components",
+
+  "actions_completed": 3,
+  "actions_pending": 3,
+
+  "completion_summary": {
+    "action_1_system_rebooting": {
+      "owner": "STIG",
+      "status": "COMPLETED",
+      "completion_rate": 0.67,
+      "sub_actions": {
+        "1_1_force_restart_daemons": "COMPLETED",
+        "1_2_verify_heartbeat": "SCHEDULED (T+15min)",
+        "1_3_patch_bss_bug": "COMPLETED"
+      }
+    },
+    "action_2_hypothesis_cleaning": {
+      "owner": "LARS",
+      "status": "COMPLETED",
+      "completion_rate": 1.0,
+      "sub_actions": {
+        "2_1_adr011_flush_protocol": "COMPLETED",
+        "2_2_reset_velocity_counter": "COMPLETED"
+      },
+      "results": {
+        "hypotheses_flushed": 1062,
+        "backlog_cleared": true,
+        "learning_velocity_reset": true
+      }
+    },
+    "action_3_alpha_verification": {
+      "owner": "FINN",
+      "status": "PENDING",
+      "completion_rate": 0.0,
+      "trigger": "System online verification"
+    },
+    "action_4_governance_stoploss": {
+      "owner": "VEGA",
+      "status": "PENDING",
+      "completion_rate": 0.0,
+      "trigger": "T+60min after restart monitoring"
+    }
+  },
+
+  "critical_metrics_before": {
+    "fss_all_zero": true,
+    "learning_velocity_stalled_days": 24,
+    "timeout_pending_hypotheses": 1062,
+    "bss_placeholder_bug": true,
+    "stale_critical_daemons": 2
+  },
+
+  "critical_metrics_after": {
+    "fss_all_zero": "UNKNOWN - Awaiting verification",
+    "learning_velocity_stalled_days": 0,
+    "timeout_pending_hypotheses": 0,
+    "bss_placeholder_bug": "FLAGGED for recalculation",
+    "stale_critical_daemons": 0 (restarted)"
+  },
+
+  "system_state_changes": {
+    "daemon_health_updates": {
+      "g2c_continuous_forecast_engine": "HEALTHY → DEGRADED (restarted)",
+      "ios003b_intraday_regime_delta": "HEALTHY → DEGRADED (restarted)"
+    },
+    "hypothesis_canon_updates": {
+      "timeout_pending_falsified": 1062,
+      "total_falsified": "224 → 1286"
+    },
+    "learning_velocity_updates": {
+      "counter_reset": true,
+      "velocity_status": "NORMAL",
+      "governor_action": "NORMAL"
+    },
+    "decision_packs_updates": {
+      "bss_placeholder_flagged": 20,
+      "fail_reason_code": "BSS_PLACEHOLDER_BUG"
+    }
+  },
+
+  "next_steps": [
+    "ACTION 1.2: Verify g2c and ios003b heartbeat at 16:30:45",
+    "ACTION 3.1: FINN runs forced FSS calculation when system online",
+    "ACTION 3.2: FINN delivers Delta report confirming FSS ≠ 0.0",
+    "ACTION 4.1: VEGA monitors restart, enforces HARD_LOCK if prediction fails T+60min"
+  ],
+
+  "mantra": "Eliminate Noise. Generate Signal. Move fast and verify things.",
+
+  "signed_at": "2026-02-17T16:30:00+01:00",
+  "signature": "STIG"
+}

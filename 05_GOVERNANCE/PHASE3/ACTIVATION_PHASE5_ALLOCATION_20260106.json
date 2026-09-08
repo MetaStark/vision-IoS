@@ -1,0 +1,85 @@
+{
+  "evidence_id": "ACTIVATION-PHASE5-20260106",
+  "directive": "CEO-DIR-2026-ACTIVATION-INTEGRITY-001",
+  "phase": "5",
+  "phase_name": "IoS-004 Allocation",
+  "timestamp": "2026-01-06T23:25:00Z",
+  "executed_by": "STIG",
+
+  "critical_assertion": {
+    "statement": "NO LIVE CAPITAL EXPOSURE",
+    "verified": true,
+    "evidence": {
+      "live_trades": 0,
+      "live_positions": 0,
+      "broker_environment": "PAPER only"
+    }
+  },
+
+  "verification_results": {
+    "ios_004_status": {
+      "registry_status": "ACTIVE",
+      "updated_at": "2025-12-20T17:59:26.719Z"
+    },
+    "execution_mode": {
+      "alpaca_paper_config": {
+        "base_url": "https://paper-api.alpaca.markets",
+        "mode": "PAPER",
+        "is_active": true,
+        "max_position_size_pct": "10%",
+        "max_leverage": "1.00",
+        "max_drawdown_pct": "15%",
+        "stop_loss_pct": "5%"
+      },
+      "regime_awareness": {
+        "allowed_regimes": ["RISK_ON", "NEUTRAL", "TRENDING_UP"],
+        "forbidden_regimes": ["CRISIS", "BLACK_SWAN"],
+        "status": "CONFIGURED"
+      }
+    },
+    "capital_exposure_audit": {
+      "trades_by_environment": {
+        "PAPER": 5,
+        "LIVE": 0
+      },
+      "latest_trade": "2025-12-07T21:17:20.435Z",
+      "paper_positions": 0,
+      "paper_orders_30d": 0,
+      "shadow_trades_30d": 8,
+      "live_capital_at_risk": "$0.00"
+    },
+    "s_tier_config": {
+      "position_size_pct": "2%",
+      "position_size_max_usd": "$2,069",
+      "stop_loss_pct": "2%",
+      "take_profit_pct": "3%",
+      "concurrent_positions": 1,
+      "authority": "CEO-DIR-2025-EXE-001-AMND-001"
+    },
+    "g2c_configuration": {
+      "parb_usd": "$200,000",
+      "ecu_usd": "$10",
+      "max_daily_loss_pct": "0.1%",
+      "max_weekly_loss_pct": "0.3%",
+      "is_active": true,
+      "activated_by": "CEO",
+      "directive_id": "CD-G2-C-ALPHA-EXP"
+    }
+  },
+
+  "phase_5_summary": {
+    "total_checks": 5,
+    "passed": 5,
+    "failed": 0,
+    "allocation_mode": "SHADOW/PAPER",
+    "live_capital_blocked": true
+  },
+
+  "decision": "PHASE 5 PASS - PROCEED TO PHASE 6",
+
+  "attestation": {
+    "actor": "STIG",
+    "timestamp": "2026-01-06T23:25:00Z",
+    "statement": "Phase 5 IoS-004 Allocation verified. CRITICAL: NO LIVE CAPITAL. Execution mode is PAPER only (Alpaca paper-api). All trades in PAPER environment (5 historical, 0 live). Regime-aware allocation configured (allowed/forbidden regimes). Risk limits active (2% position size, 0.1% daily loss cap). Shadow trading operational (8 trades)."
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "directive": "CEO-DIR-2026-END-TO-END-CHAIN-LIVENESS-REMEDIATION-043",
+  "assessment_date": "2026-02-16 20:00:00 UTC",
+  "assessed_by": "STIG",
+  "ec_contract": "EC-003",
+  "overall_verdict": "CHAIN_BROKEN-DAEMONS_NOT_RUNNING",
+  "exit_criteria_met": false,
+  "consecutive_pass_hours": 0,
+  "required_consecutive_pass_hours": 6,
+
+  "p0_settlement_lvi_cadence": {
+    "outcome_settlement_daemon": {
+      "status": "CRITICAL_MISSING",
+      "last_heartbeat": "2026-02-16 10:16:31 UTC",
+      "time_since_heartbeat": "9h 43m",
+      "root_cause": "Daemon never installed as continuous Windows service. Last run was manual --once mode on 2026-02-15.",
+      "required_action": "Install as continuous service via NSSM or Task Scheduler with hourly interval",
+      "settlement_log_status": "STALE (7 days old, 0 rows last 24h)"
+    },
+    "lvi_calculator": {
+      "status": "CRITICAL_MISSING",
+      "last_heartbeat": "2026-02-16 12:58:43 UTC",
+      "time_since_heartbeat": "5h 18m",
+      "root_cause": "Continuous mode daemon stopped after last cycle. Interval=21600s (6h) but not restarting.",
+      "required_action": "Restart continuous mode with proper scheduling",
+      "lvi_canonical_status": "NO_THROUGHPUT (0 rows last 1h, 3h stale)"
+    }
+  },
+
+  "p1_indicators_brier_scoring": {
+    "decision_pack_generator": {
+      "status": "CRITICAL_MISSING",
+      "last_heartbeat": "2026-02-04 20:40:10 UTC",
+      "time_since_heartbeat": "11 days 23h",
+      "root_cause": "Daemon not running. Last heartbeat from 2026-02-04.",
+      "required_action": "Install and start decision pack generator"
+    },
+    "brier_score_ledger": {
+      "status": "STALE",
+      "latest_timestamp": "2026-02-14 00:00:00 UTC",
+      "age": "2 days 20h",
+      "rows_last_1h": 0,
+      "rows_last_24h": 0,
+      "root_cause": "No new Brier scores being computed. Decision pack executor not generating outcomes for scoring.",
+      "required_action": "Restart decision pack execution pipeline"
+    }
+  },
+
+  "p2_forecast_alpha_graph": {
+    "mechanism_alpha_trigger": {
+      "status": "DEGRADED",
+      "last_heartbeat": "2026-02-16 19:02:04 UTC",
+      "time_since_heartbeat": "14m",
+      "root_cause": "Daemon running but reporting DEGRADED status. Not producing forecast rows (0 last 24h).",
+      "required_action": "Investigate DEGRADED condition and restore forecast production"
+    },
+    "alpha_graph_sync": {
+      "status": "CRITICAL_MISSING",
+      "last_heartbeat": "2026-02-16 14:15:30 UTC",
+      "time_since_heartbeat": "5h 1m",
+      "root_cause": "Daemon not running. Alpha graph edges not being produced (0 last 24h).",
+      "required_action": "Install and start alpha graph sync daemon"
+    }
+  },
+
+  "chain_liveness_summary": {
+    "stage_1_ingest_freshness": {
+      "status": "PASS",
+      "sla": "<1h",
+      "latest": "2026-02-16 19:13:41 UTC",
+      "age": "46m",
+      "rows_last_1h": 29,
+      "rows_last_24h": 684
+    },
+    "stage_2_indicator_continuity": {
+      "status": "PASS",
+      "sla": "<2h lag",
+      "latest": "2026-02-16 12:20:01 UTC",
+      "age": "6h 40m",
+      "rows_last_1h": 681,
+      "rows_last_24h": 681
+    },
+    "stage_3_forecast_production": {
+      "status": "FAIL",
+      "sla": "continuous",
+      "latest": "2026-02-13 23:00:00 UTC",
+      "age": "2 days 21h",
+      "rows_last_1h": 0,
+      "rows_last_24h": 0
+    },
+    "stage_4_alpha_graph_edges": {
+      "status": "FAIL",
+      "sla": "continuous",
+      "latest": "2026-02-05 21:57:46 UTC",
+      "age": "10 days 22h",
+      "rows_last_1h": 0,
+      "rows_last_24h": 0
+    },
+    "stage_5_decision_pack_execution": {
+      "status": "FAIL",
+      "sla": "continuous",
+      "latest": "null",
+      "age": "null",
+      "rows_last_1h": 0,
+      "rows_last_24h": 0
+    },
+    "stage_6_outcome_settlement": {
+      "status": "FAIL",
+      "sla": "<1h lag",
+      "latest": "2026-02-09 14:55:45 UTC",
+      "age": "7 days 5h",
+      "rows_last_1h": 0,
+      "rows_last_24h": 0
+    },
+    "stage_7_lvi_canonical": {
+      "status": "FAIL",
+      "sla": "hourly",
+      "latest": "2026-02-16 16:02:31 UTC",
+      "age": "3h 58m",
+      "rows_last_1h": 0,
+      "rows_last_24h": 3
+    }
+  },
+
+  "exit_criteria_status": {
+    "pass_count_7": false,
+    "brier_score_rows_gt_0": false,
+    "alpha_graph_edges_rows_gt_0": false,
+    "settlement_rows_gt_0": false,
+    "lvi_canonical_age_le_65min": false,
+    "hourly_snapshot_6_new_rows": false,
+    "consecutive_pass_hours": 0
+  },
+
+  "critical_blocker": {
+    "summary": "681 PENDING decision packs not being executed because outcome_settlement_daemon is not running as continuous service",
+    "chain_impact": "Data ingestion → Pack creation → [EXECUTION BLOCKED] → [SETTLEMENT BLOCKED] → [GOVERNANCE BLOCKED]",
+    "root_cause": "Critical daemons were installed but never configured for continuous execution. outcome_settlement_daemon runs only in --once mode (manual execution)."
+  },
+
+  "governance_infrastructure": {
+    "chain_liveness_hourly_table": "DEPLOYED",
+    "hourly_snapshots_stored": 0,
+    "ceo_verification_pack": "CREATED"
+  },
+
+  "files_created": [
+    "migrations/dir_043_chain_liveness_hourly.sql",
+    "03_FUNCTIONS/chain_liveness_snapshot.py",
+    "03_FUNCTIONS/ceo_verification_pack_dir043.sql"
+  ],
+
+  "next_actions_required": {
+    "p0_critical": [
+      "Install outcome_settlement_daemon as continuous Windows service (NSSM or Task Scheduler)",
+      "Restart lvi_calculator in continuous mode with proper scheduling",
+      "Verify hourly heartbeats within 5min"
+    ],
+    "p1_indicators": [
+      "Install and start decision_pack_generator as continuous service",
+      "Restart Brier scoring pipeline once decision packs are being terminalized"
+    ],
+    "p2_forecast_alpha": [
+      "Investigate mechanism_alpha_trigger DEGRADED status",
+      "Install alpha_graph_sync as continuous service"
+    ],
+    "monitoring": [
+      "Configure hourly snapshot writer job",
+      "Implement fail-closed escalation to system_event_log"
+    ]
+  },
+
+  "evidence_hash": "sha256:" + "PLACEHOLDER_FOR_HASH"
+}

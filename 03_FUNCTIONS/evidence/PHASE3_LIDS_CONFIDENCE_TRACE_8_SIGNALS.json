@@ -1,0 +1,130 @@
+{
+  "evidence_id": "PHASE3_LIDS_CONFIDENCE_TRACE_8_SIGNALS",
+  "evidence_type": "LIDS_GATE_FORENSICS",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "task": "3.2",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T02:45:00Z",
+
+  "executive_summary": {
+    "headline": "LIDS confidence=0.00 caused by field name mismatch between SELECT query and LIDS check",
+    "root_cause": "CODE_BUG_FIELD_MISMATCH",
+    "signals_blocked": 8,
+    "all_signals_had_valid_confidence": true,
+    "confidence_available_in_table": "sitc_confidence_level='HIGH' (maps to 0.85)",
+    "fix_complexity": "TRIVIAL - single line change"
+  },
+
+  "trace_methodology": {
+    "step_1": "Examined daemon log showing all 8 signals blocked with confidence=0.00",
+    "step_2": "Located LIDS check at signal_executor_daemon.py line 1698",
+    "step_3": "Traced needle dict population to get_executable_needles() lines 1423-1450",
+    "step_4": "Compared SELECT columns to LIDS check field names",
+    "step_5": "Queried golden_needles table schema for available confidence fields",
+    "step_6": "Verified all 8 signals have valid sitc_confidence_level='HIGH'"
+  },
+
+  "code_trace": {
+    "select_query_location": "signal_executor_daemon.py:1423-1441",
+    "select_query_columns_fetched": [
+      "needle_id",
+      "hypothesis_title",
+      "hypothesis_category",
+      "eqs_score",
+      "confluence_factor_count",
+      "sitc_confidence_level",
+      "price_witness_symbol",
+      "regime_technical",
+      "expected_timeframe_days",
+      "created_at"
+    ],
+
+    "lids_check_location": "signal_executor_daemon.py:1698",
+    "lids_check_code": "lids_confidence = needle.get('confidence', needle.get('belief_confidence', 0.0))",
+    "lids_check_field_lookups": ["confidence", "belief_confidence"],
+    "lids_check_default": 0.0,
+
+    "field_mismatch_analysis": {
+      "code_looks_for": ["confidence", "belief_confidence"],
+      "select_provides": ["sitc_confidence_level"],
+      "result": "Neither 'confidence' nor 'belief_confidence' in SELECT, defaults to 0.0"
+    }
+  },
+
+  "table_schema_evidence": {
+    "table": "fhq_canonical.golden_needles",
+    "confidence_related_columns": [
+      {"column": "sitc_confidence_level", "type": "text", "example_value": "HIGH"},
+      {"column": "regime_confidence", "type": "numeric", "example_value": 0.2322}
+    ],
+    "columns_not_in_table": ["confidence", "belief_confidence"],
+    "verification_query": "SELECT column_name FROM information_schema.columns WHERE table_name='golden_needles' AND column_name IN ('confidence','belief_confidence','sitc_confidence_level','regime_confidence')"
+  },
+
+  "signal_data_evidence": {
+    "query": "SELECT needle_id, target_asset, eqs_score, regime_confidence, sitc_confidence_level FROM fhq_canonical.golden_needles WHERE is_current = TRUE ORDER BY created_at DESC LIMIT 8",
+    "signals": [
+      {"needle_id": "ef2b8a45-c56d-473b-b20c-1105c4f6e47a", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.2322, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "86f80e9c-4af8-4b0c-a593-4dbb2ff3c143", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.2322, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "9af40a26-a023-457a-8e59-99b3d609e0f2", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.2322, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "65d65616-2b0a-468c-a08e-18b480e40378", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.2322, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "fc02df8d-1005-4e8a-b53c-93a257b899df", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.0008, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "1d0c845e-d804-4df0-9024-27977b745aae", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.0008, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "2a858109-60ce-49fa-9392-bb0e8c03c164", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.0008, "sitc_confidence_level": "HIGH"},
+      {"needle_id": "541339b5-5e29-45b3-947f-761eaa5f868d", "target_asset": "BTC-USD", "eqs_score": 0.97, "regime_confidence": 0.0008, "sitc_confidence_level": "HIGH"}
+    ],
+    "observation": "All 8 signals have sitc_confidence_level='HIGH' which should map to 0.85"
+  },
+
+  "string_to_numeric_mapping": {
+    "location": "signal_executor_daemon.py:1699-1700",
+    "code": "if isinstance(lids_confidence, str): lids_confidence = {'HIGH': 0.85, 'MEDIUM': 0.70, 'LOW': 0.50}.get(lids_confidence.upper(), 0.5)",
+    "mapping": {
+      "HIGH": 0.85,
+      "MEDIUM": 0.70,
+      "LOW": 0.50
+    },
+    "issue": "This mapping code EXISTS but is NEVER REACHED because the field lookup fails first and returns numeric 0.0"
+  },
+
+  "root_cause_identification": {
+    "category": "FIELD_NAME_MISMATCH",
+    "severity": "HIGH",
+    "impact": "100% of valid signals blocked",
+    "description": "The code at line 1698 looks for 'confidence' or 'belief_confidence' in the needle dict. However, the SELECT query at lines 1423-1441 only fetches 'sitc_confidence_level'. Since neither 'confidence' nor 'belief_confidence' exist in the dict, the code defaults to 0.0, which is below the 0.70 threshold.",
+    "irony": "The code at lines 1699-1700 has correct string-to-numeric mapping for 'HIGH'->0.85, but this code is never reached because the initial field lookup already returned 0.0 (numeric, not string)"
+  },
+
+  "fix_options": {
+    "option_1": {
+      "description": "Modify LIDS check to look for sitc_confidence_level first",
+      "location": "signal_executor_daemon.py:1698",
+      "current": "lids_confidence = needle.get('confidence', needle.get('belief_confidence', 0.0))",
+      "proposed": "lids_confidence = needle.get('sitc_confidence_level', needle.get('confidence', needle.get('belief_confidence', 0.0)))",
+      "impact": "Minimal change, uses existing string-to-numeric mapping"
+    },
+    "option_2": {
+      "description": "Add regime_confidence to SELECT and use it",
+      "location": "signal_executor_daemon.py:1430",
+      "change": "Add 'regime_confidence' to SELECT columns",
+      "lids_check_change": "Use needle.get('regime_confidence', 0.0)",
+      "impact": "Uses numeric confidence directly (0.2322 or 0.0008)",
+      "warning": "regime_confidence values (0.2322, 0.0008) are BELOW 0.70 threshold"
+    }
+  },
+
+  "recommendation": {
+    "preferred_fix": "option_1",
+    "rationale": "sitc_confidence_level='HIGH' maps to 0.85 which exceeds the 0.70 threshold, allowing valid signals to proceed. regime_confidence values (0.0008-0.2322) are all below threshold.",
+    "requires_ceo_approval": true,
+    "requires_testing": true
+  },
+
+  "task_3_2_acceptance": {
+    "lids_trace_complete": true,
+    "root_cause_identified": true,
+    "field_mismatch_documented": true,
+    "fix_options_documented": true,
+    "status": "COMPLETE"
+  }
+}

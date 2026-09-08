@@ -1,0 +1,236 @@
+{
+  "evidence_id": "UMA_SYNTH_002_CRYPTO_BULL_DISCOUNT_20260117",
+  "title": "UMA-SYNTH-002: Crypto BULL Conditional Discount Signal (Shadow)",
+  "synthesis_status": "COMPLETE",
+  "attested_by": "STIG",
+  "attestation_timestamp": "2026-01-17T23:45:00+01:00",
+
+  "directive_compliance": {
+    "directive": "CEO-DIR-2026-074",
+    "mode": "SIGNAL_SYNTHESIS_SHADOW",
+    "purpose": "Determine whether crypto vulnerability can be isolated into a bounded, non-contaminating rule",
+    "framing": "CONDITIONAL",
+    "execution_language": "AVOIDED"
+  },
+
+  "synthesis_summary": {
+    "signal_code": "UMA-SYNTH-002",
+    "signal_id": "b8c9d0e1-f2a3-4567-8901-bcdef2345678",
+    "signal_name": "CRYPTO_BULL_CONDITIONAL_DISCOUNT",
+    "signal_type": "CONDITIONAL_CONFIDENCE_DISCOUNT",
+    "status": "PROPOSED_SHADOW_SYNTHESIS"
+  },
+
+  "canonical_dimensions_used": {
+    "count": 2,
+    "dimensions": [
+      {
+        "dimension": "REGIME",
+        "source": "UMA-SHADOW-001/002",
+        "aspect": "BULL regime predictions",
+        "contribution": "BULL forecasts at high confidence have variable reliability"
+      },
+      {
+        "dimension": "ASSET_CLASS",
+        "source": "UMA-SHADOW-002",
+        "aspect": "Crypto-specific vulnerability",
+        "contribution": "Crypto assets show elevated directional reversal risk"
+      }
+    ],
+    "dimension_excluded": {
+      "dimension": "TEMPORAL",
+      "source": "UMA-SHADOW-004",
+      "reason": "Per CEO-DIR-2026-074 - explicitly excluded from this synthesis"
+    }
+  },
+
+  "synthesized_signal_definition": {
+    "signal_question": "Can FjordHQ localize crypto vulnerability without global suppression?",
+
+    "conditional_trigger": {
+      "condition_1": {
+        "parameter": "predicted_regime",
+        "operator": "EQUALS",
+        "value": "BULL"
+      },
+      "condition_2": {
+        "parameter": "forecast_confidence",
+        "operator": "GREATER_THAN_OR_EQUAL",
+        "value": 0.95
+      },
+      "condition_3": {
+        "parameter": "asset_class",
+        "operator": "EQUALS",
+        "value": "CRYPTO"
+      },
+      "logic": "ALL_CONDITIONS_MUST_BE_TRUE"
+    },
+
+    "conditional_action": {
+      "type": "ELEVATED_CONFIDENCE_DISCOUNT",
+      "rationale": "BULL@95%+ on CRYPTO has 37.50% directional reversal to BEAR (vs 3.29% for equity)",
+      "reversal_ratio": "11.4x higher BEAR reversal risk than equity",
+      "recommendation": "Apply conditional discount - crypto BULL confidence is structurally overstated"
+    },
+
+    "non_applicability_conditions": [
+      "Predicted regime is not BULL",
+      "Confidence below 95%",
+      "Asset class is EQUITY (not CRYPTO)",
+      "If future data shows BEAR reversal rate below 10%"
+    ]
+  },
+
+  "empirical_evidence": {
+    "evidence_source": "fhq_research.forecast_ledger + forecast_outcome_pairs + outcome_ledger",
+    "model_scope": "FINN v4.0.0 (2026.PROD.4)",
+
+    "bull_95plus_crypto": {
+      "total_forecasts": 40,
+      "correct_forecasts": 8,
+      "hit_rate_pct": 20.00,
+      "wrong_rate_pct": 80.00,
+      "avg_confidence": 0.9872,
+      "avg_brier": 0.7793,
+      "outcome_distribution": {
+        "BULL_correct": {"count": 8, "pct": 20.00},
+        "NEUTRAL_misclass": {"count": 17, "pct": 42.50},
+        "BEAR_reversal": {"count": 15, "pct": 37.50, "severity": "DIRECTIONAL_REVERSAL"}
+      }
+    },
+
+    "bull_95plus_equity": {
+      "total_forecasts": 152,
+      "correct_forecasts": 52,
+      "hit_rate_pct": 34.21,
+      "wrong_rate_pct": 65.79,
+      "avg_confidence": 0.9917,
+      "avg_brier": 0.6452,
+      "outcome_distribution": {
+        "BULL_correct": {"count": 52, "pct": 34.21},
+        "NEUTRAL_misclass": {"count": 95, "pct": 62.50},
+        "BEAR_reversal": {"count": 5, "pct": 3.29, "severity": "MANAGEABLE"}
+      }
+    },
+
+    "comparative_analysis": {
+      "hit_rate_differential": {
+        "crypto": 20.00,
+        "equity": 34.21,
+        "ratio": "Equity 1.7x better"
+      },
+      "brier_differential": {
+        "crypto": 0.7793,
+        "equity": 0.6452,
+        "delta": 0.1341,
+        "interpretation": "Crypto significantly worse"
+      },
+      "bear_reversal_differential": {
+        "crypto": 37.50,
+        "equity": 3.29,
+        "ratio": "Crypto 11.4x higher BEAR reversal risk",
+        "interpretation": "STRUCTURAL_VULNERABILITY"
+      }
+    }
+  },
+
+  "logical_validity": {
+    "combination_rationale": [
+      "UMA-SHADOW-002 identified BULL-on-crypto as context-dependent vulnerability",
+      "BULL@95%+ on crypto has 37.50% directional reversal to BEAR - structurally dangerous",
+      "Same BULL@95%+ on equity has only 3.29% BEAR reversal - manageable",
+      "The crypto vulnerability is isolated and bounded - does not contaminate equity predictions"
+    ],
+    "why_combination_valid": "Asset class modulates the risk profile of BULL predictions in a non-transferable way",
+    "why_conditional_framing": "Signal applies selectively based on asset class - localizes risk without global suppression",
+    "bounded_scope": "Rule applies only to CRYPTO assets with BULL@95%+ - equity unaffected"
+  },
+
+  "sitc_reasoning_chain": {
+    "interaction_id": "c9d0e1f2-a3b4-5678-9012-cdef34567890",
+    "total_nodes": 7,
+    "nodes": [
+      {"index": 1, "type": "PLAN_INIT", "node_content": "Signal synthesis per CEO-DIR-2026-074: REGIME + ASSET_CLASS (exclude TEMPORAL)"},
+      {"index": 2, "type": "SEARCH", "node_content": "Query BULL + CRYPTO vs BULL + EQUITY comparative statistics"},
+      {"index": 3, "type": "VERIFICATION", "node_content": "Verify BULL@95%+ CRYPTO: 40 forecasts, 20% hit rate, 0.7793 Brier"},
+      {"index": 4, "type": "VERIFICATION", "node_content": "Verify outcome distribution: 37.50% BEAR reversal (vs 3.29% for equity)"},
+      {"index": 5, "type": "REASONING", "node_content": "Crypto BULL has 11.4x higher BEAR reversal risk - structurally different"},
+      {"index": 6, "type": "SYNTHESIS", "node_content": "Frame as conditional discount - applies only to CRYPTO, equity unaffected"},
+      {"index": 7, "type": "VERIFICATION", "node_content": "Validate bounded scope - rule is non-contaminating"}
+    ],
+    "all_verified": true
+  },
+
+  "ikea_validation": {
+    "validation_id": "d0e1f2a3-b4c5-6789-0123-def456789abc",
+    "classification": "PARAMETRIC",
+    "claims_analyzed": [
+      {"claim": "40 BULL@95%+ CRYPTO forecasts", "source": "DATABASE", "verified": true},
+      {"claim": "20% hit rate for CRYPTO", "source": "DATABASE", "verified": true},
+      {"claim": "37.50% BEAR reversal for CRYPTO", "source": "DATABASE", "verified": true},
+      {"claim": "152 BULL@95%+ EQUITY forecasts", "source": "DATABASE", "verified": true},
+      {"claim": "34.21% hit rate for EQUITY", "source": "DATABASE", "verified": true},
+      {"claim": "3.29% BEAR reversal for EQUITY", "source": "DATABASE", "verified": true},
+      {"claim": "11.4x higher reversal ratio", "source": "CALCULATED", "verified": true}
+    ],
+    "parametric_claims": 7,
+    "external_claims": 0,
+    "unverified_claims": 0,
+    "verdict": "APPROVED",
+    "hallucination_risk": "ZERO"
+  },
+
+  "q2_q5_traceability": {
+    "q2_forecast": "40 BULL@95%+ forecasts on CRYPTO assets from FINN v4.0.0",
+    "q3_outcome": "8 correct, 17 NEUTRAL, 15 BEAR (37.50% directional reversal)",
+    "q4_error": "Brier 0.7793 with 11.4x elevated BEAR reversal vs equity",
+    "q5_hindsight": "CRYPTO_BULL_CONDITIONAL_DISCOUNT - localized risk rule"
+  },
+
+  "governance_compliance": {
+    "directive_ref": "CEO-DIR-2026-074",
+    "mode": "SIGNAL_SYNTHESIS_SHADOW",
+    "dimensions_used": 2,
+    "dimensions_required": ["REGIME", "ASSET_CLASS"],
+    "dimension_excluded": "TEMPORAL",
+    "framing": "CONDITIONAL",
+    "framing_allowed": ["DEFENSIVE", "CONDITIONAL"],
+    "framing_prohibited": "DIRECTIONAL",
+    "rate_limit_check": "2 of 2 per week",
+    "prohibitions_respected": {
+      "new_error_discovery": "NOT_VIOLATED",
+      "statistical_fishing": "NOT_VIOLATED",
+      "optimization": "NOT_VIOLATED",
+      "ranking_scoring": "NOT_VIOLATED",
+      "capital_framing": "NOT_VIOLATED",
+      "execution_logic": "NOT_VIOLATED",
+      "automation": "NOT_VIOLATED",
+      "learning_feedback": "NOT_VIOLATED"
+    }
+  },
+
+  "success_criteria_assessment": {
+    "internally_coherent": true,
+    "grounded_in_known_failure_structure": true,
+    "bounded_scope": true,
+    "non_contaminating": true,
+    "unjustified_confidence": "NOT_PRESENT",
+    "conditional_framing": "CONFIRMED"
+  },
+
+  "strategic_significance": {
+    "purpose": "Prove FjordHQ can localize risk without global suppression",
+    "test_objective": "Can synthesize selective trust based on asset class",
+    "principle": "Crypto vulnerability isolated - equity predictions unaffected"
+  },
+
+  "ceo_approval": {
+    "status": "APPROVED_SHADOW",
+    "action_id": "dc5c2a9c-a21d-4b44-9360-22c5962c36a1",
+    "approval_id": "c9e4b5b6-5abb-452a-a3b1-c3a24d58976a",
+    "approved_at": "2026-01-17T23:27:16.987Z",
+    "approved_by": "CEO",
+    "rationale": "Signal correctly combines REGIME + ASSET_CLASS, is bounded to CRYPTO only, and non-contaminating",
+    "database_verified": true
+  }
+}

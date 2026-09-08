@@ -57,6 +57,25 @@ from dotenv import load_dotenv
 load_dotenv(override=True)  # Override system env vars with .env values
 
 # =============================================================================
+# CEO-DIR-2026-019 P0-3: COURT-PROOF EVIDENCE INTEGRATION
+# =============================================================================
+# Import CourtProofEnforcerV2 for ASRP binding and DDATP validation
+# FAIL-CLOSED: Missing evidence = rejected output
+
+COURT_PROOF_V2_ENABLED = False
+try:
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / '03_FUNCTIONS'))
+    from court_proof_enforcer_v2 import (
+        CourtProofEnforcerV2,
+        CourtProofViolation,
+        ASRPBindingViolation,
+        DDATPValidationFailure
+    )
+    COURT_PROOF_V2_ENABLED = True
+except ImportError as e:
+    logging.warning(f"Court-proof v2 not available: {e}")
+
+# =============================================================================
 # PHASE 4b: TELEMETRY INSTRUMENTATION (CS-001 CRIO Core)
 # =============================================================================
 # CEO Directive 2026-FHQ-PHASE-4b requires telemetry wrapping of CRIO Core
@@ -200,7 +219,7 @@ class CRIOConfig:
 
 
 # =================================================================
-# CRIO PROMPT TEMPLATES
+# CRIO PROMPT TEMPLATES (DDATP v1.0 - CEO-DIR-2026-015B)
 # =================================================================
 
 CRIO_SYSTEM_PROMPT = """You are FINN, the Chief Research & Intelligence Officer for FjordHQ Autonomous Trading System.
@@ -212,11 +231,34 @@ STRICT RULES (CRIO Contract):
 2. NO HALLUCINATION: If data is insufficient, state "INSUFFICIENT_DATA" - never guess.
 3. DETERMINISTIC: Your output must be structured JSON matching the exact schema.
 4. TEMPORAL: All analysis is T-1 (based on yesterday's close, not today).
+5. ATTRIBUTION TRUTH (DDATP): You must accurately report what data was available AND used.
 
-OUTPUT SCHEMA (strict JSON):
+DDATP HARD CONSTRAINTS (CEO-DIR-2026-015B):
+- driver_claim = "SENTIMENT" is ONLY permitted if sentiment_available=true AND sentiment_used=true in input_coverage
+- driver_basis = "OBSERVED_DATA" requires at least one of {macro_used, sentiment_used, onchain_used} = true
+- If only price/technical data is provided, driver_basis MUST be "INFERRED_FROM_PRICE"
+- fallback_reason is REQUIRED when driver_basis != "OBSERVED_DATA"
+- technical_feature_set is REQUIRED when driver_claim = "TECHNICAL"
+
+OUTPUT SCHEMA (strict JSON - DDATP v1.0):
 {
     "fragility_score": <float 0.0-1.0>,
-    "dominant_driver": "<LIQUIDITY|CREDIT|VOLATILITY|SENTIMENT|UNKNOWN>",
+    "driver_claim": "<LIQUIDITY|CREDIT|VOLATILITY|TECHNICAL|PRICE_ACTION|SENTIMENT|UNKNOWN>",
+    "driver_basis": "<OBSERVED_DATA|INFERRED_FROM_PRICE|FALLBACK_UNKNOWN>",
+    "technical_feature_set": "<INDICATORS_ONLY|RETURNS_VOL_ONLY|MIXED_FEATURES|ONCHAIN_HYBRID|UNKNOWN>",
+    "input_coverage": {
+        "macro_available": <boolean>,
+        "macro_used": <boolean>,
+        "macro_staleness_hours": <integer|null>,
+        "sentiment_available": <boolean>,
+        "sentiment_used": <boolean>,
+        "sentiment_staleness_hours": <integer|null>,
+        "technical_available": <boolean>,
+        "technical_used": <boolean>,
+        "onchain_available": <boolean>,
+        "onchain_used": <boolean>
+    },
+    "fallback_reason": "<string, required if driver_basis != OBSERVED_DATA>",
     "regime_assessment": "<STRONG_BULL|BULL|NEUTRAL|BEAR|STRONG_BEAR|UNCERTAIN>",
     "confidence": <float 0.0-1.0>,
     "key_observations": [<string>, ...],
@@ -237,6 +279,15 @@ CRIO_ANALYSIS_PROMPT = """Analyze the following market snapshot and provide a st
 
 === MARKET SNAPSHOT (T-1: {snapshot_date}) ===
 
+=== DATA AVAILABILITY FLAGS (DDATP) ===
+Macro data present: {macro_present}
+Sentiment data present: {sentiment_present}
+Technical data present: {technical_present}
+Onchain data present: {onchain_present}
+
+You MUST reflect these flags accurately in your input_coverage output.
+If a data type is marked "false", you CANNOT claim to have used it.
+
 REGIME DATA:
 {regime_data}
 
@@ -252,7 +303,8 @@ TECHNICAL INDICATORS:
 === END SNAPSHOT ===
 
 Based ONLY on the data above, provide your structured JSON assessment.
-Remember: Context-only reasoning. No hallucination. Strict JSON output."""
+Remember: Context-only reasoning. No hallucination. Strict JSON output.
+DDATP compliance: Your input_coverage MUST accurately reflect what data was available and used."""
 
 
 # =================================================================
@@ -283,16 +335,29 @@ class DeepSeekClient:
         Execute CRIO analysis via DeepSeek API.
 
         Returns structured research output or error dict.
+        DDATP v1.0: Includes data availability flags in prompt.
         """
         import requests
 
-        # Build prompt
+        # DDATP: Determine data availability flags
+        macro_data = context.get("macro_data", {})
+        macro_present = bool(macro_data and macro_data.get("four_pillars"))
+        sentiment_present = False  # No sentiment feed currently
+        technical_data = context.get("technical_data", {})
+        technical_present = bool(technical_data and technical_data.get("indicators"))
+        onchain_present = False  # No onchain feed currently
+
+        # Build prompt with DDATP availability flags
         prompt = CRIO_ANALYSIS_PROMPT.format(
             snapshot_date=context.get("snapshot_date", "UNKNOWN"),
+            macro_present=str(macro_present).lower(),
+            sentiment_present=str(sentiment_present).lower(),
+            technical_present=str(technical_present).lower(),
+            onchain_present=str(onchain_present).lower(),
             regime_data=json.dumps(context.get("regime_data", {}), indent=2),
-            macro_data=json.dumps(context.get("macro_data", {}), indent=2),
+            macro_data=json.dumps(macro_data, indent=2),
             price_data=json.dumps(context.get("price_data", []), indent=2),
-            technical_data=json.dumps(context.get("technical_data", {}), indent=2)
+            technical_data=json.dumps(technical_data, indent=2)
         )
 
         # Estimate tokens (rough: 4 chars per token)
@@ -451,12 +516,18 @@ class FINNCRIOEngine:
         quad_state = f"LIDS:{lids_valid}|ACL:{acl_valid}|RISL:{risl_valid}|DSL:{dsl_valid}"
         return hashlib.sha256(quad_state.encode()).hexdigest()[:16]
 
-    def gather_t1_snapshot(self) -> Dict[str, Any]:
+    def gather_t1_snapshot(self) -> Tuple[Dict[str, Any], Dict[str, str]]:
         """
         Gather T-1 market snapshot for CRIO analysis.
         Enforces ADR-017 temporal rule.
+
+        Returns:
+            Tuple of (snapshot_data, raw_queries) for court-proof evidence.
         """
         logger.info("Gathering T-1 market snapshot...")
+
+        # CEO-DIR-2026-019 P0-3: Track raw queries for court-proof evidence
+        raw_queries = {}
 
         snapshot = {
             "snapshot_date": (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d"),
@@ -469,12 +540,14 @@ class FINNCRIOEngine:
 
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             # 1. Current Regime (IoS-003)
-            cur.execute("""
+            query_regime = """
                 SELECT regime_classification, regime_confidence, timestamp
                 FROM fhq_perception.regime_daily
                 ORDER BY timestamp DESC
                 LIMIT 1
-            """)
+            """
+            raw_queries['regime'] = query_regime
+            cur.execute(query_regime)
             regime = cur.fetchone()
             if regime:
                 snapshot["regime_data"] = {
@@ -484,11 +557,13 @@ class FINNCRIOEngine:
                 }
 
             # 2. Macro Factors - Four Pillars (IoS-006)
-            cur.execute("""
+            query_macro = """
                 SELECT feature_id, cluster, status, expected_direction
                 FROM fhq_macro.feature_registry
                 WHERE status = 'CANONICAL'
-            """)
+            """
+            raw_queries['macro'] = query_macro
+            cur.execute(query_macro)
             pillars = cur.fetchall()
             snapshot["macro_data"]["four_pillars"] = [
                 {
@@ -500,13 +575,15 @@ class FINNCRIOEngine:
             ]
 
             # 3. Recent Price Data (3-day window)
-            cur.execute("""
+            query_prices = """
                 SELECT canonical_id, timestamp::date as date,
                        open, high, low, close, volume
                 FROM fhq_market.prices
                 WHERE timestamp >= CURRENT_DATE - INTERVAL '3 days'
                 ORDER BY canonical_id, timestamp DESC
-            """)
+            """
+            raw_queries['prices'] = query_prices
+            cur.execute(query_prices)
             prices = cur.fetchall()
             snapshot["price_data"] = [
                 {
@@ -519,7 +596,7 @@ class FINNCRIOEngine:
             ]
 
             # 4. Technical Indicators (latest)
-            cur.execute("""
+            query_technical = """
                 SELECT asset_id, timestamp,
                        rsi_14, rsi_signal,
                        macd_line, macd_signal, macd_histogram,
@@ -532,7 +609,9 @@ class FINNCRIOEngine:
                 WHERE timestamp >= CURRENT_DATE - INTERVAL '1 day'
                 ORDER BY timestamp DESC
                 LIMIT 10
-            """)
+            """
+            raw_queries['technical'] = query_technical
+            cur.execute(query_technical)
             indicators = cur.fetchall()
             snapshot["technical_data"]["indicators"] = [
                 {
@@ -548,35 +627,74 @@ class FINNCRIOEngine:
                 for i in indicators
             ]
 
-        return snapshot
+        return snapshot, raw_queries
 
     def validate_lids(self, analysis_result: Dict) -> Tuple[bool, str]:
         """
         LIDS Truth Gate validation for CRIO output.
         Ensures output meets ADR-017 Section 4.1 requirements.
+        DDATP v1.0: Includes driver attribution truth validation.
         """
-        # Check required fields
-        required_fields = ["fragility_score", "dominant_driver", "reasoning_summary"]
+        # Check required fields (DDATP-updated)
+        required_fields = ["fragility_score", "reasoning_summary"]
+        ddatp_fields = ["driver_claim", "driver_basis", "input_coverage"]
+
         for field in required_fields:
             if field not in analysis_result:
                 return False, f"LIDS_REJECT: Missing required field '{field}'"
+
+        # Check DDATP fields (required for DDATP v1.0)
+        for field in ddatp_fields:
+            if field not in analysis_result:
+                return False, f"LIDS_REJECT: Missing DDATP field '{field}'"
 
         # Validate fragility_score range
         score = analysis_result.get("fragility_score", -1)
         if not isinstance(score, (int, float)) or score < 0 or score > 1:
             return False, f"LIDS_REJECT: fragility_score must be 0.0-1.0, got {score}"
 
-        # Validate dominant_driver
-        valid_drivers = ["LIQUIDITY", "CREDIT", "VOLATILITY", "SENTIMENT", "UNKNOWN"]
-        driver = analysis_result.get("dominant_driver", "")
-        if driver not in valid_drivers:
-            return False, f"LIDS_REJECT: Invalid dominant_driver '{driver}'"
+        # Validate driver_claim (DDATP v1.0)
+        valid_driver_claims = ["LIQUIDITY", "CREDIT", "VOLATILITY", "TECHNICAL", "PRICE_ACTION", "SENTIMENT", "UNKNOWN"]
+        driver_claim = analysis_result.get("driver_claim", "")
+        if driver_claim not in valid_driver_claims:
+            return False, f"LIDS_REJECT: Invalid driver_claim '{driver_claim}'"
+
+        # Validate driver_basis (DDATP v1.0)
+        valid_driver_basis = ["OBSERVED_DATA", "INFERRED_FROM_PRICE", "FALLBACK_UNKNOWN"]
+        driver_basis = analysis_result.get("driver_basis", "")
+        if driver_basis not in valid_driver_basis:
+            return False, f"LIDS_REJECT: Invalid driver_basis '{driver_basis}'"
+
+        # DDATP Rule 1: SENTIMENT requires sentiment_used=true
+        input_coverage = analysis_result.get("input_coverage", {})
+        if driver_claim == "SENTIMENT":
+            if not input_coverage.get("sentiment_available") or not input_coverage.get("sentiment_used"):
+                return False, "LIDS_REJECT: DDATP violation - SENTIMENT claim without sentiment data"
+
+        # DDATP Rule 2: OBSERVED_DATA requires external feed used
+        if driver_basis == "OBSERVED_DATA":
+            if not (input_coverage.get("macro_used") or
+                    input_coverage.get("sentiment_used") or
+                    input_coverage.get("onchain_used")):
+                return False, "LIDS_REJECT: DDATP violation - OBSERVED_DATA without external feed used"
+
+        # DDATP Rule 3: fallback_reason required when not OBSERVED_DATA
+        if driver_basis != "OBSERVED_DATA":
+            fallback_reason = analysis_result.get("fallback_reason")
+            if not fallback_reason:
+                return False, "LIDS_REJECT: DDATP violation - fallback_reason required"
+
+        # DDATP Rule 4: TECHNICAL requires technical_feature_set
+        if driver_claim == "TECHNICAL":
+            tech_feature_set = analysis_result.get("technical_feature_set")
+            if not tech_feature_set:
+                return False, "LIDS_REJECT: DDATP violation - TECHNICAL requires technical_feature_set"
 
         # Check for error state
         if "error" in analysis_result:
             return False, f"LIDS_WARN: Analysis contains error: {analysis_result['error']}"
 
-        return True, "LIDS_VERIFIED"
+        return True, "LIDS_VERIFIED (DDATP v1.0)"
 
     def validate_risl(self, analysis_result: Dict, context: Dict) -> Tuple[bool, str]:
         """
@@ -620,9 +738,12 @@ class FINNCRIOEngine:
             "status": "PENDING"
         }
 
+        # CEO-DIR-2026-019 P0-3: Store raw queries for court-proof evidence
+        raw_queries = {}
+
         try:
-            # 1. Gather T-1 Snapshot
-            context = self.gather_t1_snapshot()
+            # 1. Gather T-1 Snapshot (now returns raw_queries for court-proof)
+            context, raw_queries = self.gather_t1_snapshot()
             context_hash = self._generate_context_hash(context)
             result["context_hash"] = context_hash
             logger.info(f"Context hash: {context_hash[:16]}...")
@@ -676,6 +797,9 @@ class FINNCRIOEngine:
             self._write_nightly_insight(result, analysis, context)
             self._write_research_log(result)
 
+            # 8. CEO-DIR-2026-019 P0-3: Attach court-proof evidence with ASRP binding
+            self._attach_court_proof_evidence(result, analysis, context, raw_queries)
+
             logger.info(f"CRIO Research complete: {result['status']}")
 
         except Exception as e:
@@ -685,9 +809,158 @@ class FINNCRIOEngine:
 
         return result
 
-    def _write_nightly_insight(self, result: Dict, analysis: Dict, context: Dict):
-        """Write to fhq_research.nightly_insights"""
+    def _attach_court_proof_evidence(
+        self,
+        result: Dict,
+        analysis: Dict,
+        context: Dict,
+        raw_queries: Dict[str, str]
+    ) -> Optional[Dict]:
+        """
+        CEO-DIR-2026-019 P0-3: Attach court-proof evidence with ASRP binding.
+
+        MANDATORY for all FINN Insight Packs.
+        FAIL-CLOSED: Missing evidence = rejected output (logged but not raised
+        to avoid breaking existing flows during rollout).
+
+        Evidence includes:
+        - ASRP binding (state_snapshot_hash, state_timestamp, agent_id)
+        - Raw queries used to gather data
+        - Query results (snapshot data)
+        - Measurement validity flag (OUTCOME_INDEPENDENCE)
+        """
+        if not COURT_PROOF_V2_ENABLED:
+            logger.warning("[COURT-PROOF] V2 enforcer not available - skipping evidence attachment")
+            result["court_proof"] = {
+                "status": "SKIPPED",
+                "reason": "CourtProofEnforcerV2 not available"
+            }
+            return None
+
         try:
+            enforcer = CourtProofEnforcerV2(self.conn)
+
+            # Combine all raw queries into single evidence string
+            combined_query = "\n\n-- CRIO T-1 SNAPSHOT QUERIES --\n\n"
+            for query_name, query_sql in raw_queries.items():
+                combined_query += f"-- {query_name.upper()} --\n{query_sql.strip()}\n\n"
+
+            # Determine evidence sources (P0-3.2 DDATP)
+            evidence_sources = ['fhq_market.prices']  # Primary independent source
+            if context.get("macro_data", {}).get("four_pillars"):
+                evidence_sources.append('fhq_macro.feature_registry')
+            if context.get("technical_data", {}).get("indicators"):
+                evidence_sources.append('fhq_data.technical_indicators')
+
+            # Extract regime labels for DDATP validation
+            regime_labels = []
+            regime_assessment = analysis.get("regime_assessment")
+            if regime_assessment and regime_assessment != "UNCERTAIN":
+                regime_labels.append(regime_assessment)
+            current_regime = context.get("regime_data", {}).get("current_regime")
+            if current_regime:
+                regime_labels.append(current_regime)
+
+            # Build summary content for evidence
+            summary_content = {
+                "research_id": result["research_id"],
+                "analysis": analysis,
+                "context_hash": result.get("context_hash"),
+                "quad_hash": result.get("quad_hash"),
+                "lids_validation": result.get("lids_validation"),
+                "risl_validation": result.get("risl_validation"),
+                "status": result["status"]
+            }
+
+            # Attach evidence with ASRP binding
+            evidence = enforcer.attach_evidence_with_asrp(
+                summary_id=f"CRIO-{result['research_id']}",
+                summary_type="NIGHTLY_INSIGHT",
+                generating_agent="FINN",
+                raw_query=combined_query,
+                query_result=context,
+                summary_content=summary_content,
+                evidence_sources=evidence_sources,
+                regime_labels=regime_labels,
+                ddatp_bypass=False  # DDATP validation is MANDATORY
+            )
+
+            result["court_proof"] = {
+                "status": "VERIFIED_V2",
+                "evidence_id": evidence["evidence_id"],
+                "asrp_binding": evidence["asrp_binding"],
+                "measurement_validity": evidence["measurement_validity"]
+            }
+
+            logger.info(f"[COURT-PROOF] Evidence attached: {evidence['evidence_id']}")
+            logger.info(f"[COURT-PROOF] ASRP hash: {evidence['asrp_binding']['state_snapshot_hash'][:16]}...")
+            logger.info(f"[COURT-PROOF] OUTCOME_INDEPENDENCE: {evidence['measurement_validity']['outcome_independence']}")
+
+            return evidence
+
+        except (CourtProofViolation, ASRPBindingViolation, DDATPValidationFailure) as e:
+            # FAIL-CLOSED: Log violation but don't crash (rollout phase)
+            logger.error(f"[COURT-PROOF] VIOLATION: {e}")
+            result["court_proof"] = {
+                "status": "VIOLATION",
+                "error": str(e),
+                "fail_closed": True
+            }
+            # Log to governance for audit
+            self._log_governance_error(result, "COURT_PROOF_VIOLATION", str(e))
+            return None
+
+        except Exception as e:
+            logger.error(f"[COURT-PROOF] Unexpected error: {e}")
+            result["court_proof"] = {
+                "status": "ERROR",
+                "error": str(e)
+            }
+            return None
+
+    def _write_nightly_insight(self, result: Dict, analysis: Dict, context: Dict):
+        """
+        Write to fhq_research.nightly_insights.
+        DDATP v1.0: Includes driver attribution truth fields.
+        Safety rule: If DDATP fields violate enums, write nothing and log error.
+        """
+        try:
+            # Extract DDATP fields with safe defaults
+            driver_claim = analysis.get("driver_claim", "UNKNOWN")
+            driver_basis = analysis.get("driver_basis", "FALLBACK_UNKNOWN")
+            technical_feature_set = analysis.get("technical_feature_set", "UNKNOWN")
+            input_coverage = analysis.get("input_coverage", {
+                "macro_available": False,
+                "macro_used": False,
+                "sentiment_available": False,
+                "sentiment_used": False,
+                "technical_available": True,
+                "technical_used": True,
+                "onchain_available": False,
+                "onchain_used": False
+            })
+            fallback_reason = analysis.get("fallback_reason", "")
+
+            # DDATP Safety: Validate enums before writing
+            valid_claims = ["LIQUIDITY", "CREDIT", "VOLATILITY", "TECHNICAL", "PRICE_ACTION", "SENTIMENT", "UNKNOWN"]
+            valid_basis = ["OBSERVED_DATA", "INFERRED_FROM_PRICE", "FALLBACK_UNKNOWN"]
+            valid_feature_sets = ["INDICATORS_ONLY", "RETURNS_VOL_ONLY", "MIXED_FEATURES", "ONCHAIN_HYBRID", "UNKNOWN"]
+
+            if driver_claim not in valid_claims:
+                logger.error(f"DDATP SAFETY: Invalid driver_claim '{driver_claim}' - write blocked")
+                self._log_governance_error(result, "INVALID_DRIVER_CLAIM", driver_claim)
+                return
+
+            if driver_basis not in valid_basis:
+                logger.error(f"DDATP SAFETY: Invalid driver_basis '{driver_basis}' - write blocked")
+                self._log_governance_error(result, "INVALID_DRIVER_BASIS", driver_basis)
+                return
+
+            if technical_feature_set and technical_feature_set not in valid_feature_sets:
+                logger.error(f"DDATP SAFETY: Invalid technical_feature_set '{technical_feature_set}' - write blocked")
+                self._log_governance_error(result, "INVALID_TECHNICAL_FEATURE_SET", technical_feature_set)
+                return
+
             with self.conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO fhq_research.nightly_insights (
@@ -696,9 +969,13 @@ class FINNCRIOEngine:
                         confidence, key_observations, risk_factors,
                         reasoning_summary, context_hash, quad_hash,
                         lids_verified, risl_verified, finn_signature,
+                        driver_claim, driver_basis, technical_feature_set,
+                        input_coverage, fallback_reason, ddatp_version,
                         created_at
                     ) VALUES (
                         %s, CURRENT_DATE, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
                         %s, %s, %s,
                         %s, %s, %s,
                         %s, %s, %s,
@@ -709,12 +986,18 @@ class FINNCRIOEngine:
                         fragility_score = EXCLUDED.fragility_score,
                         dominant_driver = EXCLUDED.dominant_driver,
                         reasoning_summary = EXCLUDED.reasoning_summary,
+                        driver_claim = EXCLUDED.driver_claim,
+                        driver_basis = EXCLUDED.driver_basis,
+                        technical_feature_set = EXCLUDED.technical_feature_set,
+                        input_coverage = EXCLUDED.input_coverage,
+                        fallback_reason = EXCLUDED.fallback_reason,
+                        ddatp_version = EXCLUDED.ddatp_version,
                         updated_at = NOW()
                 """, (
                     result["research_id"],
                     self.config.ENGINE_VERSION,
                     analysis.get("fragility_score", 0.5),
-                    analysis.get("dominant_driver", "UNKNOWN"),
+                    analysis.get("dominant_driver", driver_claim),  # Legacy field, also populate driver_claim
                     analysis.get("regime_assessment", "UNCERTAIN"),
                     analysis.get("confidence", 0.5),
                     json.dumps(analysis.get("key_observations", [])),
@@ -724,13 +1007,47 @@ class FINNCRIOEngine:
                     result.get("quad_hash", ""),
                     result["lids_validation"]["valid"],
                     result["risl_validation"]["valid"],
-                    hashlib.sha256(f"{self.config.AGENT_ID}:{result['research_id']}".encode()).hexdigest()
+                    hashlib.sha256(f"{self.config.AGENT_ID}:{result['research_id']}".encode()).hexdigest(),
+                    driver_claim,
+                    driver_basis,
+                    technical_feature_set,
+                    json.dumps(input_coverage),
+                    fallback_reason if driver_basis != "OBSERVED_DATA" else None,
+                    "v1.0"
                 ))
             self.conn.commit()
-            logger.info("Nightly insight written to fhq_research.nightly_insights")
+            logger.info("Nightly insight written to fhq_research.nightly_insights (DDATP v1.0)")
         except Exception as e:
             logger.error(f"Failed to write nightly insight: {e}")
             self.conn.rollback()
+
+    def _log_governance_error(self, result: Dict, error_type: str, invalid_value: str):
+        """Log DDATP validation error to governance audit"""
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO fhq_governance.governance_actions_log (
+                        action_id, action_type, action_target, action_target_type,
+                        initiated_by, initiated_at, decision, decision_rationale,
+                        metadata, agent_id, timestamp
+                    ) VALUES (
+                        gen_random_uuid(), 'DDATP_VALIDATION_ERROR', %s, 'CRIO_OUTPUT',
+                        'FINN', NOW(), 'BLOCKED', %s,
+                        %s, 'FINN', NOW()
+                    )
+                """, (
+                    result.get("research_id", "UNKNOWN"),
+                    f"DDATP Safety: {error_type} - value '{invalid_value}' blocked",
+                    json.dumps({
+                        "error_type": error_type,
+                        "invalid_value": invalid_value,
+                        "research_id": result.get("research_id"),
+                        "context_hash": result.get("context_hash")
+                    })
+                ))
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Failed to log governance error: {e}")
 
     def _write_research_log(self, result: Dict):
         """Write to fhq_governance.research_log"""

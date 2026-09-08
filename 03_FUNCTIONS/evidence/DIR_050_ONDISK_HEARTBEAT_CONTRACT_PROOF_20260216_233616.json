@@ -1,0 +1,167 @@
+{
+  "directive": "CEO-DIR-2026-RUNTIME-LIVENESS-AUDIT-AND-SETTLEMENT-SLA-050",
+  "deliverable": "A1_ONDISK_HEARTBEAT_CONTRACT_PROOF",
+  "executed_at": "2026-02-16T22:36:16.896100+00:00",
+  "executed_by": "STIG",
+  "ec_contract": "EC-003",
+  "timestamp": "20260216_233616",
+  "files": [
+    {
+      "path": "C:\fhq-market-system\u000bision-ios\u0003_FUNCTIONS\\decision_pack_generator.py",
+      "sha256": "61d11f41f881aceca583025da19326e492c6c1524da089b4269b02c52aef3826",
+      "entrypoint_present": true,
+      "entrypoint_line": 487,
+      "heartbeat_calls_present": true,
+      "write_critical_event_calls_present": true,
+      "call_sites": {
+        "heartbeat_function": {
+          "line": 104
+        },
+        "heartbeat_calls": [
+          {
+            "line": 409,
+            "status": "HEALTHY",
+            "context": "cycle_start"
+          },
+          {
+            "line": 418,
+            "status": "HEALTHY",
+            "context": "no_hypotheses"
+          },
+          {
+            "line": 459,
+            "status": "HEALTHY",
+            "context": "cycle_complete"
+          }
+        ],
+        "critical_event_function": {
+          "line": 122
+        },
+        "critical_event_calls": [
+          {
+            "line": 470,
+            "event_type": "PACK_GENERATOR_FAILURE",
+            "severity": "CRITICAL",
+            "context": "exception_handler"
+          }
+        ]
+      }
+    },
+    {
+      "path": "C:\fhq-market-system\u000bision-ios\u0003_FUNCTIONS\u0007lpha_graph_sync_scheduler.py",
+      "sha256": "4e79b83c2cd4fb32a2eb6ad4d3a4d568381bf965023f3bb60153b77ea2d635e5",
+      "entrypoint_present": true,
+      "entrypoint_line": 128,
+      "heartbeat_calls_present": true,
+      "write_critical_event_calls_present": true,
+      "call_sites": {
+        "heartbeat_function": {
+          "line": 56
+        },
+        "heartbeat_calls": [
+          {
+            "line": 60,
+            "status": "HEALTHY",
+            "context": "cycle_start"
+          },
+          {
+            "line": 97,
+            "status": "HEALTHY",
+            "context": "cycle_complete"
+          }
+        ],
+        "critical_event_function": {
+          "line": 70
+        },
+        "critical_event_calls": [
+          {
+            "line": 106,
+            "event_type": "ALPHA_GRAPH_SYNC_FAILURE",
+            "severity": "CRITICAL",
+            "context": "exception_handler"
+          }
+        ]
+      }
+    },
+    {
+      "path": "C:\fhq-market-system\u000bision-ios\u0003_FUNCTIONS\\lvi_calculator.py",
+      "sha256": "dc21d2267f60f30e30d2baf2cb25a796559ac5635052ee86169efffe8260b2c5",
+      "entrypoint_present": true,
+      "entrypoint_line": 345,
+      "heartbeat_calls_present": true,
+      "write_critical_event_calls_present": false,
+      "call_sites": {
+        "heartbeat_function": {
+          "line": 234
+        },
+        "heartbeat_calls": [
+          {
+            "line": 286,
+            "status": "HEALTHY",
+            "context": "cycle_complete"
+          },
+          {
+            "line": 302,
+            "status": "DEGRADED",
+            "context": "exception_handler"
+          }
+        ],
+        "critical_event_function": null,
+        "critical_event_calls": []
+      }
+    },
+    {
+      "path": "C:\fhq-market-system\u000bision-ios\u0003_FUNCTIONS\\outcome_settlement_daemon.py",
+      "sha256": "902ab4c5a3d81245811c0f50e54489521a55fd188ce2b6ac9c2202071e0f413a",
+      "entrypoint_present": true,
+      "entrypoint_line": 571,
+      "heartbeat_calls_present": true,
+      "write_critical_event_calls_present": false,
+      "call_sites": {
+        "heartbeat_function": {
+          "line": 388
+        },
+        "heartbeat_calls": [
+          {
+            "line": 492,
+            "status": "ACTIVE",
+            "context": "cycle_complete"
+          },
+          {
+            "line": 512,
+            "status": "DEGRADED",
+            "context": "exception_handler"
+          },
+          {
+            "line": 522,
+            "status": "STOPPED",
+            "context": "signal_handler"
+          },
+          {
+            "line": 563,
+            "status": "DEGRADED",
+            "context": "daemon_loop_exception"
+          },
+          {
+            "line": 569,
+            "status": "STOPPED",
+            "context": "shutdown"
+          }
+        ],
+        "critical_event_function": null,
+        "critical_event_calls": [],
+        "note": "Uses system_event_log_heartbeat() instead of write_critical_event()"
+      }
+    }
+  ],
+  "summary": {
+    "total_files": 4,
+    "heartbeat_compliant": 4,
+    "critical_event_compliant": 2,
+    "entrypoint_compliant": 4,
+    "gaps": [
+      "lvi_calculator.py: Missing write_critical_event() function",
+      "outcome_settlement_daemon.py: Missing write_critical_event() function (uses system_event_log_heartbeat)"
+    ]
+  }
+}

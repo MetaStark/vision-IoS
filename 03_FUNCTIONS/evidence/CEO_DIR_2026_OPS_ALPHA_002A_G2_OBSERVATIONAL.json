@@ -1,0 +1,152 @@
+{
+  "directive": "CEO-DIR-2026-OPS-ALPHA-002A",
+  "title": "Observational Activation of the Causal Volatility Engine (Shadow-Only)",
+  "gate": "G2",
+  "gate_name": "Observational Activation",
+  "author": "STIG (EC-003)",
+  "generated_at": "2026-02-01T17:35:06+01:00",
+  "database_clock": "2026-02-01T17:35:06 CET",
+  "classification": "GOVERNANCE-CRITICAL / OBSERVATIONAL",
+  "execution_authority": "NONE",
+  "capital_authority": "ZERO",
+
+  "deliverables": {
+    "A_volatility_observer": {
+      "file": "03_FUNCTIONS/volatility_observer.py",
+      "status": "DELIVERED",
+      "description": "IoS-009 Passive Mode — scans IV/RV divergences, logs OBSERVATION rows",
+      "features": [
+        "27-symbol universe scan (Level 3 options-approved)",
+        "20-day realized volatility calculation (close-to-close log returns)",
+        "IV proxy estimation with regime-based premium",
+        "IV Rank and IV Percentile calculation",
+        "IV/RV divergence detection (5% threshold)",
+        "IV Rank extreme detection (>80% or <20%)",
+        "Strategy suggestion engine (observational only, never executed)",
+        "Strategy eligibility envelope evaluation",
+        "Theoretical P&L evaluator (counterfactual)",
+        "Evidence bundle generator",
+        "Zero-leakage audit with court-proof logging",
+        "CLI interface (--scan, --evaluate, --evidence, --dry-run, --check)"
+      ],
+      "hard_constraints": [
+        "EXECUTION_AUTHORITY = NONE (assertion-enforced)",
+        "CAPITAL_AUTHORITY = ZERO (assertion-enforced)",
+        "options_shadow_adapter NEVER imported (assertion-enforced)",
+        "No Alpaca API order calls",
+        "No execution gateway calls"
+      ]
+    },
+    "B_architectural_correction": {
+      "status": "DELIVERED",
+      "description": "Smart Hypotheses, Dumb Adapter — MIT Quad compliant",
+      "correct_flow": "IoS-007 (Graph) -> options_hypothesis_canon (OBSERVATION)",
+      "forbidden_flow": "IoS-007 -> execution adapter",
+      "enforcement": [
+        "volatility_observer.py does NOT import options_shadow_adapter",
+        "sys.modules assertion verifies no adapter loaded",
+        "All rows written with status=OBSERVATION (not CANDIDATE)",
+        "source='IoS-009_OBSERVER' — traceable, not ACI_DIRECT"
+      ]
+    },
+    "C_strategy_eligibility_envelope": {
+      "status": "DELIVERED",
+      "description": "LINE role modelled but NOT activated. Shadow metadata only.",
+      "table": "fhq_learning.strategy_eligibility_envelope",
+      "output": "envelope_compliant = TRUE/FALSE in log",
+      "criteria": {
+        "max_loss_acceptable": 500.0,
+        "max_dte": 45,
+        "min_iv_rank_for_sell": 0.30,
+        "max_iv_rank_for_buy": 0.70,
+        "required_regimes_for_sell": ["RECOVERY", "EXPANSION", "NORMAL"],
+        "blocked_regimes_for_sell": ["CRISIS", "STRESS"],
+        "min_signal_strength": 0.40
+      }
+    }
+  },
+
+  "migration": {
+    "file": "04_DATABASE/MIGRATIONS/352_volatility_observer_infrastructure.sql",
+    "executed_at": "2026-02-01T16:33:00Z",
+    "exit_code": 0,
+    "changes": [
+      "ALTER options_hypothesis_canon: added OBSERVATION to status CHECK",
+      "ALTER options_hypothesis_canon: 10 new columns (observation_type, iv_at_observation, rv_at_observation, iv_rv_divergence, regime_at_observation, theoretical_entry_price, envelope_compliant, observation_expired, theoretical_pnl, outcome_evaluated_at)",
+      "CREATE fhq_learning.volatility_observations (7 observation types)",
+      "CREATE fhq_learning.strategy_eligibility_envelope",
+      "CREATE fhq_learning.theoretical_pnl_ledger",
+      "CREATE fhq_monitoring.options_leakage_audit",
+      "CREATE VIEW fhq_learning.v_options_observation_summary"
+    ]
+  },
+
+  "first_scan_results": {
+    "symbols_scanned": 27,
+    "symbols_with_data": 24,
+    "observations_created": 24,
+    "observation_types": {
+      "IV_RV_DIVERGENCE": 24,
+      "IV_RANK_EXTREME": 0
+    },
+    "envelope_compliant": 0,
+    "envelope_non_compliant": 24,
+    "non_compliance_reason": "Regime=CRISIS blocks SELL_VOL strategies (correct behavior)",
+    "leakage_detected": false,
+    "leakage_audit_verdict": "PASS"
+  },
+
+  "acceptance_criteria_status": {
+    "prediction_log_100_plus": {
+      "current": 24,
+      "target": 100,
+      "status": "IN_PROGRESS",
+      "note": "24 from first scan. Requires ~4 more daily scans to reach 100."
+    },
+    "outcome_match_theoretical_pnl": {
+      "status": "PENDING",
+      "note": "Observations need 7+ days to mature for P&L evaluation. Use --evaluate after lookback."
+    },
+    "lvi_score_hypothesis_level": {
+      "status": "PENDING",
+      "note": "Will compute once theoretical P&L evaluations populate."
+    },
+    "zero_leakage": {
+      "status": "PASS",
+      "audits": 1,
+      "violations": 0
+    },
+    "falsification_signal": {
+      "status": "PENDING",
+      "note": "All 24 observations under CRISIS regime. Regime-specific failure rates will emerge as data matures."
+    }
+  },
+
+  "governance_verification": {
+    "execution_authority": "NONE (assertion-verified)",
+    "capital_authority": "ZERO (assertion-verified)",
+    "shadow_adapter_imported": false,
+    "alpaca_api_calls": 0,
+    "mit_quad_intact": true,
+    "aci_direct_blocked": true,
+    "nine_step_pipeline_intact": true
+  },
+
+  "files_created": [
+    "03_FUNCTIONS/volatility_observer.py",
+    "04_DATABASE/MIGRATIONS/352_volatility_observer_infrastructure.sql",
+    "03_FUNCTIONS/evidence/CEO_DIR_2026_OPS_ALPHA_002A_G2_OBSERVATIONAL.json",
+    "03_FUNCTIONS/evidence/VOLATILITY_OBSERVER_EVIDENCE_20260201_173502.json"
+  ],
+  "files_modified": [
+    "12_DAILY_REPORTS/DAY32_RUNBOOK_20260201.md",
+    "12_DAILY_REPORTS/TRUTH_SNAPSHOT/CADENCE_STATE.json"
+  ],
+
+  "operational_next_steps": [
+    "Schedule daily --scan via Task Scheduler (or manual CLI runs)",
+    "After 7 days: run --evaluate to compute theoretical P&L",
+    "After ~4 scans: prediction_log target (100+) reached",
+    "After 30 days: full evidence bundle with falsification signal per regime"
+  ]
+}

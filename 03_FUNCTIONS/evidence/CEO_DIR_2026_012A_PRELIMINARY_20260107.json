@@ -1,0 +1,157 @@
+{
+  "directive_id": "CEO-DIR-2026-012A",
+  "report_type": "PRELIMINARY_ANALYSIS",
+  "status": "NON-ACTIVE",
+  "generated_at": "2026-01-07T13:30:00Z",
+  "generated_by": "STIG",
+  "time_elapsed_hours": 0.5,
+
+  "executive_summary": {
+    "oscillation_status": "CONFIRMED",
+    "total_suppressions_24h": 122,
+    "unique_assets_affected": 122,
+    "cross_domain_leakage": "NOT_DETECTED",
+    "escalation_triggered": false,
+    "defcon_status": "GREEN"
+  },
+
+  "cluster_analysis": {
+    "methodology": "Sector-based clustering with chi-square significance test",
+    "minimum_cluster_size": 5,
+    "significance_threshold": 0.05,
+    "significant_clusters": [
+      {
+        "cluster_id": "INDUSTRIALS",
+        "asset_count": 16,
+        "avg_confidence": 0.7418,
+        "dominant_direction": "BULL_TO_NEUTRAL",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "HEALTHCARE",
+        "asset_count": 12,
+        "avg_confidence": 0.7756,
+        "dominant_direction": "NEUTRAL_TO_BEAR",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "FINANCIALS",
+        "asset_count": 11,
+        "avg_confidence": 0.7582,
+        "dominant_direction": "MIXED",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "ENERGY",
+        "asset_count": 11,
+        "avg_confidence": 0.7310,
+        "dominant_direction": "BULL_TO_NEUTRAL",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "TECHNOLOGY",
+        "asset_count": 9,
+        "avg_confidence": 0.7025,
+        "dominant_direction": "NEUTRAL_TO_BEAR",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "CONSUMER_DISC",
+        "asset_count": 7,
+        "avg_confidence": 0.6289,
+        "dominant_direction": "MIXED",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT"
+      },
+      {
+        "cluster_id": "CRYPTO_COMBINED",
+        "asset_count": 13,
+        "avg_confidence": 0.7264,
+        "dominant_direction": "BULL_TO_NEUTRAL",
+        "p_value_estimate": "<0.05",
+        "significance": "SIGNIFICANT",
+        "note": "Crypto uses 3-confirm threshold vs 5 for equity"
+      }
+    ],
+    "clusters_at_80pct_4of5": 0,
+    "escalation_threshold_met": false
+  },
+
+  "suppression_direction_analysis": {
+    "total_suppressions": 122,
+    "direction_breakdown": [
+      {"from": "NEUTRAL", "to": "BEAR", "count": 45, "pct": 36.9, "interpretation": "Bearish pressure building"},
+      {"from": "BULL", "to": "NEUTRAL", "count": 33, "pct": 27.0, "interpretation": "Bullish momentum fading"},
+      {"from": "BEAR", "to": "NEUTRAL", "count": 22, "pct": 18.0, "interpretation": "Bearish pressure releasing"},
+      {"from": "NEUTRAL", "to": "BULL", "count": 12, "pct": 9.8, "interpretation": "Bullish emerging"},
+      {"from": "OTHER", "to": "VARIOUS", "count": 10, "pct": 8.2, "interpretation": "Edge cases"}
+    ],
+    "net_directional_bias": "BEARISH",
+    "bias_confidence": 0.65
+  },
+
+  "asset_class_distribution": {
+    "EQUITY_US": {"count": 69, "pct": 56.6, "avg_conf": 0.7392},
+    "EQUITY_EU": {"count": 38, "pct": 31.1, "avg_conf": 0.7624},
+    "CRYPTO": {"count": 13, "pct": 10.7, "avg_conf": 0.7264},
+    "FX": {"count": 2, "pct": 1.6, "avg_conf": 0.6638}
+  },
+
+  "cross_domain_isolation": {
+    "status": "INTACT",
+    "equity_to_crypto_edges_detected": 0,
+    "crypto_to_equity_edges_detected": 0,
+    "max_edge_weight_threshold": 0.1,
+    "correlation_analysis": {
+      "equity_crypto_timing_correlation": "LOW",
+      "note": "Equity suppressions at 22:00 UTC, Crypto at 01:00 UTC - 3h separation"
+    },
+    "isolation_violation": false
+  },
+
+  "historical_baseline": {
+    "status": "LIMITED_DATA",
+    "available_days": 2,
+    "data": [
+      {"date": "2026-01-06", "suppressions": 18},
+      {"date": "2026-01-05", "suppressions": 104}
+    ],
+    "note": "Insufficient historical data for Z-score calculation. Epistemic suppression ledger is newly implemented.",
+    "recommendation": "Continue monitoring for 30+ days to establish baseline"
+  },
+
+  "preliminary_regret_estimate": {
+    "status": "AWAITING_OUTCOMES",
+    "note": "T+48h outcomes required for REGRET/WISDOM classification",
+    "earliest_outcome_available": "2026-01-08T22:00:00Z",
+    "preliminary_observation": "High-confidence suppressions (>0.9) in INDEX_ETF cluster may indicate over-suppression risk"
+  },
+
+  "escalation_assessment": {
+    "trigger_1_sector_clusters": {"threshold": ">=3 clusters with >80% at 4/5", "current": 0, "triggered": false},
+    "trigger_2_cross_domain_leak": {"threshold": "Any edge >0.1", "current": 0, "triggered": false},
+    "trigger_3_regret_rate": {"threshold": ">60%", "current": "PENDING", "triggered": false},
+    "overall_escalation": false,
+    "defcon_recommendation": "MAINTAIN_GREEN"
+  },
+
+  "raw_queries_attached": {
+    "suppression_ledger_query": "SELECT * FROM fhq_governance.epistemic_suppression_ledger WHERE created_at >= NOW() - INTERVAL '24 hours'",
+    "sector_distribution_query": "SELECT a.sector, COUNT(*) FROM fhq_governance.epistemic_suppression_ledger s JOIN fhq_meta.assets a ON s.asset_id = a.ticker GROUP BY a.sector",
+    "cross_domain_edges_query": "SELECT * FROM fhq_alpha.causal_edges WHERE edge_weight > 0.1 AND is_active = true"
+  },
+
+  "next_steps": [
+    "T+48h: Complete suppression regret classification with realized outcomes",
+    "T+72h: Deliver final report with full outcome reconciliation",
+    "Continue monitoring for additional sector clustering",
+    "Establish 30-day baseline for historical comparison"
+  ],
+
+  "lineage_hash": "61c4764eeaa0b70fb28d68e6c65b03cf39bff8c6c9a91f8f6416b2bbdebf3486"
+}

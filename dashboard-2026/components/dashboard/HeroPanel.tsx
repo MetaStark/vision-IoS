@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils/cn'
 interface HeroPanelProps {
   listingId?: string
   className?: string
+  refreshKey?: number
 }
 
 interface MetaSignal {
@@ -42,7 +43,7 @@ interface DriftStatus {
   }
 }
 
-export function HeroPanel({ listingId = 'LST_BTC_XCRYPTO', className }: HeroPanelProps) {
+export function HeroPanel({ listingId = 'LST_BTC_XCRYPTO', className, refreshKey = 0 }: HeroPanelProps) {
   const [metaSignal, setMetaSignal] = useState<MetaSignal | null>(null)
   const [driftStatus, setDriftStatus] = useState<DriftStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -77,7 +78,7 @@ export function HeroPanel({ listingId = 'LST_BTC_XCRYPTO', className }: HeroPane
     }
 
     fetchData()
-  }, [listingId])
+  }, [listingId, refreshKey])
 
   const getAllocationColor = (allocation: number) => {
     if (allocation > 20) return 'text-green-400 bg-green-950/30 border-green-700'

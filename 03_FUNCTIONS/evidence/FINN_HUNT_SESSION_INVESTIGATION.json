@@ -1,0 +1,126 @@
+{
+  "evidence_id": "FINN_HUNT_SESSION_INVESTIGATION",
+  "evidence_type": "ROOT_CAUSE_ANALYSIS",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P3",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T03:50:00Z",
+
+  "executive_summary": {
+    "headline": "FINN hunt blocked by DORMANT_QUEUE_LIMIT hygiene brake - exactly 20 dormant signals at 20-signal cap",
+    "root_cause": "VOL-GATE_QUEUE_SATURATION",
+    "process_status": "RUNNING_BUT_GATED",
+    "immediate_fix": "Drain dormant queue OR increase DORMANT_QUEUE_LIMIT"
+  },
+
+  "investigation_findings": {
+    "primary_blocker": {
+      "name": "DORMANT_QUEUE_LIMIT Saturation",
+      "location": "wave15_autonomous_hunter.py:849-851",
+      "code": "if dormant_count >= DORMANT_QUEUE_LIMIT: return False, f'QUEUE_FULL: {dormant_count} dormant signals >= {DORMANT_QUEUE_LIMIT} limit'",
+      "configuration": {
+        "DORMANT_QUEUE_LIMIT": 20,
+        "current_dormant_count": 20,
+        "at_capacity": true
+      },
+      "impact": "All needle generation blocked until queue drains below 20"
+    },
+
+    "queue_state": {
+      "query": "SELECT current_state, COUNT(*) FROM fhq_canonical.g5_signal_state GROUP BY current_state",
+      "results": {
+        "EXPIRED": 1333,
+        "DUPLICATE_PRUNED": 422,
+        "DORMANT": 20,
+        "PRIMED": 9
+      },
+      "observation": "Exactly 20 DORMANT signals - at limit, blocking all new generation"
+    },
+
+    "dormant_signals_detail": {
+      "count": 20,
+      "all_untransitioned": true,
+      "sample_needle_ids": [
+        "ef2b8a45-c56d-473b-b20c-1105c4f6e47a",
+        "86f80e9c-4af8-4b0c-a593-4dbb2ff3c143",
+        "9af40a26-a023-457a-8e59-99b3d609e0f2"
+      ],
+      "note": "These are the same needles being blocked by LIDS freshness gate"
+    }
+  },
+
+  "vol_gate_logic": {
+    "file": "wave15_autonomous_hunter.py",
+    "function": "check_vol_gate()",
+    "lines": "837-867",
+    "decision_tree": [
+      {"check": "dormant_count >= 20?", "current": "20 >= 20 = TRUE", "result": "BLOCKED"},
+      {"check": "vol >= 50% (FULL)?", "current": "4.2%", "result": "Not reached"},
+      {"check": "vol >= 25% (PRE_HEAT)?", "current": "4.2%", "result": "Not reached"},
+      {"check": "THROTTLED mode", "current": "Would apply", "result": "Not reached due to queue block"}
+    ],
+    "conclusion": "Queue check (line 850) runs BEFORE volatility mode evaluation, blocking at first gate"
+  },
+
+  "timeline": {
+    "dec_24": "Peak production - 400+ needles/day",
+    "jan_06_08": "Production drops to <15 needles/day",
+    "jan_08_2142": "Last golden needle created (ef2b8a45)",
+    "jan_11_onwards": "VOL-GATE queue saturation begins",
+    "jan_13_current": "Process runs every ~2h, immediately blocked by QUEUE_FULL"
+  },
+
+  "why_queue_filled": {
+    "explanation": "Dormant signals accumulate when they cannot be executed. The daemon's LIDS gates (confidence bug + freshness) blocked all execution, so signals stayed DORMANT instead of transitioning to PRIMED/EXECUTING/EXPIRED.",
+    "contributing_factors": [
+      "LIDS confidence bug caused all signals to show 0.00 confidence → blocked",
+      "No signals transitioned out of DORMANT state",
+      "Queue grew to 20-signal limit",
+      "Hygiene brake triggered, blocking new generation"
+    ]
+  },
+
+  "system_design_intent": {
+    "purpose": "DORMANT_QUEUE_LIMIT is a hygiene brake to prevent signal hoarding during low-volatility periods",
+    "rationale": "If signals aren't being executed, generating more creates stale inventory",
+    "expected_behavior": "When execution resumes, queue drains, generation resumes automatically"
+  },
+
+  "resolution_options": {
+    "option_1": {
+      "action": "Manually expire stale DORMANT signals",
+      "sql": "UPDATE fhq_canonical.g5_signal_state SET current_state = 'EXPIRED', exit_reason = 'MANUAL_STALE_CLEANUP' WHERE current_state = 'DORMANT' AND needle_id IN (SELECT needle_id FROM fhq_canonical.golden_needles WHERE created_at < NOW() - INTERVAL '24 hours')",
+      "impact": "Drains queue, allows new needle generation",
+      "risk": "Low - signals are already 4+ days stale"
+    },
+    "option_2": {
+      "action": "Increase DORMANT_QUEUE_LIMIT temporarily",
+      "change": "line 110: DORMANT_QUEUE_LIMIT = 50",
+      "impact": "Allows more signals to accumulate",
+      "risk": "Medium - doesn't address root cause of non-execution"
+    },
+    "option_3": {
+      "action": "Run daemon with fixed LIDS confidence to execute signals",
+      "precondition": "Confidence fix already applied (commit 3cd7750)",
+      "remaining_blocker": "Freshness gate - all signals >12h stale",
+      "note": "Executing stale signals is not recommended"
+    },
+    "option_4": {
+      "action": "Expire stale signals, then generate fresh ones",
+      "steps": [
+        "1. Mark 20 stale DORMANT signals as EXPIRED",
+        "2. Queue drops below 20, VOL-GATE releases",
+        "3. FINN hunt generates fresh needles",
+        "4. Fresh needles pass LIDS freshness gate",
+        "5. Daemon can execute paper trades"
+      ],
+      "impact": "Full recovery of execution pipeline",
+      "risk": "Low - recommended approach"
+    }
+  },
+
+  "recommendation": {
+    "preferred_resolution": "option_4",
+    "rationale": "Expiring stale signals and generating fresh ones addresses both the queue saturation AND the freshness blocking issue",
+    "requires_ceo_approval": true
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "directive_id": "CEO-DIR-2026-018A",
+  "artifact_type": "INDICATOR_BRIDGE_EVIDENCE_BUNDLE",
+  "status": "COMPLETE",
+  "generated_at": "2026-01-07T18:28:03.218972+00:00",
+  "generated_by": "STIG",
+  "bridge_version": "1.0.0",
+  "sync_run_id": "BRIDGE-20260107_181502",
+  "A_bridge_specification": {
+    "mapping_matrix": {
+      "momentum": {
+        "source_table": "fhq_research.indicator_momentum",
+        "mappings": {
+          "rsi_14": "rsi_14"
+        }
+      },
+      "trend": {
+        "source_table": "fhq_research.indicator_trend",
+        "mappings": {
+          "macd": "macd_line",
+          "macd_signal": "macd_signal",
+          "macd_histogram": "macd_histogram",
+          "sma_50": "sma_50",
+          "sma_200": "sma_200"
+        }
+      },
+      "volatility": {
+        "source_table": "fhq_research.indicator_volatility",
+        "mappings": {
+          "bb_upper": "bb_upper",
+          "bb_middle": "bb_middle",
+          "bb_lower": "bb_lower",
+          "bb_width": "bb_width",
+          "atr_14": "atr_14"
+        }
+      }
+    },
+    "out_of_scope_fields": [
+      "adx_14",
+      "plus_di",
+      "minus_di",
+      "adx_trend",
+      "volatility_20d",
+      "volatility_regime",
+      "rsi_signal",
+      "macd_crossover",
+      "bb_position",
+      "sma_20",
+      "sma_trend",
+      "composite_signal",
+      "signal_confidence",
+      "atr_pct"
+    ],
+    "key_structure": "asset_id + timestamp (daily granularity)",
+    "deduplication_rule": "DISTINCT ON (asset_id, timestamp::date) ORDER BY timestamp DESC"
+  },
+  "B_execution_evidence": {
+    "total_rows_written": 599529,
+    "unique_assets": 247,
+    "latest_timestamp": "2026-01-06T23:59:59+01:00",
+    "coverage_by_indicator": {
+      "rsi_14": {
+        "non_null_count": 596431,
+        "null_rate": 0.005167389734274774
+      },
+      "macd_line": {
+        "non_null_count": 559308,
+        "null_rate": 0.06708766381609566
+      },
+      "bb_width": {
+        "non_null_count": 514534,
+        "null_rate": 0.14176962248698566
+      },
+      "adx_14": {
+        "non_null_count": 0,
+        "null_rate": 1.0,
+        "note": "OUT OF SCOPE per directive"
+      },
+      "volatility_20d": {
+        "non_null_count": 0,
+        "null_rate": 1.0,
+        "note": "OUT OF SCOPE per directive"
+      }
+    }
+  },
+  "C_integrity_verification": {
+    "spot_check_samples": [
+      {
+        "asset_id": "EURUSD=X",
+        "timestamp": "2026-01-06T23:59:59+01:00",
+        "rsi_14": 39.318479685452054,
+        "macd_line": 0.001445323750480343,
+        "bb_width": 0.009220191361560997
+      },
+      {
+        "asset_id": "GRT-USD",
+        "timestamp": "2026-01-06T17:00:00+01:00",
+        "rsi_14": 59.58047739248266,
+        "macd_line": -0.0013928317053227002,
+        "bb_width": 0.20054996975466102
+      },
+      {
+        "asset_id": "DOT-USD",
+        "timestamp": "2026-01-06T17:00:00+01:00",
+        "rsi_14": 67.70089297408975,
+        "macd_line": 0.0020258528626180272,
+        "bb_width": 0.3228048797026476
+      }
+    ],
+    "lineage_preserved": true,
+    "freshness_flags_operational": true,
+    "staleness_threshold_days": 3,
+    "stale_rows_flagged": 599322
+  },
+  "acceptance_criteria_check": {
+    "table_non_empty": true,
+    "required_fields_present": {
+      "rsi_14": true,
+      "macd_line": true,
+      "bb_width": true
+    },
+    "missing_indicators_null_flagged": true,
+    "lineage_fields_populated": true,
+    "all_criteria_passed": true
+  },
+  "lineage_hash": "e6f2874c70e300964dd56342d65f9a5c802e099e73c8938702faef315e17a5d1"
+}

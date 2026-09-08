@@ -1,0 +1,188 @@
+# Cognitive Engines Stack - Docker Compose Configuration
+# CEO-DIR-2026-COGNITIVE-ENGINES-001
+# Date: 2026-01-04
+# Author: STIG (CTO)
+#
+# Purpose: Complete cognitive infrastructure for hybrid search, memory, and async processing.
+#
+# Components:
+#   - Qdrant: Vector similarity search (extends docker-compose.qdrant.yml)
+#   - Redis: Message broker for Celery + embedding cache
+#   - Celery Fast: High-priority queue for Alpha signals (< 2s latency)
+#   - Celery Research: Low-priority queue for deep research (< 1h latency)
+#
+# Queue Architecture (EC-021 InForage):
+#   q_alpha_fast   → Immediate Alpha responses (DEFCON RED/BLACK triggers)
+#   q_deep_research → Long-running research tasks (can be deferred)
+#
+# DEFCON Integration (ADR-016):
+#   GREEN  → All queues active
+#   YELLOW → Alpha queue only
+#   ORANGE → Graceful drain, no new tasks
+#   RED    → Emergency flush to Alpha only
+#   BLACK  → Full halt
+#
+# Cost Tracking:
+#   All embedding/search costs logged to fhq_governance.inforage_query_log
+
+services:
+  # ============================================================================
+  # REDIS: Message Broker + Cache
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: fhq-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "fhq.component=redis"
+      - "fhq.directive=CEO-DIR-2026-COGNITIVE-ENGINES-001"
+    networks:
+      - fhq-network
+
+  # ============================================================================
+  # CELERY FAST: High-Priority Alpha Queue
+  # ============================================================================
+  # For immediate Alpha signal processing
+  # Max latency: 2 seconds
+  # Concurrency: 4 workers
+  celery_fast:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    container_name: fhq-celery-fast
+    restart: unless-stopped
+    command: celery -A tasks worker -Q q_alpha_fast --concurrency=4 --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PGHOST=${PGHOST:-127.0.0.1}
+      - PGPORT=${PGPORT:-54322}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGDATABASE=${PGDATABASE:-postgres}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FHQ_QUEUE=q_alpha_fast
+      - FHQ_MAX_LATENCY_MS=2000
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "fhq.component=celery-fast"
+      - "fhq.queue=q_alpha_fast"
+      - "fhq.directive=CEO-DIR-2026-COGNITIVE-ENGINES-001"
+    networks:
+      - fhq-network
+
+  # ============================================================================
+  # CELERY RESEARCH: Low-Priority Deep Research Queue
+  # ============================================================================
+  # For long-running research tasks (GraphRAG, multi-hop, synthesis)
+  # Max latency: 1 hour
+  # Concurrency: 2 workers (resource intensive)
+  celery_research:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    container_name: fhq-celery-research
+    restart: unless-stopped
+    command: celery -A tasks worker -Q q_deep_research --concurrency=2 --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - PGHOST=${PGHOST:-127.0.0.1}
+      - PGPORT=${PGPORT:-54322}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGDATABASE=${PGDATABASE:-postgres}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FHQ_QUEUE=q_deep_research
+      - FHQ_MAX_LATENCY_MS=3600000
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "fhq.component=celery-research"
+      - "fhq.queue=q_deep_research"
+      - "fhq.directive=CEO-DIR-2026-COGNITIVE-ENGINES-001"
+    networks:
+      - fhq-network
+
+  # ============================================================================
+  # CELERY BEAT: Task Scheduler
+  # ============================================================================
+  # Schedules periodic tasks:
+  # - Embedding backfill (hourly)
+  # - Memory decay calculation (daily)
+  # - Archival compaction (weekly)
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.celery
+    container_name: fhq-celery-beat
+    restart: unless-stopped
+    command: celery -A tasks beat --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PGHOST=${PGHOST:-127.0.0.1}
+      - PGPORT=${PGPORT:-54322}
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGDATABASE=${PGDATABASE:-postgres}
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "fhq.component=celery-beat"
+      - "fhq.directive=CEO-DIR-2026-COGNITIVE-ENGINES-001"
+    networks:
+      - fhq-network
+
+  # ============================================================================
+  # FLOWER: Celery Monitoring Dashboard
+  # ============================================================================
+  # Web UI for monitoring Celery tasks
+  # Access at http://localhost:5555
+  flower:
+    image: mher/flower:2.0
+    container_name: fhq-flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=5555
+      - FLOWER_PURGE_OFFLINE_WORKERS=60
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "fhq.component=flower"
+      - "fhq.directive=CEO-DIR-2026-COGNITIVE-ENGINES-001"
+    networks:
+      - fhq-network
+
+volumes:
+  redis_data:
+    name: fhq-redis-data
+
+networks:
+  fhq-network:
+    name: fhq-network
+    driver: bridge

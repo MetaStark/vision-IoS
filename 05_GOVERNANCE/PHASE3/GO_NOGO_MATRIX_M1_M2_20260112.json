@@ -1,0 +1,280 @@
+{
+  "document_id": "GO_NOGO_MATRIX_M1_M2_20260112",
+  "document_type": "PHASE_GATE_MATRIX",
+  "transition": "M1_BOOTSEQ -> M2_CALIBRATION",
+  "evaluation_date": "2026-01-15",
+  "generated_at": "2026-01-12T01:40:00Z",
+  "generated_by": "STIG (EC-003_2026_PRODUCTION)",
+  "authority": "CEO-DIR-2026-035",
+
+  "gate_philosophy": {
+    "principle": "Evidence over optimism",
+    "decision_rule": "GO requires ALL mandatory criteria MET. Any VETO = NO-GO.",
+    "default_stance": "NO-GO until proven otherwise"
+  },
+
+  "criteria_categories": {
+    "MANDATORY": "Must be MET for GO. No exceptions.",
+    "RECOMMENDED": "Should be MET. Gaps documented but not blocking.",
+    "VETO": "If triggered, automatic NO-GO regardless of other criteria."
+  },
+
+  "mandatory_criteria": [
+    {
+      "criterion_id": "M1",
+      "name": "System Stability",
+      "description": "Core systems operational for 7 consecutive days",
+      "metric": "Orchestrator uptime + ios001/003/006/010 operational",
+      "threshold": "100% uptime (no unplanned outages >1h)",
+      "current_status": "ON_TRACK",
+      "day3_evidence": "162 CNRP cycles, 0 timeouts",
+      "verification_query": "SELECT COUNT(*) FROM fhq_governance.governance_actions_log WHERE created_at > NOW() - INTERVAL '7 days'",
+      "weight": "MANDATORY"
+    },
+    {
+      "criterion_id": "M2",
+      "name": "Abort Competence",
+      "description": "System demonstrates ability to NOT act when uncertain",
+      "metric": "Ensemble signals = 0, Gate interventions > 0",
+      "threshold": "Zero ensemble signals for 7 days",
+      "current_status": "MET",
+      "day3_evidence": "0 ensemble signals, 50 gate interventions",
+      "verification_query": "SELECT COUNT(*) FROM fhq_execution.signal_executor_log WHERE signal_type = 'ENSEMBLE' AND created_at > NOW() - INTERVAL '7 days'",
+      "weight": "MANDATORY"
+    },
+    {
+      "criterion_id": "M3",
+      "name": "Overconfidence Suppression",
+      "description": "HIGH-confidence forecasts are being capped by calibration gates",
+      "metric": "Calibration gates active and blocking",
+      "threshold": "Gate activity > 0 per day",
+      "current_status": "MET",
+      "day3_evidence": "50 signals capped by calibration gates",
+      "verification_query": "SELECT COUNT(*) FROM fhq_governance.calibration_gate_log WHERE action = 'BLOCKED' AND created_at > NOW() - INTERVAL '7 days'",
+      "weight": "MANDATORY"
+    },
+    {
+      "criterion_id": "M4",
+      "name": "Learning Continuity",
+      "description": "Forecast generation is stable and non-declining",
+      "metric": "Daily forecast count",
+      "threshold": ">800 forecasts/day average over 7 days",
+      "current_status": "ON_TRACK",
+      "day3_evidence": "1,308 forecasts Day 3, avg 1,133/day",
+      "verification_query": "SELECT AVG(daily_count) FROM (SELECT DATE(created_at), COUNT(*) as daily_count FROM fhq_research.forecast_ledger WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY DATE(created_at)) t",
+      "weight": "MANDATORY"
+    },
+    {
+      "criterion_id": "M5",
+      "name": "Governance Integrity",
+      "description": "No unauthorized changes to governance tables",
+      "metric": "Unauthorized migrations/changes",
+      "threshold": "0 violations",
+      "current_status": "MET",
+      "day3_evidence": "0 unauthorized migrations, 0 policy gate changes",
+      "verification_query": "SELECT COUNT(*) FROM fhq_meta.migration_log WHERE approved_by IS NULL AND executed_at > NOW() - INTERVAL '7 days'",
+      "weight": "MANDATORY"
+    },
+    {
+      "criterion_id": "M6",
+      "name": "Standing Constraints",
+      "description": "All M1 constraints maintained",
+      "metric": "No exposure, no tuning, no parameter changes",
+      "threshold": "All constraints verified daily",
+      "current_status": "MET",
+      "day3_evidence": "All 5 constraints verified in Day 3 report",
+      "verification_query": "Manual verification via daily report attestation",
+      "weight": "MANDATORY"
+    }
+  ],
+
+  "recommended_criteria": [
+    {
+      "criterion_id": "R1",
+      "name": "Brier Improvement",
+      "description": "7-day Brier score trend is stable or improving",
+      "metric": "Brier score delta over 7 days",
+      "threshold": "No degradation >0.05 from baseline",
+      "current_status": "PENDING",
+      "day3_evidence": "Baseline 0.3146, Day 3 sample too small (34 pairs)",
+      "gap_if_not_met": "Document trend, acceptable if sample size explains variance",
+      "weight": "RECOMMENDED"
+    },
+    {
+      "criterion_id": "R2",
+      "name": "Outcome Pair Accumulation",
+      "description": "New outcome pairs are being created",
+      "metric": "Daily new outcome pairs",
+      "threshold": ">0 new pairs per day on average",
+      "current_status": "CONCERN",
+      "day3_evidence": "0 new pairs Day 3",
+      "gap_if_not_met": "Audit horizon alignment, document finding",
+      "weight": "RECOMMENDED"
+    },
+    {
+      "criterion_id": "R3",
+      "name": "IOS-003-B Value Signal",
+      "description": "Intraday deltas show variance (not zero)",
+      "metric": "delta_log variance",
+      "threshold": "variance > 0",
+      "current_status": "PENDING",
+      "day3_evidence": "IOS-003-B just started, insufficient data",
+      "gap_if_not_met": "Null hypothesis (daily sufficient) is valid finding",
+      "weight": "RECOMMENDED"
+    },
+    {
+      "criterion_id": "R4",
+      "name": "Monotonicity Restoration",
+      "description": "Calibration curve shows monotonic confidence->accuracy",
+      "metric": "Reliability diagram monotonicity",
+      "threshold": "Non-decreasing accuracy across confidence bins",
+      "current_status": "NOT_DETERMINABLE",
+      "day3_evidence": "Insufficient sample size for calibration curve",
+      "gap_if_not_met": "Extend observation, document data gap",
+      "weight": "RECOMMENDED"
+    }
+  ],
+
+  "veto_conditions": [
+    {
+      "veto_id": "V1",
+      "name": "GOVERNANCE_VIOLATION",
+      "description": "Any unauthorized write to fhq_governance.* or fhq_meta.*",
+      "trigger": "COUNT(unauthorized_writes) > 0",
+      "consequence": "AUTOMATIC NO-GO, full audit required",
+      "current_status": "CLEAR",
+      "verification": "Continuous monitoring via governance_actions_log"
+    },
+    {
+      "veto_id": "V2",
+      "name": "EXPOSURE_INTRODUCED",
+      "description": "Any trading activity or position change",
+      "trigger": "COUNT(trades) > 0 OR position_delta != 0",
+      "consequence": "AUTOMATIC NO-GO, CEO escalation",
+      "current_status": "CLEAR",
+      "verification": "No trading infrastructure active"
+    },
+    {
+      "veto_id": "V3",
+      "name": "SYSTEM_FAILURE",
+      "description": "Core system offline >24h without recovery",
+      "trigger": "Any of (orchestrator, ios001, ios003, ios010) offline >24h",
+      "consequence": "AUTOMATIC NO-GO until root cause resolved",
+      "current_status": "CLEAR",
+      "verification": "Daemon health checks"
+    },
+    {
+      "veto_id": "V4",
+      "name": "DATA_INTEGRITY_BREACH",
+      "description": "Evidence of data corruption or split-brain",
+      "trigger": "Hash mismatch in court-proof evidence chain",
+      "consequence": "AUTOMATIC NO-GO, forensic audit required",
+      "current_status": "CLEAR",
+      "verification": "Court-proof evidence ledger verification"
+    },
+    {
+      "veto_id": "V5",
+      "name": "REGRET_RATE_EXTREME",
+      "description": "Regret rate exceeds critical threshold",
+      "trigger": "Regret rate > 35%",
+      "consequence": "AUTOMATIC NO-GO, suppression logic audit required",
+      "current_status": "CLEAR",
+      "current_value": "24.6%",
+      "verification": "Regret rate from reliability diagram"
+    }
+  ],
+
+  "evaluation_logic": {
+    "go_decision": {
+      "requirements": [
+        "ALL mandatory criteria (M1-M6) = MET",
+        "ALL veto conditions (V1-V5) = CLEAR",
+        "CEO approval obtained"
+      ],
+      "action": "Transition to M2_CALIBRATION phase",
+      "deliverable": "M1_EXIT_PACKAGE with full evidence bundle"
+    },
+    "conditional_go_decision": {
+      "requirements": [
+        "ALL mandatory criteria (M1-M6) = MET",
+        "ALL veto conditions (V1-V5) = CLEAR",
+        "1-2 recommended criteria NOT_MET with documented gaps"
+      ],
+      "action": "Transition with documented gaps",
+      "deliverable": "M1_EXIT_PACKAGE + Gap remediation plan"
+    },
+    "no_go_decision": {
+      "triggers": [
+        "ANY mandatory criterion NOT_MET",
+        "ANY veto condition TRIGGERED"
+      ],
+      "action": "Extend M1 by 3 days OR escalate to CEO",
+      "deliverable": "Gap analysis + remediation timeline"
+    },
+    "extension_decision": {
+      "triggers": [
+        "Insufficient data for evaluation (e.g., sample size <100)",
+        "PENDING status on >2 mandatory criteria"
+      ],
+      "action": "Automatic 3-day extension",
+      "deliverable": "Extension justification document"
+    }
+  },
+
+  "current_status_summary": {
+    "as_of": "2026-01-12 (Day 4 start)",
+    "mandatory_criteria": {
+      "met": 4,
+      "on_track": 2,
+      "not_met": 0,
+      "assessment": "ON_TRACK"
+    },
+    "recommended_criteria": {
+      "met": 0,
+      "pending": 3,
+      "concern": 1,
+      "assessment": "MONITORING"
+    },
+    "veto_conditions": {
+      "clear": 5,
+      "triggered": 0,
+      "assessment": "CLEAR"
+    },
+    "preliminary_verdict": "ON_TRACK for GO decision on Day 7",
+    "key_risk": "Outcome pair accumulation (R2) requires monitoring"
+  },
+
+  "day_7_deliverables": [
+    {
+      "deliverable_id": "D1",
+      "name": "Criteria Evaluation Table",
+      "description": "Final status of all M, R, V criteria",
+      "format": "JSON + MD"
+    },
+    {
+      "deliverable_id": "D2",
+      "name": "Evidence Bundle",
+      "description": "All verification queries with results and hashes",
+      "format": "JSON"
+    },
+    {
+      "deliverable_id": "D3",
+      "name": "Gap Analysis",
+      "description": "Any NOT_MET or PENDING criteria with remediation plan",
+      "format": "MD"
+    },
+    {
+      "deliverable_id": "D4",
+      "name": "CEO Decision Package",
+      "description": "Summary for CEO approval",
+      "format": "1-page MD"
+    }
+  ],
+
+  "attestation": {
+    "attested_by": "STIG (EC-003_2026_PRODUCTION)",
+    "attestation_timestamp": "2026-01-12T01:40:00Z",
+    "authority_reference": "CEO-DIR-2026-035",
+    "evaluation_scheduled": "2026-01-15"
+  }
+}

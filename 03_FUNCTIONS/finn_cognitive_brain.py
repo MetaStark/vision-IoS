@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import time
+import uuid
 import signal
 import logging
 import psycopg2
@@ -479,10 +480,12 @@ class FINNCognitiveBrain:
     def cost_controller(self) -> Optional['InForageCostController']:
         """EC-021 InForage: Cost-aware research controller."""
         if self._cost_controller is None and COST_CONTROL_AVAILABLE:
+            # CEO-DIR-2026-DAY25: Use proper UUID format for session tracking
+            session_uuid = str(uuid.uuid4())
             self._cost_controller = InForageCostController(
-                session_id=f'FINN_CYCLE_{self.state.cycle_count}'
+                session_id=session_uuid
             )
-            logger.info("Cost Controller initialized (EC-021 InForage)")
+            logger.info(f"Cost Controller initialized (EC-021 InForage) - Session: FINN_CYCLE_{self.state.cycle_count}")
         return self._cost_controller
 
     @property
@@ -506,10 +509,13 @@ class FINNCognitiveBrain:
         """
         if self._sitc_planner is None and SITC_AVAILABLE:
             try:
+                # CEO-DIR-2026-DAY25: Use proper UUID format for session tracking
+                session_uuid = str(uuid.uuid4())
                 self._sitc_planner = SitCPlanner(
-                    session_id=f'FINN_CYCLE_{self.state.cycle_count}'
+                    session_id=session_uuid
                 )
                 self._sitc_planner.connect()
+                logger.info(f"SitC Planner connected (session: FINN_CYCLE_{self.state.cycle_count})")
                 logger.info(f"SitC Planner initialized (EC-020) - "
                            f"DEFCON: {self._sitc_planner._defcon_level}")
             except DEFCONViolation as e:
@@ -524,8 +530,10 @@ class FINNCognitiveBrain:
     def runtime_guardian(self) -> RuntimeEconomicGuardian:
         """Runtime Economic Guardian (Mandate II: Unbypassable)."""
         if self._runtime_guardian is None:
+            # CEO-DIR-2026-DAY25: Use proper UUID format for session tracking
+            session_uuid = str(uuid.uuid4())
             self._runtime_guardian = RuntimeEconomicGuardian(
-                session_id=f'FINN_CYCLE_{self.state.cycle_count}'
+                session_id=session_uuid
             )
             if not self._runtime_guardian.initialize(self.circuit_breaker):
                 logger.critical("RUNTIME GUARDIAN FAILED TO INITIALIZE - ECONOMIC SAFETY COMPROMISED")

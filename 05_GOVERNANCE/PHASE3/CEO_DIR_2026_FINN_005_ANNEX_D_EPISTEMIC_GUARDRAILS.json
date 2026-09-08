@@ -1,0 +1,261 @@
+{
+  "annex_id": "CEO-DIR-2026-FINN-005-ANNEX-D",
+  "title": "Epistemic Integrity & Semantic Drift Guardrails (The 'Anti-Gaming' Protocol)",
+  "parent_directive": "CEO-DIR-2026-FINN-005",
+  "classification": "GOVERNANCE-CRITICAL (Class A)",
+  "status": "INSTALLED_AND_BINDING",
+  "date_issued": "2025-12-30T23:00:00Z",
+  "owner": ["VEGA (Audit)", "LARS (Strategy)"],
+
+  "purpose": {
+    "statement": "This annex prevents the LLM from gaming the 1,000-run program through confirmation bias, semantic drift, score-stuffing, or infinite reasoning loops.",
+    "core_principle": "The system must doubt itself before humans ever have to.",
+    "enforcement": "All guardrails are MANDATORY and violations result in run invalidation."
+  },
+
+  "section_d1_epistemic_red_team": {
+    "section_id": "D.1",
+    "title": "Mandatory Epistemic Red Team (Falsification Loop)",
+    "purpose": "Prevent FINN (CRIO) from developing 'confirmation traps' during the 1,000 runs",
+
+    "trigger": "Every run labeled CANDIDATE_GOLDEN_NEEDLE",
+
+    "protocol": {
+      "step_1": {
+        "action": "Spawn independent DeepSeek instance",
+        "context": "EC-018 (Meta-Alpha)",
+        "isolation": "Separate session_id, no shared state"
+      },
+      "step_2": {
+        "role": "Advocatus Diaboli",
+        "task": "Actively search for contradictory evidence in fhq_graph",
+        "search_scope": ["fhq_graph.edges", "fhq_canonical.evidence_nodes", "Qdrant evidence_nodes"]
+      },
+      "step_3": {
+        "action": "Execute 3 falsification attempts",
+        "per_attempt": {
+          "find": "Evidence that contradicts the causal chain",
+          "evaluate": "Impact on hypothesis validity",
+          "record": "Contradiction strength and source"
+        }
+      }
+    },
+
+    "survival_criteria": {
+      "attempts_required": 3,
+      "sitc_threshold": 0.75,
+      "condition": "Hypothesis must survive all 3 attempts with SitC-Chain >= 0.75"
+    },
+
+    "outcomes": {
+      "survival": {
+        "label": "GOLDEN_NEEDLE_VERIFIED",
+        "action": "Proceed to aggregation"
+      },
+      "failure": {
+        "sitc_drop_below_threshold": {
+          "label": "INTERESTING",
+          "action": "Downgrade, log falsification success"
+        },
+        "contradiction_found_strong": {
+          "label": "NOISE",
+          "action": "Discard, preserve contradiction evidence"
+        }
+      }
+    },
+
+    "audit_artifact": {
+      "table": "fhq_research.falsification_log",
+      "fields": [
+        "run_id",
+        "hypothesis_id",
+        "attempt_number",
+        "contradiction_found",
+        "contradiction_evidence_id",
+        "sitc_before",
+        "sitc_after",
+        "outcome",
+        "timestamp_utc"
+      ]
+    }
+  },
+
+  "section_d2_semantic_drift_monitoring": {
+    "section_id": "D.2",
+    "title": "Semantic Drift Monitoring (Ontology Protection)",
+    "purpose": "Ensure 1,000 repetitions do not cause the system to 'interpret' ontology differently over time",
+    "authority": "ADR-013 (One-Source-of-Truth)",
+
+    "anchor_check": {
+      "frequency": "Every 100 runs",
+      "target": "fhq_meta.ios_registry canonical ontology nodes",
+      "examples": ["NODE_LIQUIDITY", "NODE_GRAVITY", "ASSET_BTC", "STATE_BTC"]
+    },
+
+    "drift_metric": {
+      "method": "Cosine similarity between embedding vectors",
+      "comparison": "Current batch embedding vs anchor embedding at run 0",
+      "formula": "drift_score = 1 - cosine_similarity(anchor_embedding, batch_embedding)"
+    },
+
+    "threshold": {
+      "value": 0.05,
+      "interpretation": "5% drift maximum"
+    },
+
+    "violation_response": {
+      "trigger": "drift_score > 0.05 across 100-run batch",
+      "actions": [
+        "All 100 runs flagged as NOISE",
+        "Ontology mapping FROZEN",
+        "Manual refactoring REQUIRED",
+        "Alert to VEGA and LARS"
+      ]
+    },
+
+    "audit_artifact": {
+      "table": "fhq_research.semantic_drift_log",
+      "fields": [
+        "batch_id",
+        "batch_start_run",
+        "batch_end_run",
+        "node_id",
+        "anchor_embedding_hash",
+        "batch_embedding_hash",
+        "drift_score",
+        "threshold_violated",
+        "timestamp_utc"
+      ]
+    }
+  },
+
+  "section_d3_reasoning_roi": {
+    "section_id": "D.3",
+    "title": "Reasoning ROI & Autonomous Abort",
+    "purpose": "Prevent infinite reasoning loops that burn API credits without value",
+    "actor": "EC-021 (InForage)",
+
+    "roi_calculation": {
+      "formula": "Reasoning_ROI = Delta_SitC_Chain_Integrity / Cumulative_Cost",
+      "computed": "Real-time per step",
+      "unit": "SitC points per dollar"
+    },
+
+    "auto_abort_rule": {
+      "conditions": {
+        "cost_threshold": {
+          "value": 0.50,
+          "unit": "USD",
+          "tier": "SNIPER"
+        },
+        "sitc_improvement_threshold": {
+          "value": 0.10,
+          "window": "Last 5 steps"
+        }
+      },
+      "trigger": "cost > $0.50 AND delta_sitc < 0.10 over last 5 steps",
+      "action": "ABORT as NOISE (High Entropy)",
+      "label": "NOISE_HIGH_ENTROPY"
+    },
+
+    "rationale": "Even in a sandbox, we must prevent runaway costs without epistemic gain.",
+
+    "audit_artifact": {
+      "table": "fhq_research.reasoning_roi_log",
+      "fields": [
+        "run_id",
+        "step_number",
+        "cumulative_cost",
+        "sitc_chain_current",
+        "sitc_delta_5_step",
+        "roi_score",
+        "abort_triggered",
+        "timestamp_utc"
+      ]
+    }
+  },
+
+  "section_d4_anti_score_stuffing": {
+    "section_id": "D.4",
+    "title": "Anti Score-Stuffing Enforcement",
+    "purpose": "Prevent the LLM from including irrelevant evidence nodes just to inflate SitC scores",
+
+    "causal_centrality_filter": {
+      "requirement": "Every evidence node in MPS must have a direct or 1-hop link in fhq_graph.edges to the hypothesis domain",
+      "validation_query": "SELECT EXISTS (SELECT 1 FROM fhq_graph.edges WHERE from_node_id = :evidence_node OR to_node_id = :evidence_node AND domain_match = TRUE)"
+    },
+
+    "penalty": {
+      "trigger": "Node included without documented causal relevance in IoS-007",
+      "penalty_value": -0.20,
+      "applies_to": "SitC-Chain Integrity",
+      "note": "Applied REGARDLESS of verification status"
+    },
+
+    "enforcement_logic": {
+      "step_1": "For each evidence_node in MPS.evidence_nodes",
+      "step_2": "Query fhq_graph.edges for causal link to hypothesis domain",
+      "step_3": "If no link found, mark as IRRELEVANT",
+      "step_4": "Apply -0.20 penalty per irrelevant node",
+      "step_5": "Recalculate SitC-Chain Integrity with penalties"
+    },
+
+    "rationale": "This forces causal relevance over quantity. A verified but irrelevant node is worse than no node.",
+
+    "audit_artifact": {
+      "table": "fhq_research.score_stuffing_violations",
+      "fields": [
+        "run_id",
+        "evidence_node_id",
+        "hypothesis_domain",
+        "causal_link_found",
+        "penalty_applied",
+        "sitc_before_penalty",
+        "sitc_after_penalty",
+        "timestamp_utc"
+      ]
+    }
+  },
+
+  "implementation_requirements": {
+    "migrations_required": [
+      "Migration 180 (fhq_research.falsification_log)",
+      "Migration 181 (fhq_research.semantic_drift_log)",
+      "Migration 182 (fhq_research.reasoning_roi_log)",
+      "Migration 183 (fhq_research.score_stuffing_violations)"
+    ],
+    "functions_required": [
+      "spawn_red_team_instance()",
+      "calculate_semantic_drift()",
+      "compute_reasoning_roi()",
+      "apply_score_stuffing_penalty()"
+    ]
+  },
+
+  "guardrail_summary": {
+    "d1_red_team": {
+      "what": "Mandatory falsification attempts",
+      "prevents": "Confirmation bias, epistemic laziness"
+    },
+    "d2_semantic_drift": {
+      "what": "Embedding similarity monitoring",
+      "prevents": "Ontology reinterpretation, silent concept drift"
+    },
+    "d3_reasoning_roi": {
+      "what": "Cost-to-insight ratio enforcement",
+      "prevents": "Infinite reasoning loops, runaway costs"
+    },
+    "d4_score_stuffing": {
+      "what": "Causal relevance penalty",
+      "prevents": "Quantity over quality, metric gaming"
+    }
+  },
+
+  "attestation": {
+    "statement": "With Annex D installed, FjordHQ moves from observing AI mistakes to weaponizing them for system hardening.",
+    "drafted_by": "STIG (CTO)",
+    "owners": ["VEGA (Audit)", "LARS (Strategy)"],
+    "status": "BINDING",
+    "effective_date": "2025-12-30T23:00:00Z"
+  }
+}

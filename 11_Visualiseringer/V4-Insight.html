@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINN: GraphRAG & Kausal Resonnering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'fjord-dark': '#0f172a',
+                        'fjord-surface': '#1e293b',
+                        'finn-green': '#10b981',
+                        'finn-cyan': '#06b6d4',
+                        'finn-gold': '#f59e0b',
+                        'finn-red': '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .node-connector {
+            height: 2px;
+            background: linear-gradient(to right, #10b981, #06b6d4);
+            position: relative;
+        }
+        .node-connector::after {
+            content: '➜';
+            position: absolute;
+            right: -5px;
+            top: -10px;
+            color: #06b6d4;
+            font-size: 14px;
+        }
+    </style>
+    <!-- 
+        TEKNISK BEKREFTELSE:
+        - Ingen SVG benyttet.
+        - Ingen Mermaid JS benyttet.
+        - Chart.js brukes for alle dynamiske grafer.
+        - Tailwind CSS brukes for struktur og prosessdiagrammer.
+    -->
+</head>
+<body class="bg-fjord-dark text-slate-200 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 p-8 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-black tracking-tighter text-white">
+                    FINN <span class="text-finn-green">GRAPHRAG</span> ENGINE
+                </h1>
+                <p class="text-slate-400 text-sm font-mono">MODUL: CAUSAL_REASONING_V4.2</p>
+            </div>
+            <div class="hidden md:block text-right">
+                <div class="text-xs text-slate-500 font-mono">STATUS: RESEARCHING</div>
+                <div class="text-xs text-finn-green font-mono">ED25519_ATTESTED: TRUE</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 space-y-20">
+
+        <!-- INTRODUKSJON -->
+        <section class="max-w-3xl">
+            <h2 class="text-2xl font-bold text-white mb-4 border-l-4 border-finn-green pl-4">Hva er sannhet?</h2>
+            <p class="text-slate-400 leading-relaxed">
+                FINN opererer ikke med enkle korrelasjoner. Gjennom <strong>GraphRAG</strong> (Graph Retrieval-Augmented Generation) 
+                kartlegger FINN millioner av datapunkter som noder i en multidimensjonal kunnskapsgraf. 
+                Målet er å identifisere den faktiske <em>årsaken</em> bak markedsbevegelser, eliminere støy, og levere en 
+                ubestridelig evidenskjede til LARS og CEO.
+            </p>
+        </section>
+
+        <!-- VISUELL PROSESS: DATA TIL INNSIKT -->
+        <section>
+            <h3 class="text-xl font-bold text-center mb-10 text-slate-300">Prosessflyt: Fra Råstøy til Kausale Kjeder</h3>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                <!-- Data Source -->
+                <div class="bg-fjord-surface p-4 rounded-lg border border-slate-700 text-center">
+                    <div class="text-2xl mb-2">📡</div>
+                    <div class="text-xs font-bold text-finn-cyan">INGESTION</div>
+                    <div class="text-sm mt-1">Lake / Pulse / Sniper</div>
+                </div>
+                <div class="hidden md:block h-px bg-slate-700 relative"><div class="absolute -top-2 right-0 text-slate-600">▶</div></div>
+                
+                <!-- Graph Mapping -->
+                <div class="bg-fjord-surface p-4 rounded-lg border border-finn-green/30 text-center ring-2 ring-finn-green/20">
+                    <div class="text-2xl mb-2">🕸️</div>
+                    <div class="text-xs font-bold text-finn-green">GRAPH MAPPING</div>
+                    <div class="text-sm mt-1">Entity Extraction</div>
+                </div>
+                <div class="hidden md:block h-px bg-slate-700 relative"><div class="absolute -top-2 right-0 text-slate-600">▶</div></div>
+
+                <!-- Causal Reasoning -->
+                <div class="bg-fjord-surface p-4 rounded-lg border border-finn-gold/30 text-center shadow-lg shadow-finn-gold/10">
+                    <div class="text-2xl mb-2">🧠</div>
+                    <div class="text-xs font-bold text-finn-gold">CAUSAL ENGINE</div>
+                    <div class="text-sm mt-1">DAG Inference</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GRAPHRAG TOPOLOGI (SCATTER CHART) -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <h3 class="text-2xl font-bold text-white mb-4">1. GraphRAG Klyngeanalyse</h3>
+                <p class="text-slate-400 mb-6">
+                    FINN organiserer noder (f.eks. "Renteheving", "Lønnsvekst", "Boligmarked") basert på semantisk kobling. 
+                    Når en ny hendelse inntreffer, søker GraphRAG i lokale nabolag for å forstå konteksten før den 
+                    genererer et resonnement.
+                </p>
+                <div class="space-y-3">
+                    <div class="flex items-center text-sm">
+                        <span class="w-3 h-3 bg-finn-cyan rounded-full mr-3"></span>
+                        <span class="text-slate-300">Makro-økonomiske noder</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="w-3 h-3 bg-finn-green rounded-full mr-3"></span>
+                        <span class="text-slate-300">Sektorspesifikke hendelser</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="w-3 h-3 bg-finn-gold rounded-full mr-3"></span>
+                        <span class="text-slate-300">Aktive kausale koblinger</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                <div class="chart-container">
+                    <canvas id="topologyChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- KAUSALITETSKJEDER (LINE CHART) -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="order-2 lg:order-1 bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                <div class="chart-container">
+                    <canvas id="causalChainChart"></canvas>
+                </div>
+            </div>
+            <div class="order-1 lg:order-2">
+                <h3 class="text-2xl font-bold text-white mb-4">2. Inferens av Kausale Kjeder</h3>
+                <p class="text-slate-400 mb-6">
+                    Ved å analysere tidsforsinkelser (lag) mellom noder, bygger FINN en <strong>Directed Acyclic Graph (DAG)</strong>. 
+                    Grafen over viser hvordan en endring i kilde-noden (årsak) forutsier en reaksjon i mål-noden (virkning) 
+                    med høy statistisk sikkerhet.
+                </p>
+                <div class="bg-fjord-surface p-4 rounded-lg border-l-4 border-finn-cyan">
+                    <div class="text-xs font-mono text-finn-cyan mb-1">FUNN_ID: FX_2024_09</div>
+                    <div class="text-sm font-bold text-white">Rente-diff årsak til JPY Carry Trade unwinding</div>
+                    <p class="text-xs text-slate-500 mt-2">Konfidens: 94.2% | Forsinkelse: 48 timer</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRUTH CONVERGENCE (BAR CHART) -->
+        <section class="max-w-4xl mx-auto">
+            <div class="text-center mb-10">
+                <h3 class="text-2xl font-bold text-white">3. Sannhetskonvergens</h3>
+                <p class="text-slate-400">Hvordan FINN reduserer usikkerhet (Discrepancy Score) over flere analyse-sykluser.</p>
+            </div>
+            <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                <div class="chart-container">
+                    <canvas id="convergenceChart"></canvas>
+                </div>
+            </div>
+            <p class="mt-6 text-center text-xs text-slate-500 italic">
+                Hver stolpe representerer en "Research Window" hvor FINN kryss-refererer data mot eksterne kilder.
+            </p>
+        </section>
+
+        <!-- DYPDYKK: DAG LOGIKK -->
+        <section class="bg-fjord-surface p-8 rounded-2xl border border-slate-700">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                <span class="mr-3 p-2 bg-finn-green/20 rounded">📜</span>
+                Den Konstitusjonelle Forskningslogikken
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                <div>
+                    <h4 class="font-bold text-finn-green mb-2 uppercase tracking-widest text-xs">Metode: Bayesian Logic</h4>
+                    <p class="text-slate-400 leading-relaxed">
+                        FINN starter med en "prior" sannsynlighet basert på historisk kanonisk data. Hvert nytt datapunkt 
+                        fra Sniper-API-et fungerer som "evidens" som oppdaterer denne sannsynligheten i sanntid.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-finn-cyan mb-2 uppercase tracking-widest text-xs">Mål: Insight Packs</h4>
+                    <p class="text-slate-400 leading-relaxed">
+                        Sluttproduktet er en <strong>Insight Pack</strong>. Den inneholder ikke bare tall, men en forklarende tekst 
+                        generert av FINNs interne resonneringsmotor, signert med Ed25519-nøkkelen for å garantere integritet.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 p-12 text-center text-slate-600 text-xs">
+        <p>© 2026 FjordHQ Sovereign AI Framework - Konstitusjonelt Dokument EC-004-VIS</p>
+        <p class="mt-2 font-mono uppercase tracking-widest">Truth is the only signal. Noise is the only enemy.</p>
+    </footer>
+
+    <script>
+        // --- HELPER: Label Wrapping ---
+        function wrap(str, limit = 16) {
+            if (str.length <= limit) return str;
+            const words = str.split(' ');
+            let lines = [];
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                if (currentLine.length + words[i].length <= limit) {
+                    currentLine += ' ' + words[i];
+                } else {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // --- TOOLTIP CALLBACK ---
+        const tooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels ? item.chart.data.labels[item.dataIndex] : '';
+                            return Array.isArray(label) ? label.join(' ') : label;
+                        }
+                    }
+                }
+            }
+        };
+
+        // --- CHART 1: TOPOLOGY (Scatter) ---
+        const ctxTop = document.getElementById('topologyChart').getContext('2d');
+        new Chart(ctxTop, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Makro-Noder',
+                        data: [{x: 10, y: 80}, {x: 15, y: 85}, {x: 12, y: 70}, {x: 8, y: 75}],
+                        backgroundColor: '#06b6d4',
+                        pointRadius: 8
+                    },
+                    {
+                        label: 'Sektor-Noder',
+                        data: [{x: 70, y: 20}, {x: 75, y: 25}, {x: 80, y: 15}, {x: 65, y: 18}],
+                        backgroundColor: '#10b981',
+                        pointRadius: 6
+                    },
+                    {
+                        label: 'Kritiske Koblinger',
+                        data: [{x: 40, y: 50}, {x: 45, y: 55}],
+                        backgroundColor: '#f59e0b',
+                        pointRadius: 10,
+                        showLine: true,
+                        borderColor: '#f59e0b',
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: false, min: 0, max: 100 },
+                    y: { display: false, min: 0, max: 100 }
+                },
+                plugins: {
+                    legend: { labels: { color: '#94a3b8', font: { size: 10 } } },
+                    ...tooltipConfig.plugins
+                }
+            }
+        });
+
+        // --- CHART 2: CAUSAL CHAIN (Line) ---
+        const ctxCausal = document.getElementById('causalChainChart').getContext('2d');
+        new Chart(ctxCausal, {
+            type: 'line',
+            data: {
+                labels: ['T-48h', 'T-36h', 'T-24h', 'T-12h', 'T-0 (Nå)'],
+                datasets: [
+                    {
+                        label: 'Årsak: Rentedifferanse',
+                        data: [2, 5, 8, 7, 6],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Virkning: Valutakurs',
+                        data: [1, 1, 2, 5, 9],
+                        borderColor: '#10b981',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: { display: false },
+                    x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } },
+                    ...tooltipConfig.plugins
+                }
+            }
+        });
+
+        // --- CHART 3: CONVERGENCE (Bar) ---
+        const ctxConv = document.getElementById('convergenceChart').getContext('2d');
+        new Chart(ctxConv, {
+            type: 'bar',
+            data: {
+                labels: [
+                    wrap('Initielt Dataopptak'), 
+                    wrap('Krysstesting av Kilder'), 
+                    wrap('Simulering av Utfall'), 
+                    wrap('Endelig Verifisering')
+                ],
+                datasets: [
+                    {
+                        label: 'Discrepancy Score (Feilmargin)',
+                        data: [85, 42, 18, 4],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#10b981'],
+                        borderRadius: 8
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100,
+                        ticks: { color: '#64748b', callback: v => v + '%' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: { ticks: { color: '#cbd5e1' }, grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    ...tooltipConfig.plugins
+                }
+            }
+        });
+    </script>
+</body>
+</html>

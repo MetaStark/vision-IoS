@@ -1,0 +1,207 @@
+{
+  "attestation_id": "VEGA-ATT-PREFLIGHT-208-20260106",
+  "attestation_type": "PREFLIGHT_EVIDENCE_PACK",
+  "classification": "GOVERNANCE-CRITICAL (CLASS A)",
+  "directive": "CEO-DIR-2026-001",
+  "migration": "208_ceo_dir_2026_001_epistemic_separation.sql",
+  "timestamp": "2026-01-06T21:30:00Z",
+  "attesting_agent": "VEGA",
+  "verifying_agent": "STIG",
+
+  "executive_summary": {
+    "verdict": "PREFLIGHT_PACK_COMPLETE",
+    "artifacts_delivered": 7,
+    "artifacts_required": 7,
+    "compliance_status": "COMPLIANT",
+    "migration_clearance": "CLEARED_FOR_EXECUTION_PENDING_CEO_APPROVAL"
+  },
+
+  "section_1_artifact_inventory": {
+    "artifacts": [
+      {
+        "artifact_id": 1,
+        "name": "Schema Placement Justification",
+        "file": "PREFLIGHT_208_SCHEMA_PLACEMENT_JUSTIFICATION.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-013", "ADR-015"],
+        "verification": "PASS - fhq_perception justified as canonical epistemic domain"
+      },
+      {
+        "artifact_id": 2,
+        "name": "Asset Identity Lineage Diagram",
+        "file": "PREFLIGHT_208_ASSET_IDENTITY_LINEAGE.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-011", "ADR-013"],
+        "verification": "PASS - FK chain documented, hash integration specified"
+      },
+      {
+        "artifact_id": 3,
+        "name": "Confidence Semantics Table",
+        "file": "PREFLIGHT_208_CONFIDENCE_SEMANTICS.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-017"],
+        "verification": "PASS - belief_confidence and policy_confidence semantics defined"
+      },
+      {
+        "artifact_id": 4,
+        "name": "Immutability Controls Document",
+        "file": "PREFLIGHT_208_IMMUTABILITY_CONTROLS.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-002", "CEO-DIR-2026-001"],
+        "verification": "PASS_WITH_FOLLOWUP - Trigger recommended for Migration 209"
+      },
+      {
+        "artifact_id": 5,
+        "name": "Lineage Hash Contract v1.0",
+        "file": "PREFLIGHT_208_LINEAGE_HASH_CONTRACT.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-011"],
+        "verification": "PASS - SHA-256 chain hash formula documented"
+      },
+      {
+        "artifact_id": 6,
+        "name": "Belief Distribution Schema",
+        "file": "PREFLIGHT_208_BELIEF_DISTRIBUTION_SCHEMA.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-013"],
+        "verification": "PASS - JSONB schema with sum-to-one validation defined"
+      },
+      {
+        "artifact_id": 7,
+        "name": "Suppression Taxonomy v1.0",
+        "file": "PREFLIGHT_208_SUPPRESSION_TAXONOMY.json",
+        "status": "DELIVERED",
+        "adr_compliance": ["ADR-002", "CEO-DIR-2026-001"],
+        "verification": "PASS - 6 categories with governance impact matrix"
+      }
+    ],
+
+    "completion_rate": "100%"
+  },
+
+  "section_2_supplementary_deliverables": {
+    "description": "Additional deliverables produced per CEO-DIR-2026-002",
+
+    "deliverables": [
+      {
+        "name": "SIDEWAYS Provenance Report",
+        "file": "CEO_DIR_2026_002_SIDEWAYS_PROVENANCE_REPORT.json",
+        "status": "DELIVERED",
+        "finding": "SIDEWAYS originates from Migration 207 v4-to-v2 mapping"
+      },
+      {
+        "name": "Isolation Boundary Assessment",
+        "file": "CEO_DIR_2026_002_ISOLATION_BOUNDARY_ASSESSMENT.json",
+        "status": "DELIVERED",
+        "finding": "fhq_perception is semantically independent of legacy v2 artifacts"
+      }
+    ]
+  },
+
+  "section_3_compliance_verification": {
+    "adr_checklist": [
+      {
+        "adr": "ADR-002 (Audit Charter)",
+        "requirement": "All changes logged",
+        "status": "COMPLIANT",
+        "evidence": "Migration 208 includes governance_actions_log entry"
+      },
+      {
+        "adr": "ADR-004 (Change Gates)",
+        "requirement": "G4 approval for constitutional changes",
+        "status": "PENDING_CEO_APPROVAL",
+        "evidence": "Preflight pack complete, awaiting CEO sign-off"
+      },
+      {
+        "adr": "ADR-011 (Replay/Hash Chains)",
+        "requirement": "Deterministic replay capability",
+        "status": "COMPLIANT",
+        "evidence": "lineage_hash column provides chain verification"
+      },
+      {
+        "adr": "ADR-013 (One-True-Source)",
+        "requirement": "Single canonical store per domain",
+        "status": "COMPLIANT",
+        "evidence": "fhq_perception is sole canonical store for epistemic beliefs"
+      },
+      {
+        "adr": "ADR-015 (Meta-Governance)",
+        "requirement": "Four-layer oversight alignment",
+        "status": "COMPLIANT",
+        "evidence": "AIQF, VOL-ADR, CDG, KACC integration points documented"
+      },
+      {
+        "adr": "ADR-017 (LIDS/Epistemic)",
+        "requirement": "Semantic stability and replayability",
+        "status": "COMPLIANT",
+        "evidence": "Confidence semantics and suppression taxonomy defined"
+      }
+    ]
+  },
+
+  "section_4_risk_assessment": {
+    "identified_risks": [
+      {
+        "risk_id": "R1",
+        "description": "Immutability trigger not in Migration 208",
+        "severity": "MEDIUM",
+        "mitigation": "Deploy trigger in Migration 209 before production activation",
+        "owner": "STIG"
+      },
+      {
+        "risk_id": "R2",
+        "description": "Sum-to-one constraint not database-enforced",
+        "severity": "LOW",
+        "mitigation": "Application-level validation + Migration 209 CHECK constraint",
+        "owner": "STIG"
+      },
+      {
+        "risk_id": "R3",
+        "description": "Migration 207 v2 mapping remains active",
+        "severity": "NOTED",
+        "mitigation": "CEO-DIR-2026-002 G4 remediation pending",
+        "owner": "CEO"
+      }
+    ],
+
+    "overall_risk_level": "ACCEPTABLE",
+    "recommendation": "Proceed with Migration 208 execution"
+  },
+
+  "section_5_isolation_boundary_confirmation": {
+    "status": "CONFIRMED",
+    "statement": "VEGA confirms that fhq_perception and all epistemic learning paths introduced by Migration 208 are semantically independent of legacy v2 regime artifacts stored in fhq_meta.regime_state.",
+    "evidence_reference": "CEO_DIR_2026_002_ISOLATION_BOUNDARY_ASSESSMENT.json"
+  },
+
+  "section_6_attestation_statement": {
+    "statement": "VEGA hereby attests that the Migration 208 Preflight Evidence Pack is COMPLETE and COMPLIANT with all applicable ADRs. Migration 208 is CLEARED for execution pending CEO approval.",
+
+    "conditions": [
+      "Migration 209 (immutability trigger) SHALL follow within 24 hours of Migration 208 execution",
+      "CEO-DIR-2026-002 v2 ontology remediation remains pending G4",
+      "All epistemic learning systems SHALL bind to fhq_perception.v_canonical_belief, NOT fhq_meta.regime_state"
+    ],
+
+    "validity": {
+      "valid_from": "2026-01-06T21:30:00Z",
+      "valid_until": "2026-01-13T21:30:00Z",
+      "note": "Attestation expires in 7 days if migration not executed"
+    }
+  },
+
+  "signatures": {
+    "vega_attestation": {
+      "agent": "VEGA",
+      "role": "Verification & Governance Authority",
+      "timestamp": "2026-01-06T21:30:00Z",
+      "signature": "PENDING_CRYPTOGRAPHIC_SIGNATURE"
+    },
+    "stig_verification": {
+      "agent": "STIG",
+      "role": "Chief Technology Officer",
+      "timestamp": "2026-01-06T21:30:00Z",
+      "signature": "PENDING_CRYPTOGRAPHIC_SIGNATURE"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "directive_id": "CEO-DIR-2026-042",
+  "gap_id": "GAP-001",
+  "gap_description": "Heartbeat enforcement - orchestrator liveness not verifiable",
+  "closure_type": "IMPLEMENTATION",
+  "closure_timestamp": "2026-01-13T10:45:00Z",
+  "executor": "STIG",
+  "authority": "CEO",
+
+  "implementation": {
+    "file_modified": "05_ORCHESTRATOR/orchestrator_v1.py",
+    "changes": [
+      {
+        "type": "CONFIG_ADDED",
+        "item": "Config.HEARTBEAT_INTERVAL_SECONDS = 60",
+        "purpose": "Define 1-minute heartbeat interval"
+      },
+      {
+        "type": "METHOD_ADDED",
+        "item": "publish_heartbeat(current_task, events_processed)",
+        "purpose": "Upsert heartbeat to fhq_governance.agent_heartbeats"
+      },
+      {
+        "type": "LOOP_INTEGRATION",
+        "item": "run_cnrp_continuous() heartbeat call",
+        "purpose": "Publish heartbeat every 60 seconds in main loop"
+      },
+      {
+        "type": "EVENT_TRACKING",
+        "item": "total_events counter",
+        "purpose": "Track processed events for heartbeat metadata"
+      }
+    ]
+  },
+
+  "heartbeat_schema": {
+    "table": "fhq_governance.agent_heartbeats",
+    "columns": {
+      "agent_id": "LARS",
+      "component": "ORCHESTRATOR",
+      "current_task": "CNRP#n|TRUTH#n format",
+      "health_score": "1.0 when alive",
+      "events_processed": "Incremented on each action",
+      "last_heartbeat": "NOW() on each publish"
+    }
+  },
+
+  "verification_query": "SELECT agent_id, component, current_task, health_score, events_processed, last_heartbeat FROM fhq_governance.agent_heartbeats WHERE agent_id = 'LARS'",
+
+  "gap_status": "CLOSED",
+  "remaining_gaps": [
+    "GAP-002: fhq_monitoring tables still empty (monitoring infrastructure)",
+    "GAP-003: DEFCON state empty (DEFCON system inactive)",
+    "GAP-004: canonical_outcomes empty (learning loop ground truth)"
+  ],
+
+  "_meta": {
+    "generated_at": "2026-01-13T10:45:00Z",
+    "generated_by": "STIG",
+    "directive_reference": "CEO-DIR-2026-042"
+  }
+}

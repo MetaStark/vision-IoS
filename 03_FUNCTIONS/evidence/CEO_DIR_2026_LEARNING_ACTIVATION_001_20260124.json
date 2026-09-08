@@ -1,0 +1,131 @@
+{
+  "directive": "CEO-DIR-2026-LEARNING-ACTIVATION-001",
+  "title": "Continuous Learning Activation under EC-022 Freeze",
+  "issued": "2026-01-24T17:30:00+01:00",
+  "accepted": "2026-01-24T17:35:00+01:00",
+  "accepted_by": "STIG (EC-003)",
+  "classification": "GOVERNANCE-CRITICAL / AUDIT-BOUND",
+
+  "system_state": {
+    "learning": "ACTIVE",
+    "reward": "FROZEN",
+    "capital": "FROZEN",
+    "hypothesis_generation": "MANDATED",
+    "experimentation": "ACTIVE_SHADOW_PAPER_ONLY"
+  },
+
+  "throughput_requirements": {
+    "hypotheses_per_day": {
+      "minimum": 3,
+      "rationale": "100 errors/day × 3% conversion = 3 floor"
+    },
+    "experiments_per_day": {
+      "minimum": 3,
+      "rationale": "1:1 ratio with hypotheses"
+    },
+    "error_coverage": {
+      "minimum": "100%",
+      "rationale": "All forecast_outcome_pairs must be classified"
+    }
+  },
+
+  "agent_accountability": {
+    "FINN_EC004": {
+      "role": "Primary owner",
+      "deliverables": [
+        "Hypothesis generation (≥3/day)",
+        "Experiment initiation (≥3/day)"
+      ]
+    },
+    "LARS_EC002": {
+      "role": "Quality owner",
+      "deliverables": [
+        "Epistemic quality gate",
+        "Anti-thesis generation",
+        "False-negative detection"
+      ]
+    },
+    "STIG_EC003": {
+      "role": "Orchestrator",
+      "deliverables": [
+        "Throughput verification",
+        "Enforcement",
+        "Escalation"
+      ]
+    }
+  },
+
+  "escalation_thresholds": {
+    "warning_24h": "0 hypotheses in 24h → Alert STIG",
+    "escalate_48h_hypo": "0 hypotheses in 48h → Auto-alert CEO",
+    "escalate_48h_exp": "0 experiments in 48h → Auto-alert CEO",
+    "error_coverage": "< 100% → Alert FINN"
+  },
+
+  "authorized_activities": [
+    "Hypothesis creation",
+    "Shadow experimentation",
+    "Paper experimentation",
+    "Golden Needle discovery",
+    "Error-driven hypothesis spawning",
+    "Brier computation",
+    "LVI computation",
+    "Calendar-tracked learning tests",
+    "Context annotations (EC-020/021)"
+  ],
+
+  "forbidden_activities": [
+    "Capital deployment",
+    "Leverage",
+    "Reward activation",
+    "Policy mutation tied to EC-022",
+    "Live trading"
+  ],
+
+  "acceptance_tests": {
+    "hypothesis_throughput": "≥3 in 24h",
+    "experiment_throughput": "≥3 in 24h",
+    "error_coverage": "100%",
+    "metrics_updated": "Changed from yesterday"
+  },
+
+  "fail_closed_rule": "No learning activity for 48h = GOVERNANCE BREACH → CEO escalation",
+
+  "current_baseline": {
+    "hypotheses_total": 3,
+    "hypotheses_last_24h": 0,
+    "experiments_total": 2,
+    "experiments_last_24h": 0,
+    "error_coverage": "3%",
+    "golden_needles_last_7d": 0,
+    "context_annotations": 0,
+    "status": "STALLED"
+  },
+
+  "target_state": {
+    "hypotheses_per_day": "≥3",
+    "experiments_per_day": "≥3",
+    "error_coverage": "100%",
+    "golden_needles": "REACTIVATED",
+    "context_annotations": "ACTIVE",
+    "status": "LEARNING_ACTIVE"
+  },
+
+  "implementation_status": {
+    "directive_accepted": true,
+    "throughput_proposed": true,
+    "daily_report_updated": "PENDING",
+    "monitoring_wired": "PENDING",
+    "escalation_wired": "PENDING"
+  },
+
+  "governance_compliance": {
+    "ADR-018_ASRP": "COMPLIANT - Learning decoupled from reward",
+    "ADR-014": "COMPLIANT - Hypothesis lifecycle enforced",
+    "IoS-010": "IMPLEMENTING - Error-driven learning required",
+    "IoS-013": "IMPLEMENTING - Context integration active",
+    "EC-022": "COMPLIANT - Remains FROZEN"
+  },
+
+  "hash": "b8d4f2e1c3a5607e9f2b4d1c8a7e5f3b"
+}

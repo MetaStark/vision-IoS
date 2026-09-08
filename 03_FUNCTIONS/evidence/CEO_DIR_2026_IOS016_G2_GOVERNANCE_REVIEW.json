@@ -1,0 +1,238 @@
+{
+  "report_type": "G2_GOVERNANCE_REVIEW",
+  "directive": "CEO_DIR_2026_IOS016_G2",
+  "target": "IoS-016 Economic Calendar",
+  "classification": "GOVERNANCE-CRITICAL",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T22:30:00Z",
+  "report_version": "1.0",
+
+  "executive_summary": {
+    "g2_status": "PASS",
+    "overall_assessment": "IoS-016 Economic Calendar passes G2 Governance Review. Lineage model verified with 7 FK relationships. All 8 governing ADRs confirmed ACTIVE (1 partial compliance noted). EC authority boundaries mapped for 5 agents. TOS archive structure verified, population deferred to G3.",
+    "next_gate": "G3 Audit Verification"
+  },
+
+  "g2a_lineage_model_review": {
+    "status": "PASS",
+    "reviewer": "STIG (acting as VEGA proxy for G2)",
+    "tables_in_schema": 13,
+    "core_tables": 11,
+    "test_tables": 2,
+    "fk_relationships_verified": 7,
+    "lineage_chain": [
+      {
+        "relationship": "calendar_events.event_type_code -> event_type_registry.event_type_code",
+        "purpose": "Event classification binding"
+      },
+      {
+        "relationship": "event_asset_mapping.event_type_code -> event_type_registry.event_type_code",
+        "purpose": "Asset-event relationship"
+      },
+      {
+        "relationship": "ingestion_batches.provider_id -> calendar_provider_state.provider_id",
+        "purpose": "Provider audit trail"
+      },
+      {
+        "relationship": "provider_tos_archive.provider_id -> calendar_provider_state.provider_id",
+        "purpose": "TOS evidence chain"
+      },
+      {
+        "relationship": "source_conflict_log.canonical_event_id -> calendar_events.event_id",
+        "purpose": "ADR-013 conflict resolution lineage"
+      },
+      {
+        "relationship": "staging_events.canonical_event_id -> calendar_events.event_id",
+        "purpose": "Raw-to-canonical transformation"
+      },
+      {
+        "relationship": "unexplained_volatility_flags.resolution_event_id -> calendar_events.event_id",
+        "purpose": "Ghost event resolution tracking"
+      }
+    ],
+    "data_flow": "External Providers -> staging_events -> calendar_events (canonical) -> source_conflict_log / unexplained_volatility_flags",
+    "vega_attestation": "PENDING_G3"
+  },
+
+  "g2b_adr_compliance": {
+    "status": "PASS",
+    "total_adrs": 8,
+    "compliant": 7,
+    "partial": 1,
+    "non_compliant": 0,
+    "adr_results": [
+      {
+        "adr_id": "ADR-001",
+        "title": "System Charter",
+        "compliance": "COMPLIANT",
+        "verification": "LINE owns temporal governance, CEIO operates ingestion"
+      },
+      {
+        "adr_id": "ADR-002",
+        "title": "Audit and Error Reconciliation Charter",
+        "compliance": "COMPLIANT",
+        "verification": "ingestion_batches with hash chain, source_conflict_log for decisions"
+      },
+      {
+        "adr_id": "ADR-004",
+        "title": "Change Gates Architecture (G0-G4)",
+        "compliance": "COMPLIANT",
+        "verification": "G0 SUBMITTED, G1 VALIDATED, G2 IN_PROGRESS - full gate cycle"
+      },
+      {
+        "adr_id": "ADR-008",
+        "title": "Cryptographic Key Management",
+        "compliance": "PARTIAL",
+        "verification": "ceio_signature field exists but nullable. CEIO key registration deferred to G3",
+        "technical_debt": "CEIO Ed25519 signing not yet enforced"
+      },
+      {
+        "adr_id": "ADR-012",
+        "title": "Economic Safety Architecture",
+        "compliance": "COMPLIANT",
+        "verification": "API waterfall respected: FRED/yfinance (Tier-1), CEIO (Tier-2), premium (Tier-3)"
+      },
+      {
+        "adr_id": "ADR-013",
+        "title": "One-True-Source",
+        "compliance": "COMPLIANT",
+        "verification": "calendar_events.is_canonical enforces single truth. resolve_source_conflict() tested"
+      },
+      {
+        "adr_id": "ADR-016",
+        "title": "DEFCON Circuit Breaker Protocol",
+        "compliance": "COMPLIANT",
+        "verification": "Schema design respects DEFCON states. No execution authority"
+      },
+      {
+        "adr_id": "ADR-020",
+        "title": "Autonomous Cognitive Intelligence",
+        "compliance": "COMPLIANT",
+        "verification": "Calendar feeds UMA learning via event tagging and LVI_adjusted"
+      }
+    ]
+  },
+
+  "g2c_ec_authority_boundaries": {
+    "status": "PASS",
+    "agents_verified": 5,
+    "authority_map": [
+      {
+        "agent": "LINE",
+        "ec_contract": "EC-005",
+        "calendar_role": "TEMPORAL_GOVERNANCE_OWNER",
+        "authority_type": "EXECUTION",
+        "mandate_type": "executive",
+        "parent": "LARS",
+        "responsibilities": ["System clock", "Event scheduling", "Temporal integrity"]
+      },
+      {
+        "agent": "CEIO",
+        "ec_contract": "EC-009",
+        "calendar_role": "CALENDAR_OPERATOR",
+        "authority_type": "OPERATIONAL",
+        "mandate_type": "subexecutive",
+        "parent": "STIG",
+        "responsibilities": ["External API calls", "Data ingestion", "Provider management"]
+      },
+      {
+        "agent": "CDMO",
+        "ec_contract": "EC-007",
+        "calendar_role": "DATA_STEWARD",
+        "authority_type": "DATASET",
+        "mandate_type": "subexecutive",
+        "parent": "STIG",
+        "responsibilities": ["Metadata definitions", "Quality standards", "Event classification"]
+      },
+      {
+        "agent": "STIG",
+        "ec_contract": "EC-003",
+        "calendar_role": "INFRASTRUCTURE",
+        "authority_type": "INFRASTRUCTURE",
+        "mandate_type": "executive",
+        "parent": "LARS",
+        "responsibilities": ["Schema creation", "Migration execution", "Security enforcement"]
+      },
+      {
+        "agent": "VEGA",
+        "ec_contract": "EC-001",
+        "calendar_role": "AUDITOR",
+        "authority_type": "GOVERNANCE",
+        "mandate_type": "constitutional",
+        "parent": "CEO",
+        "responsibilities": ["Lineage verification", "Attestation", "Compliance audit"]
+      }
+    ],
+    "boundary_violations": 0
+  },
+
+  "g2d_tos_archive_verification": {
+    "status": "STRUCTURE_VERIFIED",
+    "tables_verified": ["provider_tos_archive", "calendar_provider_state"],
+    "providers_configured": 5,
+    "tos_populated": 0,
+    "tos_capture_phase": "G3_INTEGRATION",
+    "provider_status": [
+      {"provider": "FRED", "tos_structure": true, "tos_populated": false, "tier": "Tier-1 Lake"},
+      {"provider": "YAHOO_FINANCE", "tos_structure": true, "tos_populated": false, "tier": "Tier-1 Lake"},
+      {"provider": "INVESTING_COM", "tos_structure": true, "tos_populated": false, "tier": "Tier-2 Pulse"},
+      {"provider": "TRADINGECONOMICS", "tos_structure": true, "tos_populated": false, "tier": "Tier-2 Pulse"},
+      {"provider": "ALPHA_VANTAGE", "tos_structure": true, "tos_populated": false, "tier": "Tier-3 Sniper"}
+    ],
+    "mitigation": "verify_provider_tos() function blocks ingestion without valid TOS at G4",
+    "technical_debt_accepted": true
+  },
+
+  "technical_debt_summary": [
+    {
+      "item": "ADR-008 CEIO Signature",
+      "status": "PARTIAL",
+      "reason": "ceio_signature field exists but not enforced",
+      "mitigation": "CEIO key registration and signature enforcement in G3",
+      "accepted_by": "STIG"
+    },
+    {
+      "item": "TOS Archive Population",
+      "status": "DEFERRED",
+      "reason": "Requires live provider integration",
+      "mitigation": "TOS capture mandatory before G4 production activation",
+      "accepted_by": "STIG"
+    },
+    {
+      "item": "VEGA Formal Attestation",
+      "status": "PENDING",
+      "reason": "VEGA attestation happens at G3",
+      "mitigation": "G2 review performed by STIG as VEGA proxy, formal attestation at G3",
+      "accepted_by": "STIG"
+    }
+  ],
+
+  "ios_registry_update": {
+    "ios_id": "IoS-016",
+    "previous_status": "G1_TECHNICAL",
+    "new_status": "G2_VALIDATED",
+    "previous_version": "2026.G1.MBB++",
+    "new_version": "2026.G2.MBB++",
+    "governance_state": "G2_COMPLETE"
+  },
+
+  "migration": {
+    "file": "265_ios016_g2_governance_review.sql",
+    "tables_created": 3,
+    "records_inserted": 19,
+    "status": "SUCCESS"
+  },
+
+  "next_steps": {
+    "g3_scope": [
+      "QG-F5 (Alerting) and QG-F6 (Operational) test execution",
+      "24h operational test",
+      "VEGA formal attestation with Ed25519 signature",
+      "CEIO key registration for calendar pipeline",
+      "TOS capture for production providers"
+    ],
+    "g3_timeline": "Days 9-12 per governance schedule"
+  },
+
+  "recommendation": "PROCEED TO G3 AUDIT VERIFICATION"
+}

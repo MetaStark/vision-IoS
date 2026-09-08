@@ -1,0 +1,123 @@
+{
+  "evidence_id": "PHASE2_4_DAEMON_STARTUP_REPORT",
+  "evidence_type": "DAEMON_STARTUP_VERIFICATION",
+  "directive": "CEO-DIR-2026-TRUTH-SYNC-P2-4",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-13T01:20:00Z",
+
+  "explicit_statement": "Execution occurred in paper mode only. No capital exposure.",
+
+  "executive_summary": {
+    "status": "STARTUP_SUCCESSFUL",
+    "headline": "Daemon started, startup guard passed, LIDS gate blocked all signals - no execution",
+    "startup_time": "2026-01-13T01:15:10Z",
+    "cycle_completed": true,
+    "trades_executed": 0,
+    "orders_placed": 0,
+    "capital_exposure": "NONE"
+  },
+
+  "startup_outcome": {
+    "guard_result": "PASSED",
+    "guard_message": "Broker state verified: 0 positions, 0 pending orders",
+    "guard_timestamp": "2026-01-13T01:15:14.041Z",
+    "logged_to_governance": true,
+    "action_type": "STARTUP_RECONCILIATION_CHECK"
+  },
+
+  "execution_reality": {
+    "signals_evaluated": 8,
+    "signals_blocked_by_lids": 8,
+    "signals_executed": 0,
+    "orders_attempted": 0,
+    "orders_placed": 0,
+    "lids_block_reason": "confidence=0.00 < 0.7 threshold",
+    "cco_status": "PERMITTED"
+  },
+
+  "database_row_deltas": {
+    "fhq_execution.paper_orders": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "fhq_execution.paper_positions": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "fhq_execution.trades": {
+      "before": 5,
+      "after": 5,
+      "delta": 0
+    },
+    "fhq_canonical.g5_signal_state": {
+      "before": 1784,
+      "after": 1784,
+      "delta": 0
+    },
+    "fhq_governance.governance_actions_log": {
+      "before": 7930,
+      "after": 7939,
+      "delta": 9,
+      "new_entries": [
+        {"action_type": "STARTUP_RECONCILIATION_CHECK", "decision": "PASSED"},
+        {"action_type": "LIDS_CONFIDENCE_BLOCK", "count": 8, "decision": "BLOCKED"}
+      ]
+    }
+  },
+
+  "circuit_breaker_status": {
+    "defcon_level": "GREEN",
+    "defcon_unchanged": true,
+    "split_brain_events": 0,
+    "anomaly_events": 0
+  },
+
+  "log_excerpt": {
+    "startup_guard": "[STARTUP-GUARD] Broker state: 0 positions, 0 pending orders",
+    "guard_pass": "[STARTUP-GUARD] PASSED: Broker state verified: 0 positions, 0 pending orders",
+    "cco_permit": "CCO PERMITTED - Execution enabled",
+    "lids_blocks": "[LIDS-GATE] LIDS_BLOCKED: confidence=0.00 < 0.7 threshold (x8)",
+    "cycle_result": "Cycle Result: Permitted: True, Reason: Execution permitted, Trades: 0"
+  },
+
+  "schema_issue_discovered": {
+    "severity": "NON_BLOCKING",
+    "issue": "Column 'executed_at' does not exist in g5_signal_state",
+    "impact": "Error logged but daemon continued - affects position closure tracking",
+    "recommendation": "Add to Phase 3 schema alignment task list",
+    "blocking_for_execution": false
+  },
+
+  "broker_state_verification": {
+    "positions": 0,
+    "pending_orders": 0,
+    "cash_balance": 104904.05,
+    "portfolio_value": 104904.05,
+    "state": "CLEAN"
+  },
+
+  "compliance_verification": {
+    "paper_mode_enforced": true,
+    "single_cycle_mode": true,
+    "no_continuous_loop": true,
+    "no_live_trading": true,
+    "startup_guard_executed": true,
+    "governance_logging_active": true
+  },
+
+  "phase_2_completion_status": {
+    "task_2_1_broker_reconciliation": "COMPLETE",
+    "task_2_2_schema_fix": "COMPLETE",
+    "task_2_3_startup_guards": "COMPLETE",
+    "task_2_4_daemon_startup": "COMPLETE",
+    "overall_phase_2_status": "COMPLETE"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "attestation_date": "2026-01-13",
+    "statement": "Phase 2.4 controlled daemon startup completed successfully. Startup guard verified clean broker state. All 8 signals blocked by LIDS confidence gate (0.00 < 0.7 threshold). Zero orders placed, zero capital exposure. Execution occurred in paper mode only."
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "evidence_type": "PHASE1_RESTORATION",
+  "evidence_id": "PHASE1_RESTORE_20260208",
+  "timestamp_utc": "2026-02-08T01:50:00.000Z",
+  "timestamp_cet": "2026-02-08T02:50:00.000+01:00",
+  "executor": "STIG",
+  "executor_contract": "EC-003",
+  "authority": "CEO Phase 1 Restoration Directive",
+  "previous_directive_superseded": "CEO-DIR-2026-124",
+  "new_directive": "CEO-PHASE1-RESTORE-20260208",
+  "daemons_activated": [
+    {
+      "daemon_name": "hypothesis_death_daemon",
+      "previous_status": "DORMANT_EXPECTED",
+      "new_status": "ACTIVE",
+      "purpose": "Enables hypothesis falsification based on outcome data",
+      "expected_interval_minutes": 30
+    },
+    {
+      "daemon_name": "lvi_calculator",
+      "previous_status": "DORMANT_EXPECTED",
+      "new_status": "ACTIVE",
+      "purpose": "Computes Learning Velocity Index (LVI)",
+      "expected_interval_minutes": 30,
+      "last_computation": "2026-01-24T15:40:34.967Z",
+      "days_stale": 14
+    },
+    {
+      "daemon_name": "hypothesis_experiment_bridge_daemon",
+      "previous_status": "DORMANT_EXPECTED",
+      "new_status": "ACTIVE",
+      "purpose": "Connects experiments to hypothesis validation",
+      "expected_interval_minutes": 65
+    }
+  ],
+  "ios010_bridge_status": {
+    "overall": "PARTIAL",
+    "components": {
+      "forecast_ledger": {
+        "status": "OPERATIONAL",
+        "total_records": 67151,
+        "last_24h": 790
+      },
+      "outcome_ledger": {
+        "status": "OPERATIONAL",
+        "total_records": 66684,
+        "last_7d": 12283
+      },
+      "lvi_canonical": {
+        "status": "STALE",
+        "total_records": 474,
+        "last_computation": "2026-01-20T22:32:47.190Z",
+        "note": "Daemon just activated, expect computation within 30 min"
+      }
+    }
+  },
+  "defcon_status": "ORANGE (unchanged)",
+  "ec022_status": "PRECONDITION_UNMET (unchanged)",
+  "success_criteria": {
+    "hypotheses_being_killed": {
+      "target": "Check in 24h",
+      "current": false
+    },
+    "lvi_computation_resumed": {
+      "target": "Check in 1h",
+      "current": false
+    },
+    "learning_updates_count_positive": {
+      "target": "Required for EC-022 resumption",
+      "current": false
+    }
+  },
+  "migration_file": "357_phase1_learning_loop_restoration.sql",
+  "runbook_reference": "12_DAILY_REPORTS/DAY39_RUNBOOK_20260208.md",
+  "hash": null,
+  "signature": null
+}

@@ -1,0 +1,147 @@
+{
+  "migration": "345_learning_activation_gaps.sql",
+  "directive": "CEO-DIR-2026-LEARNING-ACTIVATION-001 Amendment A",
+  "executed_at": "2026-01-24T18:10:00+01:00",
+  "executed_by": "STIG (EC-003)",
+  "status": "SUCCESS",
+
+  "gaps_closed": {
+    "gap_1_semantic_hash": {
+      "description": "Duplicate hypothesis detection via semantic hash",
+      "implementation": [
+        "Added semantic_hash column to hypothesis_canon",
+        "Created compute_hypothesis_hash() function",
+        "Created check_hypothesis_duplicate() function",
+        "Created trigger trg_hypothesis_semantic_hash for auto-compute",
+        "Backfilled semantic_hash for 3 existing hypotheses"
+      ],
+      "status": "CLOSED"
+    },
+    "gap_2_mechanical_escalation": {
+      "description": "Mechanical escalation function with no human interpretation",
+      "implementation": [
+        "Created learning_escalation_log table",
+        "Created check_learning_escalation() function",
+        "Created execute_learning_escalation() function",
+        "Created acknowledge_escalation() function"
+      ],
+      "triggers": [
+        "HYPO_STALL: No hypothesis in 24h",
+        "EXP_STALL: No experiment in 24h",
+        "DEATH_TOO_SOFT: <50% death rate over 48h",
+        "DEATH_TOO_BRUTAL: >95% death rate over 48h"
+      ],
+      "status": "CLOSED"
+    },
+    "gap_3_throughput_monitoring": {
+      "description": "Learning throughput status view",
+      "implementation": [
+        "Created v_learning_throughput_status view"
+      ],
+      "status": "CLOSED"
+    },
+    "gap_4_scaling_authorization": {
+      "description": "Dynamic scaling authorization view",
+      "implementation": [
+        "Created v_dynamic_scaling_authorization view"
+      ],
+      "status": "CLOSED"
+    }
+  },
+
+  "verification_results": {
+    "semantic_hash": {
+      "hypotheses_with_hash": 3,
+      "unique_hashes": 3,
+      "duplicates_detected": 0,
+      "hashes": [
+        {"code": "HYP-2026-0001", "hash": "64cf41f669d919263414562bf071bea5"},
+        {"code": "HYP-2026-0002", "hash": "b2f7c85ae95aae9643264e52b73f33c6"},
+        {"code": "HYP-2026-0003", "hash": "c531b5cba35c812beedec5fb7d941804"}
+      ]
+    },
+    "escalation_triggers": {
+      "HYPO_STALL": {
+        "current_value": 20.0,
+        "threshold": 24.0,
+        "triggered": false,
+        "hours_until_trigger": 4.0
+      },
+      "EXP_STALL": {
+        "current_value": 20.0,
+        "threshold": 24.0,
+        "triggered": false,
+        "hours_until_trigger": 4.0
+      },
+      "DEATH_TOO_SOFT": {
+        "current_value": 100.0,
+        "threshold": 50.0,
+        "triggered": false
+      },
+      "DEATH_TOO_BRUTAL": {
+        "current_value": 100.0,
+        "threshold": 95.0,
+        "triggered": true,
+        "action_required": "Calibrate Tier-1 death rate to 60-90% range"
+      }
+    },
+    "throughput_status": {
+      "hypotheses_24h": 3,
+      "min_hypotheses": 3,
+      "hypothesis_status": "PASS",
+      "experiments_24h": 2,
+      "min_experiments": 3,
+      "experiment_status": "FAIL",
+      "overall_status": "LEARNING_STALLED"
+    },
+    "scaling_authorization": {
+      "phase_0_end": "2026-01-27T18:00:00+01:00",
+      "phase_0_complete": false,
+      "tier1_death_rate": 100.0,
+      "death_rate_in_range": false,
+      "no_duplicates": true,
+      "scaling_authorized": false,
+      "blocking_reason": "Phase 0 active + Death rate outside 60-90% range"
+    }
+  },
+
+  "new_database_objects": {
+    "columns": [
+      "fhq_learning.hypothesis_canon.semantic_hash",
+      "fhq_learning.hypothesis_canon.error_frequency_percentile"
+    ],
+    "tables": [
+      "fhq_learning.learning_escalation_log"
+    ],
+    "functions": [
+      "fhq_learning.compute_hypothesis_hash()",
+      "fhq_learning.check_hypothesis_duplicate()",
+      "fhq_learning.trg_compute_semantic_hash()",
+      "fhq_learning.check_learning_escalation()",
+      "fhq_learning.execute_learning_escalation()",
+      "fhq_learning.acknowledge_escalation()"
+    ],
+    "views": [
+      "fhq_learning.v_learning_throughput_status",
+      "fhq_learning.v_dynamic_scaling_authorization"
+    ],
+    "triggers": [
+      "trg_hypothesis_semantic_hash ON fhq_learning.hypothesis_canon"
+    ],
+    "indexes": [
+      "idx_hypothesis_semantic_hash",
+      "idx_escalation_unacknowledged"
+    ]
+  },
+
+  "immediate_alerts": {
+    "DEATH_TOO_BRUTAL": {
+      "status": "TRIGGERED",
+      "current_value": "100%",
+      "threshold": "95%",
+      "recommendation": "FINN must calibrate Tier-1 experiments to achieve 60-90% death rate"
+    }
+  },
+
+  "hash": "d7e8f4a2b1c3506e9f4a5c2b1d7e9f3a"
+}

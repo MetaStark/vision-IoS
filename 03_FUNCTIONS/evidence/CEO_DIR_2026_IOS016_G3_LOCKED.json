@@ -1,0 +1,111 @@
+{
+  "evidence_type": "G3_GATE_LOCKED",
+  "directive_id": "CEO_DIR_2026_IOS016_G3_LOCK",
+  "generated_by": "STIG",
+  "generated_at": "2026-01-16T23:33:33Z",
+  "classification": "GOVERNANCE-CRITICAL",
+
+  "executive_summary": {
+    "status": "G3_LOCKED",
+    "locked_by": "CEO",
+    "locked_at": "2026-01-16T23:33:33+01:00",
+    "mechanical_enforcement": "100%",
+    "vega_signature": "PENDING_CEREMONY"
+  },
+
+  "ceo_decision": {
+    "decision": "Lock G3 now, VEGA signs when ready",
+    "rationale": "Mechanical enforcement complete. Signature is ceremonial, not safety-critical.",
+    "timestamp": "2026-01-16T23:33:33+01:00"
+  },
+
+  "g3_requirements_complete": [
+    {
+      "id": "G3-REQ-001",
+      "title": "CEIO Signature Enforcement",
+      "status": "MECHANICALLY_ENFORCED",
+      "mechanism": "CHECK constraint: calendar_events_signature_required"
+    },
+    {
+      "id": "G3-REQ-002",
+      "title": "TOS Evidence",
+      "status": "MECHANICALLY_ENFORCED",
+      "mechanism": "Function: verify_provider_tos_complete()"
+    },
+    {
+      "id": "G3-REQ-003",
+      "title": "VEGA Attestation Bundle",
+      "status": "INFRASTRUCTURE_COMPLETE",
+      "mechanism": "Bundle generated, signature pending"
+    },
+    {
+      "id": "G3-REQ-004",
+      "title": "Granular Conflict Resolution",
+      "status": "MECHANICALLY_ENFORCED",
+      "mechanism": "Function: resolve_source_conflict_granular()"
+    },
+    {
+      "id": "G3-REQ-005",
+      "title": "Ghost Non-Exculpatory",
+      "status": "MECHANICALLY_ENFORCED",
+      "mechanism": "CHECK constraint: ghost_exculpatory_requires_evidence"
+    },
+    {
+      "id": "G3-REQ-006",
+      "title": "Scope Firewall",
+      "status": "MECHANICALLY_ENFORCED",
+      "mechanism": "BEFORE INSERT trigger: trg_staging_firewall"
+    },
+    {
+      "id": "G3-REQ-007",
+      "title": "24h Test Oracle",
+      "status": "OPERATIONAL",
+      "mechanism": "Function: run_24h_operational_test()"
+    }
+  ],
+
+  "vega_pending": {
+    "bundle_id": "1b76aed9-08b1-413e-a7ab-073814877e35",
+    "content_hash": "27fa53428a77ac01f655f029f14bff8ceee617f0a46dc9d4bf2cfac89c7c1290",
+    "vega_public_key": "7c71b6356827f270200cc3b870b8c8d33b72eca77d5b87145c377812705515c9",
+    "action": "VEGA signs content_hash with Ed25519 private key when ready"
+  },
+
+  "system_state": {
+    "can_refuse_incorrect_operation": true,
+    "can_prove_why_not": true,
+    "escape_hatches_removed": true,
+    "shutdown_proof": true,
+    "audit_proof": true,
+    "court_safe": true
+  },
+
+  "migrations_locked": [
+    "260_economic_calendar_foundation.sql",
+    "261_calendar_provider_infrastructure.sql",
+    "262_event_asset_mapping.sql",
+    "263_forecast_event_tagging.sql",
+    "264_uma_calendar_integration.sql",
+    "265_g2_governance_review.sql",
+    "266_g3_ceio_signature_enforcement.sql",
+    "267_g3_24h_test_oracle.sql",
+    "268_g3_tos_vega_attestation.sql",
+    "269_g3_scope_firewall.sql",
+    "270_g3_ghost_non_exculpatory.sql",
+    "271_g3_granular_conflict_resolution.sql"
+  ],
+
+  "next_gate": {
+    "gate": "G3.5 Shadow Mode",
+    "description": "48h shadow mode before G4 production activation",
+    "prerequisite": "G3 LOCKED (satisfied)"
+  },
+
+  "stig_attestation": {
+    "g3_locked": true,
+    "mechanical_enforcement_complete": true,
+    "vega_ceremony_pending": true,
+    "ready_for_shadow_mode": true,
+    "statement": "G3 LOCKED by CEO decision 2026-01-16. All mechanical enforcement in place. System can refuse to operate incorrectly and prove why something did not happen. VEGA signature pending formal ceremony."
+  }
+}

@@ -1,0 +1,379 @@
+{
+  "evidence_id": "CEO-DIR-2026-099-TRUTH-INVENTORY-20260119",
+  "directive": "CEO DIRECTIVE: FJORDHQ TRUTH INVENTORY",
+  "title": "Complete System Truth Reconstitution - Database-Verified Claims Only",
+  "generated_at": "2026-01-19T10:00:00Z",
+  "generated_by": "STIG",
+  "contract": "EC-003_2026_PRODUCTION",
+  "principle": "If it cannot be verified directly in the database, it does not exist.",
+
+  "SECTION_A_DAILY_REPORT_CLAIM_RECONCILIATION": {
+    "reports_analyzed": ["Day 2", "Day 5", "Day 11", "Day 13", "Day 14", "Day 15", "Day 16", "Day 19"],
+    "verification_matrix": {
+      "VERIFIED_CLAIMS": [
+        {
+          "claim": "GFI = 0.7137, stress threshold breached",
+          "source_report": "Day 19",
+          "db_table": "fhq_macro.geopolitical_friction_data",
+          "db_query": "SELECT observation_date, geopolitical_friction_index, geopolitical_friction_index > 0.70 as stress_breached FROM fhq_macro.geopolitical_friction_data ORDER BY observation_date DESC LIMIT 1",
+          "db_value": {"observation_date": "2026-01-18", "gfi": 0.7137, "stress_breached": true},
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "Hit rate = 6.67%",
+          "source_report": "Day 19",
+          "db_table": "fhq_research.crypto_regime_quality_metrics",
+          "db_query": "SELECT metric_date, sample_size, signals_with_outcome, hit_rate_1d FROM fhq_research.crypto_regime_quality_metrics ORDER BY metric_date DESC LIMIT 1",
+          "db_value": {"metric_date": "2026-01-18", "sample_size": 46, "signals_with_outcome": 45, "hit_rate_1d": 0.0667},
+          "denominator": "signals_with_outcome = 45",
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "Brier score tracking operational",
+          "source_report": "Multiple",
+          "db_table": "fhq_governance.brier_score_ledger",
+          "db_value": {"total_records": 3601, "unique_assets": 488, "avg_brier": 0.5885},
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "Golden Needles pipeline operational",
+          "source_report": "Multiple",
+          "db_table": "fhq_canonical.golden_needles",
+          "db_value": {"total_needles": 1804, "current_count": 39, "unique_assets": 2, "avg_eqs": 0.9720},
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "LDOW infrastructure exists",
+          "source_report": "Day 14+",
+          "db_tables": ["fhq_governance.ldow_cycle_completion", "fhq_governance.ldow_forecast_captures", "fhq_governance.ldow_unattended_executions"],
+          "db_value": {"ldow_tables_count": 12},
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "Confidence calibration gates exist",
+          "source_report": "Multiple",
+          "db_table": "fhq_governance.confidence_calibration_gates",
+          "db_value": {"total_gates": 19, "active_gates": 15, "forecast_types": 3, "regime_types": 5},
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL"
+        },
+        {
+          "claim": "SkillDamper rules persisted",
+          "source_report": "Day 19",
+          "db_table": "fhq_governance.skill_damper_config",
+          "db_value": [
+            {"threshold_type": "FREEZE", "fss_min": 0.00, "fss_max": 0.40, "damper_value": 0.00},
+            {"threshold_type": "REDUCED", "fss_min": 0.40, "fss_max": 0.50, "damper_value": 0.25},
+            {"threshold_type": "CAUTIOUS", "fss_min": 0.50, "fss_max": 0.60, "damper_value": 0.50},
+            {"threshold_type": "NORMAL", "fss_min": 0.60, "fss_max": 0.80, "damper_value": 1.00},
+            {"threshold_type": "HIGH", "fss_min": 0.80, "fss_max": 1.00, "damper_value": 1.00}
+          ],
+          "verdict": "VERIFIED",
+          "canonical_status": "CANONICAL",
+          "note": "Rules exist but cannot be evaluated - see VF-003"
+        }
+      ],
+
+      "NOT_VERIFIED_CLAIMS": [
+        {
+          "claim_id": "VF-001",
+          "claim": "BIFURCATED_LIQUIDITY regime Day 4/5",
+          "source_report": "Day 19 / Geopolitical Briefing",
+          "db_search": "fhq_research.regime_states, fhq_governance.governance_actions_log",
+          "db_query": "SELECT DISTINCT regime_state FROM fhq_research.regime_states",
+          "db_result": ["0", "1", "2"],
+          "verdict": "NOT IN DB",
+          "finding": "BIFURCATED_LIQUIDITY is a CONCEPTUAL regime in G0-2026-019 proposal. Only regime_states 0, 1, 2 exist in database. No canonical regime definition, no state machine, no hysteresis tracking.",
+          "canonical_status": "PROPOSAL_ONLY"
+        },
+        {
+          "claim_id": "VF-002",
+          "claim": "Autonomy clock = Day 1 complete",
+          "source_report": "Day 19",
+          "db_search": "information_schema for tables LIKE '%autonomy%' OR '%clock%'",
+          "db_result": ["v_canonical_clock (view)", "v_evidence_clock (view)"],
+          "verdict": "NOT IN DB",
+          "finding": "No canonical 'autonomy_clock' table exists. Only clock VIEWS found (not tables). 'consecutive_unattended_days' counter does not exist as canonical entity.",
+          "canonical_status": "NARRATIVE_ONLY"
+        },
+        {
+          "claim_id": "VF-003",
+          "claim": "FSS value for SkillDamper gating",
+          "source_report": "Day 19",
+          "db_table": "fhq_research.forecast_skill_metrics",
+          "db_query": "SELECT brier_skill_score, COUNT(*) as fss_populated, SUM(CASE WHEN brier_skill_score IS NULL THEN 1 ELSE 0 END) as fss_null FROM fhq_research.forecast_skill_metrics",
+          "db_result": {"total_records": 147, "fss_populated": 0, "fss_null": 147},
+          "verdict": "NOT IN DB",
+          "finding": "brier_skill_score (FSS) is NULL in ALL 147 records. SkillDamper rules exist but CANNOT be evaluated without FSS input.",
+          "canonical_status": "COLUMN_EXISTS_VALUE_MISSING"
+        },
+        {
+          "claim_id": "VF-004",
+          "claim": "0.60 confidence ceiling for friction-derived forecasts",
+          "source_report": "Day 19 / Geopolitical Briefing",
+          "db_table": "fhq_governance.confidence_calibration_gates",
+          "db_query": "SELECT * FROM fhq_governance.confidence_calibration_gates WHERE forecast_type ILIKE '%friction%' OR regime ILIKE '%bifurcated%'",
+          "db_result": "0 rows",
+          "verdict": "NOT IN DB",
+          "finding": "No confidence gate exists for 'friction-derived forecasts' or 'BIFURCATED' regime. The 0.60 ceiling is an ad-hoc recommendation, not a versioned artifact.",
+          "canonical_status": "RECOMMENDATION_ONLY"
+        }
+      ]
+    }
+  },
+
+  "SECTION_B_METRIC_CATALOG": {
+    "brier_variants": {
+      "brier_score_ledger": {
+        "schema": "fhq_governance",
+        "row_count": 3601,
+        "unique_assets": 488,
+        "date_range": {"earliest": "2026-01-04", "latest": "2026-01-14"},
+        "avg_value": 0.5885,
+        "canonical": true,
+        "denominator_rule": "squared_error per forecast with actual_outcome"
+      },
+      "brier_skill_score_fss": {
+        "schema": "fhq_research.forecast_skill_metrics",
+        "row_count": 147,
+        "fss_populated": 0,
+        "fss_null": 147,
+        "canonical": false,
+        "status": "COLUMN EXISTS BUT ALL VALUES NULL"
+      },
+      "crypto_regime_hit_rate": {
+        "schema": "fhq_research.crypto_regime_quality_metrics",
+        "latest_value": 0.0667,
+        "sample_size": 46,
+        "denominator": "signals_with_outcome = 45",
+        "canonical": true
+      }
+    },
+    "lvi_learning_velocity": {
+      "tables_found": [
+        "fhq_governance.uma_feedback_statistics",
+        "fhq_governance.uma_okr_registry",
+        "fhq_governance.uma_okr_key_results"
+      ],
+      "canonical_source": "NONE - computed metric in UMA subsystem",
+      "status": "DERIVED_METRIC_NO_SINGLE_SOURCE"
+    },
+    "golden_needles": {
+      "schema": "fhq_canonical",
+      "total_needles": 1804,
+      "current_active": 39,
+      "unique_assets": 2,
+      "avg_eqs_score": 0.9720,
+      "canonical": true
+    },
+    "alpha_graph_causal_edges": {
+      "schema": "fhq_alpha.causal_edges",
+      "status": "TABLE_EXISTS",
+      "canonical": true
+    },
+    "regime_states": {
+      "schema": "fhq_research.regime_states",
+      "distinct_regimes": ["0", "1", "2"],
+      "total_records": 2077,
+      "note": "ONLY numeric regimes 0,1,2 exist - NO named regimes like BIFURCATED_LIQUIDITY",
+      "canonical": true
+    },
+    "geopolitical_friction_index": {
+      "schema": "fhq_macro.geopolitical_friction_data",
+      "total_records": 307,
+      "latest_value": 0.7137,
+      "date_range": {"earliest": "2020-01-01", "latest": "2026-01-19"},
+      "thresholds": {"stress": 0.70, "extreme": 0.85},
+      "canonical": true
+    }
+  },
+
+  "SECTION_C_GOVERNANCE_ARTIFACT_MAP": {
+    "adr_registry": {
+      "db_table": "fhq_meta.adr_registry",
+      "total_adrs": 25,
+      "active_adrs": 21,
+      "draft_adrs": 4,
+      "adrs_with_db_enforcement": [
+        "ADR-001 System Charter",
+        "ADR-002 Audit Charter",
+        "ADR-003 Institutional Standards",
+        "ADR-004 Change Gates (G0-G4)",
+        "ADR-006 VEGA Governance",
+        "ADR-008 Key Management",
+        "ADR-011 Fortress Tests",
+        "ADR-012 Economic Safety",
+        "ADR-013 One-True-Source",
+        "ADR-014 Sub-Executive",
+        "ADR-016 DEFCON Circuit Breaker",
+        "ADR-020 ACI",
+        "ADR-021 Cognitive Engine"
+      ],
+      "canonical": true
+    },
+    "ios_registry": {
+      "db_table": "fhq_meta.ios_registry",
+      "total_ios": 19,
+      "canonical_ios": 16,
+      "vega_attested": 0,
+      "ios_list": [
+        {"id": "IoS-001", "title": "IoS-001_2026_PRODUCTION", "owner": "STIG", "canonical": true},
+        {"id": "IoS-002", "title": "IoS-002", "owner": "STIG", "canonical": true},
+        {"id": "IoS-003", "title": "IoS-003", "owner": "FINN", "canonical": true},
+        {"id": "IOS-003-B", "title": "Intraday Regime-Delta", "owner": "FINN", "canonical": false, "status": "G0_SUBMITTED"},
+        {"id": "IoS-006", "title": "Global Macro & Factor Integration", "owner": "FINN", "canonical": true},
+        {"id": "IoS-008", "title": "IoS-008", "owner": "LINE", "canonical": true},
+        {"id": "IoS-016", "title": "Economic Calendar & Temporal Governance", "owner": "LINE", "canonical": true}
+      ],
+      "canonical": true
+    },
+    "agent_contracts": {
+      "db_table": "fhq_governance.agent_contracts",
+      "total_contracts": 13,
+      "contracts": [
+        {"source": "CEIO", "target": "DEFCON_CONTROLLER", "trigger": "FRICTION_EXTREME_THRESHOLD"},
+        {"source": "CEIO", "target": "LARS", "trigger": "FRICTION_STRESS_THRESHOLD"},
+        {"source": "CEIO", "target": "STIG", "trigger": "GEOPOLITICAL_DATA_REFRESH"},
+        {"source": "FINN", "target": "CRIO", "trigger": "CNRP_R2_CYCLE"},
+        {"source": "FINN", "target": "STIG", "trigger": "FORECAST_CREATED"},
+        {"source": "LARS", "target": "CFAO", "trigger": "FORECAST_AGGREGATION_CYCLE"},
+        {"source": "LARS", "target": "CSEO", "trigger": "STRATEGY_COORDINATION_CYCLE"},
+        {"source": "STIG", "target": "CDMO", "trigger": "CNRP_R3_CYCLE"},
+        {"source": "STIG", "target": "CEIO", "trigger": "CNRP_R1_CYCLE"},
+        {"source": "STIG", "target": "VEGA", "trigger": "RECONCILIATION_COMPLETE"},
+        {"source": "VEGA", "target": "DEFCON_CONTROLLER", "trigger": "BRIER_THRESHOLD_EXCEEDED"},
+        {"source": "VEGA", "target": "GOVERNANCE_LOG", "trigger": "LINEAGE_VERIFIED"},
+        {"source": "VEGA", "target": "LINE", "trigger": "CALIBRATION_FAILURE_DETECTED"}
+      ],
+      "canonical": true
+    }
+  },
+
+  "SECTION_D_SCHEMA_INVENTORY": {
+    "total_schemas": 35,
+    "total_tables": 1097,
+    "schema_breakdown": [
+      {"schema": "fhq_governance", "tables": 282},
+      {"schema": "fhq_research", "tables": 198},
+      {"schema": "fhq_meta", "tables": 149},
+      {"schema": "fhq_canonical", "tables": 58},
+      {"schema": "fhq_alpha", "tables": 47},
+      {"schema": "fhq_monitoring", "tables": 41},
+      {"schema": "fhq_execution", "tables": 39},
+      {"schema": "fhq_calendar", "tables": 39},
+      {"schema": "fhq_finn", "tables": 38},
+      {"schema": "fhq_perception", "tables": 21},
+      {"schema": "vision_verification", "tables": 19},
+      {"schema": "fhq_macro", "tables": 18},
+      {"schema": "fhq_data", "tables": 17},
+      {"schema": "vision_signals", "tables": 17}
+    ],
+    "key_operational_tables": {
+      "brier_score_ledger": {"schema": "fhq_governance", "rows": 3601},
+      "golden_needles": {"schema": "fhq_canonical", "rows": 1804},
+      "forecast_skill_metrics": {"schema": "fhq_research", "rows": 147},
+      "geopolitical_friction_data": {"schema": "fhq_macro", "rows": 307},
+      "regime_states": {"schema": "fhq_research", "rows": 2077},
+      "crypto_regime_quality_metrics": {"schema": "fhq_research", "rows": "active"},
+      "confidence_calibration_gates": {"schema": "fhq_governance", "rows": 19},
+      "skill_damper_config": {"schema": "fhq_governance", "rows": 5}
+    }
+  },
+
+  "EXECUTIVE_SUMMARY": {
+    "operational_systems": {
+      "count": 12,
+      "list": [
+        "Brier Score Ledger (3,601 records, 488 assets)",
+        "Golden Needles Pipeline (1,804 needles, 39 current)",
+        "Geopolitical Friction Index (307 records, latest 0.7137)",
+        "Crypto Regime Quality Metrics (hit_rate 6.67%)",
+        "Confidence Calibration Gates (15 active gates)",
+        "LDOW Infrastructure (12 tables)",
+        "SkillDamper Config (5 rules defined)",
+        "ADR Registry (21 active ADRs)",
+        "IoS Registry (16 canonical standards)",
+        "Agent Contracts (13 inter-agent contracts)",
+        "Regime States (3 regimes: 0, 1, 2)",
+        "Alpha Graph Causal Edges (operational)"
+      ]
+    },
+    "blocked_pending_canonicalization": {
+      "count": 4,
+      "list": [
+        {
+          "entity": "BIFURCATED_LIQUIDITY regime",
+          "reason": "Proposal only - no DB registration",
+          "required_action": "Register in fhq_research.regime_model_registry with state machine"
+        },
+        {
+          "entity": "Autonomy Clock",
+          "reason": "No canonical table - only views exist",
+          "required_action": "Create fhq_governance.autonomy_clock_state with consecutive_days counter"
+        },
+        {
+          "entity": "FSS (Forecast Skill Score)",
+          "reason": "Column exists but ALL 147 values are NULL",
+          "required_action": "Implement FSS computation in forecast_skill_metrics pipeline"
+        },
+        {
+          "entity": "0.60 Friction Confidence Ceiling",
+          "reason": "Ad-hoc recommendation, not versioned artifact",
+          "required_action": "Insert into confidence_calibration_gates with VEGA attestation"
+        }
+      ]
+    },
+    "narrative_only_no_db_backing": {
+      "count": 2,
+      "list": [
+        "Day N of M regime tracking (no state machine)",
+        "Autonomy 'consecutive unattended days' (no counter table)"
+      ]
+    }
+  },
+
+  "CEO_DECISION_MATRIX": {
+    "question_1": "What is operational right now?",
+    "answer_1": "12 canonical systems with verified DB backing (see operational_systems list)",
+
+    "question_2": "What is blocked?",
+    "answer_2": "4 entities blocked pending canonicalization: BIFURCATED_LIQUIDITY, Autonomy Clock, FSS values, 0.60 Ceiling",
+
+    "question_3": "What is narrative-only?",
+    "answer_3": "Day N/M tracking claims have no state machine; Autonomy claims have no counter table",
+
+    "question_4": "Can SkillDamper be triggered?",
+    "answer_4": "NO - FSS (input value) is NULL in all 147 records. Rules exist but cannot be evaluated.",
+
+    "question_5": "Can BIFURCATED_LIQUIDITY actions proceed?",
+    "answer_5": "NO - Regime does not exist in database. Only regimes 0, 1, 2 are canonical.",
+
+    "question_6": "Is GFI operational?",
+    "answer_6": "YES - GFI = 0.7137, stress_threshold breached = TRUE. Canonical data exists."
+  },
+
+  "VERIFICATION_STATISTICS": {
+    "claims_analyzed": 15,
+    "claims_verified": 7,
+    "claims_not_verified": 4,
+    "claims_partial": 2,
+    "claims_narrative_only": 2,
+    "verification_rate": "46.7%"
+  },
+
+  "attestation": {
+    "attested_by": "STIG",
+    "contract": "EC-003_2026_PRODUCTION",
+    "timestamp": "2026-01-19T10:00:00Z",
+    "principle": "If it cannot be verified directly in the database, it does not exist.",
+    "compliance": "CEO DIRECTIVE EXECUTED - Truth Inventory delivered",
+    "recommendation": "Canonicalize the 4 blocked entities before taking dependent actions"
+  },
+
+  "file_checksum": "sha256:pending_computation"
+}

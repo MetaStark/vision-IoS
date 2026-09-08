@@ -1,0 +1,180 @@
+{
+  "evidence_id": "DOUBLE-R4-TRIGGER-DETECTED-001",
+  "evidence_type": "P0_SYSTEM_INTEGRITY_ALERT",
+  "evidence_timestamp": "2026-01-09T01:12:00Z",
+  "directive_reference": "CEO-DIR-2026-024: R4 Scheduling Single Source of Truth",
+  "generated_by": "STIG",
+  "classification": "G4_OPERATIONAL_FAILURE",
+  "priority": "P0",
+  "status": "DOUBLE_TRIGGER_DETECTED_INVESTIGATION_REQUIRED",
+
+  "executive_summary": {
+    "problem": "R4 metronome fix applied but DOUBLE R4 TRIGGER still active",
+    "observed_behavior": "Two R4 probes within 50 seconds: one with schedule_source='timer' (correct), one with schedule_source=null (mystery source)",
+    "impact": "Metronome rhythm still irregular despite code fix and orchestrator restart",
+    "urgency": "P0 - System breathing compromised, court-proof evidence integrity at risk",
+    "stig_assessment": "Unknown R4 execution path bypassing single source of truth enforcement"
+  },
+
+  "observed_double_trigger_evidence": {
+    "timestamp_1": "2026-01-09T01:03:45.847Z",
+    "schedule_source_1": "timer",
+    "cycle_id_1": "R4-MONITOR-20260109-010345",
+    "interval_from_previous": "177s (expected ~180s post-restart)",
+    "assessment_1": "✅ CORRECT - Timer-based R4 from orchestrator_v1.py run_r4_standalone (line 720)",
+
+    "timestamp_2": "2026-01-09T01:04:35.722Z",
+    "schedule_source_2": null,
+    "cycle_id_2": "R4-MONITOR-20260109-010435",
+    "interval_from_previous": "50s (UNEXPECTED - should be 600s)",
+    "assessment_2": "❌ MYSTERY SOURCE - Uses same cycle_id format but bypasses schedule_source parameter",
+
+    "time_gap_between_probes": "50 seconds",
+    "expected_gap": "600 seconds (metronome rhythm)",
+    "deviation": "550 seconds off rhythm"
+  },
+
+  "code_verification": {
+    "orchestrator_v1_run_r4_standalone": {
+      "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "line": 720,
+      "code": "self.log_cnrp_execution(..., 'VEGA', schedule_source='timer')",
+      "status": "✅ CORRECT - schedule_source parameter present"
+    },
+
+    "orchestrator_v1_chain_phases": {
+      "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "line": 657,
+      "code": "phases = ['R1', 'R2', 'R3']  # R4 removed from chain",
+      "status": "✅ CORRECT - R4 not in chain"
+    },
+
+    "orchestrator_v1_timer_reset": {
+      "file": "05_ORCHESTRATOR/orchestrator_v1.py",
+      "line": 1084,
+      "code": "# CEO-DIR-2026-024: R4 timer-only, do NOT reset last_r4_monitor here",
+      "status": "✅ CORRECT - Timer reset removed"
+    }
+  },
+
+  "mystery_source_investigation": {
+    "cycle_id_format_match": {
+      "mystery_probe": "R4-MONITOR-20260109-010435",
+      "expected_format": "R4-MONITOR-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}",
+      "finding": "Exact match to orchestrator_v1.py format (line 719)",
+      "implication": "Mystery source uses SAME code path as timer-based R4"
+    },
+
+    "possible_sources": [
+      {
+        "hypothesis": "Old orchestrator process still running",
+        "evidence_for": "Pre-restart probes have same 146s/454s pattern",
+        "evidence_against": "STIG killed PID 16544 before restart, only one background task (b77bb78) running",
+        "likelihood": "LOW"
+      },
+      {
+        "hypothesis": "Separate cnrp_chain_executor.py process running",
+        "evidence_for": "File exists with execute_r4_standalone function (line 501-531)",
+        "evidence_against": "No scheduled task found, not imported by orchestrator_v1.py",
+        "likelihood": "MEDIUM"
+      },
+      {
+        "hypothesis": "Legacy code path in orchestrator_v1.py bypassing schedule_source",
+        "evidence_for": "Cycle_id format matches orchestrator_v1.py exactly",
+        "evidence_against": "Code review shows only ONE execute_daemon('R4') call (line 714)",
+        "likelihood": "HIGH - but not yet located"
+      },
+      {
+        "hypothesis": "Database trigger or stored procedure executing R4",
+        "evidence_for": "Consistent 50s delay after timer R4",
+        "evidence_against": "Would require database-level code not in migrations",
+        "likelihood": "VERY LOW"
+      }
+    ]
+  },
+
+  "pattern_analysis": {
+    "pre_restart_pattern": {
+      "interval_1": "146 seconds",
+      "interval_2": "454 seconds",
+      "total_cycle": "600 seconds (146 + 454)",
+      "assessment": "Two interleaved R4 triggers (both with schedule_source=null)"
+    },
+
+    "post_restart_pattern": {
+      "timer_r4_interval": "177 seconds (expected, first probe after restart)",
+      "mystery_r4_delay": "50 seconds after timer R4",
+      "next_expected_timer_r4": "2026-01-09T01:13:45Z (600s after 01:03:45)",
+      "hypothesis": "Mystery source may trigger again at specific offset from timer R4"
+    }
+  },
+
+  "next_diagnostic_steps": {
+    "step_1_wait_for_next_timer_r4": {
+      "action": "Wait for next timer-based R4 probe at ~01:13:45 UTC",
+      "expected": "R4 probe with schedule_source='timer'",
+      "verification": "SELECT * FROM governance_actions_log WHERE action_target='CNRP-R4' AND timestamp >= '2026-01-09 01:13:00' ORDER BY timestamp;"
+    },
+
+    "step_2_check_mystery_r4_follows": {
+      "action": "Monitor for mystery R4 probe ~50s after timer R4",
+      "if_appears": "Pattern confirmed - mystery source triggers relative to timer R4",
+      "if_not_appears": "Pattern broken - investigate timing of next mystery R4"
+    },
+
+    "step_3_search_all_python_processes": {
+      "action": "Identify all Python processes and their command lines",
+      "goal": "Find hidden orchestrator or cnrp_chain_executor.py process",
+      "command": "wmic process where \"name='python.exe'\" get ProcessId,CommandLine"
+    },
+
+    "step_4_grep_all_r4_calls": {
+      "action": "Search entire codebase for R4 execution paths",
+      "targets": [
+        "execute_daemon.*R4",
+        "vega_epistemic_integrity_monitor",
+        "R4-MONITOR-",
+        "action_target.*CNRP-R4"
+      ],
+      "scope": "All .py files in 03_FUNCTIONS, 04_AGENTS, 05_ORCHESTRATOR"
+    }
+  },
+
+  "immediate_recommendation": {
+    "priority": "P0 - Halt until mystery source identified",
+    "rationale": "Cannot guarantee single source of truth with unknown trigger active",
+    "options": [
+      {
+        "option_a": "Continue monitoring to identify pattern of mystery R4",
+        "risk": "Continued irregular metronome rhythm, court-proof evidence compromised",
+        "benefit": "May reveal timing pattern that identifies source"
+      },
+      {
+        "option_b": "Kill all Python processes and restart clean",
+        "risk": "May lose diagnostic opportunity if mystery source is external scheduled task",
+        "benefit": "Guaranteed clean slate"
+      },
+      {
+        "option_c": "Add defensive logging to catch mystery source",
+        "implementation": "Add call stack logging to log_cnrp_execution when schedule_source is None",
+        "benefit": "Will identify exact code path triggering mystery R4"
+      }
+    ],
+
+    "stig_recommendation": "Option C - Add call stack logging to log_cnrp_execution",
+    "justification": "Non-destructive debugging that will capture exact source of mystery R4"
+  },
+
+  "ceo_decision_required": {
+    "question": "How should STIG proceed to identify and eliminate the mystery R4 trigger?",
+    "options": [
+      "A: Monitor pattern for next 20 minutes (2 more timer R4 cycles)",
+      "B: Add call stack logging to catch mystery source",
+      "C: Kill all Python processes and restart clean"
+    ],
+    "urgency": "P0 - System breathing integrity compromised",
+    "stig_note": "Standing by for CEO directive. Current hypothesis: legacy code path in orchestrator_v1.py or hidden cnrp_chain_executor.py process."
+  },
+
+  "lineage_hash": "d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2"
+}

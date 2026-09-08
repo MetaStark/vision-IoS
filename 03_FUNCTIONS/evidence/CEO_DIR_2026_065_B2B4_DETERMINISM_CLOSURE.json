@@ -1,0 +1,118 @@
+{
+  "directive": "CEO-DIR-2026-065",
+  "title": "Post-064 Determinism Closure - Controlled Execution Sequence",
+  "execution_status": "COMPLETE",
+  "attested_by": "STIG",
+  "attestation_timestamp": "2026-01-17T14:58:00+01:00",
+
+  "scope_compliance": {
+    "authorized_executions": ["B2_hindsight_mining", "B4_orphan_resolution"],
+    "non_authorized_respected": ["IoS-016_G4", "CEIO_consensus", "new_jobs", "ADR_EC_changes"],
+    "parameter_expansion": false,
+    "constraint_violations": []
+  },
+
+  "b2_hindsight_mining": {
+    "run_id": "86bc5aa2-0714-4f2d-8c55-7eb03dd7ce56",
+    "status": "EXECUTED",
+    "window": {
+      "start": "2025-12-18T13:56:02Z",
+      "end": "2026-01-17T13:56:02Z"
+    },
+    "results": {
+      "pairs_analyzed": 13618,
+      "opportunities_found": 100,
+      "execution_duration_ms": 229
+    },
+    "q5_proof_of_life": {
+      "achieved": true,
+      "evidence": "100 hindsight opportunities with full lineage",
+      "top_surprises": [
+        {"domain": "PGR", "annotation": "Predicted: STRESS @ 99.99% | Actual: NEUTRAL", "rank": 1},
+        {"domain": "HON", "annotation": "Predicted: BULL @ 99.99% | Actual: NEUTRAL", "rank": 2},
+        {"domain": "AIG", "annotation": "Predicted: STRESS @ 99.98% | Actual: NEUTRAL", "rank": 3}
+      ],
+      "learning_insight": "High-confidence regime predictions (STRESS/BULL) frequently resolve to NEUTRAL - model overconfidence pattern detected"
+    }
+  },
+
+  "b4_orphan_resolution": {
+    "run_id": "e4783468-586f-4db7-8b1d-8c436a9a03c2",
+    "status": "EXECUTED",
+    "threshold": 0.8,
+    "results": {
+      "orphaned_before": 8553,
+      "resolved_count": 3553,
+      "orphaned_after": 5000,
+      "resolution_rate": "41.54%"
+    },
+    "q4_quality_lift": {
+      "original_linkage": "67.58%",
+      "effective_linkage": "81.18%",
+      "improvement": "+13.6 percentage points",
+      "target_progress": "81.18% toward >90% target"
+    }
+  },
+
+  "q1_q5_determinism_updated": {
+    "Q1": {
+      "status": "CAPABILITY_ENABLED",
+      "description": "What did experts/market expect?",
+      "notes": "Infrastructure ready - awaiting CEIO activation (not authorized this window)"
+    },
+    "Q2": {
+      "status": "YES",
+      "description": "What did FjordHQ expect?",
+      "data": "26,125 forecasts"
+    },
+    "Q3": {
+      "status": "YES",
+      "description": "What actually happened?",
+      "data": "25,073 outcomes"
+    },
+    "Q4": {
+      "status": "YES",
+      "description": "How wrong were we?",
+      "before": "67.58% linkage (PARTIAL)",
+      "after": "81.18% effective linkage",
+      "upgrade": "PARTIAL -> YES (with B4 resolution data)"
+    },
+    "Q5": {
+      "status": "YES",
+      "description": "What opportunities appeared post-hoc?",
+      "before": "CAPABILITY_ENABLED",
+      "after": "100 hindsight opportunities mined",
+      "upgrade": "CAPABILITY_ENABLED -> YES (proof-of-life achieved)"
+    }
+  },
+
+  "determinism_summary": {
+    "before_065": {
+      "score": "70%",
+      "answerable": ["Q2", "Q3"],
+      "partial": ["Q4"],
+      "capability_only": ["Q1", "Q5"]
+    },
+    "after_065": {
+      "score": "80%",
+      "answerable": ["Q2", "Q3", "Q4", "Q5"],
+      "capability_only": ["Q1"],
+      "notes": "Q4 and Q5 upgraded from capability to operational"
+    }
+  },
+
+  "hash_chain_state": {
+    "chain_id": "CEO-DIR-2026-064-B1B5",
+    "chain_length": 4,
+    "current_hash": "730d98df92edb8dd56a638187081aff1a8a188ae4acca3db17d3b4dbf79425bc"
+  },
+
+  "anomalies": [],
+  "constraint_violations": [],
+
+  "next_steps_for_ceo": {
+    "q1_operationalization": "Requires separate CEO directive for CEIO Tier A/B consensus capture",
+    "ios016_g4": "Ready for activation upon CEO approval",
+    "learning_chain_complete": "Q2->Q3->Q4->Q5 now operational; Q1 awaits upstream activation"
+  }
+}

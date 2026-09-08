@@ -1,0 +1,86 @@
+{
+  "evidence_type": "CEO_DIRECTIVE_EXECUTION",
+  "directive": "CEO-DIR-2026-119",
+  "title": "AUTONOMY INTEGRITY RESTORATION & SHADOW PnL CANONICALIZATION",
+  "executed_by": "STIG",
+  "executed_at": "2026-02-06T12:45:00Z",
+
+  "discovery": {
+    "ios001_failure_root_cause": {
+      "task_scheduler_status": "LastResult=0 (SUCCESS)",
+      "actual_outcome": "yfinance rate limited ALL 421 equity assets",
+      "error": "Too Many Requests",
+      "result": "Assets Processed: 421, Assets Updated: 0, Rows Inserted: 0",
+      "evidence_file": "ios001_daily_ingest_20260205_230006.log"
+    },
+    "autonomy_clock_state": {
+      "previous_state": "RUNNING",
+      "consecutive_days": 2,
+      "last_tick": "2026-02-05T17:37:30Z",
+      "stale_hours": 40
+    }
+  },
+
+  "execution_steg_1_scheduler_sovereignty": {
+    "status": "PARTIAL",
+    "table_created": "fhq_governance.ios001_expected_runs",
+    "pending": "Expected runs not yet registered"
+  },
+
+  "execution_steg_2_pnl_canonical_repair": {
+    "status": "COMPLETE",
+    "shadow_trade_exit_engine_amended": true,
+    "changes": [
+      "Added find_expired_trades_without_pnl()",
+      "Added process_expired_trade_pnl()",
+      "pnl_type column: REALIZED (normal) | COUNTERFACTUAL (falsified)",
+      "learning_weight: 1.0 (realized) | 0.8 (counterfactual)"
+    ],
+    "backfill_results": {
+      "trades_updated": 2980,
+      "pnl_type": "COUNTERFACTUAL",
+      "learning_weight": 0.8,
+      "total_pnl": -10332.27,
+      "avg_return_pct": 0.97
+    }
+  },
+
+  "execution_steg_3_autonomy_clock": {
+    "status": "COMPLETE",
+    "new_state": "PAUSED",
+    "reset_reason": "CEO-DIR-2026-119: Heartbeat stale >40h. Awaiting restoration sequence.",
+    "reset_by": "STIG"
+  },
+
+  "halt_triggers_registered": [
+    {"type": "IOS001_MISSING", "condition": "No canonical run within grace period", "defcon": "YELLOW"},
+    {"type": "CLOCK_STALE", "condition": "No heartbeat > 24h", "defcon": "YELLOW"},
+    {"type": "PNL_MISSING", "condition": "EXPIRED trades with NULL shadow_pnl", "defcon": "YELLOW"},
+    {"type": "STATE_HASH_STALE", "condition": "System state hash > 4h old", "defcon": "YELLOW"},
+    {"type": "DATA_INTEGRITY", "condition": "Price/indicator freshness > 48h", "defcon": "RED"}
+  ],
+
+  "database_changes": {
+    "tables_created": [
+      "fhq_governance.ios001_expected_runs",
+      "fhq_governance.autonomy_halt_triggers"
+    ],
+    "columns_added": [
+      "fhq_execution.shadow_trades.pnl_type",
+      "fhq_execution.shadow_trades.learning_weight"
+    ]
+  },
+
+  "pending_actions": [
+    "yfinance rate limiting mitigation",
+    "IOS001 expected runs registration",
+    "VEGA attestation for DEFCON restoration",
+    "Autonomy clock restart after data integrity"
+  ],
+
+  "governance": {
+    "defcon_level": "YELLOW",
+    "autonomy_state": "PAUSED",
+    "vega_attestation_required": true
+  }
+}

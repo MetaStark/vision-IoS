@@ -1,0 +1,94 @@
+{
+  "evidence_id": "CEO_DIR_2026_DBV_002_LATENCY_ACTIVATION",
+  "directive": "CEO-DIR-2026-DBV-002",
+  "section": "3.2 Slippage & Latency Activation",
+  "classification": "EXECUTION_MEASUREMENT",
+  "created_at": "2026-01-20T20:15:00Z",
+  "created_by": "STIG (EC-003_2026_PRODUCTION)",
+
+  "observation": {
+    "reported": "System still reports 'no latency data', despite 4 orders now filled",
+    "clarification": "Latency data EXISTS in fhq_execution.alpaca_trade_sync but not aggregated to fhq_research.execution_latency"
+  },
+
+  "existing_infrastructure": {
+    "table": "fhq_execution.alpaca_trade_sync",
+    "columns_available": [
+      "submitted_at",
+      "filled_at",
+      "avg_fill_price",
+      "slippage_est_bps",
+      "spread_est_bps"
+    ],
+    "sample_data": {
+      "symbol": "BTC/USD",
+      "latency_ms": 0,
+      "slippage_est_bps": 3.0,
+      "note": "Paper trades fill instantly (0ms latency) - expected behavior"
+    }
+  },
+
+  "latency_benchmark_table": {
+    "exists": true,
+    "table": "fhq_execution.latency_benchmarks"
+  },
+
+  "required_output_table": {
+    "table": "fhq_research.execution_latency",
+    "status": "NEEDS_CREATION",
+    "schema": {
+      "latency_id": "UUID PRIMARY KEY",
+      "trade_id": "UUID REFERENCES alpaca_trade_sync",
+      "symbol": "TEXT",
+      "order_submit_time": "TIMESTAMPTZ",
+      "order_fill_time": "TIMESTAMPTZ",
+      "latency_ms": "NUMERIC",
+      "limit_price": "NUMERIC",
+      "execution_price": "NUMERIC",
+      "slippage_bps": "NUMERIC",
+      "created_at": "TIMESTAMPTZ DEFAULT NOW()"
+    },
+    "migration_sql": "CREATE TABLE IF NOT EXISTS fhq_research.execution_latency (latency_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), trade_id UUID, symbol TEXT NOT NULL, order_submit_time TIMESTAMPTZ, order_fill_time TIMESTAMPTZ, latency_ms NUMERIC, limit_price NUMERIC, execution_price NUMERIC, slippage_bps NUMERIC, created_at TIMESTAMPTZ DEFAULT NOW());"
+  },
+
+  "alpaca_trades_api": {
+    "endpoint": "GET /v2/account/activities/FILL",
+    "documentation": "https://docs.alpaca.markets/docs/account-activities",
+    "fields_available": [
+      "id (activity_id)",
+      "order_id",
+      "transaction_time",
+      "type (FILL)",
+      "price",
+      "qty",
+      "side",
+      "symbol"
+    ],
+    "implementation_note": "Current alpaca_trade_sync uses G5_PAPER_TRADES_TRIGGER, may need direct API polling for real-time fills"
+  },
+
+  "activation_steps": [
+    {
+      "step": 1,
+      "action": "Create fhq_research.execution_latency table",
+      "status": "MIGRATION_REQUIRED"
+    },
+    {
+      "step": 2,
+      "action": "Create trigger on alpaca_trade_sync to populate execution_latency",
+      "status": "IMPLEMENTATION_REQUIRED"
+    },
+    {
+      "step": 3,
+      "action": "Add Alpaca fill API polling to sync daemon",
+      "status": "OPTIONAL - Current trigger may suffice"
+    }
+  ],
+
+  "interim_solution": {
+    "description": "Latency data can be queried directly from alpaca_trade_sync",
+    "query": "SELECT symbol, EXTRACT(EPOCH FROM (filled_at - submitted_at)) * 1000 as latency_ms, avg_fill_price - COALESCE(limit_price, avg_fill_price) as price_diff, slippage_est_bps FROM fhq_execution.alpaca_trade_sync WHERE filled_at IS NOT NULL ORDER BY synced_at DESC"
+  },
+
+  "hash": "c8a2e7f3b1d5a9e6c4f0b2d8a3e6f1c9"
+}

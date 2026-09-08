@@ -1,0 +1,81 @@
+{
+  "directive": "CEO-DIR-2026-RUNTIME-LIVENESS-AUDIT-AND-SETTLEMENT-SLA-050",
+  "executed_at": "2026-02-16T22:46:25.995934+00:00",
+  "executed_by": "STIG",
+  "ec_contract": "EC-003",
+  "overall_status": "IN_PROGRESS - 2-hour SLA verification ongoing",
+  "orders": {
+    "order_a_ondisk_contract_verification": {
+      "status": "COMPLETE",
+      "deliverable": "DIR_050_ONDISK_HEARTBEAT_CONTRACT_PROOF_20260216_233616.json",
+      "findings": {
+        "total_files": 4,
+        "heartbeat_compliant": 4,
+        "critical_event_compliant": 2,
+        "gaps": [
+          "lvi_calculator.py: Missing write_critical_event() function",
+          "outcome_settlement_daemon.py: Missing write_critical_event() function"
+        ]
+      }
+    },
+    "order_b_settlement_daemon_sla_fix": {
+      "status": "FIXED - VERIFICATION IN PROGRESS",
+      "deliverable": "DIR_050_SLA_FIX_PROOF_PENDING",
+      "before_fix": {
+        "heartbeat_age_minutes": 98.0,
+        "sla_compliant": false,
+        "task_configured": false
+      },
+      "after_fix": {
+        "heartbeat_age_minutes": 1.6,
+        "sla_compliant": true,
+        "task_configured": true,
+        "schedule": "Every 30 minutes"
+      },
+      "verification": {
+        "required": "2 consecutive hours without SLA breach",
+        "current_progress": "5 minutes since last CRITICAL event (22:41:00)",
+        "last_critical_event": "2026-02-16T22:41:00.820Z",
+        "target_complete_by": "2026-02-17T00:41:00Z"
+      }
+    },
+    "order_c_watchdog_integrity": {
+      "status": "COMPLETE",
+      "deliverable": "DIR_050_WATCHDOG_INTEGRITY_PROOF_20260216_234608.json",
+      "findings": {
+        "watchdog_running": true,
+        "critical_event_writing": true,
+        "sla_threshold_minutes": 75,
+        "task_restart_enabled": true
+      }
+    }
+  },
+  "current_daemon_status": {
+    "outcome_settlement_daemon": {
+      "status": "HEALTHY",
+      "age_minutes": 1.6,
+      "sla": "PASS"
+    },
+    "alpha_graph_sync": {
+      "status": "HEALTHY",
+      "age_minutes": 0.4,
+      "sla": "PASS"
+    },
+    "decision_pack_generator": {
+      "status": "HEALTHY",
+      "age_minutes": 0.4,
+      "sla": "PASS"
+    },
+    "lvi_calculator": {
+      "status": "HEALTHY",
+      "age_minutes": 81.4,
+      "sla": "PASS (daily cadence)"
+    }
+  },
+  "acceptance_criteria": {
+    "all_4_files_on_disk_proof": true,
+    "outcome_settlement_daemon_age_60_min": true,
+    "consecutive_2h_no_sla_breach": false,
+    "no_daemon_within_10min_of_sla_without_reason": true
+  }
+}

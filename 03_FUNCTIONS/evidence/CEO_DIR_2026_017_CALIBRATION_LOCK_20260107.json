@@ -1,0 +1,110 @@
+{
+  "directive_id": "CEO-DIR-2026-017",
+  "artifact_type": "CALIBRATION_LOCK_ACCEPTANCE",
+  "status": "ACCEPTED",
+  "generated_at": "2026-01-07T18:00:00Z",
+  "generated_by": "STIG",
+  "authorized_by": "CEO",
+
+  "directive_summary": {
+    "title": "Macro Feed Impact Observation & Calibration Lock",
+    "mode": "OBSERVATIONAL_ONLY",
+    "scope": ["FINN", "STIG", "VEGA"],
+    "duration": "3 consecutive FINN cycles"
+  },
+
+  "calibration_window": {
+    "cycle_1": {"status": "PENDING", "scheduled": "Next nightly cycle"},
+    "cycle_2": {"status": "PENDING", "scheduled": "+24h"},
+    "cycle_3": {"status": "PENDING", "scheduled": "+48h"}
+  },
+
+  "pre_macro_baseline": {
+    "sample_period": "2025-12-08 to 2026-01-06",
+    "total_outputs": 30,
+    "fallback_unknown_rate": 0.633,
+    "observed_data_rate": 0.0,
+    "inferred_from_price_rate": 0.333,
+    "avg_confidence_fallback": 0.704,
+    "avg_fragility_fallback": 0.548,
+    "bull_calls_with_fallback": 0,
+    "driver_claim_distribution": {
+      "UNKNOWN": 19,
+      "LIQUIDITY": 3,
+      "CREDIT": 3,
+      "TECHNICAL": 2,
+      "VOLATILITY": 2,
+      "SENTIMENT": 0
+    }
+  },
+
+  "mandatory_observation_metrics": {
+    "A_attribution_shift": {
+      "driver_basis_distribution": "Track FALLBACK_UNKNOWN → OBSERVED_DATA migration",
+      "driver_claim_diversity": "Track LIQUIDITY/CREDIT/VOLATILITY emergence"
+    },
+    "B_confidence_recalibration": {
+      "delta_avg_confidence": "Compare vs pre-macro baseline",
+      "delta_fragility_score": "Compare vs pre-macro baseline"
+    },
+    "C_regime_call_behavior": {
+      "bull_with_observed_data": "Does BULL appear with OBSERVED_DATA?",
+      "bear_stress_attribution": "Does BEAR/STRESS shift drivers?"
+    },
+    "D_btc_specific_tracking": {
+      "btc_basis_shift": "FALLBACK_UNKNOWN → OBSERVED_DATA?",
+      "btc_confidence_stability": "Does oscillation decrease?"
+    }
+  },
+
+  "explicit_prohibitions": [
+    "No change to hysteresis thresholds",
+    "No interpretation of BTC as confirmed or failed",
+    "No trading or allocation decisions",
+    "No tuning of FINN or CRIO prompts",
+    "No interim commentary",
+    "No recommendations in report"
+  ],
+
+  "success_criteria": {
+    "question": "When FINN is no longer blind, how does its epistemic posture change?",
+    "sub_questions": [
+      "Does FINN stop hiding behind FALLBACK_UNKNOWN?",
+      "Does confidence become earned, not inflated?",
+      "Does regime calling become more consistent?",
+      "Does BTC still fail to confirm when macro is visible?"
+    ],
+    "note": "All outcomes are valid. Only truth matters."
+  },
+
+  "reporting": {
+    "cadence": "Single consolidated report after 3 cycles",
+    "interim_commentary": false,
+    "required_content": [
+      "Pre-macro vs post-macro comparison table",
+      "One-page executive synthesis",
+      "Zero recommendations"
+    ]
+  },
+
+  "stig_commitments": {
+    "will_do": [
+      "Execute 3 FINN cycles with macro feeds enabled",
+      "Capture clean before/after epistemic comparison",
+      "Track all mandatory observation metrics",
+      "Deliver single consolidated report after cycle 3"
+    ],
+    "will_not_do": [
+      "Modify hysteresis thresholds",
+      "Interpret BTC as confirmed or failed",
+      "Trigger trading or allocation decisions",
+      "Tune FINN or CRIO prompts",
+      "Provide interim commentary",
+      "Make recommendations in the report"
+    ]
+  },
+
+  "ceo_closing_statement": "We do not add sensors to force conviction. We add sensors to see whether conviction was ever justified.",
+
+  "lineage_hash": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2"
+}

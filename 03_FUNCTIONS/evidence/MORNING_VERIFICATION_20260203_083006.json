@@ -1,0 +1,271 @@
+{
+  "indicators": {
+    "pass": true,
+    "sources": {
+      "volatility": {
+        "max_date": "2026-02-03",
+        "assets": 499,
+        "fresh": true
+      },
+      "price_series": {
+        "max_date": "2026-02-03",
+        "assets": 499,
+        "fresh": true
+      },
+      "momentum": {
+        "max_date": "2026-02-03",
+        "assets": 499,
+        "fresh": true
+      }
+    }
+  },
+  "indicator_pulse": {
+    "pass": true,
+    "status": "HEALTHY",
+    "last_success": "2026-02-03 05:05:19+01:00",
+    "hours_since_success": 3.4,
+    "last_exit_code": 0,
+    "consecutive_failures": 0,
+    "detail": "Siste vellykket: 3.4t siden"
+  },
+  "outcomes": {
+    "pass": true,
+    "recent_outcomes_24h": 0,
+    "pending_evaluable": 0,
+    "daemon_status": "HEALTHY",
+    "daemon_age_hours": "0.4"
+  },
+  "zombies": {
+    "pass": false,
+    "zombies": [
+      {
+        "name": "daemon_watchdog",
+        "age_hours": "41.2",
+        "expected_minutes": 30
+      }
+    ],
+    "total_daemons": 12,
+    "alive": 11,
+    "dead": 1
+  },
+  "pipeline": {
+    "pass": false,
+    "experiments": [
+      {
+        "code": "EXP_ALPHA_SAT_A_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 19,
+        "outcomes": 19,
+        "wins": 0,
+        "win_rate": 0.0,
+        "min_sample": 30,
+        "progress_pct": 63.0,
+        "falsification_rule": null,
+        "causal_mechanism": "BBW < 10th percentile indicates compression. Energy release follows.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "LOW_VOL"
+        ],
+        "confidence": 0.65
+      },
+      {
+        "code": "EXP_ALPHA_SAT_B_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "trend_win_rate < mean_reversion_win_rate",
+        "causal_mechanism": "RSI > 70 in STRONG_BULL = trend following outperforms mean reversion",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "STRONG_BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_C_V1.1",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 30,
+        "progress_pct": 0.0,
+        "falsification_rule": "mean_touch_rate < 0.55",
+        "causal_mechanism": "Price > 2 StdDev (BB Top) in NEUTRAL regime triggers reversion to 20 SMA",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "NEUTRAL",
+          "WEAK_BEAR",
+          "WEAK_BULL"
+        ],
+        "confidence": 0.65
+      },
+      {
+        "code": "EXP_ALPHA_SAT_D_V1.0",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 25,
+        "progress_pct": 0.0,
+        "falsification_rule": "breakout_continuation_rate < 0.50",
+        "causal_mechanism": "Close > bb_upper while BBW expanding (> p50) = momentum breakout. Expanding volatility confirms genuine move vs noise.",
+        "timeframe_hours": 48.0,
+        "regime_validity": [
+          "BULL",
+          "NEUTRAL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_E_V1.0",
+        "status": "COMPLETED",
+        "promoted": false,
+        "triggers": 0,
+        "outcomes": 0,
+        "wins": 0,
+        "win_rate": null,
+        "min_sample": 20,
+        "progress_pct": 0.0,
+        "falsification_rule": "pullback_recovery_rate < 0.55",
+        "causal_mechanism": "RSI < 35 in BULL = temporary oversold. Regime momentum reasserts within 72h.",
+        "timeframe_hours": 72.0,
+        "regime_validity": [
+          "BULL"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "code": "EXP_ALPHA_SAT_F_V1.0",
+        "status": "COMPLETED",
+        "promoted": true,
+        "triggers": 16,
+        "outcomes": 16,
+        "wins": 15,
+        "win_rate": 93.8,
+        "min_sample": 15,
+        "progress_pct": 107.0,
+        "falsification_rule": "bounce_rate < 0.45",
+        "causal_mechanism": "RSI < 20 + BEAR/STRESS = panic capitulation. Dead cat bounce within 24h is structural (short covering + dip buying).",
+        "timeframe_hours": 24.0,
+        "regime_validity": [
+          "BEAR",
+          "STRESS"
+        ],
+        "confidence": 0.55
+      }
+    ],
+    "total_triggers": 35,
+    "total_outcomes": 35,
+    "total_wins": 15,
+    "regime_counts": {
+      "BEAR": 34036,
+      "BULL": 32282,
+      "NEUTRAL": 59655,
+      "STRESS": 15980
+    },
+    "gate": "OPEN",
+    "defcon": "GREEN"
+  },
+  "pipeline_health": {
+    "pass": true,
+    "steps": [
+      {
+        "step": 1,
+        "name": "Hypotese",
+        "count": 95,
+        "detail": "95 aktive"
+      },
+      {
+        "step": 2,
+        "name": "Eksperiment",
+        "count": 7,
+        "detail": "7 kj\u00f8rer"
+      },
+      {
+        "step": 3,
+        "name": "Utfall",
+        "count": 35,
+        "detail": "35 samlet"
+      },
+      {
+        "step": 4,
+        "name": "Promotering",
+        "count": 1,
+        "detail": "1 evaluert (1 best\u00e5tt)"
+      },
+      {
+        "step": 5,
+        "name": "Skyggehandel",
+        "count": 1,
+        "detail": "1 registrert"
+      },
+      {
+        "step": 6,
+        "name": "Simulering",
+        "count": 5,
+        "detail": "5 aktive"
+      },
+      {
+        "step": 7,
+        "name": "Eligibilitet",
+        "count": 1,
+        "detail": "1 vurdert"
+      },
+      {
+        "step": 8,
+        "name": "Papirhandel",
+        "count": 0,
+        "detail": "0 fylt av 30"
+      },
+      {
+        "step": 9,
+        "name": "Ekte kapital",
+        "count": 0,
+        "detail": "Ikke aktivert (krever G4)"
+      }
+    ],
+    "active_steps": 7,
+    "total_steps": 9,
+    "first_break": 8,
+    "next_milestone": "Steg 8 aktiveres etter eligibilitetsvurdering"
+  },
+  "promotion_gate": {
+    "pass": true,
+    "status": "HEALTHY",
+    "runs_today": 8,
+    "hours_since_success": 1.5,
+    "consecutive_failures": 0,
+    "detail": "Siste vellykket: 1.5t siden, 8 kj\u00f8ringer i dag"
+  },
+  "run_ledger": {
+    "pass": true,
+    "tasks": {
+      "FHQ_INDICATOR_PULSE": {
+        "fresh": true,
+        "hours_since": 3.4,
+        "max_gap_hours": 36,
+        "description": "Indikator-beregning"
+      },
+      "FHQ_PROMOTION_GATE_PULSE": {
+        "fresh": true,
+        "hours_since": 1.5,
+        "max_gap_hours": 2,
+        "description": "Promoteringsport"
+      }
+    }
+  },
+  "overall": "FAIL",
+  "timestamp": "2026-02-03T07:30:05.231640+00:00",
+  "telegram_sent": true
+}
