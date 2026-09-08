@@ -2,7 +2,7 @@
 
 **Utsteder:** STIG (EC-003_2026_PRODUCTION)
 **Dato:** 2026-09-08
-**Status:** Fase 1 UTFØRT (se § 8) · Fase 3 KLAR · Fase 0/2 BLOKKERT (sannhetskilde utilgjengelig) · Fase 4 AVVENTER LARS
+**Status:** Fase 1 UTFØRT (§ 8) · Fase 3 UTFØRT i godkjent omfang (§ 9) — masseendring 375 filer AVVENTER BESLUTNING · Fase 0/2 BLOKKERT (sannhetskilde utilgjengelig) · Fase 4 AVVENTER LARS
 **Mandat:** Teknisk implementering. Retning eies av LARS. Godkjenning av VEGA/G4.
 
 > **DAY-nummer ikke tildelt.** CLAUDE.md krever verifisering mot databaseklokken
@@ -372,5 +372,83 @@ katalog slik at eksekvering er identisk med direkte kall; fail-closed hvis kanon
 | D1 | Åpen — krever Fase 0 (DB) |
 | **D2** | **LUKKET** — 33 skyggekopier er nå logikkfrie shims |
 | **D3** | **LUKKET** — ingen kopi bærer lenger `PGPASSWORD`-fallback |
-| D4 | Åpen — Fase 3, kan starte nå |
+| D4 | **LUKKET for kontrollplanet** (3 filer, § 9). 375 øvrige filer med samme mønster avventer beslutning |
 | D5 | Åpen — krever push av lokal utvikling |
+
+---
+
+## 9. FASE 3 — UTFØRT 2026-09-08 (godkjent omfang)
+
+**Lukker:** D4 for kontrollplanet. **Runtime-adferd endret:** ja — bevisst, fail-closed (se 9.3).
+**Reversibilitet:** ett `git revert`.
+
+### 9.1 Omfangsmåling før redigering (steg 3.0)
+
+Planens § 4 Fase 3.2 sier «fjern **alle** fallbacks». Godkjenningen ble gitt på beskrivelsen
+«`daemon_manager.py` + 3 filer». Målingen viste at de to ikke er samme ting:
+
+| Kategori | Kommando | Funn |
+|---|---|---|
+| `PGPASSWORD`-fallback til literal | `grep -rnE "os\.(getenv\|environ\.get)\(['\"]PGPASSWORD['\"],\s*['\"]"` | **324 forekomster / 323 filer** (283 i `03_FUNCTIONS`) |
+| Bart `password='postgres'` uten env | `grep -rnE "password['\"]?\s*[:=]\s*['\"]postgres['\"]"` | 52 filer |
+| Innebygd credential i connection-string | `grep -rnE "postgres(ql)?://[^:@]+:[^@]+@"` | 2 filer |
+| `os.chdir` til Windows-rot | `grep -rnE "os\.chdir\(['\"][A-Za-z]:"` | 3 filer |
+| Av disse på **fabrikkstien** | — | `hypothesis_death_daemon`, `hypothesis_experiment_bridge_daemon`, `scripts/research_daemon` |
+
+**Beslutning:** Utfør nøyaktig det godkjente omfanget — de 3 `os.chdir`-filene, som utgjør
+kontrollplanet (`daemon_manager`, `daemon_watchdog`) pluss `pre_tier_scoring_daemon`.
+Alle tre er utenfor fabrikkstien (dispatch-fence respektert). De ~375 øvrige filene er
+en egen beslutning (§ 9.5) — ikke fordi risikomodellen er annerledes, men fordi
+review- og revert-omfanget er 100× større enn det som ble godkjent.
+
+### 9.2 Endring (steg 3.1 + 3.2), identisk i alle tre filer
+
+| Før | Etter |
+|---|---|
+| `os.chdir('C:/fhq-market-system/vision-ios')` | `os.chdir(Path(__file__).resolve().parent.parent)` |
+| `'password': os.getenv('PGPASSWORD', 'postgres')` | `_pgpassword = os.getenv('PGPASSWORD')` → `RuntimeError` hvis usatt → `'password': _pgpassword` |
+
+`03_FUNCTIONS/<fil>.py` → `parent.parent` er repo-roten. På produksjonsverten løser det til
+nøyaktig `C:\fhq-market-system\vision-ios` — byte-identisk utfall. På enhver annen checkout
+virker det i stedet for å kaste `FileNotFoundError`. Netto: 3 filer, +39 / −9 linjer.
+
+### 9.3 Konsekvens på produksjonsverten — må leses før merge
+
+Etter denne endringen **nekter de tre daemonene å starte hvis `PGPASSWORD` ikke er satt i
+miljøet de kjører i** (Task Scheduler-kontekst, ikke bare interaktiv shell). Det er riktig
+adferd — stille bruk av standardpassord er forbudt — men det er en endring jeg ikke kan
+observere effekten av herfra. Dette er samme feilklasse som ASTRID avdekket 2026-09-08
+(`FHQ_RESEARCH_RUNNER_PASSWORD` kun i env, aldri sourced i cron → alle ticks krasjet).
+
+**Sjekk før merge på verten:** at `PGPASSWORD` er satt i den konteksten Task Scheduler
+starter `daemon_watchdog` fra. Feiler den, feiler den *høyt* med tydelig melding — ikke stille.
+
+### 9.4 Verifikasjon (steg 3.3)
+
+`psycopg2` finnes ikke i eksekveringsmiljøet og importeres øverst i alle tre filer — en naiv
+kjøring ville dødd der og gitt et falskt negativt. Beviset er derfor miljøuavhengig:
+`psycopg2` stubbet i `sys.modules`, kildekoden eksekvert *kun frem til `DB_CONFIG` lukkes*
+(imports → chdir → logging → fail-closed → dict), startet fra bevisst feil cwd (`/tmp`).
+
+| # | Test | Resultat |
+|---|---|---|
+| V1 | `py_compile` × 3 | 0 feil |
+| V2 | Gjenværende fallback / hardkodet chdir i omfang | 0 / 0; `pathlib` importert i alle 3 |
+| V3a | `PGPASSWORD` **usatt** | `RuntimeError` med `PGPASSWORD` i meldingen, alle 3; `cwd == repo-rot` |
+| V3b | `PGPASSWORD` **satt** til sentinel | modulen passerer, `DB_CONFIG['password'] == sentinel`, `cwd == repo-rot`, alle 3 |
+| V4 | Restfiler etter probe | 0 |
+
+### 9.5 Åpen beslutning — masseendringen
+
+| Sett | Filer | Merknad |
+|---|---|---|
+| `PGPASSWORD`-fallback | ~320 | Samme 6-linjers mønster; mekanisk, men 100× review-omfang |
+| Bart literal uten env | 52 | Verre enn fallback — ingen overstyring mulig i dag |
+| Innebygd i connection-string | 2 | |
+| **Herav på fabrikkstien** | 3 | **Må vente** på at `RUN-20260908T190000Z` lukker |
+
+Risikoen er binær på miljøvariabelen, ikke lineær i filantall: er `PGPASSWORD` satt,
+stopper ingen; er den ikke satt, stopper alle fail-closed-daemoner. Det som skalerer med
+filantall er review-byrden og revert-omfanget. Anbefaling: gjør masseendringen som egen
+commit, *etter* at 9.3-sjekken er bekreftet på verten, og *utenom* de 3 fabrikkfilene til
+kjeden har lukket.
