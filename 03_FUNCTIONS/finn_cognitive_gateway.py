@@ -70,7 +70,12 @@ DB_HOST = os.environ.get('PGHOST', 'localhost')
 DB_PORT = os.environ.get('PGPORT', '54322')
 DB_NAME = os.environ.get('PGDATABASE', 'postgres')
 DB_USER = os.environ.get('PGUSER', 'postgres')
-DB_PASS = os.environ.get('PGPASSWORD', 'postgres')
+DB_PASS = os.getenv('PGPASSWORD')
+if not DB_PASS:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
 
 
 def get_db_connection():

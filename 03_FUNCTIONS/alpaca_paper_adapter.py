@@ -88,12 +88,19 @@ AGGRESSIVE_MAX_POSITION_PCT = 0.15  # 15% of NAV per position
 AGGRESSIVE_KELLY_MULTIPLIER = 0.75  # 3/4 Kelly
 AGGRESSIVE_MIN_POSITION = 500       # Minimum $500 per trade
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
     'port': int(os.getenv('PGPORT', '54322')),
     'database': os.getenv('PGDATABASE', 'postgres'),
     'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 # Alpaca Paper Trading credentials

@@ -21,12 +21,19 @@ DIRECTIVE_ID = "CEO-DIR-2026-027"
 
 def get_db_connection():
     """Create database connection."""
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host=os.environ.get('PGHOST', '127.0.0.1'),
         port=os.environ.get('PGPORT', '54322'),
         database=os.environ.get('PGDATABASE', 'postgres'),
         user=os.environ.get('PGUSER', 'postgres'),
-        password=os.environ.get('PGPASSWORD', 'postgres')
+        password=_pgpassword
     )
 
 def register_inter_agent_contracts(conn):

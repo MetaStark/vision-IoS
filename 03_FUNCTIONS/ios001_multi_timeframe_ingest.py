@@ -41,7 +41,12 @@ PGHOST = os.getenv("PGHOST", "127.0.0.1")
 PGPORT = os.getenv("PGPORT", "54322")
 PGDATABASE = os.getenv("PGDATABASE", "postgres")
 PGUSER = os.getenv("PGUSER", "postgres")
-PGPASSWORD = os.getenv("PGPASSWORD", "postgres")
+PGPASSWORD = os.getenv('PGPASSWORD')
+if not PGPASSWORD:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
 
 # Alpaca API
 ALPACA_API_KEY = os.getenv("ALPACA_API_KEY", "")

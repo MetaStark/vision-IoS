@@ -10,16 +10,24 @@ G2 Exit Criteria:
 - All weighting-eligible signals have provenance tracking
 """
 
+import os
 import psycopg2
 import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     "host": "127.0.0.1",
     "port": 54322,
     "user": "postgres",
-    "password": "postgres",
+    "password": _pgpassword,
     "dbname": "postgres"
 }
 

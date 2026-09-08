@@ -16,6 +16,7 @@ VEGA CONDITIONS IMPLEMENTED:
 - C2: Court-proof calculation logging to vision_verification.eqs_v2_calculation_log
 """
 
+import os
 import psycopg2
 import numpy as np
 import pandas as pd
@@ -624,12 +625,19 @@ def main():
     load_dotenv()
 
     # Database connection
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     conn = psycopg2.connect(
         host=os.getenv('PGHOST', '127.0.0.1'),
         port=os.getenv('PGPORT', '54322'),
         database=os.getenv('PGDATABASE', 'postgres'),
         user=os.getenv('PGUSER', 'postgres'),
-        password=os.getenv('PGPASSWORD', 'postgres')
+        password=_pgpassword
     )
 
     try:

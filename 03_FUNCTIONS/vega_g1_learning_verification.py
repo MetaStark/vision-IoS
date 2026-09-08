@@ -11,6 +11,7 @@ This script runs the acceptance tests required to verify:
 Learning will NOT be reactivated until all tests pass.
 """
 
+import os
 import sys
 import json
 from datetime import datetime, timezone
@@ -50,12 +51,19 @@ PASS_CRITERIA = {
 
 
 def get_db_conn():
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host='127.0.0.1',
         port=54322,
         database='postgres',
         user='postgres',
-        password='postgres'
+        password=_pgpassword
     )
 
 

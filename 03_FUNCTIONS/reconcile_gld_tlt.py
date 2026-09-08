@@ -14,12 +14,19 @@ from uuid import uuid4
 BATCH_SIZE = 500
 
 def get_db_connection():
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host=os.environ.get('PGHOST', '127.0.0.1'),
         port=os.environ.get('PGPORT', '54322'),
         database=os.environ.get('PGDATABASE', 'postgres'),
         user=os.environ.get('PGUSER', 'postgres'),
-        password=os.environ.get('PGPASSWORD', 'postgres')
+        password=_pgpassword
     )
 
 def reconcile_asset(conn, asset):

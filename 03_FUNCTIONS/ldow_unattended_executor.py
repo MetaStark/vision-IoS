@@ -99,7 +99,12 @@ class LDOWConfig:
         port = os.getenv("PGPORT", "54322")
         database = os.getenv("PGDATABASE", "postgres")
         user = os.getenv("PGUSER", "postgres")
-        password = os.getenv("PGPASSWORD", "postgres")
+        password = os.getenv('PGPASSWORD')
+        if not password:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
         return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
 

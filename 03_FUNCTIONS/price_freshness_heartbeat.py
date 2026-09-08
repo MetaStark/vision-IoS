@@ -45,12 +45,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger('price_heartbeat')
 
 # Database configuration
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
     'port': int(os.getenv('PGPORT', 54322)),
     'database': os.getenv('PGDATABASE', 'postgres'),
     'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 # Telegram configuration

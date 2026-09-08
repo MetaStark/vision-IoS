@@ -137,12 +137,19 @@ class IntradayRegimeDeltaEngine:
 
     def __init__(self, db_config: Dict[str, str] = None):
         """Initialize the engine with database connection."""
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         self.db_config = db_config or {
             'host': os.getenv('PGHOST', '127.0.0.1'),
             'port': os.getenv('PGPORT', '54322'),
             'dbname': os.getenv('PGDATABASE', 'postgres'),
             'user': os.getenv('PGUSER', 'postgres'),
-            'password': os.getenv('PGPASSWORD', 'postgres')
+            'password': _pgpassword
         }
         self.conn = None
         self.target_assets = ['BTC-USD', 'ETH-USD', 'SOL-USD']

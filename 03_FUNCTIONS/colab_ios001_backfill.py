@@ -101,7 +101,12 @@ class ColabBackfillConfig:
     PGPORT: str = os.getenv("PGPORT", "54322")
     PGDATABASE: str = os.getenv("PGDATABASE", "postgres")
     PGUSER: str = os.getenv("PGUSER", "postgres")
-    PGPASSWORD: str = os.getenv("PGPASSWORD", "")
+    PGPASSWORD: str = os.getenv('PGPASSWORD')
+    if not PGPASSWORD:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
 
     # Rate limiting - COLAB OPTIMALISERT (mer konservativ)
     BATCH_SIZE: int = 5              # Mindre batches for Colab

@@ -176,12 +176,19 @@ class QdrantGraphRAGClient:
                 logger.error(f"[GraphRAG] Failed to connect to Qdrant: {e}")
 
         # Postgres connection parameters
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         self.pg_config = {
             "host": pg_host or os.getenv("PGHOST", "127.0.0.1"),
             "port": pg_port or int(os.getenv("PGPORT", "54322")),
             "database": pg_database or os.getenv("PGDATABASE", "postgres"),
             "user": pg_user or os.getenv("PGUSER", "postgres"),
-            "password": pg_password or os.getenv("PGPASSWORD", "postgres"),
+            "password": pg_password or _pgpassword,
         }
 
     def _get_pg_connection(self):

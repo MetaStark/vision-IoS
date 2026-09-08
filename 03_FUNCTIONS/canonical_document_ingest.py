@@ -27,12 +27,19 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Database connection
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': '127.0.0.1',
     'port': 54322,
     'database': 'postgres',
     'user': 'postgres',
-    'password': 'postgres'
+    'password': _pgpassword
 }
 
 BASE_PATH = r"C:\fhq-market-system\vision-ios"

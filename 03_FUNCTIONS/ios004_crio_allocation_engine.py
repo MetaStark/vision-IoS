@@ -71,7 +71,12 @@ class AllocationConfig:
     PGPORT = int(os.getenv("PGPORT", "54322"))
     PGDATABASE = os.getenv("PGDATABASE", "postgres")
     PGUSER = os.getenv("PGUSER", "postgres")
-    PGPASSWORD = os.getenv("PGPASSWORD", "postgres")
+    PGPASSWORD = os.getenv('PGPASSWORD')
+    if not PGPASSWORD:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
 
     # CEO Directive Risk Scalar Thresholds
     HIGH_FRAGILITY_THRESHOLD = 0.70  # Reduce by >= 50%

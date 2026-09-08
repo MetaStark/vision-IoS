@@ -991,12 +991,19 @@ class EC018AlphaDaemon:
 
     def connect(self):
         """Connect to database."""
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         self.conn = psycopg2.connect(
             host=os.environ.get('PGHOST', '127.0.0.1'),
             port=os.environ.get('PGPORT', '54322'),
             database=os.environ.get('PGDATABASE', 'postgres'),
             user=os.environ.get('PGUSER', 'postgres'),
-            password=os.environ.get('PGPASSWORD', 'postgres'),
+            password=_pgpassword,
             options='-c client_encoding=UTF8'
         )
         self.conn.autocommit = True  # Prevent transaction issues

@@ -14,18 +14,26 @@ Stoppregel: Kun observere, male, klassifisere.
 Ingen justering, ingen nye features, ingen "fiksing".
 """
 
+import os
 import psycopg2
 import json
 import numpy as np
 from datetime import datetime, timezone
 from decimal import Decimal
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     "host": "127.0.0.1",
     "port": 54322,
     "database": "postgres",
     "user": "postgres",
-    "password": "postgres"
+    "password": _pgpassword
 }
 
 

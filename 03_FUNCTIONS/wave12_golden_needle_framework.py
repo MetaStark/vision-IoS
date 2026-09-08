@@ -220,12 +220,19 @@ class Wave12GoldenNeedleRunner:
 
     def connect_database(self):
         """Connect to the FjordHQ database."""
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         db_config = {
             'host': os.getenv('PGHOST', '127.0.0.1'),
             'port': int(os.getenv('PGPORT', 54322)),
             'database': os.getenv('PGDATABASE', 'postgres'),
             'user': os.getenv('PGUSER', 'postgres'),
-            'password': os.getenv('PGPASSWORD', 'postgres')
+            'password': _pgpassword
         }
         self.conn = psycopg2.connect(**db_config)
         logger.info("Database connected")

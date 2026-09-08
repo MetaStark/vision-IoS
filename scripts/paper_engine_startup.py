@@ -1,6 +1,7 @@
 """
 STIG-006: Paper Engine Startup - Initial 3 loops then continuous
 """
+import os
 import psycopg2
 import json
 import hashlib
@@ -17,7 +18,14 @@ SAFETY_CONFIG = {
 
 CONTINUOUS_INTERVAL = 300  # 5 min for continuous mode
 
-conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password='postgres')
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
+conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password=_pgpassword)
 cur = conn.cursor()
 
 print("=" * 60)

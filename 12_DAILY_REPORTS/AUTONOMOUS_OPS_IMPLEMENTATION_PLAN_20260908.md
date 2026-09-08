@@ -2,7 +2,7 @@
 
 **Utsteder:** STIG (EC-003_2026_PRODUCTION)
 **Dato:** 2026-09-08
-**Status:** Fase 1 UTFØRT (§ 8) · Fase 3 UTFØRT i godkjent omfang (§ 9) — masseendring 375 filer AVVENTER BESLUTNING · Fase 0/2 BLOKKERT (sannhetskilde utilgjengelig) · Fase 4 AVVENTER LARS
+**Status:** Fase 1 UTFØRT (§ 8) · Fase 3 UTFØRT: kontrollplan (§ 9) + masseendring 369 filer (§ 10) — **MERGE-GATE: `PGPASSWORD` bekreftet i Task Scheduler-kontekst på vert** · Fase 0/2 BLOKKERT (sannhetskilde utilgjengelig) · Fase 4 AVVENTER LARS
 **Mandat:** Teknisk implementering. Retning eies av LARS. Godkjenning av VEGA/G4.
 
 > **DAY-nummer ikke tildelt.** CLAUDE.md krever verifisering mot databaseklokken
@@ -372,7 +372,8 @@ katalog slik at eksekvering er identisk med direkte kall; fail-closed hvis kanon
 | D1 | Åpen — krever Fase 0 (DB) |
 | **D2** | **LUKKET** — 33 skyggekopier er nå logikkfrie shims |
 | **D3** | **LUKKET** — ingen kopi bærer lenger `PGPASSWORD`-fallback |
-| D4 | **LUKKET for kontrollplanet** (3 filer, § 9). 375 øvrige filer med samme mønster avventer beslutning |
+| D4 | **LUKKET** — kontrollplan (3 filer, § 9) + 369 filer (§ 10). Gjenstår: 3 fencede fabrikkfiler (avventer `RUN-20260908T190000Z`) og 4 pre-eksisterende ødelagte filer (§ 10.5) |
+| **D6** | **NY, oppdaget under § 10** — `guard_generation_freeze.py` har pre-eksisterende syntaksfeil ved HEAD → `finn_crypto/e/t_scheduler` kan ikke importere på noen vert. `finn_crypto_scheduler` er kontrollplan-forvaltet. Ikke berørt av denne endringen; krever egen fiks |
 | D5 | Åpen — krever push av lokal utvikling |
 
 ---
@@ -452,3 +453,98 @@ stopper ingen; er den ikke satt, stopper alle fail-closed-daemoner. Det som skal
 filantall er review-byrden og revert-omfanget. Anbefaling: gjør masseendringen som egen
 commit, *etter* at 9.3-sjekken er bekreftet på verten, og *utenom* de 3 fabrikkfilene til
 kjeden har lukket.
+
+---
+
+## 10. FASE 3b — MASSEENDRING UTFØRT 2026-09-08 (ordre: «1 og 2 ja … vi kjør!»)
+
+**Lukker:** D4 fullt ut, med to eksplisitte unntak (§ 10.5). **Runtime-adferd endret:** ja —
+fail-closed i 369 filer. **Reversibilitet:** ett `git revert`.
+**MERGE-GATE (bindende):** ikke merge før `PGPASSWORD` er bekreftet satt i den konteksten Task
+Scheduler starter daemonene fra. Gaten ligger ved *merge*, som CEO kontrollerer — ikke ved commit.
+
+### 10.1 Omfang — eksakt regnskap
+
+| | Filer |
+|---|---|
+| Kategori A (`PGPASSWORD`-fallback, enhver literal) | 320 + 4 tom-default `''` som begge tidligere grep overså |
+| − fencet (fabrikksti, `RUN-20260908T190000Z` åpen) | −3 |
+| − pre-eksisterende syntaksfeil ved HEAD (urørt, § 10.5) | −4 |
+| Kategori B (bart `password='postgres'`, ingen env) | +52 |
+| **Berørt** | **369** |
+
+Per katalog: `03_FUNCTIONS` 318 · `scripts` 39 · `05_ORCHESTRATOR` 7 (de unike beboerne; shims
+fra § 8 er logikkfrie og matchet ikke) · `migrations` 2 · `04_AGENTS`/`06_AGENTS`/`08_BACKFILL` 1 hver.
+Kategori C (23 «connection-strings») ble reklassifisert som *avledet*: f-strenger fra allerede
+oppslåtte variabler — kilden er en A-forekomst linjer over. Ingen selvstendig handling; verifisert
+for 8 av 8 undersøkte.
+
+### 10.2 Metode — og det første forsøket som feilet
+
+Ingen blind regex. Klassifisering først (§ 3b.0): A er *strukturert*, ikke uniform — 221 `DB_CONFIG`-dict,
+62 `connect()`-kwarg, 12 in-def, 10 modultopp, 7 klasseattributt, 9 øvrige. Én ankerbasert transform:
+guard-blokk foran statementets hode med hodets innrykk, uttrykk byttet til `_pgpassword`; bare
+tilordninger beholder eget navn. Samme kodesti for dry-run og apply. Ingen delt modul — null nye
+import-kanter (03/05-farens fra § 8).
+
+**Forsøk 1 feilet og ble revertert.** Dry-run rapporterte 0 anomalier; apply ga **88 `SyntaxError`**.
+Diagnose fra diff: siste kwarg uten etterfølgende komma — `password=os.getenv(…)` rett før `)` — er
+*tekstlig identisk* med en tilordning, så `ASSIGN` skrev seks linjer inn i den åpne parentesen.
+Linjenivå kan ikke skille kwarg fra statement. 4 av de 88 var pre-eksisterende ved HEAD; 84 var mine.
+**v2:** parentesdybde eksakt via `tokenize` (dybde > 0 → aldri eget anker; gå til siste dybde-0-rad),
+og **compile-gate per fil inne i apply** — en kilde som ikke kompilerer skrives aldri. Dry-run v2:
+369 filer, 0 anomalier, 0 blokkert. Apply v2: 0/369 kompileringsfeil.
+
+Transform-statistikk: `dict/kwarg` 330 · `assign` 31 · `oneliner` 9 · `import os` lagt til 34.
+Netto: **369 filer, +2 932 / −370 linjer.**
+
+### 10.3 Konsekvens på produksjonsverten
+
+Identisk med § 9.3, nå for 369 daemoner og skript: **starter ikke uten `PGPASSWORD` i miljøet de
+kjører i** — Task Scheduler-kontekst, ikke interaktiv shell. Høyt, med tydelig melding, aldri stille.
+Risikoen er binær på variabelen (§ 9.5), så denne endringen er ikke *farligere* enn § 9 — bare 123×
+større å reviewe og reverte. Set-grenen er strukturelt garantert: `if not X: raise` er falsk når X er
+satt, og `password=_pgpassword` er identisk med det gamle uttrykkets verdi.
+
+### 10.4 Verifikasjon
+
+| # | Test | Resultat |
+|---|---|---|
+| V1 | Ekstern `py_compile` × 369 (i tillegg til intern compile-gate) | **0 feil** |
+| V2 | Gjenværende fallback repo-vidt, utvidet mønster (enhver literal), utenfor fence/pre | **A = 0, B = 0**; fence beholder 3 |
+| V4 | Tre-invarianter | modified = 369 = berørt; untracked = 0; § 9-filene urørt; fencede urørt |
+
+**V3 — miljøuavhengig guard-probe, alle 369** (`pw_verify.py` v3.3, artefakt `/tmp/pw_verify_final.txt`):
+kildekoden eksekvert *frem til guarden*, fra repo-rot, begge env-grener. Kun filens *direkte* imports
+stubbes (transitive stdlib-feature-prober får ekte `ImportError`). En `RuntimeError` teller som
+fail-closed-bevis bare når innerste ramme er den probede filen selv — eller når opphavet er en annen
+berørt fil med guard (sjekket *i scriptet*, ikke i prosa). Søskenmoduler renses mellom filer. Filer
+probet kode skaper i treet fjernes og rapporteres (6 tomme `.log`, alle fra `logging.FileHandler`).
+
+| Tier | Filer | Betydning |
+|---|---|---|
+| Exec-bevist, **begge grener** | **241** | usatt → `RuntimeError` fra egen guard; satt → passerer |
+| Exec-bevist **fail-closed, transitivt** | 16 | søskenets guard fyrte først; egen guard til stede, `set→ok` |
+| Exec-bevist fail-closed, env etter guard | 1 | usatt → `RuntimeError`; satt → pre-eksisterende Windows-sti |
+| Strukturelt (compile + guard-plassering) | 111 | guard i `def` som ikke kalles ved import (93), env-feil før guard (8), uutført scope (8), trunkering (2) |
+| **UNEXPLAINED** | **0** | |
+| Sum | 369 | |
+
+**Probens egen historikk, for ærlighetens skyld:** v2.2 brukte en grådig catch-all import-hook som
+ga stub til Jython-only `org.python.core` (som CPythons `copy` *forventer* skal feile) → 95 falske
+env-feil. v3 stubber kun direkte imports. Proben ble iterert fem ganger; transformen én gang etter revert.
+
+### 10.5 Det som bevisst er urørt
+
+| Fil | Grunn |
+|---|---|
+| `03_FUNCTIONS/hypothesis_death_daemon.py`, `hypothesis_experiment_bridge_daemon.py`, `scripts/research_daemon.py` | Fabrikkstien — dispatch-fence til `RUN-20260908T190000Z` lukker |
+| `03_FUNCTIONS/dir_010_create_stig.py`, `dir_010_create_stig_user.py`, `dir_010_create_stig_user_clean.py`, `e2e_smoke_test.py` | Kompilerte ikke ved HEAD; transformen hopper over ødelagte filer eksplisitt fremfor å endre noe den ikke kan verifisere |
+
+### 10.6 Oppdaget under arbeidet — D6
+
+`03_FUNCTIONS/guard_generation_freeze.py` har en pre-eksisterende syntaksfeil (`""", (`) ved HEAD.
+Den importeres av `finn_crypto_scheduler`, `finn_e_scheduler` og `finn_t_scheduler` — **ingen av dem
+kan importere på noen vert i dag**, uavhengig av denne endringen. `finn_crypto_scheduler` er én av de
+5 daemonene `daemon_manager.py` forvalter. Funnet er utenfor dette omfanget og krever egen fiks;
+det er nøyaktig feilklassen ASTRID beskrev: kode som ser riktig ut i repoet men ikke kjører.

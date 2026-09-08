@@ -18,6 +18,7 @@ Constraints:
 - NO new indicators, NO new formulas
 """
 
+import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
@@ -25,12 +26,19 @@ import psycopg2
 
 def run_phase2_validation():
     # Database connection
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     conn = psycopg2.connect(
         host='127.0.0.1',
         port=54322,
         database='postgres',
         user='postgres',
-        password='postgres'
+        password=_pgpassword
     )
 
     print('='*70)
