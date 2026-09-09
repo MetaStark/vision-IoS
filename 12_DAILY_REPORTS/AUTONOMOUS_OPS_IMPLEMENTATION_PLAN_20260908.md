@@ -1798,3 +1798,52 @@ den ikke eier. Det er en praktisk detalj for G4-ordren.
 |---|---|
 | § 18.6 | **Lukket, negativt:** ingen `trust` for docker-subnettet |
 | D17 | Bekreftet fra `pg_roles` |
+
+### 18.10 Innbruddssjekk (CEO spurte «kan jeg være hacket?») og D10s siste ledd (~21:15 Oslo)
+
+Fire lesninger fra verten. Alle ordrett.
+
+**(1) Portbinding.** `docker port supabase_db_fhq-market-system` → `5432/tcp -> 0.0.0.0:54322`
+og `[::]:54322`. **Databasen lytter på alle grensesnitt på Windows-verten**, altså også
+LAN-adressen `10.0.0.23`. Det er angrepsflate, ikke innbrudd. **D18 (ny):** bind porten til
+`127.0.0.1` i Supabase-konfigurasjonen. G4-forslag.
+
+**(2) Mislykkede innlogginger siste 24 t, siste 20 linjer fra db-containerens logg.** To
+kilder, ingen andre:
+
+| Kilde | Rolle | Tidspunkt (UTC) | Tolkning |
+|---|---|---|---|
+| `172.17.0.3` (a0-containeren) | `fhq_executive_task` | hvert 5. min, 3 per tikk, **siste 17:15:11** | barneprosessene med feil passord — **dette er D10** |
+| `172.17.0.3` | `postgres` | 16:55:22 | én; a0 eller en jobb med fallback, ukjent |
+| `172.17.0.1` (verten) | `postgres` | 18:32:21 · 18:56:11 | CEOs egne forsøk kl. 20:32 og 20:56 Oslo, begge dokumentert over |
+
+**Ingen fremmede adresser.** Alt kommer fra a0-containeren og fra verten, og de to vert-feilene
+matcher CEOs egne handlinger på minuttet. Forbehold: Docker Desktops NAT lar også
+LAN-klienter fremstå som `172.17.0.1`, så «ingen fremmede adresser» er sterkt, ikke absolutt.
+
+**(3) Roller med login: 21.** `authenticator`, `pgbouncer`, `supabase_*` (6) er Supabase-
+standard. `fhq_*` (11) følger systemets egen navnekonvensjon. `hermes_readonly` er den ene jeg
+ikke kan plassere fra dokumentasjonen; den er kun lesende. CEO bekrefter om den er kjent.
+Ingen rolle utenom `supabase_admin` er superbruker.
+
+**(4) Windows nettverkspålogginger siste 8 t:** ingen hendelser.
+
+**Konklusjon på spørsmålet:** ingen indikasjon på innbrudd. Én reell eksponering (D18).
+
+**D10, siste ledd.** Loggen viser at barna faktisk kom frem til databasen som
+`fhq_executive_task` og fikk **«password authentication failed»**, hvert tikk, til og med
+**17:15:11 UTC = 19:15:11 Oslo**. Etter det: ingen flere. Det stemmer med `72H-GOVERNOR`s
+første suksess 19:20:17 og `VELOCITY-WATCH`s første kontakt 19:50. **Rotårsaken til D10 var
+et passord for `fhq_executive_task` som databasen ikke godtok**, og det ble rettet ~19:15
+Oslo. `.env` ble skrevet 17:49 Oslo, altså *før* feilene sluttet, så det som skjedde 19:15 var
+på **databasesiden** (`ALTER ROLE … PASSWORD`) eller i en annen nøkkel enn den jeg hashet.
+**Hvem gjorde det, og hva, er fortsatt ikke målt.** Spørsmålet står, nå med klokkeslett 19:15.
+
+Ikke synlig i utdraget: når feilene *begynte*. De siste 20 linjene starter 16:50 UTC. En
+telling per time og rolle over hele loggen daterer starten, og dermed kollapsen aug→sep.
+
+| | |
+|---|---|
+| **D10** | **Rotårsak målt:** `fhq_executive_task` avvist på passord fra a0-containeren til 19:15:11 Oslo; deretter ok. Hva som rettet det kl. 19:15: spørsmål |
+| **D18 (ny)** | Port 54322 bundet til `0.0.0.0` på verten. Bind til `127.0.0.1`. G4 |
+| Innbrudd | Ingen indikasjon. Alle feilforsøk fra egne kilder |
