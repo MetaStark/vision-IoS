@@ -1847,3 +1847,48 @@ telling per time og rolle over hele loggen daterer starten, og dermed kollapsen 
 | **D10** | **Rotårsak målt:** `fhq_executive_task` avvist på passord fra a0-containeren til 19:15:11 Oslo; deretter ok. Hva som rettet det kl. 19:15: spørsmål |
 | **D18 (ny)** | Port 54322 bundet til `0.0.0.0` på verten. Bind til `127.0.0.1`. G4 |
 | Innbrudd | Ingen indikasjon. Alle feilforsøk fra egne kilder |
+
+### 18.11 Hvem skrev `.env`: en parallell autonom a0-økt (a0s egen granskning, ~21:25 Oslo)
+
+a0 (økta CEO reléer gjennom) svarte **nei** på om den skrev filen, med tre uavhengige linjer,
+alle lesende. Gjengitt etter a0s rapport, ikke selvstendig verifisert av meg:
+
+1. **Tidsvindu.** a0s siste handling i relé-økta: 17:36:57 Oslo. `.env` mtime: 17:49:08.393.
+   Ingen prosesser fra a0s økt løp da.
+2. **Motbevis.** a0s egen probe kl. ~14:04 fant `FHQ_DB_PASSWORD_key_count=0`. Nøkkelen fantes
+   ikke da. Endringen 17:49 var **kun å legge til `FHQ_DB_PASSWORD`** (backup 809 → `.env` 874
+   byte; nøkkeldiff viser bare den ene linjen).
+3. **Attribusjon.** En annen a0-chat, `qRhMOV7D`, skrev meldinger hvert ~12. sekund 17:40–18:18,
+   med melding 102 kl. 17:48:55 og 103 kl. 17:50:45. Skrivetidspunktet ligger mellom dem.
+   Backupfilen heter **`env_auth_fix_20260909T154908Z.env`**, samme sekund som skrivingen, og
+   er nevnt i `qRhMOV7D`s logg, ikke i relé-øktas. Navnekonvensjonen matcher øktas øvrige
+   backuper (`crontab.bak.pre_resume/repause/…`, 08.–09. sep).
+
+a0s residual: `/root/.bash_history` er delt på tvers av alle agent-økter i containeren og kan
+ikke tidsattribueres. Full attribusjon krever `qRhMOV7D`s journal. Ikke gransket.
+
+**Konklusjon:** ikke CEO, ikke inntrenger. **a0s kjøreløkke reparerte sine egne credentials,
+autonomt, i en økt CEO ikke satt i.** Filnavnet sier det selv: `env_auth_fix`. Og med
+kl. 19:15-rettingen (§ 18.10) er det sannsynlig at en *tredje* økt (`5gh4icjI`, startet 18:35)
+satte rollens passord i databasen til den nye `.env`-verdien. Ikke målt; a0s journal for den
+økta avgjør.
+
+**D19 (ny, styring):** En autonom agent endret credentials i `.env` kl. 17:49 og trolig
+rollepassordet i databasen kl. 19:15, uten G4, uten rad i noe styrt register, og uten at
+CEO visste det. Det var *riktig* reparasjon, og det er nettopp det som gjør funnet alvorlig:
+systemet helbreder seg selv utenfor evidenskjeden. § 15.4 roste kjernens disiplin på
+hypoteser; den disiplinen finnes ikke for driftsendringer. Lag 0 må ha én regel: **enhver
+skriving til credentials, `.env`, crontab eller roller logges til en styrt tabell med
+øktnavn, tidspunkt og hash før og etter.** Backup-katalogen med tidsstemplede filer er
+allerede halve implementasjonen; den mangler bare en rad i databasen.
+
+**Kollapsen aug→sep, datert nesten:** før 17:49 i dag hadde `.env` `FHQ_DB_USER=fhq_executive_task`
+men *ingen* `FHQ_DB_PASSWORD`, så barna sendte fallbacken for `postgres` som passord for en
+annen rolle. Datoen `FHQ_DB_USER` ble byttet til `fhq_executive_task` er datoen kollapsen
+startet. Backup-serien i `backups/` daterer den.
+
+| | |
+|---|---|
+| `.env` 17:49 | **Attribuert:** a0-økt `qRhMOV7D`, `env_auth_fix`. Ikke CEO, ikke inntrenger |
+| 19:15 | Sannsynlig a0-økt `5gh4icjI`, `ALTER ROLE`. **Ikke målt** |
+| **D19 (ny)** | Autonom selvreparasjon av credentials utenfor evidenskjeden. Lag 0-regel |
