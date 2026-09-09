@@ -1376,8 +1376,59 @@ traff — som er selve funnet. Ingen datarader er berørt.
 | D10 | Omfang og mønster målt; årsak står mellom to kandidater — én sammenligning avgjør |
 | Fabrikken | Disiplinen holder: 6/6 reelle eksperimenter `KILLED`, 0 promoteringer 08.09 |
 | Rapport-hygiene | Sesjonsrapport ≠ eksekveringslogg. To kjørte RO-er manglet i rapporten |
-| Gate | Uendret. De ti døde jobbene ligger i `/a0/usr/.../scripts/`, ikke i `03_FUNCTIONS` |
+| Gate | De ti døde jobbene ligger i `/a0/usr/.../scripts/`, ikke i `03_FUNCTIONS`. **Men se § 16.7** |
 
 **Gaten styrkes av dette.** Samtlige ti tracebacks peker på filer under
 `/a0/usr/projects/agent-zero_runtime_loop/scripts/`. Ingen av dem er en fil denne grenen
 endrer. Fail-closed-endringen kan ikke være årsaken, og kan ikke bli det.
+
+### 16.7 D14 (ny) — vertens `PGPASSWORD` er satt, men verdien er feil
+
+Oppdaget ved et uhell kl. 17:20 Oslo: CEO kjørte runde 6-kommandoen i PowerShell på verten
+i stedet for i containeren. Resultatfila inneholdt ikke data, men dette:
+
+```
+psql: error: connection to server at "host.docker.internal" (10.0.0.23), port 54322 failed:
+FATAL:  password authentication failed for user "postgres"
+```
+
+Fire kontroller på verten, samme PowerShell-økt, ingen verdier vist:
+
+| Kommando | Svar | Betyr |
+|---|---|---|
+| `[bool]$env:PGPASSWORD` | `True` | Prosessen har variabelen |
+| `GetEnvironmentVariable('PGPASSWORD','Machine') -eq $env:PGPASSWORD` | `True` | Prosessverdien **er** Machine-verdien |
+| `Test-Path "$env:APPDATA\postgresql\pgpass.conf"` | `False` | Ingen annen passordkilde |
+| `psql -h 127.0.0.1 -p 54322 -U postgres -c "SELECT 1"` med Machine-verdien lastet | `FATAL: password authentication failed` | **Machine-verdien avvises av databasen** |
+
+Passordet nådde serveren og ble avvist. Det er ikke «tomt», det er **galt**. Ingen
+`pgpass.conf` kan ha overstyrt det.
+
+**Hva det gjør med gaten.** § 15.1 lukket gaten på at `PGPASSWORD` var satt på Machine-nivå.
+At den var satt ble målt. At verdien var riktig ble aldri målt, og den er det ikke. Presist:
+
+- Merge endrer **ikke** vertens atferd. Med fallback-mønsteret `os.getenv('PGPASSWORD', '…')`
+  overstyrer en satt miljøvariabel fallbacken allerede i dag. Skript på verten som leser
+  `PGPASSWORD` feiler med samme `FATAL` før og etter merge.
+- Gatens formulering «ingenting som kjører mister credential» står, fordi verten ikke har
+  noen fungerende credential i miljøet å miste. Ingen `03_FUNCTIONS`-fil kjørte på verten i
+  dag (§ 15.1).
+- Men **forutsetningen for at noe som helst på verten skal virke etter merge er nå eksplisitt:
+  Machine-verdien må rettes.** Det er en driftsfeil uavhengig av grenen, og den må lukkes
+  uansett.
+
+**Sannhetskilden for riktig passord er database-containeren selv**, `POSTGRES_PASSWORD` i
+dens miljø. Fallback-verdien de gamle skriptene bar, 231 forekomster på master, er Supabases
+dokumenterte standard for lokal utvikling. Om databasen fortsatt godtar den er ikke målt.
+a0s psql virker fra containeren, så a0 har en fungerende verdi; hvor den kommer fra er ikke
+målt (SHELL 2 i runde 4 fant `PGPASSWORD` tom i a0s *cron*-miljø, ikke nødvendigvis i a0s
+interaktive skall).
+
+**Verifisering uten å eksponere hemmeligheten:** CEO beregner sha256 av Machine-verdien
+lokalt, a0 beregner sha256 av verdien a0 bruker. Like hasher = samme verdi. Verdien selv
+skal ikke passere chat, logg eller dette dokumentet.
+
+| | |
+|---|---|
+| **D14** | Vertens `PGPASSWORD` (Machine) avvises av databasen. Rettes fra `POSTGRES_PASSWORD` i db-containeren. Ikke skapt av grenen; må lukkes før noe på verten kan koble seg til |
+| Gate | Konklusjonen i § 15.1 står, med D14 som eksplisitt driftsforutsetning. Merge = CEO |
