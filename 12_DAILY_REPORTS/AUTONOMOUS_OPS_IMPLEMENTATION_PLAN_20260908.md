@@ -1892,3 +1892,77 @@ startet. Backup-serien i `backups/` daterer den.
 | `.env` 17:49 | **Attribuert:** a0-økt `qRhMOV7D`, `env_auth_fix`. Ikke CEO, ikke inntrenger |
 | 19:15 | Sannsynlig a0-økt `5gh4icjI`, `ALTER ROLE`. **Ikke målt** |
 | **D19 (ny)** | Autonom selvreparasjon av credentials utenfor evidenskjeden. Lag 0-regel |
+
+---
+
+## 19. FASE 0 — ALT LUKKET  (2026-09-09 ~21:45 Oslo)
+
+CEO-direktiv: «Nå må vi få systemet til å kjøre optimalt. Slutt å tulle med ting i sidegater.»
+Ingen flere spørsmål stilles. De tre siste ble besvart samtidig:
+
+**19:15 var ikke `ALTER ROLE`.** a0 gjennomsøkte alle økters journaler for 17:10–17:25 UTC:
+null `ALTER ROLE`, null psql. Ett `ALTER ROLE` var *godkjent men trukket* kl. 18:09 («proven a
+no-op and withdrawn with zero DB writes»). Den eneste skrivingen i vinduet var
+`backups/script_key_rename_20260909T171454Z/` + **tre skript endret 19:15:30 Oslo**
+(`feature_freshness_watchdog`, `72h_governor`, `portfolio_quarantine_writer_v3`), én linje
+hver: env-nøkkelen i `os.environ.get(...)`. LARS-godkjent «3-line rename» under
+`RUN-20260909T144500Z-061747`, VEGA-lukket, dokumentert i
+`docs/stig/FHQ_STIG_DB_AUTH_REPAIR_20260909_RUN-20260909T144500Z.md § 10`. **§ 18.11s
+antagelse om `ALTER ROLE` trekkes.** Databasen var uskyldig hele tiden; rollen godtok det
+dokumenterte passordet (reprodusert 3×). Alt var klientside.
+
+**Kollapsen er datert på sekundet.** `.env`-backupserien: `db_role_switch_20260905/.env`
+(mtime 05.09 00:53:38) har ingen `FHQ_DB_USER`; `env_auth_fix_…` (mtime 05.09 00:55:49) har
+`FHQ_DB_USER` = lease-brukeren. **Byttet skjedde 2026-09-04T22:55:49Z.** Første feil
+`23:00:13Z`, 4 min 24 s senere. Databaseloggen bekrefter uavhengig: 157 avviste
+`fhq_executive_task`-innlogginger i timen 04.09 kl. 23 UTC, deretter **120 i timen, hver
+time, i 4,6 døgn** (2 880 per døgn), fallende 09.09 kl. 15–17 UTC til null. Ordrett fra
+tellingen: `2026-09-09 17 fhq_executive_task 12`, så ingenting. 12 412 `EXECUTION_ERROR`
+over 14 `run_id` i intervallet. **D10 er fullstendig forklart og fullstendig lukket:** rollen
+byttet uten passord 4. sep; passord lagt til 9. sep 15:49Z; tre skript rettet 17:14Z.
+
+**`hermes_readonly` er kjent:** rollen for Hermes, minnesystemet. Ingen ukjente roller.
+
+**§ 18.11 og D19 står, med korreksjon.** Reparasjonen var LARS-godkjent og VEGA-lukket *i
+a0s eget styringssystem*, med journal og backup. Det er bedre enn § 18.11 antok. Men den var
+usynlig fra det styrte vision-IoS-systemet og fra CEO. D19 omformuleres: **to styringssystemer
+uten felles register.** Lag 0-regelen er den samme: én tabell, alle skrivinger.
+
+### 19.1 Sluttstatus, alle funn
+
+| | Status | Eier av neste steg |
+|---|---|---|
+| D1 vision-IoS-daemonene døde | Målt. Beslutning: avvikle eller gjenopplive | LARS/CEO |
+| D2, D3, D4 | Lukket i kode (`fd0328b6`). **Merge = CEO** | CEO |
+| D5 tre kildetrær | Tallfestet, uløst | CEO |
+| D6 `guard_generation_freeze` | Kandidat klar; ratifiser vert eller gjenopprett direktiv | VEGA |
+| D7–D9 | Lukket | — |
+| **D10** | **Lukket.** Rotårsak, dato, reparasjon: alt målt | — |
+| D11 `prereg_id` | Diagnostisert; tre-kolonne-fiks | G4 |
+| D12 fabrikken sulteforet | Målt; hypotese-tilførsel er flaskehalsen | LARS |
+| **D13** skriver kapper ved 500 | Diagnostisert; én linje i `runa_cadence_executor.py` | a0 under CEO-ordre |
+| D14 | Lukket | — |
+| **D15** rolle mangler `GRANT` | **Blokkerer 8 av 10 jobber nå.** Pakke: § 20 | CEO som `supabase_admin` |
+| D16 `e7cb94da` hengende | Målt; oppsamler | G4 |
+| D17 `postgres` ikke superbruker | Målt; CLAUDE.md-korreksjon | G4 |
+| **D18** port på `0.0.0.0` | Målt; brannmur eller binding | CEO |
+| D19 to styringssystemer | Formulert; én tabell | G4 |
+
+**Fase 0 er ferdig. Ingen åpne spørsmål. Ingen flere runder.**
+
+---
+
+## 20. DRIFT — FEM HANDLINGER, I REKKEFØLGE
+
+Kriterium: hva får flest jobber til å lykkes, raskest, med minst risiko. Ikke hva som er
+interessant.
+
+| # | Handling | Effekt | Risiko | Leveranse fra STIG |
+|---|---|---|---|---|
+| **1** | **`GRANT`-pakke til `fhq_executive_task`** (D15) | 8 av 10 døde jobber kommer opp | Lav: bare rettigheter, ingen data, reversibelt med `REVOKE` | `scripts/d15_grant_package.ps1` genererer SQL fra databaseloggen; CEO leser og kjører som `supabase_admin` |
+| **2** | **Fjern 500-tegns-kappingen** i `runa_cadence_executor.py` (D13) | Alle fremtidige feil blir diagnostiserbare | Lav: én linje, `text`-kolonne | Presis instruks til a0 + akseptansetest |
+| **3** | **Merge PR #20** | Verten kan ikke lenger koble seg til med gjettet passord | Lav: gate-grunnlag komplett, D14 lukket | Ferdig. CEO trykker |
+| **4** | **Brannmurregel: 54322 kun fra `127.0.0.1`** (D18) | Databasen forsvinner fra LAN | Lav: én regel, reversibel | Én PowerShell-linje, administrator |
+| **5** | **Sjekk hypotesegeneratoren** `STEP03-HYPOTHESIS-V1` (D12) | Fabrikken får mat | Ukjent til målt | Én SQL; runde 6 H4 viste `SyntaxError` linje 559 i `btcusd_hypothesis_generator_v1.py` |
+
+Alt annet (D11, D16, D17, D19, D1, D5, D6) venter til 1–5 er gjort.
