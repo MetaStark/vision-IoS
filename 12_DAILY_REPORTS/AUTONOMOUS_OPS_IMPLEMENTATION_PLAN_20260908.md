@@ -1432,3 +1432,167 @@ skal ikke passere chat, logg eller dette dokumentet.
 |---|---|
 | **D14** | Vertens `PGPASSWORD` (Machine) avvises av databasen. Rettes fra `POSTGRES_PASSWORD` i db-containeren. Ikke skapt av grenen; må lukkes før noe på verten kan koble seg til |
 | Gate | Konklusjonen i § 15.1 står, med D14 som eksplisitt driftsforutsetning. Merge = CEO |
+
+**Oppfølging 20:35 Oslo (DB-klokke).** CEO fant riktig verdi og testet i et nytt vindu:
+`SELECT 1` mot `127.0.0.1:54322` → `ok = 1`; mot `host.docker.internal:54322` →
+`2026-09-09 20:35:04 Oslo`. sha256 av verdien: `a942b37c…`. **Det er nøyaktig hashen til
+fallback-verdien de gamle skriptene bar** (§ 16.7, 231 forekomster på master). Verdien som lå
+på Machine tidligere i dag var altså ikke den. Men `Machine -eq $env:PGPASSWORD` gav `False`:
+den riktige verdien lever i prosessen eller på User-nivå, **Machine-verdien er fortsatt feil.**
+D14 er halvt lukket. Kopiering til Machine via administrator-vindu er levert; bekreftelse
+utestår.
+
+---
+
+## 17. FASE 0 — RUNDE 6: D10 SNEVRES TIL ÉN TESTBAR HYPOTESE  (2026-09-09 ~17:40 Oslo)
+
+Kilder: `phase0_round6_result.txt` (277 linjer, 51 009 byte, `sha256 5ea1e2d2…`, `PSQL_EXIT=0`,
+1 ERROR-linje, min feil, se 17.5) og `phase0_round6_shell.txt` (60 linjer, 3 289 byte,
+`sha256 0746d109…`, `SH_EXIT=0`). Begge fingeravtrykk verifisert av a0 før kjøring.
+
+### 17.1 D13 — avkuttingen sitter i skriveren, ikke i kolonnen
+
+| Måling | Verdi |
+|---|---|
+| `error_message` datatype (H1) | `text`, **ingen** `character_maximum_length` |
+| Lengdefordeling i dag (H2) | **500 tegn: 693 rader** · 11 tegn («Exit code 1»): 77 rader · ingenting annet |
+| Hele tabellen (H3) | 16 071 rader; maks 500; **14 239 (88,6 %) ligger på taket**; 442 nevner et unntak |
+| Andre felt (H5) | `error_stack text NULL` finnes. Om den er fylt er ikke målt |
+
+Kolonnen er ubegrenset. **Skriveren kapper ved nøyaktig 500 tegn**, og kaster dermed
+unntakslinjen for ni av ti jobber, i dag og i 88,6 % av all historikk. Fiksen er ett uttrykk i
+skriveren, som er `runa_cadence_executor.py` (K4). Enten fjern kappingen, eller lagre halen i
+stedet for hodet, eller fyll `error_stack`.
+
+Kontroll av tellingen: 693 = 9 jobber × 77 tikk, 77 = den tiende (LIVE-PRICE-FETCHER, «Exit
+code 1»). Kjøringen skjedde ~17:40, 77 fem-minutters-tikk etter 11:11. Konsistent med runde 5
+(69 tikk ved 16:55).
+
+### 17.2 D10 — kandidat 2 er avkreftet, kandidat 1 er delvis avkreftet, og en tredje kommer fram
+
+**Skriptene bruker ikke `PGPASSWORD`.** K1/K3, ordrett:
+
+```
+DB_HOST     = os.environ.get('FHQ_DB_HOST',     '172.17.0.1')          # candle_fetcher, cadence_executor
+DB_HOST     = os.environ.get("FHQ_DB_HOST",     "host.docker.internal") # step08_v5
+DB_PORT     = int(os.environ.get('FHQ_DB_PORT', '54322'))
+DB_PASSWORD = os.environ.get('FHQ_DB_PASSWORD', '<fallback>')           # cadence_executor linje 31
+```
+
+Fallback-passordet i executor har **samme sha256 som verdien databasen godtok kl. 20:35
+(`a942b37c…`)**. Kandidat 2 fra § 16.4, «`PGPASSWORD` er tom», er irrelevant: variabelen
+leses ikke, og fallbacken er riktig.
+
+**Kandidat 1, «`DB_HOST` løser feil», holder ikke alene.** To skript med forskjellige
+standardverter, `172.17.0.1` og `host.docker.internal`, feiler like mange ganger, 77 hver.
+Og K4 viser at **`runa_cadence_executor.py` er den som skriver `run_failures`**, altså kobler
+executor-prosessen seg til databasen, med sin standard `172.17.0.1` og sin fallback, og
+lykkes. Samme fil, samme standardverdier, som `run_id = RUNA-CADENCE-EXECUTOR` som *feiler* i
+`get_connection` 77 ganger i dag.
+
+**Det som skiller dem er miljøet, og K3 viser hvor det kommer fra:**
+
+```
+28-32   DB_HOST/…/DB_PASSWORD = os.environ.get('FHQ_DB_*', <standard>)   # leses ved import
+34      # Load project .env file for child script environment
+36-46   for hver linje i <prosjekt>/.env: if _key not in os.environ: os.environ[_key] = _val
+321     Execute a target script via subprocess …
+```
+
+Modulkonstantene på linje 28–32 evalueres **før** `.env` lastes på linje 36–46. Forelder-
+prosessen kobler seg derfor til med standardverdiene. Barneprosessene arver `os.environ`
+**etter** at `.env` er lastet, og leser sine `FHQ_DB_*` derfra. Kjøres executor som sitt eget
+barn, får den også `.env`-verdiene, og feiler.
+
+> **Hypotese H-ENV (ikke bevist):** `<prosjekt>/.env` i a0-containeren setter `FHQ_DB_HOST`
+> og/eller `FHQ_DB_PASSWORD` til verdier som ikke virker. Den forklarer alle fem
+> observasjonene på én gang: (1) forelder skriver, barn feiler; (2) barn med ulike
+> standardverter feiler likt; (3) alle ti feiler i samme kall; (4) `stdout` viser at
+> prosessene starter; (5) kollapsen aug→sep (§ 15.2) er datoen `.env` sist ble endret.
+> **Én lesning avgjør den:** nøklene i `.env`, filens `mtime`, verdien av `FHQ_DB_HOST`, og
+> sha256 av `FHQ_DB_PASSWORD` sammenlignet med `a942b37c…`. Runde 7.
+
+Jeg konkluderer ikke før den lesningen er gjort. Men det er ikke lenger to likestilte
+kandidater; det er én hypotese med en klar falsifikator.
+
+### 17.3 D11 — feltet er fortsatt ikke navngitt (min feil)
+
+I1 og I2 ble kappet ved 3 000 tegn før kandidat-id-et dukket opp, og I3 viser bare
+hodene. Det som *er* bekreftet: `spec.hypothesis_id = FHQ-RO-8131c557-…` og
+`spec.mechanism_id = 8131c557-…`, altså **RO-id-et ligger allerede i noden**, i `spec`, i
+`discover` og i `ro_binding`. Attribusjonen er komplett i JSON, som § 16.1 sa. Hvilket felt som
+bærer `4d108812` avgjøres med én `jsonb_each_text … WHERE value LIKE '%4d108812%'` i runde 7.
+
+### 17.4 § 16.2 må mildnes: rapporten var ikke unøyaktig, den var eldre
+
+J2: `8131c557` og `fc6565fc` gikk `READY_FOR_FREEZE → FROZEN_FOR_EXPERIMENT` kl. **21:52**,
+med `evidence_ref = STIG-RO-SUPERSESSION-V2-…-RUN-20260908T190000Z-061747`. Det er
+kjedehandlingen som § 15.5 daterte, 42 min *etter* pausen ASTRIDs rapport ble skrevet ved
+(19:10Z = 21:10 Oslo). De to RO-ene fantes ikke som fryste da rapporten ble skrevet. **Rapporten
+var korrekt på sitt tidspunkt.** Poenget i § 16.2 står, men skal formuleres som «en
+sesjonsrapport er et øyeblikksbilde, ikke en logg», ikke som en feil hos ASTRID.
+
+J3: **seks reelle kjøringer totalt, alle 08.09, snitt 6,82 s.** Ingen før, ingen etter.
+
+### 17.5 Proveniens og egne feil
+
+- J1 feilet: `research_objects` har ingen kolonne `title`. Jeg antok kolonnenavnet. Zero-
+  Assumption brutt på et ufarlig sted; rettes i runde 7 ved å lese `information_schema` først.
+- I1/I2 ble kappet av mitt eget `LEFT(…, 3000)`. Ikke datatap, bare for kort vindu.
+- Relélaget erstattet hver JSON-`true` med `§§secret(…)` igjen (`pit_ok`, `bound`, `pass`,
+  `holds`). Kosmetisk, samme mønster som § 16.5.
+
+### 17.6 Status etter runde 6
+
+| | |
+|---|---|
+| D10 | Snevret til **H-ENV**. `PGPASSWORD`-sporet avkreftet. Én lesning av `.env` avgjør |
+| D13 | **Bekreftet og presisert:** skriver-side kapping ved 500; 88,6 % av all historikk rammet; kolonnen er `text` |
+| D11 | Attribusjon komplett i JSON (bekreftet igjen). Feltnavn for kandidat-id: runde 7 |
+| D14 | Halvt lukket: riktig verdi = fallback-verdien; Machine-nivå fortsatt feil; venter bekreftelse |
+| § 16.2 | Mildnet: RO-ene ble fryst etter rapporten. Øyeblikksbilde, ikke feil |
+| Gate | Uendret. Ingen av de ti berører `03_FUNCTIONS`, og de bruker ikke `PGPASSWORD` |
+
+### 17.7 Andre kjøring av runde 6, fra verten kl. ~20:40 — noe endret seg kl. 19:50
+
+CEO kjørte samme skript selv fra `D:\Runtime` med host-psql etter at D14-verdien var på plass.
+Uavhengig kjøring, ingen relé, ingen redigering (`true` står som `true`). To snapshots av
+samme tabell, tre timer fra hverandre:
+
+| H2 lengdefordeling i dag | a0 ~17:40 | CEO ~20:40 |
+|---|---|---|
+| 500 tegn (kappet traceback) | 693 | 967 |
+| 11 tegn («Exit code 1») | 77 | 113 |
+| **94 tegn (ny klasse)** | **0** | **34** |
+
+De 34 nye radene, alle fra `RUN-CONTAINER-LEARNING-VELOCITY-WATCH-V1`, hvert 5. min fra
+**17:50Z = 19:50 Oslo** til 18:35Z, ordrett:
+
+```
+[2026-09-09T18:35:10Z] ERROR: permission denied for table btcusd_shadow_outcome_evidence_mvp
+```
+
+**Den jobben kommer nå inn i databasen.** Kl. 17:40 døde den i `psycopg2.connect`. Kl. 19:50
+autentiserer den og feiler først på en tabellrettighet. Noe i kjeden container → database
+endret seg mellom 17:40 og 19:50 Oslo. Det sammenfaller med at CEO arbeidet med passordet
+(§ 16.7-oppfølgingen). **Hva som faktisk ble gjort på verten er ikke målt**, og jeg spør i
+stedet for å anta: ble databasens eget passord endret (`ALTER USER` / Supabase-kommando), ble
+`.env` i containeren endret, ble en container restartet, eller ble bare miljøvariabelen på
+verten satt? Svaret avgjør om H-ENV (17.2) fortsatt er hypotesen, eller om D10 og D14 hadde
+**samme rotårsak: databasens passord var ikke det skriptene bar som fallback**, og ble det
+kl. ~19:50.
+
+Bevisene som allerede peker dit: (a) skriptenes fallback-passord har hash `a942b37c…`;
+(b) det er verdien databasen godtar *nå*; (c) verten fikk «password authentication failed»
+kl. 17:20 med en annen verdi; (d) jobbene feilet i `connect` hele dagen med fallbacken;
+(e) én jobb kommer inn fra 19:50. Hvis databasepassordet var noe annet før 19:50, forklarer
+det (c), (d) og (e) uten `.env`. Hvis det ikke ble endret, står H-ENV.
+
+**D15 (ny, liten):** `permission denied for table btcusd_shadow_outcome_evidence_mvp`. Rollen
+velocity-watch kobler seg til med er ikke superbruker, ellers kunne den ikke fått den feilen.
+Den bruker `psycopg2.connect(conn_string)`, ikke `FHQ_DB_*` (§ 16.4, F2). Egen rolle, egen
+`GRANT` som mangler. Uavhengig av D10.
+
+**Neste måling, runde 7:** suksessrate per `run_id` siste 60 min. Hvis de ni andre også har
+begynt å lykkes etter 19:50, er D10 løst av det CEO gjorde, og årsaken er dokumentert av
+svaret på spørsmålet over.

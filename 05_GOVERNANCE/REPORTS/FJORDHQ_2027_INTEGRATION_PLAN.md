@@ -110,7 +110,17 @@ Fase 0 kjørte (plandokument § 12–13). Tabellen over var bygget på repoet; d
 
 **Dommene 08.09 bekrefter disiplinen.** Elleve `VERDICT`-noder: tre `INVALID_TEST`, én `INCONCLUSIVE`, sju `KILLED`. **Alle seks reelle eksperimentene ble drept, null promotert.** Fabrikken feiler ikke; den falsifiserer. Kill-regelen i § 15.4 er i drift.
 
-**Rapport-hygiene.** ASTRIDs seks RO-er og de seks som faktisk kjørte er ikke samme liste: `8131c557` (LTA_001) og `fc6565fc` (EFP_002) kjørte uten å stå i rapporten. Sesjonsrapporter er ikke eksekveringslogg og skal ikke telle omfang i denne planen.
+**Rapport-hygiene.** ASTRIDs seks RO-er og de seks som faktisk kjørte er ikke samme liste: `8131c557` (LTA_001) og `fc6565fc` (EFP_002) kjørte uten å stå i rapporten. *Runde 6 mildner dette:* de to ble fryst kl. 21:52, 42 min etter at rapporten ble skrevet. Rapporten var korrekt på sitt tidspunkt. Poenget står som «øyeblikksbilde, ikke logg», ikke som feil.
+
+**Runde 6 (plandokument § 17) — D13 presisert, D10 snevret, én ny liten:**
+
+| Påstand | Databasen sier | Konsekvens |
+|---|---|---|
+| D13: «kolonnen kappes ved 500» | **Kolonnen er `text`, ubegrenset. Skriveren kapper ved nøyaktig 500.** 14 513 av 16 415 rader (88 %) i hele historikken ligger på taket | Fiksen er ett uttrykk i `runa_cadence_executor.py`, som er skriveren. Lag 0, dag 1 |
+| D10: «`PGPASSWORD` tom i containeren» | **Irrelevant.** Skriptene leser `FHQ_DB_*` med fallback; fallback-passordet har samme hash som verdien databasen godtar nå | Kandidaten er strøket. Én hypotese igjen: `.env` som arves av barneprosesser (H-ENV), **eller** at databasens passord var et annet før kl. 19:50 i dag |
+| «Fabrikken kjører reelt» | Seks reelle kjøringer totalt, alle 08.09, snitt 6,8 s. Ingen før, ingen etter | Lag 1s skalaproblem er bekreftet i tall: seks eksperimenter, én dag |
+
+**Noe endret seg kl. 19:50.** En av de ti døde jobbene kommer nå inn i databasen og feiler på en tabellrettighet i stedet for i `connect`. Det sammenfaller med at passordet på verten ble arbeidet med. Hva som faktisk ble gjort er ikke målt; runde 7 måler om de ni andre også har snudd.
 
 ---
 
