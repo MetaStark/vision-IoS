@@ -12,7 +12,10 @@
 # 'Continue', not 'Stop': docker logs emits the database log on stderr, and Stop would abort on it.
 $ErrorActionPreference = 'Continue'
 $Role  = 'fhq_executive_task'
-$Since = '2026-09-09T17:15:00Z'
+# Rolling window: only denials in the last 15 minutes, so already-granted objects drop off
+# and each run shows only what is STILL denied. Empty output means the role has what it needs.
+# Override with an absolute timestamp as the first argument if a wider view is wanted.
+$Since = if ($args.Count -ge 1) { $args[0] } else { '15m' }
 $Db    = 'supabase_db_fhq-market-system'
 $Out   = 'D:\Runtime\d15_grant_package.sql'
 
