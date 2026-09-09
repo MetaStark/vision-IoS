@@ -1756,3 +1756,45 @@ G4-korreksjonen av CLAUDE.md (§ 12.2).
 |---|---|
 | **D14** | **Lukket.** Machine-verdi riktig, bekreftet i nytt vindu |
 | **D17 (ny)** | `postgres` er ikke superbruker. Supabase-mønster. Påvirker D15-diagnosen og CLAUDE.md |
+
+### 18.9 `pg_hba.conf` og rollene, lest direkte (~21:10 Oslo)
+
+Db-container: **`supabase_db_fhq-market-system`** (eier port 54322). `pg_hba.conf`, de
+virksomme linjene, ordrett:
+
+```
+local all  supabase_admin     scram-sha-256
+local all  all                peer map=supabase_map
+host  all  all  127.0.0.1/32  trust
+host  all  all  ::1/128       trust
+host  all  all  10.0.0.0/8      scram-sha-256
+host  all  all  172.16.0.0/12   scram-sha-256
+host  all  all  192.168.0.0/16  scram-sha-256
+host  all  all  0.0.0.0/0       scram-sha-256
+host  all  all  ::0/0           scram-sha-256
+```
+
+**`trust` gjelder bare loopback *inne i db-containeren*.** Alt som kommer utenfra, inkludert
+a0-containeren og Windows-verten, ankommer via Docker-gatewayen `172.17.0.1` (L5 viste
+nettopp den som `client_addr` for begge) og treffer `172.16.0.0/12 scram-sha-256`. **Passord
+kreves. Sikkerhetsfunnet fra § 18.6 avkreftes.** Hvordan a0s eget psql får passordet er
+fortsatt ikke målt, men det *er* en passordvei, ikke en tillitsregel. Sannsynlig: a0s
+agentramme setter `PGPASSWORD` i sin egen prosess. Lav prioritet.
+
+`pg_roles`:
+
+| rolle | superbruker | login |
+|---|---|---|
+| `supabase_admin` | **t** | t |
+| `postgres` | f | t |
+| `fhq_executive_task` | f | t |
+| `fhq_lease` | *(finnes ikke — navnet var min gjetning fra `FHQ_LEASE_DB_USER`; den faktiske verdien er ikke lest)* | |
+
+D17 bekreftet. D15-fiksen, `GRANT`-pakken til `fhq_executive_task`, må kjøres som
+`supabase_admin` eller som eier av tabellene; `postgres` kan ikke gi rettigheter på objekter
+den ikke eier. Det er en praktisk detalj for G4-ordren.
+
+| | |
+|---|---|
+| § 18.6 | **Lukket, negativt:** ingen `trust` for docker-subnettet |
+| D17 | Bekreftet fra `pg_roles` |
