@@ -1168,6 +1168,12 @@ riktig størrelsesorden; **det målte tallet er 630 på ~5,25 t.**
 
 ### 15.3 D11 — løst: attribusjonen finnes som JSON-spor, ikke som nøkkel
 
+> **TRUKKET 2026-09-09 17:00 — se § 16.1.** Konklusjonen under, at
+> `sandbox_runs.research_object_id` lagrer et FORMALIZE-preget node-id, ble testet direkte i
+> runde 5 og er falsifisert: 6 av 6 rader gir `no-match-in-FORMALIZE`. Id-et er et kandidat-id
+> preget ved `PREREG`. Tabellen med søketreff nedenfor står ved lag; slutningen om hva id-et
+> *er*, og fiksen som fulgte av den, er erstattet av § 16.1.
+
 | Søk etter de seks id-ene | Treff |
 |---|---|
 | `research_objects` — som id, som `parent_ro_id`, i radtekst | 0 / 0 / 0 |
@@ -1234,10 +1240,144 @@ begrensning i dag er hypotese-tilførsel, ikke eksekvering.
 | D7 | `D:\Runtime` = a0 runtime-loop, evidens; CEO bekrefter |
 | D9 | To epoker; epoke I's ledgere er historikk (siste 27. mai) |
 | D10 | **Målt:** 630/693 i dag; 10 jobber døde på hvert tikk; brøt aug→sep. Unntaksklasse: runde 5 |
-| D11 | **Løst:** JSON-spor, ikke FK; kolonnen feilnavngitt; én-kolonne-fiks |
+| D11 | ~~**Løst:** JSON-spor, ikke FK; kolonnen feilnavngitt; én-kolonne-fiks~~ — **trukket, se § 16.1** |
 | **D12 (ny)** | Fabrikken er sulteforet: tom kø, `NO_USEFUL_WORK` hvert tikk hele dagen |
 
 **Til 2027-planen:** Lag 0 = registrer det levende systemet (a0-runtime) og reparer de ti
 døde jobbene. Lag 1 = attribusjonsnøkkel + hypotese-tilførsel; disiplinen finnes. Lag 2 =
 koble epoke III til epoke I's ledgere, eller erklære dem historikk. Kill-rate = evidensbasert.
-| **D10 (ny)** | 530/583 kjøreforsøk feilet i `fhq_runtime` siden stats-start (13.3). **Rettet i § 14.5:** vinduet er usikkert — id-spennet motsier «4,5 t»; raten måles direkte i runde 4 |
+
+> **Redaksjonell merknad.** En løsrevet tabellrad om D10 sto her etter avsnittet, som rest
+> etter redigeringen i § 14. Den er fjernet; innholdet står korrekt i § 14.5 og § 15.2.
+
+---
+
+## 16. FASE 0 — RUNDE 5: ÉN KONKLUSJON TREKKES  (2026-09-09 17:00 Oslo)
+
+Kilde: `phase0_round5_result.txt`, 247 linjer, 33 442 byte,
+`sha256 fc7d401d3fcbc2ca2df37b4028491d92e5be8ab7dd4ba21b1cbbd7cfc8a0ac55`, `PSQL_EXIT=0`,
+0 ERROR-linjer. Skript-fingeravtrykk verifisert byte-eksakt av a0 før kjøring.
+
+### 16.1 D11 — konklusjonen i § 15.3 er FEIL og trekkes
+
+§ 15.3 slo fast at `sandbox_runs.research_object_id` lagrer et **FORMALIZE-preget node-id**.
+Runde 5 § G2 testet nøyaktig den påstanden ved å sammenligne feltet mot alle tre pregede
+node-id-ene i hver FORMALIZE-node. Resultatet for alle seks kjøringer:
+
+```
+matches = no-match-in-FORMALIZE        (6 av 6 rader)
+```
+
+**Påstanden er falsifisert.** Id-et er ikke et hypotese-, mekanisme- eller familie-node-id.
+Slutningen i § 15.3 var bygget på tidssammenfall mellom kjøring og FORMALIZE i én syklus, ikke
+på et id-treff. Det var en antagelse, og den brøt Zero-Assumption-protokollen. Den er nå
+erstattet av et målt treff.
+
+**Hva id-et faktisk er.** § G3 finner de seks id-ene i 60 rader i `factory_cycle_nodes`:
+seks sykluser × ti noder, `PREREG · DATA_MANIFEST · PIT_VALIDATE · EXECUTE · STAT_VALIDATE ·
+ECON_VALIDATE · ADVERSARIAL · ROBUSTNESS · VERDICT · ROUTE`, alle `exit_status = OK`. Id-et
+opptrer fra `PREREG` og ut. Det er et **kandidat-id preget ved PREREG og båret gjennom hele
+sykluskjeden** — ikke noe FORMALIZE lager.
+
+**Mappingen er dermed entydig, via `cycle_id` og bekreftet av veggklokka:**
+
+| `sandbox_runs.research_object_id` | Syklus | `EXECUTE`-node | Kjøring | RO (fra FORMALIZE) | Eksperiment |
+|---|---|---|---|---|---|
+| `995ab43b` | `FK1-20260908T081439Z-23ff8b` | 10:14:48.95 | 10:14:48.84 | *(tom i FORMALIZE)* | *(ingen)* |
+| `ee438f68` | `FK1-20260908T163402Z-5f023b` | 18:34:11.62 | 18:34:11.50 | `994b6a83` | **CPI_003** |
+| `c5deca1f` | `FK1-20260908T164902Z-ab9639` | 18:49:11.26 | 18:49:11.04 | `9e73188e` | **MINT_002** |
+| `9521001e` | `FK1-20260908T201902Z-cdc3d9` | 22:19:10.71 | 22:19:10.60 | `bcb914fe` | **VRP_PRE_001** |
+| `4d108812` | `FK1-20260908T203402Z-984bb9` | 22:34:10.36 | 22:34:10.24 | `8131c557` | **LTA_001** |
+| `b507dd45` | `FK1-20260908T204903Z-9fd67c` | 22:49:10.91 | 22:49:10.79 | `fc6565fc` | **EFP_002** |
+
+Kjøringen ligger 100–200 ms før `EXECUTE`-nodens `completed_at` i alle seks tilfeller. Ingen
+kryssende par er mulig innenfor de intervallene.
+
+**Konsekvensen for fiksen er uendret, men presisjonen er en annen.** § 15.3 foreslo å bytte
+innholdet i kolonnen. Det er nå feil råd: id-et er et ekte kandidat-id med egen funksjon
+gjennom hele kjeden. **Riktig fiks er additiv:** behold feltet, gi det riktig navn
+(`candidate_id`), og legg til `cycle_id` som fremmednøkkel. Da blir RO nåbar med én join i
+stedet for et JSON-søk, uten å ødelegge sporet som allerede finnes.
+
+### 16.2 ASTRIDs seks RO-er er ikke de seks som kjørte
+
+| Kilde | RO-ene |
+|---|---|
+| ASTRIDs sesjonsrapport | `e7cb94da` · `994b6a83` · `9e73188e` · `313dcd0d` · `02ebcae5` · `bcb914fe` |
+| Databasen — RO-er bak de seks reelle kjøringene | *(tom)* · `994b6a83` · `9e73188e` · `bcb914fe` · **`8131c557`** · **`fc6565fc`** |
+
+Tre sammenfaller. **`8131c557` (LTA_001) og `fc6565fc` (EFP_002) kjørte reelt og står ikke i
+rapporten.** `e7cb94da` (MINT_002) ble formalisert kl. 16:49 i syklus
+`FK1-20260908T144903Z-c12305`, men har ingen kjøring med veggtid ≥ 1 s. `313dcd0d` og
+`02ebcae5` ble superseded kl. 21:52 (§ 15.5). Rapporten er altså ikke gal om hva som fantes,
+men den er ikke listen over hva som ble eksekvert. **Sesjonsrapporter skal ikke brukes som
+kilde for eksekveringsomfang.**
+
+### 16.3 Alle seks reelle eksperimentene ble drept
+
+§ G4 — elleve `VERDICT`-noder 08.09:
+
+| Dom | Antall | Sykluser |
+|---|---|---|
+| `INVALID_TEST` | 3 | 04:00, 04:04, 04:14 |
+| `INCONCLUSIVE` | 1 | 06:04 |
+| **`KILLED`** | **7** | 06:19, 10:14, 18:34, 18:49, 22:19, 22:34, 22:49 |
+
+**Alle seks kjøringene med reell veggtid endte i `KILLED`.** Null promoteringer 08.09.
+Sammenholdt med kill-regelen i § 15.4 er dette ikke et symptom på en ødelagt fabrikk: det er
+falsifiseringsdisiplin som virker. Den syvende `KILLED` (06:19, RO `64fe502a`) ble avgjort uten
+kjøring ≥ 1 s, altså drept på et tidligere ledd.
+
+### 16.4 D10 — unntaksklassen finnes ikke i databasen (D13, ny)
+
+Ti jobber, **69 feil hver, nøyaktig likt**, siden DB-start 11:11. Alle ti er utløst av
+`RUNA-CADENCE-EXECUTOR` med `trigger_reason = CADENCE` på vert `32477e7f9473` (a0-containeren),
+`exit_code = 1`. Ni av ti tracebacks ender inne i `psycopg2.connect(...)`; den tiende
+(`RUN-CONTAINER-LIVE-PRICE-FETCHER-V1`) har bare `Exit code 1`.
+
+**Meldingen er avkortet før unntakslinjen.** Avkuttet faller på forskjellig sted per jobb, og
+stedet følger lengden på skriptstien: lengre sti gir tidligere kutt. To uavhengige jobber
+rekonstruerer til 497 og 498 tegn. **`run_failures.error_message` kappes ved ~500 tegn**, og
+Python legger unntaksklassen på *siste* linje. Diagnostikken blir systematisk kastet.
+
+> **D13 (ny).** Feltet som skal bære årsaken kan ikke bære den. Alle 690 feilene i dag er
+> lagret uten unntaksklasse. Fiks: utvid kolonnen, eller lagre `type(e).__name__` og
+> `str(e)` i egne felt. Til den er på plass er «hvorfor» ikke tilgjengelig i databasen.
+
+**To kandidatårsaker står igjen, og runde 5 kan ikke skille dem:**
+
+1. `DB_HOST` løser feil inne i containeren. Verten nås som `host.docker.internal`, ikke
+   `localhost`.
+2. `PGPASSWORD` er tom i containeren. Det ble målt i runde 4 (SHELL 2).
+
+Jeg velger ikke mellom dem. Begge er konsistente med bevisene, og å gjette her er nøyaktig
+feilen § 16.1 nettopp rettet.
+
+**Tre observasjoner som peker mot testen:** `stdout_preview` viser at skriptene starter og
+skriver bannere før de dør, så prosessene kjører. Candle- og pris-hentene når Binance, så
+utgående nett virker. Og `RUNA-CADENCE-EXECUTOR` feiler på samme måte som de ni den selv
+utløser, samtidig som feilradene *blir skrevet* til databasen. **Noe skriver til basen mens
+skriptene ikke kommer inn.** Den skriveveien har en fungerende tilkobling. Å sammenligne de to
+tilkoblingsveiene avgjør saken uten gjetning.
+
+### 16.5 Proveniens
+
+To redigeringsartefakter fra a0s relélag i denne runden, begge kosmetiske: kolonnealiaset
+`true_ro_id` kom tilbake som `§§secret(...)_ro_id` fordi ordet «true» traff et
+redigeringsmønster, og `cycle_id`/`true_ro_id` står tomme i § G2 fordi `LEFT JOIN`-en ikke
+traff — som er selve funnet. Ingen datarader er berørt.
+
+### 16.6 Status etter runde 5
+
+| | |
+|---|---|
+| **D11** | **Korrigert.** § 15.3 trukket. Id = kandidat-id fra `PREREG`. Fiks er additiv: navn + `cycle_id` |
+| **D13 (ny)** | `run_failures.error_message` kappes ved ~500 tegn og mister unntaksklassen |
+| D10 | Omfang og mønster målt; årsak står mellom to kandidater — én sammenligning avgjør |
+| Fabrikken | Disiplinen holder: 6/6 reelle eksperimenter `KILLED`, 0 promoteringer 08.09 |
+| Rapport-hygiene | Sesjonsrapport ≠ eksekveringslogg. To kjørte RO-er manglet i rapporten |
+| Gate | Uendret. De ti døde jobbene ligger i `/a0/usr/.../scripts/`, ikke i `03_FUNCTIONS` |
+
+**Gaten styrkes av dette.** Samtlige ti tracebacks peker på filer under
+`/a0/usr/projects/agent-zero_runtime_loop/scripts/`. Ingen av dem er en fil denne grenen
+endrer. Fail-closed-endringen kan ikke være årsaken, og kan ikke bli det.
