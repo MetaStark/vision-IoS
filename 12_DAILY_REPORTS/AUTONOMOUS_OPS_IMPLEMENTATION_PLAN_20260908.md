@@ -1990,3 +1990,47 @@ av CEO, ikke av STIG**, og reverserbar med `REVOKE` på samme objekter.
 
 Forventet pass 2: tabellene i de fire skjemaene som ble avvist på skjemanivå, og sekvenser
 for tabeller med løpenummer. Akseptansetest etter ti minutter: suksess per `run_id`.
+
+### 20.2 Handling 2 utført — D13 lukket  (a0 under CEO-ordre, 22:20 Oslo)
+
+Backup `backups/runa_error_untrunc_20260909T202001Z/runa_cadence_executor.py`, sha256 før
+`49d12bae…`, etter `ffae8bca…`. Diffen, hele endringen (728 → 731 linjer):
+
+```diff
+             record_failure(conn, attempt_id, run_id,
+-                           stderr_preview or f'Exit code {exit_code}',
+-                           error_stack=stdout_preview)
++                           (proc.stderr or '') or f'Exit code {exit_code}',
++                           error_stack=full_stdout)
+```
+
+Omfang holdt strengt: bare `run_failures`-skrivingen. `run_attempts.error_message` og
+`result_summary` beholder 500-preview, som ikke var del av ordren. `py_compile` OK i begge
+venv. **Akseptansetest bestått på ekte cron-feil kl. 22:25:08, fem minutter etter patch:**
+5 av 6 rader > 500 tegn, `error_stack` opp til 10 904 tegn. Den sjette (`STEP08-V5`) har tom
+stderr og får `Exit code N` korrekt. Reversibel: kopier backup tilbake.
+
+**Direkte gevinst:** fulle tracebacks ligger nå i tabellen. Unntaksklassen per feilende jobb
+kan hentes med SQL fra og med 22:25. Runde 5 § F kan besvares uten omvei.
+
+### 20.3 Handling 4 utført — D18 lukket  (CEO, administrator, ~22:20 Oslo)
+
+To regler: `Supabase 54322 kun lokal` (Allow, `RemoteAddress 127.0.0.1`) og
+`Supabase 54322 blokk ekstern` (Block, alle). Begge `Enabled: True`, `PrimaryStatus: OK`.
+`SELECT 1` mot `127.0.0.1` etterpå → `ok = 1`. **Lokal tilgang virker.**
+
+Presisering: i Windows-brannmuren vinner Block over Allow. Allow-regelen er derfor ikke det
+som slipper deg inn; det er at loopback-trafikk ikke filtreres av innkommende regler. Det er
+riktig oppførsel, og resultatet er det ønskede: LAN blokkert, lokal åpen. Bevis for at LAN
+faktisk er blokkert krever en test fra en *annen* maskin på nettet; fra verten selv kan det
+ikke måles. Regelen er på plass; testen er valgfri.
+
+### 20.4 Status handling 1–5
+
+| # | Status |
+|---|---|
+| 1 GRANT-pakke | **Pass 1 kjørt.** Akseptansetest og pass 2 venter (ti minutter) |
+| 2 500-kapping | **Utført og verifisert.** D13 lukket |
+| 3 Merge PR #20 | Venter på CEO |
+| 4 Brannmur | **Utført.** D18 lukket |
+| 5 Hypotesegenerator | Én SQL, ikke kjørt ennå |
