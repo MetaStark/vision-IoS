@@ -798,7 +798,7 @@ kallerne* også ble refaktorert til to argumenter er ukjent: a0 kan lese dem dir
 To-arg på verten → konsistent refaktor (fortsatt ikke-compliant). Tre-arg → latent `TypeError`
 i produksjon. Begge utfall går i VEGA-briefen.
 
-### 12.7 Neste runde
+### 12.7 Neste runde (utført — se § 13)
 
 `scripts/phase0_followup.sql` — kolonne-agnostisk mot de oppdagede tabellene:
 **A** fabrikken (`sandbox_runs`, `research_objects`, lifecycle-events — antall, rader på
@@ -808,3 +808,154 @@ stats sist nullstilt (`pg_stat_database.stats_reset`) og topp-30 levende tabelle
 utfallsledgere, **F** `hypothesis_canon` — er deflatert-Sharpe/PBO-kolonnene *befolket*,
 **G** `fhq_market.*` — hvor ble `prices` av. Samme kontrakt: a0 verifiserer fingeravtrykk, kun
 lesing, returnerer rått.
+
+---
+
+## 13. FASE 0 — RUNDE 2 OG VERT-SJEKKER  (2026-09-09 15:38 Oslo)
+
+**Proveniens:** `phase0_followup.sql` kjørt av a0 (fingeravtrykk `ed92b657…` / 192 / 32
+verifisert, exit 0, 0 ERROR). Resultat 42 668 B, 309 linjer, sha256
+`4f2509434decc7db092a18ae9f2460e56654d8e483b171d84b5721cf7db9a957`, i a0s container
+`tmp/phase0_followup_result.txt`. Vert-sjekker 3a/3c kjørt av CEO i PowerShell på Windows-verten.
+Rader ordrett.
+
+### 13.1 Merge-gaten — IKKE oppfylt
+
+| Sjekk | Resultat |
+|---|---|
+| `[Environment]::GetEnvironmentVariable('PGPASSWORD','Machine') -ne $null` | **`False`** |
+| `[Environment]::GetEnvironmentVariable('PGPASSWORD','User') -ne $null` | **`False`** |
+
+`PGPASSWORD` er ikke satt på noe OS-nivå på Windows-verten. § B (`pg_stat_activity`) viser tre
+idle pool-tilkoblinger fra vertssiden (`client_addr 172.17.0.1`, docker-gateway) opprettet
+13:55, 14:32 og 15:34 — **en timeplanlagt prosess på verten når databasen i dag** uten
+`PGPASSWORD` i miljøet, altså via `.pgpass`, innebygd credential, eller nettopp
+`'postgres'`-fallbacken `fd0328b6` fjerner. Identiteten er ikke lesbar fra SQL
+(`application_name` tom).
+
+**Beslutning: `fd0328b6` merges ikke.** Løsning (CEO, ~2 min, admin-PowerShell):
+`[Environment]::SetEnvironmentVariable('PGPASSWORD','<verdi>','Machine')`, deretter 3a på nytt →
+`True`. Avveining: maskinnivå gjør variabelen lesbar for alle prosesser på boksen — strengt
+bedre enn en hardkodet `'postgres'` i 369 filer, men per-jobb-credential er sluttmålet (Lag 0).
+
+### 13.2 Fabrikken er ekte — § 12.3s forbehold trekkes
+
+| Spørring | Resultat | ASTRID 2026-09-08 |
+|---|---|---|
+| `sandbox_runs` totalt | **93** | 87 syntetiske + 88–90 reelle ≈ 90 |
+| … som nevner 2026-09-08 | **8** | tick 1150–1163 |
+| `research_objects` totalt | **87** | «87/87» |
+| `lifecycle_events` | 71, **alle 71** nevner 2026-09-08; `created_at 2026-09-08 00:25:05` | «7 RO-statusverdier remappet» |
+| ASTRIDs seks RO-id-er | `research_objects` 8 treff, `lifecycle_events` 12 treff, `sandbox_runs` **0** | e7cb94da, 994b6a83, 9e73188e … |
+| `RUN-20260908T190000Z` / tick 1161–1163 | `lifecycle_events` 6, `research_objects` 2 | eksekutiv kjede |
+
+**Den syntetiske signaturen ligger ordrett i DB-en** (A3): tre runs med identisk
+`stdout_sha256 fd212d61…`, identiske `artifact_hashes`, `wall_seconds` 0,23 / 0,08 / 0,11,
+`stderr_sha256 = e3b0c442…` (sha256 av tom streng), `owner STIG-P1PKG2`; pluss `WP08-TEST`-rader
+med `command: echo`, `code_hash: abc`, `status RUNNING` for alltid. ASTRIDs rapport beskriver
+denne databasen. **Én rest:** 0 treff i `sandbox_runs` for de seks RO-id-ene — de to reelle
+kjøringene (89–90) refererer enten andre RO-er enn ASTRID navnga, eller ligger ikke i
+`sandbox_runs`. Runde 3 § R2 avgjør.
+
+### 13.3 Det levende systemet — og det er ikke det dokumentene beskriver
+
+**Statistikkvinduet:** `pg_stat_database.stats_reset` = NULL; pg_cron-backendens `backend_start`
+= **2026-09-09 11:11:49**. Alle `pg_stat`-tellere (11b, C2, E) gjelder **siden 11:11 i dag**
+(~4,5 t ved måling). § 12.1 rad 10 må leses slik — ikke «måneder». Måneds-påstandene hviler på
+tidsstemplene *i* tabellene (hjerteslag, `created_at`, governance-logg), som står.
+
+**17 tabeller skrevet siste 4,5 t** (C2), 1 166 av 1 183 urørt:
+
+| Tabell | ins / upd | Lag |
+|---|---|---|
+| `fhq_core.market_prices_live` | 62 658 / 22 052 209 | Binance SPOT: BTC, ETH, SOL |
+| `fhq_runtime.run_locks` / `run_attempts` / **`run_failures`** | 583 / 583 / **530** | runtime-loop: **91 % av forsøkene feiler** |
+| `fhq_features.btcusd_features` · `fhq_truth.btcusd_price_candle` | 285 · 272 (+1 023) | features/candles |
+| `fhq_news.fhq_news_archive` · `_analysis_selection` | 230 · 17 | nyheter |
+| `fhq_learning.btc_probability_signals` · `fhq_regime.btcusd_regime_state` | 72 · 26 | signal/regime |
+| `fhq_control.factory_cycles` / `factory_cycle_nodes` | 18 / 18 | **fabrikken kjører sykluser i dag** |
+| `fhq_research.challenger_forward_episodes` · `fhq_meta.execution_lease` | 1 (+132) · (+569) | evaluering · lease |
+
+En **BTCUSD-pipeline** i skjemaer (`fhq_truth`, `fhq_features`, `fhq_regime`, `fhq_runtime`,
+`fhq_news`) som hverken runtime-kartet (2026-03-09) eller Fase 0-scriptets opprinnelige sett
+kjente. `sandbox_runs.command` = `/opt/venv/bin/python /a0/usr/projects/agent-zero_runtime_loop/
+sandbox/experiments/…`, `image a0-container python:3.13`. § B: lease tatt av dedikert DB-bruker
+fra `172.17.0.3`; en `UPDATE market_prices_live SET event_time_synthetic = TRUE WHERE id >= 62230446`
+pågår fra samme container (= de 22 M oppdateringene: en backfill som *flagger syntetiske
+tidsstempler* — M1 på datalaget). **Evidensen indikerer: `D:\Runtime` (`MetaStark/runtime`) er
+a0s runtime-loop, og det er det levende systemet.** Bekreftelse fra CEO utestående.
+
+DB-plattform bekreftet: `supabase_admin`-backends (`pg_net`, `pg_cron`) → **lokal Supabase-stack**
+(54322 = Supabase CLI-default). pg_cron er en fjerde planleggingskontekst (`cron.job`) — kjører SQL
+inne i DB-en, trenger ikke `PGPASSWORD`. Runde 3 § R5.
+
+### 13.4 To læringsløkker
+
+| Løkke | Tabeller | Tilstand |
+|---|---|---|
+| **Governance-laget** (mig 100/151/165/174/177 — det STIG analyserte) | `learning_proposals` 0 · `forecast_skill_registry` 0 · `canonical_outcomes` 4 seed · `epistemic_proposals` 0 · `knowledge_fragments` finnes ikke | Styrt, **aldri brukt** |
+| **Lærings-/forskningslaget** | `research.outcome_ledger` **146 948** · `brier_score_ledger` **39 542** · `run_ledger` 39 437 · `decision_outcome_ledger` 24 477 · `hypothesis_ledger` 1 665 · `shadow_trades` 32 917 (siste 2026-05-25) · `regime_daily` 175 008 (siste 2026-06-08) | Befolket i skala, **sovende siden mars–juni**; 0 skriving siste 4,5 t |
+
+Migrasjonene STIG leste bygget en parallell governance-løkke som aldri ble koblet til den
+løkken som faktisk kjørte. AELL-2026-001 og 2027-planens § 2 beskrev den tomme.
+
+**`hypothesis_canon` (F):** 1 539 hypoteser, 2026-01-23 → 2026-03-26, **0 siste 30 d**.
+**1 538 FALSIFIED** (99,9 %), 1 DRAFT. `deflated_sharpe_computed` **75** (4,9 %), `pbo` 75,
+`pre_tier_score` 1 216, `time_to_falsification` 1 319, **snitt 375,6 t** (15,7 d). Siste
+statusendring 2026-04-25. Lesning: dødsdaemonen drepte ~alt; multippel-testing-korreksjonen ble
+beregnet for 5 %. Planens «kill-rate ≥ 80 %» er oppfylt på en måte som *også* er en feilmodus —
+et system som dreper 99,9 % lærer ikke, det sletter. Snitt-TTF er planens første reelle
+LVI-baseline.
+
+**LVI (D):** `v_system_lvi` beregnet **én gang**, 2026-01-20 (vindu 12-21→01-20,
+`system_avg_lvi 0,168`, BEAR). `lvi_timeseries` **1 rad** (2026-02-09, `global_brier 0,350`,
+`lvi_value NULL`). `lvi_calculator` hadde hjerteslag til 2026-04-10 uten å skrive hit.
+
+**`fhq_market.prices`** (G): finnes ikke — **`prices_archived_20260904`** gjør. Kartets
+primærinput ble arkivert 2026-09-04. Live-pipelinen er `market_prices_live`.
+
+### 13.5 D6 — vertens kallere er også to-arg
+
+a0 grep i egen eksport: `finn_crypto_scheduler.py:529`, `finn_e_scheduler.py:413`,
+`finn_t_scheduler.py:485`, `gn_s_shadow_generator.py:244` — alle `guard_generation_freeze(conn,
+hypothesis_code)`. **Verten ble konsistent refaktorert**; ingen `TypeError`-felle (§ 12.6 rettes).
+To internt konsistente verdener: repo = direktiv-compliant, ødelagt; vert = kvote fjernet,
+kompilerer. Spørsmålet til VEGA er rent governance, med to rene utfall:
+**(1)** ratifiser verten → CEO-DIR-2026-015 endres, repoet oppdateres til vertens 5 filer;
+**(2)** gjenopprett direktivet → kandidat-guard + 4 kallere tilbake til tre argumenter på verten.
+Begge er 5-fils-endringer. Ingen av dem er STIGs å velge.
+
+### 13.6 D5 — tallfestet
+
+| Tre | Siste commit |
+|---|---|
+| GitHub `origin/master` | 2026-03-09 (`f9f148ef`) |
+| Lokal `C:\fhq-market-system\vision-ios` | **2026-05-13 21:37** |
+| `D:\Runtime` (`MetaStark/runtime`) | 2026-05-15 (`3ff28a0`, per a0) |
+| `guard_generation_freeze.py` på vert | mtime 2026-05-01 |
+
+Lokal er 65 dager foran master; begge er måneder bak runtime-klokken. Arbeidsstøt 1.–15. mai
+på begge trær, så stillhet. (`git fetch` på verten viste `560453ac..f9f148ef` — lokal
+`origin/master`-ref var 2026-03-09-backupen; nå oppdatert.)
+
+### 13.7 Proveniens-forbehold — a0s redigeringslag
+
+Runde 1 § 5 viste `§§secret(FHQ_TELEGRAM_ONLY_HOURLY)` for `is_active::text`. Runde 2 § H:
+`is_active = t`. Verdien i DB-en var alltid `t`; **a0s relay redigerer output før hashing.**
+Samme lag ga `§§secret(FHQ_LEASE_DB_USER)` i § B (tilsiktet). Konsekvens: a0s sha256 attesterer
+«som a0 så det etter redigering», ikke rå DB-output. Akseptabelt for lesing; må nevnes i enhver
+court-proof-referanse til disse filene.
+
+### 13.8 Status D1–D8 etter Fase 0
+
+| | |
+|---|---|
+| D1 | **Bevist**: 106 filer / 74 registrert / 0 hjerteslag < 24 t / 17 tabeller faktisk skrevet — av et *annet* delsystem |
+| D2, D3 | Lukket (`df5b3112`) |
+| D4 | Kode lukket; **merge blokkert** til 13.1 er `True` |
+| D5 | Tallfestet (13.6); uløst |
+| D6 | Adjudikeringsgrunnlag komplett (13.5); VEGA |
+| D7 | `D:\Runtime` = a0 runtime-loop, evidensbasert; CEO bekrefter |
+| D8 | Står |
+| **D9 (ny)** | To læringsløkker: governance-laget tomt, forskningslaget befolket og sovende (13.4) |
+| **D10 (ny)** | 530/583 kjøreforsøk feilet siste 4,5 t i `fhq_runtime` (13.3) — årsak i runde 3 |

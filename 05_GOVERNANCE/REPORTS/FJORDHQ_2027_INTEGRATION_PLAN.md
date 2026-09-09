@@ -64,6 +64,23 @@ Alt under er verifisert i dag mot fil, DB eller kvittering. Ingenting er antatt.
 
 **Den viktigste setningen i dette dokumentet:** Systemet fikk *i dag* for første gang teknisk evne til å produsere sannferdig evidens. Enhver 2027-plan som ikke starter der, er fantasi.
 
+### 3b. Oppdatert etter Fase 0 mot databasen (2026-09-09) — additiv, § 3 står som skrevet
+
+Fase 0 kjørte (plandokument § 12–13). Tabellen over var bygget på repoet; databasen korrigerer den på seks punkter. Tesen i § 0 og regelen i § 4 styrkes; *hvilke* primitiver som mangler var feil.
+
+| Påstand i § 2–3 | Databasen sier | Konsekvens for planen |
+|---|---|---|
+| «Kontrollplanet dekker 5 av 106» | 74 registrert i `daemon_health`, **0** med hjerteslag < 24 t; `daemon_watchdog` STOPPED siden 2026-02-06. Men **17 tabeller skrives i dag** av et delsystem ingen av dokumentene kjente (a0s BTC-runtime i `fhq_truth/features/regime/runtime`) | Lag 0 er *mer* hult enn antatt for det styrte systemet — og det levende systemet må først *registreres* før det kan observeres |
+| M2: «ingen deflatert-Sharpe-port» | `hypothesis_canon` har kolonnene; **4,9 %** befolket. 1 538 av 1 539 hypoteser FALSIFIED (99,9 %) | Q1 2027 er ikke «bygg porten», det er «bruk den». Og kill-rate 99,9 % er selv en feilmodus: et system som dreper alt, lærer ikke |
+| M4: «Brier bygget, ikke i drift» | `brier_score_ledger` **39 542** rader; `research.outcome_ledger` **146 948** — sovende siden mars–juni | Kalibreringsmaskineriet *har* kjørt i skala. Q2 er gjenoppliving og kobling, ikke nybygg |
+| LVI «finnes» | Beregnet **én gang**, 2026-01-20. Snitt tid-til-falsifikasjon 375,6 t er den reelle baselinen | Q1-metrikken har et startpunkt: 375,6 t |
+| «Repo = runtime» (Lag 0, 0.2) | Tre trær: master 2026-03-09, lokal 2026-05-13, `D:\Runtime` 2026-05-15 — og *ingen* av dem er det som kjører i dag | 0.2 må inkludere a0s runtime-repo; ellers registreres feil system |
+| Merge-gate | `PGPASSWORD` **ikke satt** (Machine/User begge `False`); en timeplanlagt vertsprosess når DB-en i dag likevel | `fd0328b6` merges ikke før variabelen er satt på maskinnivå |
+
+**Ny D9 — to læringsløkker.** Governance-laget (mig 100/151/165/174/177) er tomt; forsknings-/læringslaget er befolket og sovende. Planens Lag 2–3 var tegnet på det tomme. Riktig sekvens: *koble* governance-laget til de eksisterende ledgerne før noe nytt bygges.
+
+**Ny D10.** 530 av 583 kjøreforsøk i `fhq_runtime` feilet siste 4,5 t. Det levende systemet lever med 91 % feilrate. Årsak: runde 3.
+
 ---
 
 ## 4. Arkitektur 2027 — fem lag, én regel
