@@ -2155,3 +2155,26 @@ CEO enten committer eller forkaster de lokale endringene først, og installerer 
 `FUTURES_PERP` med `event_time_synthetic = t`, 45 k reelle `FUTURES_PERP`. Det er et tredje,
 folkerikt prisbord ved siden av `fhq_truth`/`fhq_market`. Hører til datakart-opprydningen
 (D-kartet, § 12.2), ikke driftsplanen. Notert, ikke handlet på.
+
+### 20.9 Rullende vindu isolerer siste objekt; D12 lukket; fabrikken lever  (DB-klokke 23:47 Oslo)
+
+Med 15-minutters vinduet står **ett objekt igjen: `fhq_runtime.run_artifacts` (3×)**. Alt annet
+er gitt. Det er dette executor selv skriver til på slutten av hvert tikk; `INSERT` avvises,
+transaksjonen abortes, og dens egen `InFailedSqlTransaction` (nå 3 219 tegn full tekst) er
+følgefeilen. **Barnejobbene kjører likevel** — sonden viser tikket kl. 23:20: 14 forsøk, 11
+suksesser, og i `run_locks`:
+
+```
+STEP03-HYPOTHESIS-V1   COMPLETED  23:20:14
+STEP04-CANDIDATE-GEN   ... (kjørte)
+REGIME-REFRESH-V1      COMPLETED  23:20:13
+FEATURE-ENGINE-V1      COMPLETED  23:20:12
+```
+
+**D12 er lukket.** `STEP03-HYPOTHESIS-V1` fullførte for første gang siden 5. september, 4,6
+døgn. Kjeden grodde oppover av seg selv etter pass 2/3, nøyaktig som § 20.6 forutså. Fabrikken
+har hypotese-tilførsel igjen.
+
+Siste GRANT, `run_artifacts` (driftsskjema `fhq_runtime`, `SELECT/INSERT/UPDATE`), lukker
+executors egen bokføring, og da slutter dens attempt-rad å gå `FAILED`. Etter det skal
+generatorens 15-minutters vindu komme tilbake tomt. **Det er slutten på handling 1.**
