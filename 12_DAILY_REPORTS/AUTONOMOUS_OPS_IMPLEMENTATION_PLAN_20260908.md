@@ -1723,3 +1723,36 @@ sikkerhetsfunn. Ikke målt; én lesning av `pg_hba_file_rules` avgjør det.
 | D14 | Riktig verdi bekreftet i prosess; Machine-kopiering **ikke bekreftet** |
 | Åpent | Hva skjedde 17:49 (`.env`) og 19:20–19:50 (governor, velocity)? `pg_hba` trust? |
 | Gate | Uendret, og nå fullstendig frikoblet: de ti kjører som en annen rolle, fra en annen fil, i en annen container |
+
+### 18.8 D14 lukket (~21:05 Oslo) — og `postgres` er ikke superbruker
+
+CEO satte verdien på Machine-nivå fra et administrator-vindu og bekreftet i et nytt vanlig
+vindu, ordrett:
+
+```
+[Environment]::GetEnvironmentVariable('PGPASSWORD','Machine') -eq $env:PGPASSWORD   -> True
+psql -h 127.0.0.1 -p 54322 ... -c "SELECT 1 AS ok"                                  -> ok = 1
+```
+
+**D14 er lukket.** Verten har nå en fungerende credential i miljøet på Machine-nivå. Merge-
+gatens driftsforutsetning (§ 16.7) er oppfylt.
+
+Samme økt, `pg_hba_file_rules`:
+
+```
+ERROR:  permission denied for function pg_hba_file_rules
+```
+
+**Rollen `postgres` i denne databasen er ikke superbruker.** Det er Supabases lokale mønster:
+`postgres` er en begrenset eierrolle, `supabase_admin` er superbrukeren. Konsekvenser:
+(a) `pg_hba` kan ikke leses via SQL som `postgres`; den leses fra db-containerens filsystem
+i stedet. (b) «permission denied for table» (D15) kan ramme også `postgres`-baserte
+tilkoblinger, ikke bare `fhq_executive_task`, hvis tabellen eies av en annen rolle. (c)
+CLAUDE.md-tabellen «User: postgres» er riktig som påloggingsnavn, men gir ikke de
+rettighetene et Windows-PostgreSQL-oppsett med superbruker ville gitt. Enda et punkt til
+G4-korreksjonen av CLAUDE.md (§ 12.2).
+
+| | |
+|---|---|
+| **D14** | **Lukket.** Machine-verdi riktig, bekreftet i nytt vindu |
+| **D17 (ny)** | `postgres` er ikke superbruker. Supabase-mønster. Påvirker D15-diagnosen og CLAUDE.md |
