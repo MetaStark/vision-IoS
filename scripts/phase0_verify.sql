@@ -226,7 +226,89 @@ ORDER BY initiated_at DESC LIMIT 15;
 
 \echo
 \echo '=================================================================='
+\echo ' 11. RUNTIME DATA MAP  (04_DATABASE/CANONICAL_RUNTIME_DATA_MAP.md, 2026-03-09)'
+\echo '     Kartet erklaerer "runtime truth". Settet er DISJUNKT fra seksjon 1b.'
+\echo '     Vi velger ikke side her: begge sett maales, DB-en avgjoer hvilket som lever.'
+\echo '=================================================================='
+\echo '--- 11a. Finnes kartets tabeller?'
+WITH need(schema_name, table_name) AS (VALUES
+  ('fhq_core','market_prices_live'),
+  ('fhq_market','prices'),
+  ('fhq_research','indicator_momentum'),
+  ('fhq_research','indicator_trend'),
+  ('fhq_research','indicator_volatility'),
+  ('fhq_research','indicator_volume'),
+  ('fhq_research','indicator_ichimoku'),
+  ('fhq_perception','regime_daily'),
+  ('fhq_perception','sovereign_regime_state_v4'),
+  ('fhq_learning','micro_regime_classifications'),
+  ('fhq_execution','shadow_trades'),
+  ('fhq_learning','outcomes'),
+  ('fhq_learning','hypothesis_canon'),
+  ('fhq_learning','calibration'),
+  ('fhq_alpha','alpha_signals')
+)
+SELECT n.schema_name || '.' || n.table_name AS runtime_map_table,
+       CASE WHEN t.table_name IS NULL THEN 'MISSING' ELSE 'exists' END AS status
+FROM need n
+LEFT JOIN information_schema.tables t
+  ON t.table_schema = n.schema_name AND t.table_name = n.table_name
+ORDER BY status DESC, runtime_map_table;
+
+\echo '--- 11b. LIV: skriveaktivitet per tabell, kartets sett og seksjon-1b-settet side om side'
+\echo '     (pg_stat_user_tables: kolonne-agnostisk; tellere siden siste stats-reset; n_live_tup er estimat)'
+SELECT CASE WHEN (schemaname, relname) IN (
+         ('fhq_core','market_prices_live'),('fhq_market','prices'),
+         ('fhq_research','indicator_momentum'),('fhq_research','indicator_trend'),('fhq_research','indicator_volatility'),
+         ('fhq_research','indicator_volume'),('fhq_research','indicator_ichimoku'),
+         ('fhq_perception','regime_daily'),('fhq_perception','sovereign_regime_state_v4'),
+         ('fhq_learning','micro_regime_classifications'),('fhq_execution','shadow_trades'),
+         ('fhq_learning','outcomes'),('fhq_learning','hypothesis_canon'),('fhq_learning','calibration'),
+         ('fhq_alpha','alpha_signals'))
+       THEN 'RUNTIME-MAP' ELSE 'GOVERNANCE/EPISTEMIC' END AS side,
+       schemaname || '.' || relname AS tbl,
+       n_live_tup, n_tup_ins, n_tup_upd, n_tup_del,
+       last_autoanalyze AT TIME ZONE 'Europe/Oslo' AS last_autoanalyze_oslo
+FROM pg_stat_user_tables
+WHERE (schemaname, relname) IN (
+  ('fhq_core','market_prices_live'),('fhq_market','prices'),
+  ('fhq_research','indicator_momentum'),('fhq_research','indicator_trend'),('fhq_research','indicator_volatility'),
+  ('fhq_research','indicator_volume'),('fhq_research','indicator_ichimoku'),
+  ('fhq_perception','regime_daily'),('fhq_perception','sovereign_regime_state_v4'),
+  ('fhq_learning','micro_regime_classifications'),('fhq_execution','shadow_trades'),
+  ('fhq_learning','outcomes'),('fhq_learning','hypothesis_canon'),('fhq_learning','calibration'),
+  ('fhq_alpha','alpha_signals'),
+  ('fhq_monitoring','daemon_health'),('fhq_governance','orchestrator_cycles'),
+  ('fhq_canonical','canonical_outcomes'),('fhq_canonical','golden_needles'),
+  ('fhq_governance','epistemic_proposals'),('fhq_governance','epistemic_proposal_runs'),
+  ('fhq_governance','calibration_versions'),('fhq_governance','learning_proposals'),
+  ('fhq_memory','knowledge_fragments'),('fhq_research','forecast_skill_registry'),
+  ('fhq_governance','governance_actions_log'))
+ORDER BY side, n_tup_ins DESC, tbl;
+
+\echo '--- 11c. TO UTFALLSTABELLER, TO KALIBRERINGSTABELLER — hvilken er levende?'
+SELECT schemaname || '.' || relname AS tbl, n_live_tup, n_tup_ins, n_tup_upd,
+       last_autoanalyze AT TIME ZONE 'Europe/Oslo' AS last_autoanalyze_oslo
+FROM pg_stat_user_tables
+WHERE (schemaname, relname) IN (
+  ('fhq_canonical','canonical_outcomes'), ('fhq_learning','outcomes'),
+  ('fhq_governance','calibration_versions'), ('fhq_learning','calibration'))
+ORDER BY tbl;
+
+\echo '--- 11d. Kolonner i kartets kjernetabeller (STIG trenger disse for oppfoelgingsspoerringer)'
+SELECT table_schema || '.' || table_name AS tbl,
+       string_agg(column_name || ':' || data_type, ', ' ORDER BY ordinal_position) AS columns
+FROM information_schema.columns
+WHERE (table_schema, table_name) IN (
+  ('fhq_learning','outcomes'), ('fhq_learning','calibration'), ('fhq_learning','hypothesis_canon'),
+  ('fhq_execution','shadow_trades'), ('fhq_alpha','alpha_signals'),
+  ('fhq_perception','regime_daily'), ('fhq_market','prices'))
+GROUP BY 1 ORDER BY 1;
+
+\echo
+\echo '=================================================================='
 \echo ' FERDIG. Lim hele outputen tilbake til STIG sammen med host-sjekkene i toppen.'
 \echo ' Seksjon 1c oppgir de faktiske tabellnavnene for fabrikken (sandbox_runs,'
-\echo ' kill-ledger, research_objects) — STIG skriver oppfølgingsspørringer mot dem.'
+\echo ' kill-ledger, research_objects); seksjon 11d oppgir kolonnene i runtime-kartets'
+\echo ' kjernetabeller — STIG skriver oppfoelgingsspoerringer mot begge.'
 \echo '=================================================================='
