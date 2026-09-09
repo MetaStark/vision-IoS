@@ -9,14 +9,16 @@
 #
 # ASCII only: Windows PowerShell 5.1 reads BOM-less files as ANSI.
 # ============================================================================
-$ErrorActionPreference = 'Stop'
+# 'Continue', not 'Stop': docker logs emits the database log on stderr, and Stop would abort on it.
+$ErrorActionPreference = 'Continue'
 $Role  = 'fhq_executive_task'
 $Since = '2026-09-09T17:15:00Z'
 $Db    = 'supabase_db_fhq-market-system'
 $Out   = 'D:\Runtime\d15_grant_package.sql'
 
 Write-Host ('== 1. Reading permission-denied from ' + $Db + ' since ' + $Since + ' ==') -ForegroundColor Cyan
-$raw = docker logs $Db --since $Since 2>&1 | Out-String -Stream
+# Merge stderr into stdout at the cmd level so PowerShell sees plain strings, not error records.
+$raw = cmd /c ('docker logs ' + $Db + ' --since ' + $Since + ' 2>&1')
 $objs = @{}
 $rx = [regex]('(?i)' + [regex]::Escape($Role) + '@\S+ .*permission denied for (table|sequence|function|schema|relation|view) ([\w\.]+)')
 foreach ($line in $raw) {
