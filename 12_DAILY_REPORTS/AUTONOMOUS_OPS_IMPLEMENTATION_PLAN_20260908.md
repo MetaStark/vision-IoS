@@ -669,3 +669,121 @@ Neste steg: a0 returnerer vert-filen ordrett; STIG differ og skriver adjudikerin
 
 **Fortsatt blokkert på verten (krever F4 eller CEO direkte):** 3a — `PGPASSWORD` i Task
 Scheduler-kontekst (`Machine`/`User`); 3c — git-datoer i vision-ios (`.git` utenfor eksport).
+
+---
+
+## 12. FASE 0 — RESULTAT  (DB-klokke 2026-09-09 15:19:19 Oslo)
+
+**Proveniens:** Agent Zero kjørte `phase0_verify.sql` (fingeravtrykk verifisert før kjøring:
+`de48b93e…c140b` / 314 / 23), `psql -h host.docker.internal -p 54322` → exit 0.
+Resultatfil `phase0_result.txt`: 35 505 B, 422 linjer, sha256
+`7e4e34381462442c21b2ecd64de5b6bb9dbd9deaadb4463c716912bcbb5d9f2d`, fysisk i a0s container
+`/a0/usr/projects/agent-zero_runtime_loop/tmp/phase0_result.txt`. Én `ERROR`-linje (§ 8, design:
+`ON_ERROR_STOP off`). Relayet uendret av CEO. Rader under er gjengitt ordrett.
+
+### 12.1 Dommen
+
+**Systemet kjører ikke. Én prosess lever: prisstrømmen.** Alt nedstrøms har vært statisk i
+2–7 måneder. Dette er første gang påstanden bygger på databasen, ikke på filer.
+
+| # | Bevis (ordrett) | Betydning |
+|---|---|---|
+| 1 | `daemon_health`: 74 rader; `heartbeat_lt_1h` = **0** for alle statuser; `stale_gt_24h` = 74/74. Ferskeste: `efs_binance_gateway` 2026-08-23 (17 d); nest ferskeste `phase3_calibration_daemon` 2026-07-07 (64 d); resten 104–233 d | Ingen registrert daemon har slått på 17 dager. 47 sier `HEALTHY` med hjerteslag fra april–mai → statuskolonnen er meningsløs; fail-closed heartbeat (mig 346) håndhever ikke |
+| 2 | `daemon_watchdog` \| `STOPPED` \| 2026-02-06 (215 d) | Vakthunden som skal restarte daemoner har vært av i 7 måneder |
+| 3 | 2c: `economic_outcome_daemon` NOT IN daemon_health; `finn_brain_scheduler`, `finn_crypto_scheduler`, `g2c_continuous_forecast_engine`, `ios003b_intraday_regime_delta` alle `STOPPED` siden feb 2026 | Kontrollplanets fem kritiske daemoner: fire døde, én aldri registrert |
+| 4 | `orchestrator_cycles` siste 7 d: **(0 rows)** | Ingen orkestrering på en uke |
+| 5 | `governance_actions_log`: siste rad **2026-07-07 02:09** `PHASE3_DAILY_CALIBRATION`, daglig 06-22→07-07, så intet | 64 dagers stillhet i governance-loggen |
+| 6 | `learning_proposals`: **(0 rows)**; avslagsrate: NULL | Governance-læringsløkken (mig 151) har aldri hatt ett forslag. F3 er ikke teater — den er fraværende |
+| 7 | `forecast_skill_registry`: **(0 rows)** | IoS-005 FSS: aldri ett scorecard |
+| 8 | `canonical_outcomes`: 4 rader, alle `2026-01-01 02:00:10`, 0 siste 30 d, 0 med konfidens | «Ground truth»-tabellen AELL-analysen hvilte på: fire seed-rader, ingenting siden |
+| 9 | Proposal Engine: `proposal_runs` = 4, siste **2026-01-23**; `epistemic_proposals`: ingen rader | Kjørte fire ganger i januar, produserte null forslag, stoppet |
+| 10 | 11b: **`fhq_core.market_prices_live`** n_live_tup 67 712 586, n_tup_ins 58 035, n_tup_upd 21 856 342, autoanalyze **2026-09-09 14:00** — *alle andre 15 målte tabeller*: 0 / 0 / 0 / NULL | Siden siste stats-reset er prisstrømmen den eneste tabellen som skrives |
+| 11 | Prisstrøm skrives i dag; `efs_binance_gateway` hjerteslag 17 d gammelt | Levende prosess uten hjerteslag. `daemon_health` er upålitelig i *begge* retninger — D1 bevist |
+
+### 12.2 Dokumenter som er feil mot databasen
+
+| Dokument | Påstand | DB | Korreksjon |
+|---|---|---|---|
+| CLAUDE.md | «PostgreSQL 17.6 (Windows x64)», `127.0.0.1:54322` | `x86_64-pc-linux-gnu`, `inet_server_addr 172.17.0.2`, port 5432 | DB-en kjører i **Docker** (bridge-nett), eksponert som 54322 på verten. Krever G4 for å rette CLAUDE.md — foreslås |
+| CLAUDE.md | Vision-IoS skriver til `vision_*`-skjemaer | 49 skjemaer, **null** `vision_*` | Skjemamodellen i CLAUDE.md finnes ikke |
+| Runtime data map (2026-03-09) | 10 tabeller = «runtime truth» | **9 av 15 MISSING**, inkl. `fhq_market.prices` (kartets primærinput), alle fem `indicator_*`, `fhq_learning.outcomes`, `fhq_learning.calibration`, `fhq_alpha.alpha_signals` | Kartet er 60 % utdatert. `fhq_market` har 14 tabeller — ingen heter `prices` |
+| AELL-2026-001 (STIG) | § 2.2 `knowledge_fragments` «✅ FULLY IMPLEMENTED» | `relation does not exist` | Feil. Mig 100 aldri anvendt, eller tabellen droppet. CEIO-feedback-triggeren kan ikke ha virket |
+| AELL-2026-001 (STIG) | § 2.6 FSS «✅» | 0 rader | Skjema finnes, aldri brukt |
+| AELL-2026-001 (STIG) | Gap 2 «ingen Brier» | `fhq_governance.brier_score_ledger` finnes (1c) | Feil retning: ledger finnes; om den brukes er neste spørsmål |
+| 2027-plan § 2 M2 (STIG) | «ingen deflatert-Sharpe-port» | `hypothesis_canon` har `deflated_sharpe_estimate`, `pbo_probability`, `family_inflation_risk`, `time_to_falsification_hours`, `pre_tier_score_at_birth`, `falsification_criteria` | Lag 1 mangler ikke design — det mangler **drift**. Samme for kostmodellen: `shadow_trades` har `spread_bps`, `slippage_bps`, `fee_bps` |
+
+Lag 0-tesen — «sannhet før intelligens» — var riktigere enn jeg visste. Men *hvilke* primitiver
+som mangler var feil: de fleste finnes; nesten ingen brukes.
+
+### 12.3 Det åpne spørsmålet — ASTRIDs fabrikk
+
+ASTRID rapporterte 2026-09-08: DP1–DP4 implementert, tick 1150–1163, sandbox_runs 88–90, to
+reelle eksperimenter, fabrikk pauset 19:10Z. **Ingenting av dette finnes i noen tabell Fase 0
+spurte** — `governance_actions_log` stopper 07-07. Men fabrikktabellene er *oppdaget* og *ikke
+spurt*: `fhq_control.sandbox_runs`, `fhq_control.research_objects`,
+`fhq_control.research_object_lifecycle_events`, `fhq_control.trajectory_ledger`.
+
+STIG konkluderer ikke. Én kolonne-agnostisk spørring avgjør:
+`SELECT COUNT(*) FROM fhq_control.sandbox_runs WHERE t::text LIKE '%2026-09-08%'` og totalt
+antall (ASTRID impliserer ≈ 90). Finnes radene → fabrikken er det andre levende delsystemet.
+Finnes de ikke → ASTRIDs rapport beskriver en annen database, eller er selv den typen syntetisk
+evidens den diagnostiserte. Begge utfall er alvorlige; bare ett er sant. `phase0_followup.sql`
+§ A.
+
+### 12.4 Merge-gaten, re-evaluert
+
+Døde daemoner stopper ikke av en merge. Men **prisstrømmens writer** (`market_streamer_v2.py`
+per kartet — i `03_FUNCTIONS`, transformert i `fd0328b6`) er det eneste som lever. Merges
+`fd0328b6` uten `PGPASSWORD` i *dens* kontekst, dør det eneste levende. Gaten står, og
+beskytter nå nøyaktig én ting. 3a forblir blokkert (F4). `pg_stat_activity` i oppfølgingen
+viser hvem som er koblet til *nå* — det er den definitive liveness-målingen, uavhengig av
+hjerteslag.
+
+### 12.5 Anomali i § 5
+
+`schedule_config` \| `value` viser `§§secret(FHQ_TELEGRAM_ONLY_HOURLY)`. Kolonnen er
+`is_active::text` (boolean → `t`/`f`). En boolean kan ikke inneholde den strengen. Enten har
+a0s relay-lag redigert et mønster, eller kolonnen er endret på verten. Ikke tolkbar; noteres.
+
+### 12.6 D6 — adjudikering: verten fjernet en direktiv-mandatert unntaksvei
+
+`guard_generation_freeze.py` mottatt ordrett fra a0 (4 056 B, `436aff81…`); fingeravtrykk
+verifisert før diff (`d6_adjudicate.sh` nekter ellers). Diff repo (5 866 B, `cd02695f…`,
+kompilerer ikke) → vert: **−58 / +21 linjer.** Funksjoner uendret i antall (2/2).
+
+| Hva | Repo (`cc0f46be`, 2026-02-12) | Vert (mtime 2026-05-01) |
+|---|---|---|
+| Signatur | `guard_generation_freeze(conn, hypothesis_code, controlled_exception)` | `guard_generation_freeze(conn, hypothesis_code)` |
+| Under aktiv frys | `controlled_exception=True` **tillates innenfor kvote**: 5 % av hypoteser siste 720 t (+1); øvrige blokkeres. Dette er CEO-DIR-2026-015s unntaksmekanisme | **Alt blokkeres.** Kvotelogikken (≈40 linjer, to `hypothesis_canon`-spørringer) er fjernet |
+| `exception_quota_pct` fra DB | Leses (`result[2]`) — **men brukes aldri**; 0,05 er hardkodet | Ikke lest |
+| `log_block` | Ødelagt: `""", (params) """)` — et overflødig `"""` etter parametertuppelen (linje 122/140). Dette er hele syntaksfeilen | Rettet: `.format(table)` + korrekt `))`; fallback lagt i egen `try` |
+| `import json` | **Mangler** — `log_block` kaller `json.dumps` → `NameError` ved første blokk selv om syntaksen hadde vært rett | Lagt til |
+| `DB_CONFIG.password` | Ingen nøkkel | Ingen nøkkel (allerede fail-closed på credential) |
+
+**Adjudikeringsspørsmålet — mistet guarden logikk?** Ja. Verten fjernet ikke død kode; den
+fjernet **den kontrollerte unntaksveien direktivet krever**, og ble strengere. Strengere er den
+*trygge* retningen for en frys-guard — den kan ikke lekke hypoteser — men den er **ikke
+compliant** med CEO-DIR-2026-015, og skjemaet forventer fortsatt mekanismen
+(`hypothesis_canon.controlled_exception:boolean`, § 11d). Kallere som sender tre argumenter
+(direktivets signatur) får `TypeError` mot vert-versjonen. Ingen av dem kjører i dag
+(`finn_crypto/e/t_scheduler` alle `STOPPED` siden feb, § 12.1), så ingenting utøver guarden nå.
+
+**Verdikt:** vert = trygg men ikke-compliant; repo = compliant men ødelagt (to feil: syntaks
+og manglende import). **Ingen av dem er riktig fil.** Riktig fil er repoets logikk +
+vertens syntaksfiks + `import json`. STIG har splittet den kandidaten deterministisk
+(repo[guard-logikk] + vert[`log_block`] + repo[`__main__`], + import) i scratchpad og
+kompilert den — **den er et forslag til VEGA G3, ikke deployet**, og legges ikke i
+`03_FUNCTIONS/` på branchen før adjudikering. Ett policy-spørsmål følger med til VEGA/CEO:
+skal kvoten bruke DB-verdien `exception_quota_pct` (som skjemaet har) eller direktivets
+hardkodede 5 %? Repoet leser den ene og bruker den andre; det er ikke STIGs å velge.
+
+### 12.7 Neste runde
+
+`scripts/phase0_followup.sql` — kolonne-agnostisk mot de oppdagede tabellene:
+**A** fabrikken (`sandbox_runs`, `research_objects`, lifecycle-events — antall, rader på
+2026-09-08, `SELECT * LIMIT`), **B** hvem er koblet til nå (`pg_stat_activity`), **C** når ble
+stats sist nullstilt (`pg_stat_database.stats_reset`) og topp-30 levende tabeller på tvers av
+*alle* skjemaer, **D** LVI (`lvi_canonical`, `v_system_lvi`, `lvi_timeseries`), **E** Brier og
+utfallsledgere, **F** `hypothesis_canon` — er deflatert-Sharpe/PBO-kolonnene *befolket*,
+**G** `fhq_market.*` — hvor ble `prices` av. Samme kontrakt: a0 verifiserer fingeravtrykk, kun
+lesing, returnerer rått.
