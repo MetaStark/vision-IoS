@@ -2102,3 +2102,36 @@ får tilførsel igjen, av seg selv, uten at noe slås på.** Forventet forsinkel
 
 **Handling 5 er dermed ikke en handling.** Den er akseptansetesten for pass 2. Ingen G4, ingen
 re-aktivering, ingen ny kode. D12 lukkes når `STEP03` har sin første `SUCCESS` siden 5. sep.
+
+### 20.7 Forsøksfallet 22:35–22:45 forklart; tikket 22:50 er dagens beste  (DB-klokke 22:54)
+
+Sonden `scripts/d15_attempt_drop.sql`, kun lesing:
+
+| Tikk | Forsøk | Distinkte | OK |
+|---|---|---|---|
+| 22:20 | 11 | 11 | 5 |
+| 22:30 | 11 | 11 | 5 |
+| **22:35** | **2** | 2 | 1 |
+| **22:40** | **2** | 2 | 1 |
+| **22:45** | **1** | 1 | 0 |
+| **22:50** | **15** | **15** | **13** |
+
+**Tre døde tikk, så det beste tikket hele dagen.** `run_locks` viser mekanismen: på 22:35,
+22:40 og 22:45 skaffet executor én til to låser, dens egen rad gikk `FAILED`, og resten av
+tikket døde med låser som senere `EXPIRED`. Executors egen feil, nå i full tekst takket være
+D13:
+
+```
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+```
+
+Det er følgefeilen etter en avvist setning i samme transaksjon. Databaseloggen har nøyaktig
+tre nye avvisninger i samme vindu: **`sequence run_attempts_attempt_id_seq` × 3** og
+`run_locks_lock_id_seq` × 3. Pass 1 ga tabellen `run_attempts`; `INSERT` kom derfor forbi
+tabellsjekken og traff sekvensen, som ingen hadde gitt. Transaksjonen døde, tikket døde.
+**Pass 3 inneholder nettopp de sekvensene.** Kl. 22:50 kom et helt tikk gjennom: 15 forsøk,
+13 suksesser. Gjenstår: `STEP08-V5` (`Exit code 1`, tom stderr, egen feil) og `CEIO` (lås
+skaffet 22:50:11, ikke frigitt ved 22:54, trolig hengende).
+
+Generatoren har fått styringsvakt (`23817e1e`): `fhq_governance.agent_memory` og
+`market_episode_map_v3` får `SELECT`, aldri skriverett, automatisk.
