@@ -958,4 +958,153 @@ court-proof-referanse til disse filene.
 | D7 | `D:\Runtime` = a0 runtime-loop, evidensbasert; CEO bekrefter |
 | D8 | Står |
 | **D9 (ny)** | To læringsløkker: governance-laget tomt, forskningslaget befolket og sovende (13.4) |
-| **D10 (ny)** | 530/583 kjøreforsøk feilet siste 4,5 t i `fhq_runtime` (13.3) — årsak i runde 3 |
+
+---
+
+## 14. FASE 0 — RUNDE 3 OG GATE-VERIFISERING  (2026-09-09 16:07 Oslo)
+
+**Proveniens:** `phase0_round3.sql` kjørt av a0 (fingeravtrykk `5c3367b3…` / 151 / 21 verifisert,
+exit 0). Resultat 52 569 B, 317 linjer, sha256
+`091c8215404b50baa6e0d055ff83eff9af499dc702fac508abde40bc90371b47`, 21 NOTICE (R4), 17 ERROR
+(relasjoner som ikke finnes — `cron.*`; design). CEO kjørte 3a på nytt etter
+`SetEnvironmentVariable(…,'Machine')`. Rader ordrett.
+
+### 14.1 Merge-gaten — vert-betingelsen oppfylt, én rest i containeren
+
+| Sjekk | Før (13.1) | Nå |
+|---|---|---|
+| `PGPASSWORD` `Machine` | `False` | **`True`** |
+| `PGPASSWORD` `User` | `False` | `False` (irrelevant når Machine er satt) |
+
+Prosesser på Windows-verten (Task Scheduler, de tre pool-tilkoblingene fra `172.17.0.1`) ser
+variabelen **ved neste oppstart**. Allerede kjørende prosesser beholder gammelt miljø — normal
+deploy-semantikk; `fd0328b6` trer uansett først i kraft ved pull + restart.
+
+**Rest:** containeren `172.17.0.3` (a0s runtime) arver *ikke* Windows-miljøet. R8/R3 viser at
+dens prosesser kjører **a0s egen kode** (`/a0/usr/projects/agent-zero_runtime_loop/…`), ikke
+`03_FUNCTIONS` — så `fd0328b6` berører dem ikke *med mindre* a0s script importerer fra
+`/host/fhq-src`. Avgjøres av a0 uten F4:
+`grep -rlE 'fhq-src|03_FUNCTIONS' /a0/usr/projects/agent-zero_runtime_loop/ --include=*.py | head`
+og `sh -c 'echo PGPASSWORD:${PGPASSWORD:+SET}'`. Tom grep → merge er trygg for containeren.
+**Merge er CEOs beslutning når den er svart.** STIG merger ikke.
+
+### 14.2 Fabrikken lever — og produserte seks reelle eksperimenter 08.09
+
+`factory_cycles`: **1 211 rader, heartbeat 2026-09-09 16:04** (R4) — SENSE-tick hvert 15. min
+(`IDLE_NO_CHANGE / NO_USEFUL_WORK`), terminalruter `INVALID_TEST` (`LOOKAHEAD_PROBE_FAIL`),
+`PROMOTION_CANDIDATE`, `KILLED` (`T3_BLIND_REPLAY`). Kjernen ASTRID beskrev er dette.
+
+**R1b — per dag, ordrett:**
+
+| Dag | Runs | Distinkte stdout | Maks veggtid | < 1 s |
+|---|---|---|---|---|
+| 08-24 | 34 | 13 | 0,99 | 29 |
+| 08-25 → 08-27 | 29 | 7 / 6 / **1** | 0,20 | 29 |
+| 09-04 / 05 / 06 | 22 | **1 / 1 / 1** | 0,21 | 17 |
+| **09-08** | **8** | **7** | **7,97** | 2 |
+
+Til og med 06.09: hver dag med `distinkte stdout = 1` og veggtid < 1 s — den syntetiske
+eksekutoren, tallfestet per dag. **08.09: seks kjøringer à 6,3–8,0 s med unik stdout**
+(`STIG-K1`, `kernel-v1`) kl. 10:14, 18:34, 18:49, 22:19, 22:34, 22:49 Oslo; de to < 1 s
+(06:04, 06:19) har `stdout_sha = e3b0c442…` = tom — de to krasjede tickene før fiksen.
+
+ASTRID rapporterte «to reelle» kl. 19:27Z (= 21:27 Oslo): tre var kjørt da (10:14, 18:34, 18:49)
+— korrekt inkl. N2-beviset. **Tre kom etter 19:10Z-pausen** (22:19–22:49 Oslo = 20:19–20:49Z).
+Pausen ble opphevet eller omgått; status for `RUN-20260908T190000Z` er ukjent.
+
+### 14.3 D11 (ny) — attribusjonen RO → kjøring er brutt for de reelle eksperimentene
+
+| | Funn |
+|---|---|
+| ASTRIDs seks RO-er (R2) | Finnes, statuser stemmer: `e7cb94da CONSUMED`; `994b6a83`, `9e73188e`, `bcb914fe` `VERDICT_RECORDED / FACTORY_KILLED`; `313dcd0d`, `02ebcae5` `SUPERSEDED` (`FINN-K1-BATCH-20260908`, frosset 20:24) |
+| Deres `sandbox_runs` (R2b) | **0 rader** |
+| De seks reelle kjøringenes `research_object_id` (R2c) | `4d108812, 9521001e, 995ab43b, b507dd45, c5deca1f, ee438f68` — **ingen finnes i `research_objects`** (LEFT JOIN → `ro_status NULL`) |
+
+ASTRID skrev «994b6a83 og 9e73188e VERDICT_RECORDED (sandbox_runs 89–90)». Dommene *er*
+registrert (via `lifecycle_events`), men kjøringene peker på id-er utenfor RO-tabellen, og
+RO-ene har ingen kjøringer. Enten refererer kjøringer et kandidat-/versjons-id som ikke er
+`research_object_id`, eller så skriver fabrikken feil FK. Uansett: **for de eneste reelle
+eksperimentene kan ikke DB-en svare «hvilken hypotese testet denne kjøringen?»** — mig 165s
+egen premiss («you cannot learn from what you cannot attribute») er brutt der det gjelder mest.
+Runde 4 § Q2 søker id-ene i `factory_cycle_nodes`, `lifecycle_events` og `parent_ro_id`.
+
+### 14.4 Massedrapet var administrativt — kill-rate-metrikken må omdefineres
+
+**R6 — uker:** 2026-01-26 **845**, 02-02 284, 03-02 220, ellers ≤ 28. **R6b — årsaker:**
+
+| Årsak | n | Andel |
+|---|---|---|
+| `CEO-DIR-20260217-ALPHA-RECOVERY: STALE_SYSTEM_HALT - ADR-011 Flush Protocol` | **1 062** | 69,1 % |
+| `HORIZON_EXPIRED*` (utløpt uten markedsvalidering) | ~256 | 16,6 % |
+| `NULL_ASSET_UNIVERSE` (input-reparasjon) | 90 | 5,9 % |
+| **`DIRECTION_ACCURACY` / `STATISTICAL_SIGNIFICANCE`** — evidens | **121** | **7,9 %** |
+
+§ 13.4s «99,9 % drept» var ikke falsifikasjon; det var en direktiv-flush 17.02 pluss utløp.
+**Evidensbasert falsifisering: 121 av 1 539.** 2027-planens § 6-metrikk «kill-rate ≥ 80 %» er
+udefinert som skrevet — den må være *evidensbaserte drap / avgjorte*, med administrative flush
+og horisont-utløp ekskludert. Ellers belønner metrikken nettopp det den skulle avsløre.
+
+**R6c — generatorer:** `finn_crypto_scheduler` 966 (63 %, CRYPTO, DSR 11); `MECHANISM_…` 210
+(DSR 0); **FINN-T 186 (DSR 63)** — den eneste generatoren som kjørte deflatert Sharpe i skala;
+FINN-E 118 (DSR 0).
+
+### 14.5 Tidslinjen — tre epoker, datert av ledgerne (R4, ordrett)
+
+| Tabell | Rader | Siste skriving |
+|---|---|---|
+| `fhq_research.outcome_ledger` | 146 948 | **2026-05-25** |
+| `fhq_governance.brier_score_ledger` | 39 542 | **2026-05-27** |
+| `fhq_learning.decision_outcome_ledger` | 24 477 | 2026-05-25 |
+| `fhq_execution.shadow_trades` | 32 917 | 2026-05-26 |
+| `fhq_market.prices_archived_20260904` | 1 271 906 | 2026-05-22 (arkivert 09-04) |
+| `fhq_monitoring.run_ledger` | 39 437 | 2026-05-20 |
+| `fhq_perception.regime_daily` | 175 008 | 2026-06-08 |
+| `fhq_governance.lvi_canonical` | 629 | **2026-07-07** |
+| `fhq_learning.hypothesis_canon` | 1 539 | 2026-04-25 |
+| — | — | — |
+| `fhq_control.factory_cycles` | 1 211 | **2026-09-09 16:04** |
+| `fhq_truth.btcusd_price_candle` | 245 078 | **16:05** |
+| `fhq_regime.btcusd_regime_state` | 74 166 | **16:00** |
+| `fhq_learning.btc_probability_signals` | 2 022 | **16:00** |
+| `fhq_news.fhq_news_archive` | 4 748 | 13:00 |
+
+| Epoke | Periode | System | Tilstand |
+|---|---|---|---|
+| **I** | jan → **20.–27. mai** | vision-IoS-daemoner; forskningsløkken | Befolket i skala; stoppet hardt |
+| **II** | mai → 7. jul | nedtrapping: `regime_daily`, `lvi_canonical` (phase3-daemon) | Døde ut |
+| **III** | **24. aug →** | a0 runtime-loop: BTC-pipeline + fabrikk | Levende i dag |
+
+Repo-datoene 13.–15. mai er ikke tilfeldige: systemet ble byttet ut i midten av mai. D9 («to
+læringsløkker») er presist *to epoker*: epoke I's ledgere er historikk; epoke III har ikke koblet
+seg til dem.
+
+**D10 rettet.** § 13 hevdet «530 feil siste 4,5 t». `run_failures.failure_id` spenner 1 159 →
+15 107 og `attempt_id` 127 648 → 161 158 (R3c) — 33 K sekvens-spenn mot `n_tup_ins 583` lar seg
+ikke forene med et 4,5-timers vindu uten massiv rollback-churn. **Raten er ikke fastslått.**
+Innholdet er: feilene er a0s runtime-script (`container_hourly_evidence_throughput.py:60`,
+`RUN-STEP08-EVIDENCE-GRADING-V4/V5` dominerer topp 10, `RUN-CEIO-AUTONOMOUS-V1`,
+`RUN-72H-LEARNING-PRESSURE-GOVERNOR-V1`), alle `resolution_status OPEN`, én eskalert til LARS
+25.05 og aldri lukket. Runde 4 § Q1 teller per `run_id` med `created_at >= 11:11`.
+
+### 14.6 Øvrig
+
+- **pg_cron eliminert:** `cron.job` finnes ikke — launcheren kjører uten jobbtabell.
+- **Prisstrøm (R7):** BTC/ETH/SOL fra Binance SPOT, ~22–23 M rader per asset siden
+  2025-11-16, siste tick **14:05:23Z** (live), latens ~385 ms. **`event_time_synthetic = TRUE`
+  på 7,4 M rader per asset ≈ 32 %** — en tredjedel av prishistorikken har syntetiske
+  tidsstempler; backfillen pågår. En prosess leser etter `FUTURES_PERP`/`funding_rate`
+  (kolonnene finnes, tomme i SPOT-rader) — perp-ingest kan være på vei. Lag 0 må vite dette.
+- **Pool-tilkoblingene (R8):** tre `client backend` fra `172.17.0.1`, `state_change` 16:07 —
+  aktive hvert minutt, ikke sovende. Identitet ikke lesbar fra SQL.
+
+### 14.7 Status etter runde 3
+
+| | |
+|---|---|
+| Fase 0 | **Lukket** — sannhetsavstemming utført mot DB i tre runder |
+| Gate | Vert oppfylt (`True`); container-rest avgjøres av én grep hos a0; **merge = CEO** |
+| D11 | Ny: RO → kjøring-attribusjon brutt for de reelle eksperimentene |
+| Kill-rate | Omdefineres (14.4); § 6 i 2027-planen rettes |
+| D10 | Rate ikke fastslått; innhold fastslått |
+| Neste | Runde 4 (`phase0_round4.sql`): feilrate per run_id i dag, hvor de seks RO-id-ene bor, dagens attempts |
+| **D10 (ny)** | 530/583 kjøreforsøk feilet i `fhq_runtime` siden stats-start (13.3). **Rettet i § 14.5:** vinduet er usikkert — id-spennet motsier «4,5 t»; raten måles direkte i runde 4 |

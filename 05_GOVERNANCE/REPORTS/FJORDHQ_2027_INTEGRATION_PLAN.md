@@ -79,7 +79,16 @@ Fase 0 kjørte (plandokument § 12–13). Tabellen over var bygget på repoet; d
 
 **Ny D9 — to læringsløkker.** Governance-laget (mig 100/151/165/174/177) er tomt; forsknings-/læringslaget er befolket og sovende. Planens Lag 2–3 var tegnet på det tomme. Riktig sekvens: *koble* governance-laget til de eksisterende ledgerne før noe nytt bygges.
 
-**Ny D10.** 530 av 583 kjøreforsøk i `fhq_runtime` feilet siste 4,5 t. Det levende systemet lever med 91 % feilrate. Årsak: runde 3.
+**Ny D10.** 530 av 583 kjøreforsøk i `fhq_runtime` feilet siden stats-start; vinduet er usikkert, raten måles i runde 4. Innholdet er fastslått: a0s runtime-script, `STEP08-EVIDENCE-GRADING` dominerer, alle `OPEN` siden mai.
+
+**Runde 3 (plandokument § 14) — to korreksjoner til denne planen:**
+
+| Påstand | Databasen sier | Konsekvens |
+|---|---|---|
+| § 6: «Kill-rate ≥ 80 % — et system som dreper < 80 % lyver» | 1 538 av 1 539 «falsifisert», men **1 062 var en direktiv-flush** (`STALE_SYSTEM_HALT`, 17.02), ~256 var horisont-utløp uten test, 90 input-reparasjon. **Evidensbasert falsifisering: 121 = 7,9 %** | Metrikken er udefinert som skrevet. Ny definisjon: **evidensbaserte drap / avgjorte**, med administrative flush og utløp ekskludert. Ellers belønner den nettopp det den skulle avsløre |
+| § 3: «Fabrikken pauset på ny feilklasse» | Fabrikken ticker **hvert 15. min i dag** (`factory_cycles` heartbeat 16:04) og produserte **seks** reelle eksperimenter 08.09 (6–8 s, unik stdout) — men de seks kjøringene peker på RO-id-er som **ikke finnes** i `research_objects` (**D11**) | Lag 1s første leveranse er ikke «kjør reelle eksperimenter» — det skjer. Det er **attribusjon**: kjeden hypotese → kjøring → dom må være lesbar fra DB-en for hvert reelt eksperiment. Mig 165s premiss, håndhevet |
+
+**Epokene (§ 14.5):** forskningsløkkens ledgere stopper hardt 20.–27. mai; a0s runtime starter 24. aug. Planens Lag 2 («gjenoppliv kalibreringsmaskineriet») betyr konkret: koble epoke III til epoke I's 147 K utfall og 39,5 K Brier-rader — eller beslutte at de er historikk.
 
 ---
 
