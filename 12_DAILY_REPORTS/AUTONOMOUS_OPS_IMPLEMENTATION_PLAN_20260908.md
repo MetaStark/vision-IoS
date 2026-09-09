@@ -2034,3 +2034,33 @@ ikke måles. Regelen er på plass; testen er valgfri.
 | 3 Merge PR #20 | Venter på CEO |
 | 4 Brannmur | **Utført.** D18 lukket |
 | 5 Hypotesegenerator | Én SQL, ikke kjørt ennå |
+
+### 20.5 Akseptansetest pass 1, pass 2 generert, handling 5 målt  (22:29 Oslo)
+
+**Pass 1 virket.** Siste ti minutter, per `run_id`:
+
+| Friske nå | Fortsatt 0 av 2 |
+|---|---|
+| `72H-GOVERNOR` · `CANDLE-FETCHER` · **`LEARNING-VELOCITY-WATCH`** · **`STEP08-V4`** · **`LIVE-PRICE-FETCHER`** (2/2) | `FEATURE-FRESHNESS-WATCHDOG` · `PORTFOLIO-QUARANTINE` · `FEATURE-ENGINE` · `STEP08-V5` · `CEIO-AUTONOMOUS` · `RUNA-CADENCE-EXECUTOR` |
+
+Tre jobber til kom opp av pass 1. **5 av de opprinnelige 10 er friske.** Uthevet = nye.
+
+**Pass 2, 7 nye objekter:** `fhq_hypothesis.btcusd_hypothesis_mvp`, `fhq_regime.btcusd_regime_state`,
+`fhq_features.btcusd_features`, `fhq_perception.v_btcusd_market_state_container_mvp` (utsikt),
+to sekvenser i `fhq_runtime`, og **`fhq_governance.market_episode_map_v3`**. Det siste er
+det eneste punktet i hele pakken som treffer et styringsskjema. Generatoren foreslår
+`SELECT, INSERT, UPDATE` som for alle tabeller. **STIGs anbefaling: kun `SELECT` der.**
+CLAUDE.md forbyr skriving til `fhq_governance` uten G4, og en kjøretidsrolle skal ikke ha
+stående skriverett inn i et styringsskjema på grunnlag av to avviste lesninger. Trenger en jobb
+faktisk å skrive dit, dukker det opp i loggen som en `INSERT`-avvisning, og da er det en
+G4-beslutning med navn på jobben. Resten av pass 2 er som pass 1: driftsskjemaer, reversibelt.
+
+**Handling 5 målt.** `RUN-CONTAINER-STEP03-HYPOTHESIS-V1` kjørte sist **2026-09-05 01:50:12
+Oslo, `FAILED`**, og har ikke kjørt siden. Fem siste forsøk, alle `FAILED`, alle 5. sep
+01:30–01:50, altså **én time etter rollebyttet kl. 00:55 som startet kollapsen (§ 19)**.
+Hypotesegeneratoren ble tatt ut av kjøring samme natt, og fabrikken har vært uten tilførsel
+siden. **D12s årsak:** ikke mangel på idéer, men en generator som er skrudd av. Runde 6 H4
+viste `SyntaxError` linje 559 i `btcusd_hypothesis_generator_v1.py` og en argparse-feil
+(`--connection-string`). Om den ble skrudd av *bevisst* (dispatch-fence, STALE-halt) eller
+bare falt ut av crontab, er ikke målt. a0 avgjør det fra crontab-backupene før noe slås på
+igjen. Å slå på fabrikkens tilførsel er en CEO-beslutning, ikke en reparasjon.
