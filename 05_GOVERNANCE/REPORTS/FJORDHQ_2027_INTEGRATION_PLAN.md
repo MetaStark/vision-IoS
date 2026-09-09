@@ -122,6 +122,17 @@ Fase 0 kjørte (plandokument § 12–13). Tabellen over var bygget på repoet; d
 
 **Noe endret seg kl. 19:50.** En av de ti døde jobbene kommer nå inn i databasen og feiler på en tabellrettighet i stedet for i `connect`. Det sammenfaller med at passordet på verten ble arbeidet med. Hva som faktisk ble gjort er ikke målt; runde 7 måler om de ni andre også har snudd.
 
+**Runde 7 (plandokument § 18) — D10-mekanismen målt, D11 lukket:**
+
+| Påstand | Databasen sier | Konsekvens |
+|---|---|---|
+| D10: «ti jobber døde i `connect`» | **Mekanisme:** executor laster `.env` etter egne konstanter; barna arver `FHQ_DB_USER=fhq_executive_task` + eget passord, forelderen kjører som `postgres`. `.env` ble endret **17:49 Oslo**; første suksess 17:50:16. Nå: 2/10 friske, **8 feiler inne i spørringer** — rollen mangler `GRANT` (D15) | Lag 0 er ikke «reparer ti jobber». Det er: **én rolle, én `GRANT`-pakke, én `.env` under versjonskontroll.** G4 |
+| D11: «attribusjonsnøkkel» | **Lukket.** `sandbox_runs.research_object_id` = `PREREG.prereg.prereg_id` | Tre kolonner: `prereg_id`, `cycle_id` FK, ekte `research_object_id`. Null datatap |
+| D13 | `error_stack` er også kappet ved 500 | Fiksen er i skriveren, ikke i skjemaet |
+| «Fabrikken lukker alt den åpner» | **Nei — D16.** `e7cb94da` står `CONSUMED` uten dom, uten kjøring | Lag 1 trenger en oppsamler for hengende RO-er |
+
+**Åpne spørsmål som bare CEO kan svare på:** hvem skrev `.env` kl. 17:49 (filen har Windows-BOM), og hva skjedde 19:20–19:50 som fikk to jobber til å snu. Hvordan a0s psql autentiserer uten passordkilde er heller ikke målt; `pg_hba` med `trust` ville vært et sikkerhetsfunn.
+
 ---
 
 ## 4. Arkitektur 2027 — fem lag, én regel

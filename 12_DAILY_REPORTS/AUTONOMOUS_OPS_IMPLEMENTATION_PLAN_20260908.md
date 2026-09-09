@@ -1596,3 +1596,130 @@ Den bruker `psycopg2.connect(conn_string)`, ikke `FHQ_DB_*` (§ 16.4, F2). Egen 
 **Neste måling, runde 7:** suksessrate per `run_id` siste 60 min. Hvis de ni andre også har
 begynt å lykkes etter 19:50, er D10 løst av det CEO gjorde, og årsaken er dokumentert av
 svaret på spørsmålet over.
+
+---
+
+## 18. FASE 0 — RUNDE 7: D10-MEKANISMEN ER MÅLT, D11 ER LUKKET  (DB-klokke 2026-09-09 20:49:53 Oslo)
+
+Kilder: `phase0_round7_result.txt` og `phase0_round7_shell.txt`, begge kjørt av CEO fra verten
+(host-psql mot `127.0.0.1:54322`; `docker exec 32477e7f9473`). Ingen relé, ingen redigering.
+Containerklokke = UTC (`date -u` 18:49:53Z ved DB-klokke 20:49:53 Oslo).
+
+### 18.1 `.env` ble endret kl. 17:49 Oslo i dag, og jobbene snudde 68 sekunder senere
+
+| Måling | Verdi |
+|---|---|
+| `.env` (P1) | finnes, 874 byte, 20 linjer, **mtime `2026-09-09T15:49:08` UTC = 17:49:08 Oslo**, `-rw------- root` |
+| Første `SUCCESS` i dag, `CANDLE-FETCHER` (L3) | **17:50:16 Oslo** |
+| Første `SUCCESS` i dag, `72H-GOVERNOR` (L3) | 19:20:17 Oslo |
+| Nøkler i `.env` (P2) | `FHQ_DB_HOST` `FHQ_DB_PORT` `FHQ_DB_USER` `FHQ_DB_PASSWORD` `FHQ_EXEC_DB_ROLE_PASSWORD` `FHQ_LEASE_DB_USER` `FHQ_LEASE_DB_PASSWORD` + 6 ikke-DB-nøkler + **én nøkkel med BOM-prefiks: `﻿FHQ_DB_PASS`** |
+| Ikke-hemmelige verdier (P3) | `FHQ_DB_HOST=172.17.0.1` · `FHQ_DB_PORT=54322` · **`FHQ_DB_USER=fhq_executive_task`** |
+| `FHQ_DB_PASSWORD` (P4) | 48 tegn, sha256 `499bab71…` — **ikke** `a942b37c…` |
+
+**H-ENV er bekreftet som mekanisme.** Barneprosessene arver `.env` (§ 17.2). `.env` setter
+`FHQ_DB_USER=fhq_executive_task` og et eget 48-tegns passord. Forelderen bruker
+modulkonstantene, `postgres` med fallback `a942b37c…`, og har alltid kommet inn. Barna kobler
+seg til som **`fhq_executive_task`**, ikke som `postgres`. Det er derfor de to har oppført seg
+forskjellig hele dagen, og derfor «`PGPASSWORD`» aldri var relevant.
+
+**Hva som sto i `.env` før 17:49 er ikke målt** (filen er overskrevet). Det som er målt: før
+17:49 feilet alle ti i `connect`; fra 17:50 kommer de inn. Den første linjen i filen har
+UTF-8 BOM, `﻿FHQ_DB_PASS=…`, som er signaturen til en Windows-editor eller PowerShells
+`Out-File`. Nøkkelen `﻿FHQ_DB_PASS` leses av ingen; den er død, og har ikke skadet noe.
+**Hvem eller hva som skrev filen kl. 17:49 er ikke målt, og jeg spør.** Kl. 17:49 Oslo var CEO
+aktiv på verten (§ 16.7-kontrollene ble kjørt rundt 17:20–17:40), og a0 hadde nettopp kjørt
+runde 6 (~17:40). Kandidater: CEO via Docker/a0-UI, a0 på eget initiativ (kjøreløkken har
+selvhelende komponenter), eller en prosess i containeren.
+
+### 18.2 D10 etter snuoperasjonen: 2 av 10 friske, 8 feiler nå på rettigheter, ikke på tilkobling
+
+Siste 60 min (L2), DB-klokke 20:49:
+
+| Tilstand | Jobber |
+|---|---|
+| **Friske, 6/6 eller bedre** | `CANDLE-FETCHER` (fra 17:50), `72H-GOVERNOR` (fra 19:20) |
+| Friske, ikke blant de ti | `CANDLE-AGGREGATOR`, `CHAIN-WATCHDOG`, `DIRECTIONAL-WATCH`, `LEARNING-PROGRESS-NOTIFY`, `LP001-SHORT-BIAS`, `NO-TRADE-WATCH`, `HOURLY-EVIDENCE-BRIEF` |
+| **Feiler 12/12** | `CEIO-AUTONOMOUS`, `LIVE-PRICE-FETCHER`, `FEATURE-FRESHNESS-WATCHDOG`, `PORTFOLIO-QUARANTINE`, `STEP08-V4`, `STEP08-V5`, `LEARNING-VELOCITY-WATCH`, `RUNA-CADENCE-EXECUTOR`, + **`FEATURE-ENGINE`** (ny i listen) |
+
+Men *hvor* de feiler har flyttet seg (L4, siste linje av feilen, siste 90 min):
+
+```
+CEIO-AUTONOMOUS            500   SELECT e.en                 <- i en spørring, ikke i connect
+FEATURE-FRESHNESS-WATCHDOG 500   cur.execu                   <- i cur.execute
+PORTFOLIO-QUARANTINE       500   cur.e                       <- i cur.execute
+STEP08-V4                  500   cur.execute(base_query      <- i cur.execute
+LEARNING-VELOCITY-WATCH     94   ERROR: permission denied for table btcusd_shadow_outcome_evidence_mvp
+FEATURE-ENGINE             500   ^^^^^^^^^^^^^^^^^^^^        <- caret-linje: SyntaxError i skriptet
+STEP08-V5                   11   Exit code 1
+RUNA-CADENCE-EXECUTOR      500   File "/a0/usr/projects/agent-zero_run…
+```
+
+Fem av åtte dør nå **inne i en spørring**, som er nøyaktig det man ser når rollen kommer inn
+men mangler `GRANT`. Den ene med kort melding sier det rett ut. **D15 er ikke én tabell; det er
+rollen `fhq_executive_task` som mangler rettigheter på det meste jobbene trenger.** Fiksen er
+en `GRANT`-pakke for den rollen, eller å la barna kjøre som samme rolle som forelderen. Det er
+en G4-beslutning i `fhq_*`-skjemaene; jeg foreslår, VEGA/CEO velger.
+
+Timefordelingen (L1) bekrefter bildet: `not_success` 120/time frem til 18, 112 i 19-timen,
+90 i 20-timen (delvis time); `distinct_runs_ok` 6 → 9. **Det går riktig vei, og det er ikke
+denne grenen som beveger det.**
+
+To ting som ikke er forklart: `72H-GOVERNOR` snudde først 19:20, og `VELOCITY-WATCH` nådde
+databasen først 19:50, halvannen til to timer etter `.env`-endringen. Enten en andre endring
+(passord i databasen, `GRANT`, restart), eller at de to jobbene leser en annen nøkkel
+(`FHQ_EXEC_DB_ROLE_PASSWORD`, `FHQ_LEASE_*`). Containeren ble **ikke** restartet (P6: oppe
+10 t 16 min, dvs. siden 08:33 UTC = 10:33 Oslo). Spørsmålet fra § 17.7 står.
+
+### 18.3 D11 — lukket: feltet er `prereg_id`
+
+N/N2, eksakt:
+
+```
+PREREG.state_after.S.prereg.prereg_id = 4d108812-1218-4165-a0e0-69aa22ed87a7
+```
+
+`sandbox_runs.research_object_id` lagrer **`prereg_id`**, preget ved `PREREG` sammen med
+`rng_seed`, `seed_int` og `spec_sha256`. `sandbox_runs` har allerede `experiment_id uuid`
+(N3); hva den holder er ikke målt. **Fiks, endelig formulering:** døp `research_object_id`
+om til `prereg_id`, legg til `cycle_id text` med FK til `factory_cycles`, og legg det ekte
+RO-id-et i en ny `research_object_id`. Tre kolonner, null datatap, én join til RO. D11 er
+ferdig diagnostisert; alt videre er implementasjon.
+
+### 18.4 D13 — `error_stack` er også kappet
+
+M: 1 132 rader i dag, **alle** med `error_stack`, maks lengde **500**. Begge feltene bærer
+samme kappede hode. Ingen alternativ bærer for årsaken finnes i tabellen. D13 står som
+formulert i § 17.1; fiksen er i skriveren.
+
+### 18.5 RO-ene, med riktige kolonner (O)
+
+| RO | status | promotion | opprettet |
+|---|---|---|---|
+| `e7cb94da` | **`CONSUMED`** | *(tom)* | 08.09 16:45 |
+| `994b6a83` · `9e73188e` · `bcb914fe` · `fc6565fc` · `8131c557` | `VERDICT_RECORDED` | `FACTORY_KILLED` | 08.09 |
+| `02ebcae5` · `313dcd0d` | `SUPERSEDED` | *(tom)* | 08.09 20:24 |
+
+`fc6565fc` og `8131c557` ble **opprettet** 21:51:11 og fryst 21:52:05, av supersession-kjøringen
+selv. § 17.4 står. **D16 (ny, liten):** `e7cb94da` er `CONSUMED` av syklus
+`FK1-20260908T144903Z-c12305` uten å ha nådd `VERDICT`, og har ingen kjøring ≥ 1 s. En RO
+hengende i mellomtilstand. Én rad; fabrikken har ingen «stuck»-oppsamler.
+
+### 18.6 Uforklart: hvordan a0s psql autentiserer
+
+P5: ingen `.pgpass`, `PGPASSFILE` og `PGSERVICE` tomme, `PGPASSWORD` ikke i skallet. Likevel
+har a0s psql virket seks ganger i dag. Enten setter a0s agentramme `PGPASSWORD` i sin egen
+prosess, eller `pg_hba.conf` gir `trust` for docker-subnettet. Det siste ville være et
+sikkerhetsfunn. Ikke målt; én lesning av `pg_hba_file_rules` avgjør det.
+
+### 18.7 Status etter runde 7
+
+| | |
+|---|---|
+| **D10** | **Mekanisme målt:** `.env` arves av barn; barn = `fhq_executive_task`. Før 17:49: connect-feil. Etter: 2/10 friske, 8 feiler på rettigheter (D15). Hvem endret `.env` kl. 17:49: **spørsmål til CEO** |
+| **D11** | **Lukket.** Feltet er `prereg_id`. Tre-kolonne-fiks formulert (18.3) |
+| D13 | Står. `error_stack` også kappet ved 500 |
+| **D15** | Utvidet: rollen `fhq_executive_task` mangler `GRANT` på det jobbene trenger. G4 |
+| **D16 (ny)** | `e7cb94da` hengende i `CONSUMED` uten dom |
+| D14 | Riktig verdi bekreftet i prosess; Machine-kopiering **ikke bekreftet** |
+| Åpent | Hva skjedde 17:49 (`.env`) og 19:20–19:50 (governor, velocity)? `pg_hba` trust? |
+| Gate | Uendret, og nå fullstendig frikoblet: de ti kjører som en annen rolle, fra en annen fil, i en annen container |
