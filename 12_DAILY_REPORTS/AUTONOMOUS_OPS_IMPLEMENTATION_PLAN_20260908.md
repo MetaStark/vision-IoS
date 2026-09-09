@@ -1966,3 +1966,27 @@ interessant.
 | **5** | **Sjekk hypotesegeneratoren** `STEP03-HYPOTHESIS-V1` (D12) | Fabrikken får mat | Ukjent til målt | Én SQL; runde 6 H4 viste `SyntaxError` linje 559 i `btcusd_hypothesis_generator_v1.py` |
 
 Alt annet (D11, D16, D17, D19, D1, D5, D6) venter til 1–5 er gjort.
+
+### 20.1 Handling 1 utført — GRANT-pakke, pass 1  (CEO, ~22:10 Oslo)
+
+Generatoren (`scripts/d15_grant_package.ps1`, `bf7bc3ad`) leste databaseloggen siden
+17:15 UTC og fant **14 distinkte objekter avvist for `fhq_executive_task`**:
+
+```
+272x table  fhq_runtime.run_attempts           68x schema fhq_hypothesis
+105x table  fhq_decide.btcusd_shadow_outcome_evidence_mvp
+ 69x schema fhq_regime                          68x table  fhq_decide.btcusd_decision_candidate_mvp
+ 51x table  fhq_research.btcusd_quarantine_portfolio_ledger
+ 42x table  fhq_truth.btcusd_price_candle       35x schema fhq_perception
+ 35x table  fhq_truth.btcusd_live_price         35x table  fhq_runtime.run_locks
+ 35x schema fhq_features                        17x view   fhq_decide.v_btcusd_step05_eligible_shadows_mvp
+ 17x table  fhq_runtime.governor_cycle_evidence  1x table  fhq_runtime.run_failures
+```
+
+Pakken: `USAGE` på 8 skjemaer, `SELECT, INSERT, UPDATE` på 9 tabeller, `SELECT` på 1 utsikt.
+Ingen `DELETE`, ingen eierbytte. CEO leste og kjørte den som `supabase_admin`:
+`BEGIN`, 18 × `GRANT`, `COMMIT`. **Første skriving til databasen i hele denne planen, utført
+av CEO, ikke av STIG**, og reverserbar med `REVOKE` på samme objekter.
+
+Forventet pass 2: tabellene i de fire skjemaene som ble avvist på skjemanivå, og sekvenser
+for tabeller med løpenummer. Akseptansetest etter ti minutter: suksess per `run_id`.
