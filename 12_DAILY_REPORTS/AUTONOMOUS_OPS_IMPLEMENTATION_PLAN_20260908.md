@@ -2064,3 +2064,41 @@ viste `SyntaxError` linje 559 i `btcusd_hypothesis_generator_v1.py` og en argpar
 (`--connection-string`). Om den ble skrudd av *bevisst* (dispatch-fence, STALE-halt) eller
 bare falt ut av crontab, er ikke målt. a0 avgjør det fra crontab-backupene før noe slås på
 igjen. Å slå på fabrikkens tilførsel er en CEO-beslutning, ikke en reparasjon.
+
+### 20.6 Pass 2 kjørt, og handling 5 løser seg selv  (CEO + a0, ~22:40 Oslo)
+
+**Pass 2:** CEO endret den ene `fhq_governance`-linjen til `SELECT` (verifisert med
+`Select-String`: linje 6 `USAGE ON SCHEMA`, linje 24 `GRANT SELECT ON TABLE`, ingen `INSERT`),
+og kjørte som `supabase_admin`: `BEGIN`, 26 × `GRANT`, `COMMIT`.
+
+**a0s granskning av hypotesegeneratoren, kun lesing, tre svar:**
+
+1. **Den falt ut. Ikke bevisst.** `run_registry` sier fortsatt `ENABLED` (sist endret 11. juni),
+   null audit-rader, crontab intakt, cron har fyrt hvert 5. minutt hele tiden. Mekanismen er
+   executors avhengighetsport (`runa_cadence_executor.py` L173–200): hver avhengighet må ha
+   `SUCCESS` innen 60 minutter, ellers `DEPENDENCY_NOT_MET` og **stille skip uten rad**.
+   Kjeden: `STEP03` (15 m) → `REGIME-REFRESH` (10 m) → `FEATURE-ENGINE` (15 m) →
+   `CANDLE-FETCHER` (5 m). Tidslinje 5. sep: `REGIME-REFRESH` siste suksess 00:50 →
+   rollebytte 00:55 → auth-feil fra 01:00 → `STEP03`s siste forsøk 01:50 = avhengighetens
+   suksess + 60 min + ett tikk → skippet hvert tikk siden. Hele klyngen døde forskjøvet
+   (01:05–02:05), jobber utenfor kjeden holdt til 05:55. Avhengighetsvindu, ikke crontab.
+   Forbehold fra a0: skip-linjene finnes ikke i `governed_worker_cron.log`; mekanismen er
+   fastslått fra kode + eksakt 60-minutters-justering i DB, ikke logglinje for logglinje.
+
+2. **`SyntaxError` linje 559 var fra 18. juni,** to tikk, fikset samme dag, `STEP03` har 6 252
+   suksesser mot 15 feil siden. Runde 6 H4 viste gamle rader; **min kobling til D12 var feil**
+   og trekkes. September-feilene var `psycopg2.connect`, ikke syntaks.
+
+3. **Args-kontrakten stemmer.** Executor kaller `--execute`, skriptet aksepterer det som alias
+   for `--scheduled`. Ingen argument-feil.
+
+**Hvorfor den ikke kom tilbake etter auth-fiksen 15:49Z:** kjeden var fortsatt brutt, nå av
+privilegier. `FEATURE-ENGINE` feilet med full traceback, fanget av dagens D13-patch:
+`psycopg2.errors.InsufficientPrivilege: permission denied for table btcusd_features`.
+**Det er nøyaktig én av de sju linjene i pass 2.** Med pass 2 kjørt: `FEATURE-ENGINE` får
+lese → lykkes → `REGIME-REFRESH` får ferskt vindu → `STEP03` får ferskt vindu → **fabrikken
+får tilførsel igjen, av seg selv, uten at noe slås på.** Forventet forsinkelse: opp til
+40 minutter for tre kaskaderende vinduer.
+
+**Handling 5 er dermed ikke en handling.** Den er akseptansetesten for pass 2. Ingen G4, ingen
+re-aktivering, ingen ny kode. D12 lukkes når `STEP03` har sin første `SUCCESS` siden 5. sep.
