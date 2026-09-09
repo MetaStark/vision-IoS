@@ -90,6 +90,16 @@ Fase 0 kjørte (plandokument § 12–13). Tabellen over var bygget på repoet; d
 
 **Epokene (§ 14.5):** forskningsløkkens ledgere stopper hardt 20.–27. mai; a0s runtime starter 24. aug. Planens Lag 2 («gjenoppliv kalibreringsmaskineriet») betyr konkret: koble epoke III til epoke I's 147 K utfall og 39,5 K Brier-rader — eller beslutte at de er historikk.
 
+**Runde 4 (plandokument § 15) — Fase 0 lukket. Tre siste korreksjoner:**
+
+| Påstand | Databasen sier | Konsekvens |
+|---|---|---|
+| D10: «91 % feilrate» (vindu usikkert) | **Målt:** 630 feil / 693 forsøk i dag; **ti jobber med 0 suksess på hvert 5-min-tikk** (`STEP08-EVIDENCE-GRADING`, `CANDLE-FETCHER`, `LIVE-PRICE-FETCHER`, `72H-LEARNING-PRESSURE-GOVERNOR`, `CEIO-AUTONOMOUS`, …). Historikk: juli 76 K forsøk / 3,5 % feil → august kollaps → september 87 % | Lag 0s første konkrete jobb: de ti døde jobbene. Prisene flyter fra en annen prosess — pipelinen bak dem gjør ikke |
+| D11: «attribusjon brutt» | **Løst:** FORMALIZE preger nye node-UUID-er; `sandbox_runs.research_object_id` lagrer node-id, ikke RO-id. Kjeden RO → syklus → node → kjøring → dom er rekonstruerbar via `lifecycle_events.evidence_ref` og JSON i `factory_cycle_nodes` — **ikke via fremmednøkkel** | Én-kolonne-fiks i Lag 1: ekte RO-id i `sandbox_runs`, node-id i ny kolonne |
+| M1/M2: «disiplinen mangler» | **Kjernen har den.** CPI_003-spec ordrett i DB: frosset kalender med sha, kill-regel `≥ 15 bps AND hac_t ≥ 2`, kostgulv 10 bps, `m=2` familie-alfa, engangs gjenbruksbudsjett, novelty-attest, fem adversarielle prober, OOS frosset ved PREREG, Newey-West + Bonferroni | Q1 2027 er ikke «bygg falsifikasjonsdisiplin». Den finnes. Q1 er: **attribusjonsnøkkel + hypotese-tilførsel** |
+
+**D12 — fabrikken er sulteforet.** `RUN-20260908T190000Z` handlet 21:52 og fabrikken gjenopptok; i dag ticker den hvert 15. min på 14-dagers-saken med `IDLE_NO_CHANGE / NO_USEFUL_WORK`, null feil — og **tom kø**. Den bindende begrensningen er ikke eksekvering; det er hypoteser.
+
 ---
 
 ## 4. Arkitektur 2027 — fem lag, én regel

@@ -1106,5 +1106,138 @@ Innholdet er: feilene er a0s runtime-script (`container_hourly_evidence_throughp
 | D11 | Ny: RO → kjøring-attribusjon brutt for de reelle eksperimentene |
 | Kill-rate | Omdefineres (14.4); § 6 i 2027-planen rettes |
 | D10 | Rate ikke fastslått; innhold fastslått |
-| Neste | Runde 4 (`phase0_round4.sql`): feilrate per run_id i dag, hvor de seks RO-id-ene bor, dagens attempts |
+| Neste | Runde 4 (`phase0_round4.sql`): feilrate per run_id i dag, hvor de seks RO-id-ene bor, dagens attempts — **utført, § 15** |
+
+---
+
+## 15. FASE 0 — RUNDE 4: LUKKING  (2026-09-09 16:25 Oslo)
+
+**Proveniens:** `phase0_round4.sql` kjørt av a0 (fingeravtrykk `fc1c844d…` / 89 / 13 verifisert,
+exit 0). Resultat 129 872 B, 168 linjer, sha256
+`0c42ecef7bf003ce50ccf06189415bec0be71d21a2d3989002022a6b5f685ace`, 10 ERROR (relasjoner som
+ikke finnes; design). To shell-kommandoer i a0s container, ordrett. Rader ordrett.
+
+### 15.1 Merge-gaten — resten lukket med evidens
+
+| Sjekk | Resultat |
+|---|---|
+| `grep -rlE 'fhq-src\|03_FUNCTIONS' …/agent-zero_runtime_loop/ --include=*.py` | **4 filer:** `step01_candle_worker_governed.py`, `step01_feature_engine_governed.py`, `step02_forecast_materializer_governed.py`, `step02_regime_refresh_governed.py` |
+| `echo PGPASSWORD:${PGPASSWORD:+SET}` i containeren | **`PGPASSWORD:`** — tom. **Ikke satt i containeren** |
+| Kjører de fire i dag? (Q1c, alle attempts siden 11:11) | **Nei.** Ingen `STEP01/STEP02`-run_id blant dagens 16 |
+| Hvor kjørte de sist? (R3b) | **Mai 2026, på Windows-verten:** `host_hostname STUEMAKIN`, `stdout_log_path D:\Runtime\logs\…` |
+
+De fire wrapperne som når `03_FUNCTIONS` er vert-side, mai-æra, og ikke i drift. Verten har
+`PGPASSWORD` på maskinnivå (§ 14.1). Dagens container-jobber er a0s egne `container_*`-script
+som ikke berører de transformerte filene. **`fd0328b6` når ingenting som kjører uten
+credential.** Om `STEP01/02` gjenopplives *inne i* containeren uten `PGPASSWORD`, feiler de
+høyt — designet adferd. Anbefaling (LINE/a0, ikke blokkerende): sett `PGPASSWORD` også i
+container-miljøet. **Merge er CEOs beslutning; grunnlaget er komplett.**
+
+### 15.2 D10 — målt: 630 feil, 10 jobber, 0 suksess på hvert tikk
+
+| Mål (siden 11:11 Oslo) | Verdi |
+|---|---|
+| Feil | **630**, 10 distinkte `run_id`, **63 hver** |
+| Forsøk | **693**; suksess **63**; **feilrate 90,9 %** |
+| Mønster | 63 = ett 5-minutters-tikk × ~5,25 t. **Ti jobber feiler på hvert eneste tikk hele dagen** |
+
+| Jobb | Forsøk | Suksess | Snitt s | Lesning |
+|---|---|---|---|---|
+| `RUN-CONTAINER-CANDLE-FETCHER-V1` · `LIVE-PRICE-FETCHER-V1` | 63 | 0 | 0,4 | Krasj ved oppstart. Prisene flyter *likevel* (R7) — fra en annen prosess |
+| `RUN-STEP08-EVIDENCE-GRADING-V4` · `-V5` | 63 | 0 | 0,2 | Evidensgradering død hele dagen |
+| `RUN-72H-LEARNING-PRESSURE-GOVERNOR-V1` · `LEARNING-VELOCITY-WATCH-V1` · `FEATURE-FRESHNESS-WATCHDOG-V1` · `PORTFOLIO-QUARANTINE-V1` · `RUNA-CADENCE-EXECUTOR` | 63 | 0 | 0,2–0,3 | Krasj ved oppstart |
+| `RUN-CEIO-AUTONOMOUS-V1` | 63 | 0 | 6,0 | Kjører ~6 s, så krasj |
+| `LEARNING-PROGRESS-NOTIFY` · `CHAIN-WATCHDOG` · `DIRECTIONAL-WATCH` | 16 | 16 | 1–2 | Friske |
+| `HOURLY-EVIDENCE-THROUGHPUT-BRIEF` · `NO-TRADE-WATCH` · `LP001-SHORT-BIAS` | 5 | 5 | — | Friske (juni-feilen på linje 60 er fikset) |
+
+**Q1e — historikken sier når det brøt:**
+
+| Måned | Forsøk | Ikke-suksess | Feilrate |
+|---|---|---|---|
+| mai | 4 713 | 10 | 0,2 % |
+| juni | 65 343 | 787 | 1,2 % |
+| **juli** | **76 230** | 2 688 | 3,5 % |
+| **august** | **1 746** | 331 | 19,0 % |
+| **september** | 14 149 | **12 325** | **87,1 %** |
+
+Runtime-loopen kjørte 2 000–2 500 forsøk/dag i juni–juli med > 96 % suksess. August: kollaps
+til ~56/dag — byttet. September: 87 % feil. Feilene er tracebacks i `container_*.py` ved
+import/oppstart; unntaksklassen er ikke i utdraget (`sample_error` kuttes ved filstien) —
+runde 5 § F henter siste linje av hver traceback. § 13s «530 siste 4,5 t» var feil vindu og
+riktig størrelsesorden; **det målte tallet er 630 på ~5,25 t.**
+
+### 15.3 D11 — løst: attribusjonen finnes som JSON-spor, ikke som nøkkel
+
+| Søk etter de seks id-ene | Treff |
+|---|---|
+| `research_objects` — som id, som `parent_ro_id`, i radtekst | 0 / 0 / 0 |
+| `lifecycle_events` · `factory_cycles` · `trajectory_ledger` · `hypothesis_canon` | 0 / 0 / 0 / 0 |
+| **`factory_cycle_nodes`** | **60** |
+
+**Mekanismen (Q2d, ordrett fra syklus `FK1-20260908T163402Z-5f023b`):** SENSE finner
+`proposal.research_object_id = 994b6a83-…` (ASTRIDs RO). DISCOVER → NOVELTY
+(`GENUINELY_NEW_MECHANISM`, matchet `EIS-001`) → **FORMALIZE preger tre nye UUID-er:**
+`hypothesis: {family_node: de7fd04c-…, mechanism_node: f47c08a0-…, hypothesis_node: f5452aac-…}`.
+Q2e: `994b6a83 FROZEN → CONSUMED` (`CYCLE_BINDING`, `evidence_ref = FK1-…5f023b`) → `VERDICT_RECORDED /
+FACTORY_KILLED` (`CYCLE_VERDICT`, samme syklus) kl. 18:34:12 — ti sekunder etter kjøringen
+`ee438f68` (18:34:11). **`sandbox_runs.research_object_id` lagrer et preget node-id, ikke
+RO-id-et.** Kolonnen er feilnavngitt.
+
+Kjeden **RO → syklus → node → kjøring → dom** er rekonstruerbar — via `evidence_ref` i
+`lifecycle_events` og JSON i `factory_cycle_nodes.state_after` — men ikke via fremmednøkkel.
+«You cannot learn from what you cannot attribute» er *teknisk* oppfylt og *relasjonelt* brutt.
+**Fiks (Lag 1, én kolonne):** lagre det ekte RO-id-et i `sandbox_runs.research_object_id` og
+node-id-et i en ny kolonne — eller legg til `cycle_id`. Runde 5 § G gjør mappingen eksplisitt.
+
+### 15.4 Kjernen er bedre enn planen krediterte den
+
+`state_after` i FORMALIZE-noden for CPI_003 (ordrett utdrag):
+
+> `kill_rule: {cost_floor_bps: 10, one_sided_alpha: 0.05, family_killed_if: "max cell OOS mean gross < 15 bps OR no cell (>= 15 bps gross AND hac_t >= 2)"}` ·
+> `multiplicity_ledger: {alpha_budget: "m=2 family-cumulative, one-sided", reuse_budget: "ONE-TIME: this exact dataset-direction pair is spent by CPI_003 and cannot back a third hypothesis", prior_inspection_detail: "the 45-event outcome set was previously inspected by killed CPI-001 contra cells"}` ·
+> `calendar: {events: 45, sha256: e909dfb8…, frozen_ref: artifacts/research_episodes/CPI_001/FROZEN_FOMC_CALENDAR_V1.json}` ·
+> `novelty_attestation_sha256: 5e583c40…` ·
+> `inconclusive_handling: "small-N INCONCLUSIVE is an honest outcome and must not be read as survival"` ·
+> `robustness_tests: {oos_frac: 0.3, adversarial_probes: [lookahead_shift, concentration_top1pct, signflip_worst_quintile, rank_proxy_swap, jackknife_thirds]}` ·
+> `OOS_definition: "last 30% of trades by time order (frozen at PREREG)"` ·
+> `primary_statistical_test: "one-sided t-test (naive + Newey-West), Bonferroni-adjusted alpha"` ·
+> `cost_model: {fees_bps: 4, slippage_bps: 2, total_bps: 6}`
+
+Frosset kalender med hash, kill-regel med kostgulv, familie-alfa-budsjett, engangs
+gjenbruksbudsjett, novelty-attest, adversarielle prober, frosset OOS, Newey-West + Bonferroni.
+**Dette er M1/M2-disiplinen 2027-planens Q1 skulle bygge.** Den finnes, i drift, i kjernen.
+Gapet er ikke design: det er (a) attribusjonsnøkkelen (15.3), (b) historikken med syntetisk
+eksekutor (nå fikset), (c) skala — seks reelle kjøringer totalt.
+
+### 15.5 Kjeden er lukket, fabrikken ticker — og er sulteforet
+
+`RUN-20260908T190000Z` handlet kl. 21:52 Oslo (Q2e: `STIG-RO-SUPERSESSION-V2-…-RUN-20260908T190000Z-061747`
+superseded `02ebcae5` og `313dcd0d`), 42 min etter pausen 19:10Z; deretter kom de tre siste
+reelle kjøringene (22:19–22:49). **Kjeden virket; fabrikken gjenopptok.**
+
+Q3b — siste ti sykluser (14:04 → 16:19 i dag): case `FHQ-AUTONOMY-RESEARCH-14D-20260908`
+(ASTRIDs 14-dagers sak), hvert 15. min, **alle `SENSE / IDLE_NO_CHANGE / NO_USEFUL_WORK`,
+`failure_count 0`.** Ikke pauset. Ikke ødelagt. **Køen er tom.** Fabrikkens bindende
+begrensning i dag er hypotese-tilførsel, ikke eksekvering.
+
+### 15.6 Fase 0 — sluttstatus
+
+| | |
+|---|---|
+| **Fase 0** | **Lukket.** Fire runder, ~1 000 linjer rå DB-output, alle fingeravtrykk verifisert |
+| Gate | **Grunnlag komplett; ingenting som kjører mister credential.** Merge = CEO |
+| D1 | 106 filer / 74 registrert / 0 hjerteslag — det styrte systemet er dødt; det levende er a0s |
+| D2, D3 | Lukket (`df5b3112`) |
+| D4 | Kode lukket (`b9303303`, `fd0328b6`); merge avventer CEO |
+| D5 | Tallfestet; uløst — tre trær, ingen er runtime |
+| D6 | Adjudikeringsgrunnlag komplett; VEGA velger (ratifiser vert / gjenopprett direktiv) |
+| D7 | `D:\Runtime` = a0 runtime-loop, evidens; CEO bekrefter |
+| D9 | To epoker; epoke I's ledgere er historikk (siste 27. mai) |
+| D10 | **Målt:** 630/693 i dag; 10 jobber døde på hvert tikk; brøt aug→sep. Unntaksklasse: runde 5 |
+| D11 | **Løst:** JSON-spor, ikke FK; kolonnen feilnavngitt; én-kolonne-fiks |
+| **D12 (ny)** | Fabrikken er sulteforet: tom kø, `NO_USEFUL_WORK` hvert tikk hele dagen |
+
+**Til 2027-planen:** Lag 0 = registrer det levende systemet (a0-runtime) og reparer de ti
+døde jobbene. Lag 1 = attribusjonsnøkkel + hypotese-tilførsel; disiplinen finnes. Lag 2 =
+koble epoke III til epoke I's ledgere, eller erklære dem historikk. Kill-rate = evidensbasert.
 | **D10 (ny)** | 530/583 kjøreforsøk feilet i `fhq_runtime` siden stats-start (13.3). **Rettet i § 14.5:** vinduet er usikkert — id-spennet motsier «4,5 t»; raten måles direkte i runde 4 |
