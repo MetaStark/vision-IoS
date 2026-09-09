@@ -548,3 +548,60 @@ Den importeres av `finn_crypto_scheduler`, `finn_e_scheduler` og `finn_t_schedul
 kan importere på noen vert i dag**, uavhengig av denne endringen. `finn_crypto_scheduler` er én av de
 5 daemonene `daemon_manager.py` forvalter. Funnet er utenfor dette omfanget og krever egen fiks;
 det er nøyaktig feilklassen ASTRID beskrev: kode som ser riktig ut i repoet men ikke kjører.
+
+---
+
+## 11. FASE 0 — FØRSTE EVIDENS FRA RUNTIME-SIDEN (Agent Zero, 2026-09-09)
+
+**Kilde:** Agent Zero-rapport relayet av CEO. **Ikke verifisert av STIG** — STIG når verken vert
+eller container. Gjengitt som mottatt; a0s bevisfil `tmp/phase0_blocked_evidence_20260909.txt`
+(79 linjer) ligger i a0s container.
+
+### 11.1 Hva a0 utførte
+
+| Steg | Resultat |
+|---|---|
+| `code_execution_remote` (F4, host-CLI) | **NED** — «no CLI client connected to Agent Zero», 3 forsøk, identisk feil |
+| DB fra container | **OK** — `host.docker.internal:54322`, `select 1 → 1`. `127.0.0.1:54322` → connection refused (eget docker-nett) |
+| Container-crontab | 57 linjer. `grep -nE 'PGPASSWORD=\|source .*env\|\. .*env'` → **tom** (exit 1) |
+| `scripts/phase0_verify.sql` | **Ikke tilgjengelig i noen visning** a0 når. GitHub-operasjoner fra container forbudt etter prosjektregler → ikke forsøkt |
+| Steg 1, 2, 3a, 3b, 3c fra briefen | **Ikke utført** — alle krever F4 eller filen |
+
+### 11.2 Topologi a0 avdekket — endrer D5
+
+| Montering | Funn |
+|---|---|
+| `C:→/host/fhq-src` (9p, lesebeskyttet) | Ingen `.git`, ingen `scripts/`, ingen `03_FUNCTIONS/guard_generation_freeze.py`. **Kuratert/stale visning, ikke C:-roten** |
+| `D:→/host/runtime` (9p, lesebeskyttet) | **Repo `MetaStark/runtime`, HEAD `3ff28a0`, 2026-05-15.** Ingen `claude/explain-learning-loop-Sa9z7`; `fd0328b6` → «Not a valid object name»; ingen `phase0_verify.sql`, ingen `guard_generation_freeze.py` |
+
+**D7 — Et tredje kodetre.** `MetaStark/runtime` er hverken `vision-IoS` eller `fhq-market-system`.
+STIG har aldri sett det. Hvis dette er treet som faktisk kjører, er hele § 2–3 (D1–D6) en analyse
+av *et annet tre enn runtime*. Det er ikke avklart. **Spørsmål reist til CEO: hva er
+`MetaStark/runtime`?** Planens Lag 0, steg 0.2 («repo = runtime») må omfatte dette repoet.
+
+**D8 — a0s visning av C: er ikke arbeidstreet.** `/host/fhq-src` mangler `.git`. a0 kan ikke
+verifisere noe om runtime-koden fra den monteringen.
+
+### 11.3 Merge-gate — flaten vokste
+
+Container-crontab (57 linjer) er en planlagt eksekveringskontekst uten `PGPASSWORD=` og uten
+env-sourcing i crontab-teksten. Trolig fabrikkens tick-driver (ASTRID: «crontab linje 42»).
+
+Dette **beviser ikke** at jobbene mangler credential: LINEs fail-closed-loader kan ligge *inne i*
+driveren. Det beviser at sjekken må gjøres på **jobbnivå**, i minst tre kontekster:
+
+1. Windows Task Scheduler (`[Environment]::GetEnvironmentVariable('PGPASSWORD','Machine'/'User')`)
+2. Container-crontab — per jobb: laster driveren `PGPASSWORD` selv?
+3. Windows-crontab/WSL, om den finnes
+
+Merge av `fd0328b6` forblir gatet til alle tre er bekreftet.
+
+### 11.4 Unblokk-stier for Fase 0 — ingen krever F4 for SQL-delen
+
+| Sti | Handling | Merknad |
+|---|---|---|
+| **A** | CEO kopierer `scripts/phase0_verify.sql` fra GitHub inn i a0s container; a0 kjører `psql -h host.docker.internal -p 54322 -U postgres -d postgres -f phase0_verify.sql > phase0_result.txt 2>&1` | Scriptet er uendret; kun `-h` skiller seg fra briefen. a0 leser scriptet først (kun `SELECT`, ingen DDL) |
+| **B** | CEO kjører a0s fire kommandoer direkte på Windows-verten | Raskest. F4 nede blokkerer a0, ikke CEO |
+| — | Steg 3a/3b/3c (PowerShell-env, `py_compile`, git-drift) | Krever verten — sti B, eller F4 gjenopprettet |
+
+STIG kan ikke gjenopprette A0 CLI — ingen kanal til vert eller container.
