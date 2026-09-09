@@ -2135,3 +2135,23 @@ skaffet 22:50:11, ikke frigitt ved 22:54, trolig hengende).
 
 Generatoren har fått styringsvakt (`23817e1e`): `fhq_governance.agent_memory` og
 `market_episode_map_v3` får `SELECT`, aldri skriverett, automatisk.
+
+### 20.8 Pass 3 generert med vakt; lokal-økt-overtakelse blokkert; sidefunn notert  (23:10 Oslo)
+
+**Pass 3 (35 linjer)** la til de tre sekvensene, `v_btcusd_step03_handoff_mvp` (utsikt,
+`SELECT`), og `agent_memory`, som vakten korrekt satte til `SELECT`. Verifisert med
+`Select-String`: begge `fhq_governance`-linjene er `SELECT` med «governance guard»-kommentar,
+de tre sekvensene er med. **Ikke kjørt ennå** (CEO kjørte den forrige fila om igjen, ufarlig
+gjentakelse). Kjøres én gang som `supabase_admin`.
+
+**Lokal-økt-overtakelse blokkert, to hindre:** `git checkout` avvist av lokale endringer i 30
+filer (`03_FUNCTIONS/*`, dashboard, migrasjoner) i vertens klon, og `claude` er ikke på PATH.
+Det bekrefter D5/D19 fra en ny vinkel: **vertens arbeidskopi har divergerende versjoner av de
+samme filene grenen endrer** — en tredje kilde ved siden av de tre trærne i D5. Ikke et
+driftsproblem nå; STIG fortsetter fra skyen. Å flytte økta lokalt er valgfritt og krever at
+CEO enten committer eller forkaster de lokale endringene først, og installerer CLI-en.
+
+**Sidefunn (ikke jaget):** `fhq_core.market_prices_live` har 45 M reelle SPOT-rader, 22 M
+`FUTURES_PERP` med `event_time_synthetic = t`, 45 k reelle `FUTURES_PERP`. Det er et tredje,
+folkerikt prisbord ved siden av `fhq_truth`/`fhq_market`. Hører til datakart-opprydningen
+(D-kartet, § 12.2), ikke driftsplanen. Notert, ikke handlet på.
