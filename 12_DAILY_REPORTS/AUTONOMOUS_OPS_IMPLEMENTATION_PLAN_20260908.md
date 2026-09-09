@@ -777,6 +777,27 @@ kompilert den — **den er et forslag til VEGA G3, ikke deployet**, og legges ik
 skal kvoten bruke DB-verdien `exception_quota_pct` (som skjemaet har) eller direktivets
 hardkodede 5 %? Repoet leser den ene og bruker den andre; det er ikke STIGs å velge.
 
+**Kallerne (repo-side, verifisert):** alle fire produksjonskallere sender **tre** argumenter
+(`conn, hypothesis_code, controlled_exception`) og importerer `from guard_generation_freeze
+import guard_generation_freeze` — samme modulsti som verten har:
+
+| Kaller | Kallsted | Arg | Status i `daemon_health` |
+|---|---|---|---|
+| `finn_crypto_scheduler.py` | :535 | 3 | `STOPPED` 2026-02-16 |
+| `finn_e_scheduler.py` | :422 | 3 | `STOPPED` 2026-02-06 |
+| `finn_t_scheduler.py` | :494 | 3 | `STOPPED` 2026-02-06 |
+| `gn_s_shadow_generator.py` | :246 | 3 | `STOPPED` 2026-02-12 |
+| 6 test-kallsteder (`dir_014b_*`) | — | 3 | — |
+
+Mot vertens to-argument-guard gir alle fire `TypeError` ved første hypotese. **Fellen er
+sovende** — alle fire har vært døde siden februar, før vertens 05-01-redigering — men den
+utløses i det øyeblikket kontrollplanet restartes (Q4 2026, steg 0.5). Om vertens *kopier av
+kallerne* også ble refaktorert til to argumenter er ukjent: a0 kan lese dem direkte
+(`03_FUNCTIONS` er inne i dens eksport, F4 unødvendig). Ask til a0:
+`grep -n -A2 'guard_generation_freeze(' /host/fhq-src/{finn_crypto_scheduler,finn_e_scheduler,finn_t_scheduler,gn_s_shadow_generator}.py`.
+To-arg på verten → konsistent refaktor (fortsatt ikke-compliant). Tre-arg → latent `TypeError`
+i produksjon. Begge utfall går i VEGA-briefen.
+
 ### 12.7 Neste runde
 
 `scripts/phase0_followup.sql` — kolonne-agnostisk mot de oppdagede tabellene:
