@@ -632,3 +632,40 @@ Merge av `fd0328b6` forblir gatet til alle tre er bekreftet.
 | — | Steg 3a/3b/3c (PowerShell-env, `py_compile`, git-drift) | Krever verten — sti B, eller F4 gjenopprettet |
 
 STIG kan ikke gjenopprette A0 CLI — ingen kanal til vert eller container.
+
+### 11.5 Andre a0-rapport (15:05 Oslo) — rotårsak, korrigert leveringsvei, D6 på verten
+
+**Kilde:** Agent Zero, relayet av CEO. Rå bevisfiler i a0s container:
+`tmp/phase0_delivery_status_20260909_1505.txt` (61 linjer), `tmp/phase0_blocked_evidence_20260909.txt` (79 linjer).
+
+**Rotårsak til at scriptet aldri nådde a0 — eksportomfang, ikke levering:**
+
+| Montering | Faktisk innhold |
+|---|---|
+| `/host/fhq-src` | **Kun subtreet `C:\fhq-market-system\vision-ios\03_FUNCTIONS`.** `scripts/`, `.git`, `04_DATABASE/`, `05_ORCHESTRATOR/` — alt annet er strukturelt usynlig for a0, uansett branch |
+| `/a0/usr` | Docker-volum (ext4), **ikke** et Windows-mount. Tidligere anvist sti `C:\fhq-agent-zero\usr\…` var feil |
+| `/host/runtime` = `D:\Runtime` | Fullt synlig, lesbar. **Korrigert leveringsvei:** legg filen på `D:\Runtime\phase0_verify.sql` |
+
+Repo-veien er død for a0. Filen er levert som vedlegg (`file_uuid 39ea7514…`, identisk med `3e38093b`,
+sha256 `de48b93e…c140b`, 314 linjer, 23 `SELECT`). Fingeravtrykk-kontrakten er logget hos a0 og
+verifiseres ved mottak før kjøring.
+
+**D6 — lukket på verten, åpen i repoet, og de to filene er ikke samme fil:**
+
+| | Repo (`master@2026-03-09`, sist rørt `cc0f46be` 2026-02-12) | Vert (a0, `/host/fhq-src/guard_generation_freeze.py`) |
+|---|---|---|
+| Størrelse | 5 866 B | **4 056 B** |
+| sha256 | `cd02695f…5815d69` | `436aff81…aa271e40` |
+| mtime | — | **2026-05-01** |
+| `py_compile` | **NEI** — `""", (` på linje 122 og 140 | **OK** (to venv-er) |
+
+Vert-filen er datert etter siste push til GitHub, kompilerer, og er **1 810 B mindre** — ~30 % av
+filen er borte. Det er ikke en syntaksfiks. Filen er guarden for CEO-DIR-2026-015 (72-timers
+generasjonsfrys). **Konklusjon:** D6 er et D5-symptom (drift), ikke en repo-feil å patche — men
+løsningen er *ikke* å hente vertens versjon inn som sannhet. Den er å **diffe de to og
+adjudikere hos VEGA**: har guarden mistet logikk, eller ble død kode fjernet? Forslagskortet
+«fiks D6 i repoet» er trukket; å patche den ødelagte kopien ville gitt en tredje variant.
+Neste steg: a0 returnerer vert-filen ordrett; STIG differ og skriver adjudikeringsbrief.
+
+**Fortsatt blokkert på verten (krever F4 eller CEO direkte):** 3a — `PGPASSWORD` i Task
+Scheduler-kontekst (`Machine`/`User`); 3c — git-datoer i vision-ios (`.git` utenfor eksport).
