@@ -62,6 +62,13 @@ foreach ($k in ($objs.Keys | Sort-Object)) {
     }
     $schemas[$schema] = $true
     $fq = $schema + '.' + $bare
+    # Governance guard: objects in fhq_governance, fhq_meta or fhq_research_governance never get
+    # write rights from this generator. SELECT only. Any write there is a G4 decision by name.
+    $readOnlySchema = ($schema -eq 'fhq_governance') -or ($schema -eq 'fhq_meta')
+    if ($readOnlySchema -and ($kind -in 'table','relation')) {
+        $sql.Add('GRANT SELECT ON TABLE ' + $fq + ' TO ' + $Role + ';  -- governance guard: SELECT only, write needs G4')
+        continue
+    }
     switch ($kind) {
         'table'    { $sql.Add('GRANT SELECT, INSERT, UPDATE ON TABLE ' + $fq + ' TO ' + $Role + ';') }
         'relation' { $sql.Add('GRANT SELECT, INSERT, UPDATE ON TABLE ' + $fq + ' TO ' + $Role + ';') }
