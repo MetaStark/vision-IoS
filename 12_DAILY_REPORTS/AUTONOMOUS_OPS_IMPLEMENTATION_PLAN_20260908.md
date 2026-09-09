@@ -575,9 +575,36 @@ eller container. Gjengitt som mottatt; a0s bevisfil `tmp/phase0_blocked_evidence
 | `D:→/host/runtime` (9p, lesebeskyttet) | **Repo `MetaStark/runtime`, HEAD `3ff28a0`, 2026-05-15.** Ingen `claude/explain-learning-loop-Sa9z7`; `fd0328b6` → «Not a valid object name»; ingen `phase0_verify.sql`, ingen `guard_generation_freeze.py` |
 
 **D7 — Et tredje kodetre.** `MetaStark/runtime` er hverken `vision-IoS` eller `fhq-market-system`.
-STIG har aldri sett det. Hvis dette er treet som faktisk kjører, er hele § 2–3 (D1–D6) en analyse
-av *et annet tre enn runtime*. Det er ikke avklart. **Spørsmål reist til CEO: hva er
-`MetaStark/runtime`?** Planens Lag 0, steg 0.2 («repo = runtime») må omfatte dette repoet.
+STIG har aldri sett det. **Spørsmål reist til CEO: hva er `MetaStark/runtime`?** Planens Lag 0,
+steg 0.2 («repo = runtime») må omfatte dette repoet.
+
+**D7 presisert (verifisert i vision-IoS, 2026-09-09).** `04_DATABASE/CANONICAL_RUNTIME_DATA_MAP.md`
+(2026-03-09) erklærer ti tabeller som «runtime truth». Kryssjekk mot dette repoet:
+
+| Kartets tabell | DDL i vision-IoS |
+|---|---|
+| `fhq_market.prices` | mig 023 |
+| `fhq_perception.regime_daily` | mig 025 |
+| `fhq_perception.sovereign_regime_state_v4` | mig 120 |
+| `fhq_learning.micro_regime_classifications` | mig 353 |
+| `fhq_execution.shadow_trades` | mig 099 |
+| `fhq_learning.hypothesis_canon` | mig 335 |
+| `fhq_core.market_prices_live` | **ingen — skjemaet `fhq_core` finnes ikke her** |
+| `fhq_learning.outcomes` | **ingen** |
+| `fhq_learning.calibration` | **ingen** |
+| `fhq_alpha.alpha_signals` | **ingen** |
+
+Alle fem writer-script kartet navngir ligger i `03_FUNCTIONS/`. **Konklusjon:** kartet beskriver
+*dette* repoets runtime — bekymringen «feil tre» er avkreftet for runtime-laget. Men fire
+runtime-sannhet-tabeller har ingen DDL her mens koden som skriver til dem har det. DDL-en bor i
+foundation-repoet (`fhq_*` er foundation-eid, ADR-013), i `MetaStark/runtime`, eller opprettes
+ad hoc. § 11 i `phase0_verify.sql` avgjør det fra DB-en.
+
+**Viktigere for planen:** kartets sett og Fase 0-scriptets opprinnelige sett er **disjunkte**.
+To direkte overlapp: `fhq_canonical.canonical_outcomes` vs `fhq_learning.outcomes`, og
+`fhq_governance.calibration_versions` vs `fhq_learning.calibration`. § 2 (M3/M4) og AELL-2026-001
+pekte på de første; kartet erklærer de andre som runtime-sannhet. STIG velger ikke side —
+scriptets § 11b/11c måler begge, og DB-en sier hvilket som lever.
 
 **D8 — a0s visning av C: er ikke arbeidstreet.** `/host/fhq-src` mangler `.git`. a0 kan ikke
 verifisere noe om runtime-koden fra den monteringen.
