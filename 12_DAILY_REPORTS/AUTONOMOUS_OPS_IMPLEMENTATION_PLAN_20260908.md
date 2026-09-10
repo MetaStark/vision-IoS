@@ -2363,3 +2363,36 @@ ordre.
 Ledd 1 av innstillingen i § 22.5. Fabrikken slår `SENSE / IDLE_NO_CHANGE` hvert 15. min og har
 ikke produsert et eksperiment siden 08.09 20:49. Finn den ene betingelsen som gjør at SENSE sier
 «ingen jobb», og navngi den. Ingen skriving, ingen DDL.
+
+### 22.7 Fabrikken er idle av vilje, ikke feil — to spaker, begge LARS'  (a0-svar, ~16:20 Oslo)
+
+a0 sporet SENSE-logikken til kilden. Den bindende betingelsen er **tom kø**, og den er en følge
+av en bevisst styringsavgjørelse, ikke en feil:
+
+- **Kjernen konsumerer bare `status = 'FROZEN_FOR_EXPERIMENT'`.** Nå: **0 slike rader.** Siste
+  frysing var 8. september. 17 `DRAFT`-objekter (24.08–05.09) venter, men `DRAFT → READY_FOR_FREEZE
+  → FROZEN` eies av oppstrøms-frysing (FINN K1-dispatch / RO-livssyklus), ikke av fabrikk-kjernen.
+- **Tom-kø-proben er bevisst avslått.** Produksjons-ticken kjører med
+  `llm_probe_on_empty_queue=False`, kommentert `LARS-ADJ-20260908T1235Z-R2RECON R-2-prime`. Med
+  full kø ville en LLM foreslått nytt arbeid; LARS slo den av 8. september.
+- **Alt annet er friskt:** budsjett 7/40 og 15/80 (ikke oppbrukt), ingen fence, ingen halt,
+  ingen lås, heartbeat i dag 16:19, ticker konkluderer `IDLE` på 4–5 sek per tick. De 9
+  `GOVERNED_WAITING` er historiske (48H-budsjett utløst 08.09, løst ved case-rotasjon).
+
+**To spaker kan mate fabrikken. Begge er LARS-avgjørelser, ikke STIG-fikser:**
+
+| Spak | Hva den gjør | Hvem eier |
+|---|---|---|
+| **A. Frys DRAFT-ene** | Kjør oppstrøms-frysing (FINN K1-dispatch) så noen av de 17 `DRAFT` blir `FROZEN_FOR_EXPERIMENT`; kjernen plukker dem umiddelbart | FINN + LARS — hvilke hypoteser som forplikter er strategi |
+| **B. Slå på tom-kø-proben** | Sett `llm_probe_on_empty_queue=True`; LLM foreslår nytt arbeid når køen er tom | LARS — det reverserer eksplisitt ruling R-2-prime av 08.09 |
+
+STIG rører ingen av dem. Spak A er FINNs livssyklus og et strategisk hypotesevalg. Spak B
+opphever en datert LARS-ruling. **Innstilling til LARS:** spak A er den disiplinerte veien —
+den mater fabrikken med hypoteser noen bevisst har laget og fryst, i tråd med
+falsifiseringsdisiplinen, mens spak B lar en LLM improvisere arbeid, som er nettopp det
+R-2-prime slo av. Men valget er LARS'.
+
+**Kjeden er nå fullt kartlagt fra ende til ende:** oppstrøms-frysing (spak A/B) → fabrikk
+DISCOVER → FORMALIZE → VERDICT → **dom-til-score-bro (mangler, § 22.5)** → ledger → kalibrering
+→ neste hypotese. To ledd er tomme: tilførselen (dette punktet) og broen (§ 22.5). Begge er
+retnings-/G4-saker. STIG har målt begge og venter på ordre.
