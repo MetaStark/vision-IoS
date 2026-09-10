@@ -2482,3 +2482,9 @@ eneste melding til, når STIG først står på verten.**
 **Neste konkrete steg, om CEO vil:** STIG skriver (a) spec for `autonomy_ledger`, (b) oppsettet
 for STIG-på-verten (systemprompt + fullmakts-fil + planlegging), og (c) tier-policyen som utkast
 til VEGA. Alle tre er dokumenter, ingen kjøring, klare til gjennomlesing.
+
+### 23.6 Direktiv til a0 (kun lesing) — jord autonomi-designet mot databasen
+
+De tre autonomi-dokumentene (§ 23, `05_GOVERNANCE/AUTONOMY_0{1,2,3}`) hviler på antakelser om
+databasen. Før G4 og VEGA bruker beslutningskraft, verifiser at antakelsene holder. Kun lesing.
+Fem sjekker; hver bekrefter eller motbeviser en forutsetning designet trenger.
