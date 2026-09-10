@@ -2178,3 +2178,29 @@ har hypotese-tilførsel igjen.
 Siste GRANT, `run_artifacts` (driftsskjema `fhq_runtime`, `SELECT/INSERT/UPDATE`), lukker
 executors egen bokføring, og da slutter dens attempt-rad å gå `FAILED`. Etter det skal
 generatorens 15-minutters vindu komme tilbake tomt. **Det er slutten på handling 1.**
+
+### 20.10 G4-grensen: fabrikken trenger `pre_commitment_registry`  (DB-klokke 07:26 Oslo)
+
+Etter en natt med tikking står vinduet igjen med tre objekter: `run_failures_failure_id_seq`
+(drift, ufarlig) og **to tabeller i `fhq_governance`**: `pre_commitment_registry` (2×) og
+`candidate_hypothesis_bridge` (2×). Vakten satte begge til `SELECT`.
+
+**Dette er grensen § 20-planen holdt igjen for.** `pre_commitment_registry` er der PREREG-steget
+fryser forhåndsforpliktelsen, selve falsifiseringsdisiplinen (CPI_003-spec, § 15.4). Hvis
+fabrikken trenger å **skrive** dit, og ikke bare lese, er `SELECT` for lite, og pipelinen
+stanser ved PREREG. Men skriving til `fhq_governance` krever G4 (CLAUDE.md). Jeg gir den ikke.
+
+**Spørsmålet avgjøres av registeret, ikke av gjetning.** `run_registry.writes_to` og
+`reads_from` erklærer per jobb hva den skriver og leser. Én spørring viser om noen jobb
+erklærer skriving til de to tabellene:
+
+- Erklærer en jobb `writes_to` som inkluderer `pre_commitment_registry` →
+  **G4-beslutning:** skal `fhq_executive_task` få `INSERT` (og kanskje `UPDATE`) der?
+  STIGs anbefaling til VEGA: **ja til `INSERT`, nei til `UPDATE`/`DELETE`** — en
+  forhåndsforpliktelse skal kunne opprettes, aldri endres eller slettes, det er hele poenget
+  med at den er «frozen». Da er disiplinen håndhevet av rettighetene selv.
+- Erklærer ingen jobb skriving → `SELECT` holder, kjør pakken som den er, ferdig.
+
+Handling 1 er dermed 95 % ferdig. Alt i drift er gitt. Det som gjenstår er én G4-avgjørelse om
+én tabell, og den tilhører VEGA og CEO. Den sikre delen av pakken (sekvensen + `SELECT` på de
+to) kan kjøres nå uten å foregripe avgjørelsen.
