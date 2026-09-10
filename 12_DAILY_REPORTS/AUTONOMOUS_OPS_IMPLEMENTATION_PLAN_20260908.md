@@ -2283,3 +2283,77 @@ kjeden brytes:
 
 Ingen skriving. Ingen DDL. Bare kjeden, sporet, og det ene bruddpunktet navngitt. Det svaret
 avgjør neste konkrete jobb — og den jobben legges fram for LARS/CEO før noe bygges.
+
+---
+
+## 22. LÆRINGSLØKKEN ER BRUTT ÉTT STED — a0s sporing  (2026-09-10 ~08:00 Oslo)
+
+a0 sporet den nyeste reelle dommen hele veien rundt. Svaret er entydig, og det er alvorlig.
+
+### 22.1 Funnet, i én setning
+
+**Dommen dør inne i `fhq_control`.** Syklus `FK1-20260908T204903Z-9fd67c` (EFP_002, extreme
+negative funding) ble korrekt `KILLED`: net_is −4,34 bps, net_oos −6,74 bps mot 15 bps-gulvet,
+HAC t=1,705 < 2. Dommen havner i `factory_experiments`, `factory_hypothesis_memory`,
+`factory_cycles` og budsjett-ledgeren — **alle i `fhq_control`**. Den havner **ikke** i
+`outcome_ledger`, brier, kalibrering eller LVI. Ingen kodebane, jobb eller cron forplanter den
+dit. `pg_stat_all_tables` (tellere gyldige fra restart 09-09 08:59 UTC) viser **0 innsettinger
+og 0 oppdateringer** i alle scoring-/kalibrerings-/LVI-tabellene siden restart, mens
+`factory_cycle_nodes` viser 84 reelle skrivinger. **Løkka er brutt umiddelbart etter VERDICT:
+DISCOVER i neste syklus velger hypoteser uten skåret tilbakemelding. «Neste hypotese bedre» har
+ingen mekanisk eksistens.**
+
+Brier (~39 466 rader), lvi_canonical (629), outcome_ledger (18) er **fossiler fra epoke I**,
+ikke dagens leveranse. De sluttet i mai, som Fase 0 fant, og ingen produsent er koblet på.
+
+### 22.2 Korreksjon til § 20.6 og § 20.9 — to atskilte løkker
+
+Jeg konflaterte to ting, og det retter jeg. Det finnes **to** løkker:
+
+| Løkke | Hvor | Status nå |
+|---|---|---|
+| **Runtime-kadensen** (STEP01–08, candle/price, `RUNA-CADENCE-EXECUTOR`) | `fhq_runtime.run_attempts` | **Frisk** — 18/3 i dag. Det var denne § 20.6/20.9 gjaldt |
+| **Forskningsfabrikken** (SENSE→…→FORMALIZE→VERDICT, `FK1-*`) | `fhq_control.factory_cycle_nodes` | **Idle siden 08.09 20:49.** Kun SENSE/`IDLE_NO_CHANGE` hvert 15. min etterpå |
+
+Da jeg skrev at «fabrikken har fått mat igjen» (§ 20.6), gjaldt det runtime-kadensens
+`STEP03-HYPOTHESIS`, ikke forskningsfabrikkens DISCOVER. **Forskningsfabrikken har ikke
+produsert et nytt eksperiment siden 8. september.** GRANT-arbeidet fikset kadensen; det rørte
+ikke fabrikk-kjernens sult. Det står som en åpen korreksjon, ikke som en løst sak.
+
+### 22.3 To strukturelle hull a0 påviste
+
+- **Scoring-broen finnes ikke.** `compute_lvi` leser bare `brier_score_ledger`, som har null
+  produsent. `fn_analyze_confidence_calibration` leser `fhq_canonical.canonical_outcomes` — et
+  helt annet ID-univers (shadow-MVP), tomt, 0 rader — som fabrikken aldri skriver til. Selv en
+  perfekt D11-attribusjon ville ikke ført dommen inn i scoring, fordi de lever i hvert sitt
+  ID-univers.
+- **RESULT-noden er foreldreløs.** I `factory_hypothesis_memory_edges` (68 kanter) finnes ingen
+  kant fra RESULT-noden tilbake til HYPOTHESIS-noden; RESULT har `parent_node_id NULL` og kobles
+  bare via en tittelstreng-konvensjon. Grafen glemmer sin egen dom.
+
+### 22.4 Tilgangsfunn — D20 (ny)
+
+Alle fire tilgjengelige roller (lease, `fhq_research_runner`, `fhq_p1_health_reader`,
+`fhq_suite_writer`) har `SELECT`-nekt på `fhq_learning.*`, `fhq_research.outcome_ledger` og
+governance-sinkene. Læringsdataene er ikke bare ustkrevet; de er **uleselige** for
+runtime-siden. Det må rettes uansett hvilken retning LARS velger.
+
+### 22.5 Dette er en retnings- og G4-sak, ikke en STIG-fiks
+
+Å lukke løkka betyr å bygge en **dom-til-score-bro**: en jobb som leser `factory_experiments`-
+dommer og skriver `outcome_ledger` + `brier_score_ledger` + kalibrering + LVI, med attribusjon
+via `prereg_id`/`hypothesis_id` som allerede er intakt i `factory_preregistrations`. Tre grunner
+til at STIG **ikke** bygger den nå:
+
+1. **LARS eier retningen.** Om læring skal scores på brier, på LVI, eller på en ny modell er et
+   strategisk valg, ikke et teknisk.
+2. **G4 kreves.** Sinkene (`brier_score_ledger`, `lvi_canonical`) ligger i `fhq_governance`.
+   Å skrive dit er en G4-beslutning, ikke en driftshandling.
+3. **Fabrikken må mates først.** En scoring-bro over en fabrikk som ikke produserer dommer
+   siden 8. september, scorer ingenting. Fabrikk-sulten (§ 22.2) er første ledd.
+
+**STIGs innstilling til LARS/CEO, i prioritert rekkefølge:** (a) gjenopplive
+forskningsfabrikkens DISCOVER så den produserer dommer igjen; (b) `GRANT SELECT` på
+lærings-sinkene så de blir lesbare (D20); (c) bygge dom-til-score-broen under G4, med
+`prereg_id` som nøkkel. Hvert ledd er en egen, målbar leveranse. Ingen av dem kjøres uten
+ordre.
