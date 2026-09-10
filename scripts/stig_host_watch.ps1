@@ -1,5 +1,5 @@
 # ============================================================================
-# STIG-HOST-WATCH — les-bare helsevakt paa verten. INGEN skriving, INGEN DDL.
+# STIG-HOST-WATCH - les-bare helsevakt paa verten. INGEN skriving, INGEN DDL.
 # ============================================================================
 # Kjoerer kun SELECT mot databasen, skriver et sammendrag til en fil, og gjoer
 # ingenting annet. Trenger verken G4 eller VEGA. Dette er trinn 1, trygg versjon:
@@ -18,7 +18,7 @@ $oslo    = Get-Date -Format 'yyyy-MM-dd HH:mm'
 if (-not (Test-Path $DigDir)) { New-Item -ItemType Directory -Path $DigDir -Force | Out-Null }
 $out     = Join-Path $DigDir ("STIG_HOST_" + $stamp + ".md")
 
-# PGPASSWORD hentes fra Machine-scope (satt riktig 09-09, se plan-dok § 18.8)
+# PGPASSWORD hentes fra Machine-scope (satt riktig 09-09, se plan-dok par. 18.8)
 if (-not $env:PGPASSWORD) { $env:PGPASSWORD = [Environment]::GetEnvironmentVariable('PGPASSWORD','Machine') }
 
 function Q($sql) { & $Pg -h $H -p $Port -U $U -d $Db -A -t -c $sql 2>&1 }
@@ -34,16 +34,16 @@ $dbclock = Q "SELECT to_char(NOW() AT TIME ZONE 'Europe/Oslo','YYYY-MM-DD HH24:M
 # --- Skriv sammendrag ---
 $reachable = -not ("$health $dbclock" -match 'authentication failed|could not connect|error')
 $lines = New-Object System.Collections.Generic.List[string]
-$lines.Add("# STIG-HOST helsevakt — $oslo (verts-klokke)")
+$lines.Add("# STIG-HOST helsevakt - $oslo (verts-klokke)")
 $lines.Add("")
 $lines.Add("- DB-klokke (Oslo): " + ($dbclock -join ''))
-$lines.Add("- DB naadd: " + $(if ($reachable) {'JA'} else {'NEI — SJEKK PGPASSWORD/CONTAINER'}))
+$lines.Add("- DB naadd: " + $(if ($reachable) {'JA'} else {'NEI - SJEKK PGPASSWORD/CONTAINER'}))
 $lines.Add("")
 $lines.Add("## Kjoeringer siste 15 min")
 if ($health) { foreach ($h in $health) { if ($h.Trim()) { $lines.Add("- " + $h) } } } else { $lines.Add("- (ingen)") }
 $lines.Add("")
 $lines.Add("## Jobber uten en eneste suksess siste 30 min (se paa disse)")
-if ($dead -and ($dead | Where-Object {$_.Trim()})) { foreach ($d in $dead) { if ($d.Trim()) { $lines.Add("- " + $d) } } } else { $lines.Add("- INGEN — alt friskt") }
+if ($dead -and ($dead | Where-Object {$_.Trim()})) { foreach ($d in $dead) { if ($d.Trim()) { $lines.Add("- " + $d) } } } else { $lines.Add("- INGEN - alt friskt") }
 $lines.Add("")
 $lines.Add("## Siste feil per jobb, siste 15 min")
 if ($fails -and ($fails | Where-Object {$_.Trim()})) { foreach ($f in $fails) { if ($f.Trim()) { $lines.Add("- " + $f) } } } else { $lines.Add("- INGEN") }
@@ -56,7 +56,7 @@ $lines.Add("_Kun lesing. Ingenting ble endret. Neste rapport om 15 min._")
 
 [System.IO.File]::WriteAllLines($out, $lines, [System.Text.Encoding]::UTF8)
 
-# --- Én linje til skjermen ---
+# --- En linje til skjermen ---
 $ok  = ($health | Where-Object {$_ -match '^SUCCESS:'}) -replace 'SUCCESS:',''
 $nok = ($health | Where-Object {$_ -match '^FAILED:'})  -replace 'FAILED:',''
 $deadN = @($dead | Where-Object {$_.Trim()}).Count
