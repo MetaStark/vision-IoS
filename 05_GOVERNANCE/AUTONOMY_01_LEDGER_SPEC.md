@@ -68,6 +68,36 @@ CREATE INDEX IF NOT EXISTS idx_autonomy_ledger_pending ON fhq_control.autonomy_l
 2. Bekrefte at loggen selv er Tier 0 å skrive til (ellers kan ingen agent logge autonomt).
 3. Sette standard `veto_deadline`-vindu for Tier 1 (forslag: 24 timer).
 
-## 5. Migrasjon (klar, kjøres først etter G4)
+## 5. Forhold til eksisterende logg-tabeller (jordet av a0, § 23.7)
+
+a0s verifisering fant **35 beslektede tabeller**. To er nære nok til at `autonomy_ledger` må
+avgrenses mot dem, ellers blir den et tredje styringssystem, akkurat det D19 advarer mot:
+
+- **`fhq_governance.audit_log`** (19 kolonner, hash-kjede, `event_hash`, `signature`,
+  `governance_gate`, `adr_reference`, 60 rader). Dette er den **governance-signerte** hendelses-
+  loggen: kun `postgres` skriver den, så agenter *kan ikke*. Den er Tier 2 per natur.
+- **`fhq_governance.autonomy_clock_history` / `_state` / `_halt_triggers`**: autonomi-klokkens
+  tidslinje og stopp-utløsere, også governance-eid.
+
+**Avgrensning:** `autonomy_ledger` er ikke en erstatning for `audit_log`. Den er
+komplementær: `audit_log` fanger *konstitusjonelle, signerte* hendelser (Tier 2, menneske/
+postgres); `autonomy_ledger` fanger *operasjonelle agent-handlinger* (Tier 0/1) i `fhq_control`,
+**der agenten faktisk har INSERT** (a0 bekreftet 7/7 tabeller). En Tier 2-handling skriver en
+`PENDING_G4`-rad i `autonomy_ledger` *og* ender, når mennesket godkjenner, som en signert rad i
+`audit_log`. De to loggene møtes på `correlation_id`. Det er slik de to styringssystemene blir
+til ett revidert spor, ikke tre.
+
+## 6. Jordede fakta (a0, § 23.7)
+
+- **UUID:** `gen_random_uuid()` er innebygd i `pg_catalog` (PG13+) *og* via pgcrypto 1.3, i aktiv
+  bruk som default i 10+ tabeller. `DEFAULT gen_random_uuid()` er trygt uten ekstra avhengighet.
+- **Skrive-rolle:** lease-rollen har `USAGE` på `fhq_control` og `INSERT+SELECT` på alle 7
+  tabeller der, ingen `DELETE`. `autonomy_ledger` samme skjema = agenten kan skrive den. Men
+  lease-rollen kan **ikke lese** `fhq_learning`/`fhq_governance`-ledgerne (D20) — det påvirker
+  dom-til-score-broen, ikke loggen.
+
+## 7. Migrasjon (klar, kjøres først etter G4)
 
 Leveres som `04_DATABASE/MIGRATIONS/178_autonomy_ledger.sql` når G4 er gitt. Ikke opprettet nå.
+Bør vurdere å arve `audit_log`s `event_hash`/`signature`-mønster for Tier 1/2-rader, så en
+autonom handling kan kjede-signeres på samme måte som en governance-hendelse.

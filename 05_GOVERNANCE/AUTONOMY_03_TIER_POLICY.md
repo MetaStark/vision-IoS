@@ -36,6 +36,12 @@ Systemet handler selv og skriver `autonomy_ledger`. Ingen varsling nødvendig.
 
 **Grense:** hjemmel må finnes i `run_registry` eller en ADR. Uten hjemmel → Tier 2.
 
+**Jordet av a0 (§ 23.7):** bare **29 av 38** `run_registry`-rader har både `reads_from` og
+`writes_to` ikke-tomme. De 9 udeklarerte (5 tomme, 3 kun-reads, 1 kun-writes) har **ingen Tier
+0-hjemmel** — en GRANT for dem faller til Tier 2 til deklarasjonen er fylt inn. Å fylle inn de 9
+deklarasjonene er en egen, liten oppgave (selv en `fhq_runtime`-skriving, Tier 1) som gjør flere
+jobber Tier 0-styrbare. `reads_from`/`writes_to` er `text[]`, matches med `cardinality() > 0`.
+
 ## 3. Tier 1 — handl, logg, veto-vindu
 
 Systemet handler, skriver `autonomy_ledger` med `veto_deadline = now()+24t`, og tar handlingen
@@ -68,13 +74,29 @@ navn på beslutningen.
 
 ## 5. To grenser bare LARS/VEGA kan sette (åpne spørsmål i denne policyen)
 
-1. **Er lærings-ledgerne (`brier_score_ledger`, `lvi_canonical`, `outcome_ledger`) Tier 2?** De
-   ligger i `fhq_governance`/`fhq_learning`, så etter regelen er de Tier 2. Men da kan
-   dom-til-score-broen (§ 22.5) aldri kjøre autonomt, og læringsløkka forblir manuell. **VEGAs
-   valg:** enten (a) hold dem Tier 2 og aksepter at scoring krever menneske, eller (b) erklær
-   *append-only scoring-skriving* til disse tre tabellene som Tier 1 under en egen regel, slik at
-   broen kan kjøre og logge, men aldri endre eller slette en score. Anbefaling: (b), fordi en
-   score som bare kan legges til, aldri endres, er selv en falsifiserings-disiplin.
+1. **Er lærings-ledgerne Tier 2?** De ligger i `fhq_governance`/`fhq_learning`/`fhq_research`, så
+   etter regelen er de Tier 2. Men da kan dom-til-score-broen (§ 22.5) aldri kjøre autonomt, og
+   læringsløkka forblir manuell. **a0 jordet dette (§ 23.7) og det endrer forslaget:**
+
+   | Tabell | Type i praksis | Immutabilitet |
+   |---|---|---|
+   | **`fhq_research.outcome_ledger`** (~137 k rader) | ekte append-only-logg | **DB-håndhevet**: trigger blokkerer UPDATE+DELETE |
+   | `fhq_learning.outcome_ledger` (~18 rader) | delvis | kun `entry_context_hash` er immutabel |
+   | `fhq_governance.brier_score_ledger` (~39 k) | regulert innsetting | **ikke** blokkert mot UPDATE |
+   | `fhq_governance.lvi_canonical` (~629) | re-beregnet snapshot | ingen triggere |
+   | `fhq_governance.calibration_bins` | re-beregnet snapshot | ingen triggere |
+
+   **`outcome_ledger` er navne-tvetydig** (to skjemaer). Policyen MÅ kvalifisere skjema.
+   Snapshot-tabellene (`lvi_canonical`, `calibration_bins`) er *re-beregnet*, ikke append-only —
+   de skrives på nytt, ikke bare legges til, så «append-only Tier 1» passer ikke dem.
+
+   **Revidert anbefaling til VEGA:** erklær **INSERT til `fhq_research.outcome_ledger` som Tier 1**
+   (det ER DB-håndhevet append-only — rettighetene og triggeren håndhever disiplinen sammen), så
+   dom-til-score-broen kan skrive dommer autonomt og logge. Hold `brier_score_ledger`,
+   `lvi_canonical` og `calibration_bins` på **Tier 2**, fordi de enten tillater UPDATE eller er
+   snapshots som re-beregnes — det er en tyngre operasjon som fortjener menneske. Da lærer
+   systemet autonomt på den immutable outcome-loggen, mens de avledede snapshotene forblir
+   menneske-portet.
 2. **Hvor stor kvote får fabrikk-tilførselen?** Hvis LARS åpner spak A (frysing) under en kvote,
    blir frysing opp til N hypoteser per døgn Tier 1. LARS setter N. Uten en kvote forblir det
    Tier 2 per handling.

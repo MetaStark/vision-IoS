@@ -2488,3 +2488,27 @@ til VEGA. Alle tre er dokumenter, ingen kjøring, klare til gjennomlesing.
 De tre autonomi-dokumentene (§ 23, `05_GOVERNANCE/AUTONOMY_0{1,2,3}`) hviler på antakelser om
 databasen. Før G4 og VEGA bruker beslutningskraft, verifiser at antakelsene holder. Kun lesing.
 Fem sjekker; hver bekrefter eller motbeviser en forutsetning designet trenger.
+
+### 23.7 a0 jordet autonomi-designet — fem forutsetninger, fire rettinger
+
+a0 testet alle fem forutsetningene mot databasen (kun lesing). Resultat og rettinger:
+
+| # | Forutsetning | Verdict | Retting i dokumentene |
+|---|---|---|---|
+| 1 | `gen_random_uuid()` finnes | **Holder** | Notert: innebygd i `pg_catalog` + pgcrypto 1.3, i bruk i 10+ tabeller. Ingen avhengighet å legge til |
+| 2 | Lease-rollen kan `INSERT` i `fhq_control` | **Holder** | 7/7 tabeller INSERT+SELECT, USAGE, ingen DELETE. Loggen kan skrives av agenten |
+| 3 | Tier 0-hjemmel i `run_registry` | **Delvis** | 29/38 fullt deklarert. Dok 3 § 2: de 9 udeklarerte faller til Tier 2; å fylle dem er en egen Tier 1-jobb |
+| 4 | Lærings-ledgere er append-only | **Delvis** | Dok 3 § 5 omskrevet: kun `fhq_research.outcome_ledger` er DB-håndhevet append-only → Tier 1; snapshotene (`lvi_canonical`, `calibration_bins`) re-beregnes → Tier 2; `outcome_ledger` tvetydig, skjema kvalifisert |
+| 5 | Ingen `autonomy_ledger` finnes | **Holder** | Dok 1 § 5 lagt til: avgrens mot `audit_log` (signert, Tier 2) og `autonomy_clock_*`; de to loggene møtes på `correlation_id`, ikke tre systemer |
+
+**Viktigste enkeltfunn:** `fhq_governance.audit_log` finnes allerede med hash-kjede, `signature`,
+`governance_gate` og `adr_reference`, men bare `postgres` skriver den. Det bekrefter designet:
+agenter kan ikke skrive governance-loggen, derfor trengs en agent-skrivbar `autonomy_ledger` i
+`fhq_control`, og de to kobles på `correlation_id`. `autonomy_ledger` bør arve
+`audit_log`s signatur-mønster for Tier 1/2-rader.
+
+**Andre funn:** `fhq_research.outcome_ledger` har ~137 k rader og er ekte immutabel — det er den
+reelle outcome-loggen, ikke `fhq_learning`-varianten med 18 rader. Dom-til-score-broen skal
+skrive dit.
+
+Dokumentene er nå jordet. Klare for G4 (tabellen), CEO (host-agenten) og VEGA (policyen).
