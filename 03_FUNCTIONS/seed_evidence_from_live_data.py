@@ -15,6 +15,7 @@ Author: STIG (CTO)
 Date: 2026-01-04
 """
 
+import os
 import psycopg2
 from psycopg2.extras import execute_values
 import uuid
@@ -24,12 +25,19 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Tuple
 
 def get_db_connection():
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host='127.0.0.1',
         port=54322,
         database='postgres',
         user='postgres',
-        password='postgres'
+        password=_pgpassword
     )
 
 def generate_content_hash(content: str) -> str:

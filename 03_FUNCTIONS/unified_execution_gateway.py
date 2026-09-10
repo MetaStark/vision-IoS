@@ -53,12 +53,19 @@ logger = logging.getLogger('UNIFIED_GATEWAY')
 def _get_execution_state():
     """CEO-DIR-2026-020 D4: Read execution_state for cognitive fasting check."""
     try:
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         conn = psycopg2.connect(
             host=os.getenv('PGHOST', '127.0.0.1'),
             port=os.getenv('PGPORT', '54322'),
             database=os.getenv('PGDATABASE', 'postgres'),
             user=os.getenv('PGUSER', 'postgres'),
-            password=os.getenv('PGPASSWORD', 'postgres')
+            password=_pgpassword
         )
         with conn.cursor() as cur:
             cur.execute("""

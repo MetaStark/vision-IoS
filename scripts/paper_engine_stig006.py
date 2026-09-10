@@ -3,6 +3,7 @@ STIG-006: Continuous Paper Engine Startup
 ADR-012/ADR-013 Safety Guarantees
 Loop interval: 300s (5 minutes)
 """
+import os
 import psycopg2
 import json
 import hashlib
@@ -24,7 +25,14 @@ SAFETY_CONFIG = {
 LOOP_INTERVAL = 300  # 5 minutes per directive
 
 def get_conn():
-    return psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password='postgres')
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
+    return psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password=_pgpassword)
 
 def verify_authority(cur):
     cur.execute('''

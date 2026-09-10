@@ -24,12 +24,19 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 def get_db_conn():
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host='127.0.0.1',
         port=54322,
         database='postgres',
         user='postgres',
-        password='postgres'
+        password=_pgpassword
     )
 
 def get_volatility_quartile(conn):

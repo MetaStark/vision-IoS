@@ -53,12 +53,19 @@ class BrokerReconciliationDaemon:
 
     def __init__(self):
         # Database connection
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         self.db_conn = psycopg2.connect(
             host=os.getenv('PGHOST', '127.0.0.1'),
             port=os.getenv('PGPORT', '54322'),
             database=os.getenv('PGDATABASE', 'postgres'),
             user=os.getenv('PGUSER', 'postgres'),
-            password=os.getenv('PGPASSWORD', 'postgres')
+            password=_pgpassword
         )
 
         # Alpaca client

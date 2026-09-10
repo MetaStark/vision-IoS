@@ -55,7 +55,12 @@ class BackfillConfig:
     PGPORT: str = os.getenv("PGPORT", "54322")
     PGDATABASE: str = os.getenv("PGDATABASE", "postgres")
     PGUSER: str = os.getenv("PGUSER", "postgres")
-    PGPASSWORD: str = os.getenv("PGPASSWORD", "postgres")
+    PGPASSWORD: str = os.getenv('PGPASSWORD')
+    if not PGPASSWORD:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
 
     # Rate limiting (CEO directive) - Conservative settings
     BATCH_SIZE: int = 10  # Smaller batches

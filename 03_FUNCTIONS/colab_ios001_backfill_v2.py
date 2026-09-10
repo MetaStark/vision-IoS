@@ -334,7 +334,14 @@ DB_CONFIG = {{
     "port": "54322",
     "database": "postgres",
     "user": "postgres",
-    "password": "postgres"
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
+    "password": _pgpassword
 }}
 
 DATA_DIR = Path("./ios001_data")  # Kopier CSV-filer hit

@@ -4,12 +4,20 @@ Governance-Compliant Implementation per STIG-001 Directive
 ADR-013: One-True-Source of Evidence
 ADR-015: Meta-Governance - Forbidden Overstatement
 """
+import os
 import psycopg2
 import json
 import hashlib
 from datetime import datetime, timezone
 
-conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password='postgres')
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
+conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password=_pgpassword)
 cur = conn.cursor()
 
 print('=== SYSTEM LOOP DRY-RUN (10 ROUNDS) ===')

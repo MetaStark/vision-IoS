@@ -35,9 +35,16 @@ def run_e2e_pipeline():
     print(f'Timestamp: {datetime.now(timezone.utc).isoformat()}')
     print('='*80)
 
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     conn = psycopg2.connect(
         host='127.0.0.1', port=54322, database='postgres',
-        user='postgres', password='postgres'
+        user='postgres', password=_pgpassword
     )
 
     test_results = []

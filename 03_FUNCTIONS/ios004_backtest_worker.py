@@ -337,12 +337,19 @@ class IoS004BacktestWorker:
 
     def connect(self):
         """Connect to database."""
+        _pgpassword = os.getenv('PGPASSWORD')
+        if not _pgpassword:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
+
         conn_params = {
             'host': os.environ.get('PGHOST', '127.0.0.1'),
             'port': os.environ.get('PGPORT', '54322'),
             'database': os.environ.get('PGDATABASE', 'postgres'),
             'user': os.environ.get('PGUSER', 'postgres'),
-            'password': os.environ.get('PGPASSWORD', 'postgres')
+            'password': _pgpassword
         }
 
         self.conn = psycopg2.connect(**conn_params)

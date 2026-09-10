@@ -9,6 +9,7 @@ ADR Alignment: ADR-011, ADR-012, ADR-013, ADR-016
 CRITICAL: Paper mode only. No live endpoints. ADR-012 constraints enforced.
 """
 
+import os
 import json
 import time
 import hashlib
@@ -19,12 +20,19 @@ from typing import Dict, List, Any, Tuple
 import statistics
 
 # Database connection
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     "host": "127.0.0.1",
     "port": 54322,
     "database": "postgres",
     "user": "postgres",
-    "password": "postgres"
+    "password": _pgpassword
 }
 
 class Wave002Validator:

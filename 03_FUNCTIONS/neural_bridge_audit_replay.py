@@ -14,6 +14,7 @@ Constraints:
 - Artifacts written to governance/audit tables only
 """
 
+import os
 import json
 import logging
 import psycopg2
@@ -30,12 +31,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Database config
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': '127.0.0.1',
     'port': 54322,
     'database': 'postgres',
     'user': 'postgres',
-    'password': 'postgres'
+    'password': _pgpassword
 }
 
 # The 4 BTC needle_ids that opened positions pre-Neural Bridge

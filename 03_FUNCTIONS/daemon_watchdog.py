@@ -23,9 +23,12 @@ import psycopg2
 from psycopg2.extras import Json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
-# Set working directory
-os.chdir('C:/fhq-market-system/vision-ios')
+# Set working directory to the repository root (this file lives in 03_FUNCTIONS/).
+# Resolves to C:\fhq-market-system\vision-ios on the production host and to the
+# correct root on any other checkout, instead of hardcoding one machine's path.
+os.chdir(Path(__file__).resolve().parent.parent)
 
 # Logging setup
 logging.basicConfig(
@@ -38,12 +41,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
     'port': int(os.getenv('PGPORT', '54322')),
     'database': os.getenv('PGDATABASE', 'postgres'),
     'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 # Critical daemons to monitor

@@ -2,6 +2,7 @@
 IoS-012 Paper Engine - Quick Validation Test (3 loops)
 STIG-005 Directive
 """
+import os
 import psycopg2
 import json
 import hashlib
@@ -15,7 +16,14 @@ SAFETY_CONFIG = {
     'live_trading_enabled': False
 }
 
-conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password='postgres')
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
+conn = psycopg2.connect(host='127.0.0.1', port=54322, database='postgres', user='postgres', password=_pgpassword)
 cur = conn.cursor()
 
 print("=" * 60)

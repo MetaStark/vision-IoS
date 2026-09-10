@@ -65,7 +65,12 @@ class MITQuadConfig:
     PGPORT = int(os.getenv("PGPORT", "54322"))
     PGDATABASE = os.getenv("PGDATABASE", "postgres")
     PGUSER = os.getenv("PGUSER", "postgres")
-    PGPASSWORD = os.getenv("PGPASSWORD", "postgres")
+    PGPASSWORD = os.getenv('PGPASSWORD')
+    if not PGPASSWORD:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
 
     # RISL Thresholds
     RISL_BLOCK_FRAGILITY = 0.80   # Block execution if fragility > 80%

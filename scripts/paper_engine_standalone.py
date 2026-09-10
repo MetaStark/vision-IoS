@@ -4,6 +4,7 @@ STIG-004 Directive Implementation
 ADR-012: Economic Safety Enforcement
 ADR-013: One-True-Source of Evidence
 """
+import os
 import psycopg2
 import json
 import hashlib
@@ -24,12 +25,19 @@ SAFETY_CONFIG = {
 LOOP_INTERVAL_SECONDS = 300  # 5 minutes
 
 def get_connection():
+    _pgpassword = os.getenv('PGPASSWORD')
+    if not _pgpassword:
+        raise RuntimeError(
+            'PGPASSWORD environment variable is not set. '
+            'Refusing to connect without an explicit credential.'
+        )
+
     return psycopg2.connect(
         host='127.0.0.1',
         port=54322,
         database='postgres',
         user='postgres',
-        password='postgres'
+        password=_pgpassword
     )
 
 def verify_paper_authority(cur):

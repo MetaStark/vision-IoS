@@ -7,6 +7,7 @@ AUTHORIZATION: VEGA authorized single rerun under bifurcated SitC definitions
 GOVERNANCE: Both metrics MUST be persisted in audit artifact
 """
 
+import os
 import psycopg2
 import json
 import uuid
@@ -18,9 +19,16 @@ print("FINN-TRUTH-QDRANT-001 RERUN")
 print("Per VEGA G3-2025-002 (APPROVED)")
 print("=" * 70)
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 conn = psycopg2.connect(
     host="127.0.0.1", port=54322,
-    database="postgres", user="postgres", password="postgres"
+    database="postgres", user="postgres", password=_pgpassword
 )
 conn.autocommit = True
 cur = conn.cursor()

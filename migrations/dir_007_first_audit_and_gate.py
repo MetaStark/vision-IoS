@@ -4,18 +4,26 @@ CEO-DIR-2026-FIRST-AUDIT-ROW-007
 Create first full-binding audit row and first gate row
 """
 
+import os
 import psycopg2
 from psycopg2 import sql
 import hashlib
 import uuid
 
 # Database connection
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': '127.0.0.1',
     'port': 54322,
     'database': 'postgres',
     'user': 'postgres',
-    'password': 'postgres'  # Adjust if needed
+    'password': _pgpassword  # Adjust if needed
 }
 
 def execute_migration():

@@ -42,12 +42,19 @@ load_dotenv()
 # CONFIGURATION
 # =============================================================================
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.environ.get('PGHOST', '127.0.0.1'),
     'port': int(os.environ.get('PGPORT', 54322)),
     'database': os.environ.get('PGDATABASE', 'postgres'),
     'user': os.environ.get('PGUSER', 'postgres'),
-    'password': os.environ.get('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 CANONICAL_ASSETS = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'EURUSD']

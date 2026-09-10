@@ -44,12 +44,19 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent))
 from ios_db_integrity_sentinel import run_db_integrity_sentinel, load_config_from_yaml, compute_hash
 
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.environ.get('PGHOST', '127.0.0.1'),
     'port': int(os.environ.get('PGPORT', 54322)),
     'database': os.environ.get('PGDATABASE', 'postgres'),
     'user': os.environ.get('PGUSER', 'postgres'),
-    'password': os.environ.get('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 EVIDENCE_DIR = Path(__file__).parent.parent / '05_GOVERNANCE' / 'PHASE3' / 'SENTINEL_DB_INTEGRITY_G3_EVIDENCE'

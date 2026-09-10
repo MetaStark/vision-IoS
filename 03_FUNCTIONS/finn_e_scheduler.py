@@ -40,12 +40,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from guard_generation_freeze import guard_generation_freeze
 
 # Database configuration
+_pgpassword = os.getenv('PGPASSWORD')
+if not _pgpassword:
+    raise RuntimeError(
+        'PGPASSWORD environment variable is not set. '
+        'Refusing to connect without an explicit credential.'
+    )
+
 DB_CONFIG = {
     'host': os.getenv('PGHOST', '127.0.0.1'),
     'port': int(os.getenv('PGPORT', '54322')),
     'database': os.getenv('PGDATABASE', 'postgres'),
     'user': os.getenv('PGUSER', 'postgres'),
-    'password': os.getenv('PGPASSWORD', 'postgres')
+    'password': _pgpassword
 }
 
 # Scheduler configuration

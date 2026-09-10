@@ -436,7 +436,12 @@ def get_vendor_guard() -> VendorGuard:
         port = os.getenv("PGPORT", "54322")
         database = os.getenv("PGDATABASE", "postgres")
         user = os.getenv("PGUSER", "postgres")
-        password = os.getenv("PGPASSWORD", "postgres")
+        password = os.getenv('PGPASSWORD')
+        if not password:
+            raise RuntimeError(
+                'PGPASSWORD environment variable is not set. '
+                'Refusing to connect without an explicit credential.'
+            )
         conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
         _guard_instance = VendorGuard(conn_string)
     return _guard_instance
