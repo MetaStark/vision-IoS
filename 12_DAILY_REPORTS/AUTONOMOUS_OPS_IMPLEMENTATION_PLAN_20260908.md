@@ -2204,3 +2204,40 @@ erklærer skriving til de to tabellene:
 Handling 1 er dermed 95 % ferdig. Alt i drift er gitt. Det som gjenstår er én G4-avgjørelse om
 én tabell, og den tilhører VEGA og CEO. Den sikre delen av pakken (sekvensen + `SELECT` på de
 to) kan kjøres nå uten å foregripe avgjørelsen.
+
+### 20.11 Registeret avgjør: `pre_commitment` er kun lesing; den ekte G4-grensen er `baseline_controls_v5`  (07:26 Oslo)
+
+CEO kjørte den sikre pakken (5 `GRANT`) og deretter registerspørringen. Én rad, ordrett:
+
+```
+run_id      RUN-STEP08-BASELINE-V5-CADENCE
+reads_from  {..., fhq_governance.pre_commitment_registry}
+writes_to   {fhq_governance.baseline_controls_v5}
+```
+
+**To ting faller ut av dette:**
+
+1. **`pre_commitment_registry` er i `reads_from`, ikke `writes_to`.** Fabrikken *leser*
+   forhåndsforpliktelsen, den skriver den ikke via denne jobben. `SELECT` er riktig og
+   tilstrekkelig, allerede gitt. **Ingen G4 trengs for de to tabellene i § 20.10.** Vakten
+   traff riktig av seg selv. `candidate_hypothesis_bridge` har ingen erklært skriver i
+   registeret i det hele tatt; `SELECT` dekker den lesningen.
+
+2. **Den ekte styringsskrivingen er `fhq_governance.baseline_controls_v5`**, erklært eksplisitt
+   i `writes_to` for `RUN-STEP08-BASELINE-V5-CADENCE`. Når den jobben kjører, blir `INSERT`
+   der nektet, og vakten gir bare `SELECT`. **Dette er G4-beslutningen, og den har et rent
+   grunnlag:** systemets eget register autoriserer skrive-intensjonen. G4 ratifiserer bare
+   privilegiet som registeret allerede sier jobben skal ha.
+
+**STIGs innstilling til VEGA (court-proof):** gi `fhq_executive_task` `INSERT, UPDATE` på
+`fhq_governance.baseline_controls_v5`, fordi `run_registry.writes_to` for
+`RUN-STEP08-BASELINE-V5-CADENCE` erklærer nettopp det bordet som skrivemål. Ikke `DELETE`.
+Setningen er skrevet ferdig i `scripts/g4_baseline_controls_grant.sql` og skal **ikke** kjøres
+uten VEGA-ordre. Det er den siste GRANTen; etter den er hele pipelinen fri for
+rettighetsblokkeringer.
+
+**Handling 1 sluttstatus:** all drift gitt (`fhq_runtime`, `fhq_truth`, `fhq_features`,
+`fhq_regime`, `fhq_decide`, `fhq_hypothesis`, `fhq_research`, `fhq_perception` + sekvenser),
+styringslesing gitt (`SELECT` på tre `fhq_governance`-tabeller), én styringsskriving venter på
+G4 (`baseline_controls_v5`). Fabrikken kjører, prisene flyter, hypoteser genereres. **Handling
+1 er lukket bortsett fra den ene G4-avgjørelsen.**
