@@ -2357,3 +2357,9 @@ forskningsfabrikkens DISCOVER så den produserer dommer igjen; (b) `GRANT SELECT
 lærings-sinkene så de blir lesbare (D20); (c) bygge dom-til-score-broen under G4, med
 `prereg_id` som nøkkel. Hvert ledd er en egen, målbar leveranse. Ingen av dem kjøres uten
 ordre.
+
+### 22.6 Direktiv til a0 (kun lesing) — hvorfor står forskningsfabrikken idle?
+
+Ledd 1 av innstillingen i § 22.5. Fabrikken slår `SENSE / IDLE_NO_CHANGE` hvert 15. min og har
+ikke produsert et eksperiment siden 08.09 20:49. Finn den ene betingelsen som gjør at SENSE sier
+«ingen jobb», og navngi den. Ingen skriving, ingen DDL.
