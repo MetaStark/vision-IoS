@@ -2396,3 +2396,89 @@ R-2-prime slo av. Men valget er LARS'.
 DISCOVER → FORMALIZE → VERDICT → **dom-til-score-bro (mangler, § 22.5)** → ledger → kalibrering
 → neste hypotese. To ledd er tomme: tilførselen (dette punktet) og broen (§ 22.5). Begge er
 retnings-/G4-saker. STIG har målt begge og venter på ordre.
+
+---
+
+## 23. EKTE AUTONOMI — HVORFOR CEO ER MELLOMMANN, OG HVORDAN DET FJERNES  (2026-09-10)
+
+CEO: «Jeg kan ikke sitte som mellommann. Systemet må oppgraderes til å kjøre autonomt, ikke
+bare si at det er autonomt.» Riktig krav. Diagnosen er presis: **systemet kjører autonomt
+(cron tikker, fabrikken sanser, kadensen kjører); det STYRES ikke autonomt.** Hver meningsfull
+handling i denne økta gikk gjennom CEO fordi to ting mangler, ikke fordi koden er passiv.
+
+### 23.1 De to årsakene til mellommann-rollen
+
+1. **Beslutningsagenten er fysisk adskilt fra systemet.** STIG kjører i Anthropics sky og når
+   ikke databasen (127.0.0.1:54322 bak vertens brannmur). Alt jeg gjorde i dag, GRANT-diagnose,
+   `.env`-sporing, fabrikk-analyse, gikk via CEO som kopierte kommandoer og limte inn svar.
+   **Så lenge agenten som tar avgjørelser ikke er der dataene er, MÅ et menneske relé-e.** Dette
+   er den største enkeltårsaken.
+
+2. **Myndighet er ikke delegert som policy.** Hver handling krevde en fersk CEO-godkjenning
+   fordi det ikke finnes en stående regel som sier hva systemet *får* gjøre selv. G4 kreves for
+   alt i `fhq_governance`; `llm_probe` er slått av; frysing eies av FINN. Det er riktige
+   sikringer, men de er implementert som «spør mennesket hver gang», ikke som «mennesket setter
+   grensen én gang, systemet handler innenfor, og bare unntak eskalerer».
+
+**Ekte autonomi = fjern begge.** Sett agenten der dataene er, og bytt per-handling-godkjenning
+med delegert myndighet innenfor grenser. Alt annet er kosmetikk.
+
+### 23.2 Tre endringer som gjør styringen autonom
+
+**A. Sett en STIG-klasse agent på verten (fjerner årsak 1).** Claude Code kan kjøre headless og
+planlagt lokalt, der `psql`, `docker` og `D:\Runtime` er rett foran den. En agent som våkner på
+et intervall (eller på en DB-trigger), leser tilstanden, handler innenfor sin fullmakt, og
+skriver til et styrt register. **Da er det ingen chat å relé-e.** CEO leser et sammendrag, ikke
+en meldingsstrøm. Dette er den ene handlingen bare CEO kan starte, og den som løser mest.
+
+**B. Ett kontrollplan med felles register (fjerner D19).** I dag har a0-runtime sitt eget
+styringssystem (LARS-rulinger, VEGA-lukking, journaler) usynlig for det styrte repoet og for
+CEO. Autonomi krever at *hver* autonom handling skriver én rad til en styrt tabell:
+tidspunkt, agent, hva, hvorfor, hash før/etter, og hvilken fullmakts-tier den falt under. Da er
+autonomien reviderbar, og CEO styrer via et dashboard over det registeret, ikke via å være i
+løkka.
+
+**C. Delegert myndighet i tiers (fjerner årsak 2).** Definér én gang hva systemet får gjøre
+selv, hva det får gjøre og logge for etterhåndsveto, og hva som hardt stopper for G4. Fabrikkens
+kill-regel ER allerede dette mønsteret for forskning; utvid det til drift.
+
+### 23.3 Fullmakts-tiers (CEO/VEGA setter grensene én gang)
+
+| Tier | Systemet får | Eksempler fra i dag | Menneskets rolle |
+|---|---|---|---|
+| **0 — Autonomt** | Reversible driftsreparasjoner, ingen governance | GRANT på `fhq_runtime`/`fhq_truth`-objekter registeret allerede erklærer; restart av død jobb; fjerne en logg-kapping | Ser det i dashboardet etterpå |
+| **1 — Handl + logg, veto i etterkant** | Reversible endringer med bredere flate | `.env`-credential-fiks; brannmurregel; GRANT på nye driftsskjemaer | Kan omgjøre innen et vindu; varsles |
+| **2 — Hard stopp, G4** | Irreversibelt eller konstitusjonelt | Skriving til `fhq_governance`; endre CLAUDE.md/ADR; drepe et helt system; reversere en LARS-ruling | Må godkjenne før, med navn |
+
+De ti GRANT-passene i dag var alle Tier 0 eller 1 bortsett fra `baseline_controls_v5` (Tier 2).
+Med tiers på plass ville STIG-på-verten kjørt alle Tier 0/1 selv og eskalert bare den ene Tier
+2-raden til CEO. **Én melding i stedet for tretti.**
+
+### 23.4 Byggerekkefølge — hvert ledd en egen leveranse
+
+1. **Register-tabellen** (`fhq_control.autonomy_ledger` eller lignende): skjema for hver
+   autonom handling. STIG kan skrive spec og migrasjon; opprettelse i `fhq_*` er G4.
+2. **STIG-på-verten**: headless Claude Code, planlagt, med les-tilgang overalt og skriv innenfor
+   Tier 0/1. CEO starter den; STIG leverer oppsett, systemprompt og fullmakts-fila.
+3. **Tier-policyen som data**: en tabell eller fil som koder tier-grensene, lest av agenten før
+   hver handling. VEGA eier innholdet; STIG leverer strukturen.
+4. **Dom-til-score-broen** (§ 22.5): nå kan den kjøre autonomt under Tier 1, fordi den skriver
+   til lærings-ledgere, ikke til konstitusjon — hvis CEO/VEGA plasserer de ledgerne utenfor
+   Tier 2. Det er en policy-avgjørelse.
+5. **Tilførsel** (§ 22.7): frysing under Tier 1 med en kvote, eller `llm_probe` på med en
+   budsjett-grense. LARS setter kvoten; deretter mater fabrikken seg selv.
+6. **Dashboardet**: én side over registeret. CEO ser hva systemet gjorde, hva som venter på
+   Tier 2, og LVI-kurven. Erstatter meldingsstrømmen.
+
+### 23.5 Skillet som holder autonomien trygg
+
+Autonomi betyr ikke at grensene forsvinner; det betyr at de flyttes fra «spør hver gang» til
+«håndhevet av policy». Falsifiseringsdisiplinen (§ 15.4) viser at systemet *kan* håndheve en
+hard regel selv: kill-regelen dreper uten å spørre. Det samme mønsteret på drift og governance
+er hele oppgraderingen. **STIG kan bygge ledd 1, 3, 4, 6 og forberede 2 og 5. CEO/VEGA/LARS må
+sette tier-grensene og plassere lærings-ledgerne. Ingenting av det krever at CEO relé-er en
+eneste melding til, når STIG først står på verten.**
+
+**Neste konkrete steg, om CEO vil:** STIG skriver (a) spec for `autonomy_ledger`, (b) oppsettet
+for STIG-på-verten (systemprompt + fullmakts-fil + planlegging), og (c) tier-policyen som utkast
+til VEGA. Alle tre er dokumenter, ingen kjøring, klare til gjennomlesing.
