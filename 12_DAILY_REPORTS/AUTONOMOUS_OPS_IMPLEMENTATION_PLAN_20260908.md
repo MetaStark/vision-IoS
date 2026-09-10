@@ -2241,3 +2241,45 @@ rettighetsblokkeringer.
 styringslesing gitt (`SELECT` på tre `fhq_governance`-tabeller), én styringsskriving venter på
 G4 (`baseline_controls_v5`). Fabrikken kjører, prisene flyter, hypoteser genereres. **Handling
 1 er lukket bortsett fra den ene G4-avgjørelsen.**
+
+---
+
+## 21. PR #20 FLETTET; NESTE RETNING — LUKK LÆRINGSLØKKEN  (2026-09-10 ~07:45 Oslo)
+
+PR #20 er flettet til master (`0c56231d`). `baseline_controls_v5`-GRANTen er kjørt etter G4
+(BEGIN / 2 GRANT / DO / COMMIT). Akseptanse: siste 15 min **18 `SUCCESS`, 3 `FAILED`** — løkka
+går. Grenen er restartet fra master; videre arbeid er ferske endringer, ikke stabling på
+flettet historikk.
+
+### 21.1 Hva «produsere læring» faktisk krever
+
+Fabrikken *kjører* nå: sanser, oppdager, formaliserer, kjører eksperiment, feller dom, dreper
+etter kill-regelen. Det er **falsifisering**, og den virker. Men **læring** er noe mer: at
+systemet blir målbart bedre over tid. Det måles i ledgerne (`outcome_ledger`, brier,
+kalibrering) og i Learning Velocity Index. Fra Fase 0 vet vi at de ledgerne tilhører epoke I og
+stanset i mai; epoke III (a0-runtime) skriver BTC-pipelinen og fabrikken, men det er ikke
+verifisert at fabrikkens dommer *mates tilbake* inn i en ledger som scorer og kalibrerer.
+
+**Læringsløkken lukkes bare hvis kjeden går hele veien rundt:**
+hypotese → kjøring → dom → **ledger-scoring** → **kalibrering/LVI** → neste hypotese er bedre.
+Vi har bekreftet venstre halvdel. Høyre halvdel, fra dom til scoring til neste hypotese, er
+ikke målt. Det er neste retning, og den er en **måling først**, ikke en bygging. LARS eier om
+og hvordan den skal bygges; STIG måler hvor den er brutt.
+
+### 21.2 Direktiv til a0 (kun lesing) — «lukker løkken?»
+
+Spor ett reelt eksperiment fra i går eller i dag hele veien rundt, og rapporter nøyaktig hvor
+kjeden brytes:
+
+1. Ta én FORMALIZE-syklus med dom (`KILLED`/`INCONCLUSIVE`) fra `factory_cycle_nodes`.
+2. Følg dommen: havner den i en ledger som scorer prediksjonen (`outcome_ledger`, brier,
+   `calibration`)? Skriv siste `created_at` i hver av de ledgerne — lever de i dag, eller er de
+   mai-fossiler?
+3. Oppdateres et lærings- eller kalibreringsmål (LVI, `fn_analyze_confidence_calibration` fra
+   migrasjon 177) av den dommen? Ja/nei, med bevis.
+4. Er D11-attribusjonen (prereg_id vs RO-id) det som hindrer at dommen kobles til hypotesen for
+   scoring? Ja/nei, med bevis.
+5. Én setning: hvor er kjeden brutt mellom «dom felt» og «neste hypotese bedre»?
+
+Ingen skriving. Ingen DDL. Bare kjeden, sporet, og det ene bruddpunktet navngitt. Det svaret
+avgjør neste konkrete jobb — og den jobben legges fram for LARS/CEO før noe bygges.
